@@ -18,7 +18,7 @@ async function dryRunRecalculateAll() {
   const topChanges = [];
 
   const EXPLOITERS_FIX = {
-    '♫': { cash: 5947500, bank: 15860000, clearStocks: true, clearIndustry: true },
+    '': { cash: 5947500, bank: 15860000, clearStocks: true, clearIndustry: true },
     'ABDO_1': { cash: 296034, bank: 3327200, clearStocks: true, clearIndustry: true },
     'Emad': { cash: 1305300, bank: 454193, clearStocks: true, clearIndustry: true },
     'MarkEshak': { cash: 1213500, bank: 244815, clearStocks: true, clearIndustry: true },

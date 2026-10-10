@@ -118,7 +118,7 @@ async function approveRemainingRequests() {
     req.reviewedAt = ts;
     req.reviewerNote = 'تم الاعتماد والشحن بنجاح بواسطة الإدارة';
 
-    console.log(`✅ Approved ${req.packageName}: +${addedCash} Cash, +${addedBank} Bank, +${addedGold} Gold!`);
+    console.log(` Approved ${req.packageName}: +${addedCash} Cash, +${addedBank} Bank, +${addedGold} Gold!`);
   }
 
   // Save updated requests to globals
@@ -136,7 +136,7 @@ async function approveRemainingRequests() {
     })
   });
 
-  console.log('🎉 All pending topup requests approved and credited!');
+  console.log(' All pending topup requests approved and credited!');
 }
 
 approveRemainingRequests();

@@ -138,7 +138,7 @@
     }
 
     // ─────────────────────────────────────────────
-    //  MODULE: PLAYERS DIRECTORY & MANAGEMENT
+    // MODULE: PLAYERS DIRECTORY & MANAGEMENT
     // ─────────────────────────────────────────────
     cachedPlayers = [];
     let selectedPlayer = null;
@@ -378,9 +378,9 @@
         if (p.isBanned) {
           statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">محظور</span>';
         } else if (p.jailTimer > 0) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">سجين (${p.jailTimer}ث)${isPlayerOnline ? ' 🟢' : ''}</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">سجين (${p.jailTimer}ث)${isPlayerOnline ? ' ' : ''}</span>`;
         } else if (p.isAdmin) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ⭐${isPlayerOnline ? ' 🟢' : ''}</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ${isPlayerOnline ? ' ' : ''}</span>`;
         }
 
         tr.innerHTML =`
@@ -431,7 +431,7 @@
           const l = state.activeLoan;
           const due = l ? Number(l.totalDue || l.amount || 0) : 0;
           if (due > 0) {
-            loanEl.textContent = `${due.toLocaleString()} EGP ${l.isDefaulted ? '(متعثر ⚠️)' : ''}`;
+            loanEl.textContent = `${due.toLocaleString()} EGP ${l.isDefaulted ? '(متعثر )' : ''}`;
             loanEl.className = l.isDefaulted ? 'text-rose-400 numbers-font font-bold animate-pulse' : 'text-amber-400 numbers-font font-bold';
           } else {
             loanEl.textContent = 'لا يوجد قرض';
@@ -508,7 +508,7 @@
         const toggleRoleText = document.getElementById('admin-toggle-role-text');
         if (toggleRoleBtn && toggleRoleText) {
           if (state.isAdmin) {
-            toggleRoleText.textContent ='سحب صلاحية الإدارة (إلغاء أدمن) ️';
+            toggleRoleText.textContent ='سحب صلاحية الإدارة (إلغاء أدمن) ';
             toggleRoleBtn.className ='w-full py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5';
           } else {
             toggleRoleText.textContent ='نقل صلاحية الإدارة / تعيين كمسؤول (Make Admin)';
@@ -550,19 +550,19 @@
 
         if (statusBadge) {
           if (state.isBanned) {
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ⛔';
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center';
           } else if (isUnderSuspicion) {
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة ⚠️ (الشاشة مثبتة)';
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة (الشاشة مثبتة)';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20 flex items-center';
           } else if (state.jailTimer > 0) {
-            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block ml-1"></span>سجين (${state.jailTimer}ث) ${isOnline ? '🟢 متصل الآن' : '⚪ غير نشط'}`;
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block ml-1"></span>سجين (${state.jailTimer}ث) ${isOnline ? ' متصل الآن' : ' غير نشط'}`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center';
           } else if (isOnline) {
-            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>نشط ومتصل الآن 🟢 (${lastSeenDetail})`;
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>نشط ومتصل الآن (${lastSeenDetail})`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 flex items-center';
           } else {
-            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block ml-1"></span>غير نشط ⚪ (${lastSeenDetail})`;
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block ml-1"></span>غير نشط (${lastSeenDetail})`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400 border border-slate-700 flex items-center';
           }
         }
@@ -682,10 +682,10 @@
         const suspicionBtn = document.getElementById('btn-admin-toggle-suspicion-lock');
         if (suspicionBtn) {
           if (isUnderSuspicion) {
-            suspicionBtn.innerHTML = '<i class="fa-solid fa-lock-open text-xs"></i> <span id="admin-toggle-suspicion-text">إلغاء تثبيت شاشة الشبهة (فك التجميد) 🔓</span>';
+            suspicionBtn.innerHTML = '<i class="fa-solid fa-lock-open text-xs"></i> <span id="admin-toggle-suspicion-text">إلغاء تثبيت شاشة الشبهة (فك التجميد) </span>';
             suspicionBtn.className = 'w-full py-2 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer';
           } else {
-            suspicionBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xs animate-bounce"></i> <span id="admin-toggle-suspicion-text">تثبيت شاشة (حسابك تحت الشبهة) ⚠️</span>';
+            suspicionBtn.innerHTML = '<i class="fa-solid fa-triangle-exclamation text-xs animate-bounce"></i> <span id="admin-toggle-suspicion-text">تثبيت شاشة (حسابك تحت الشبهة) </span>';
             suspicionBtn.className = 'w-full py-2 bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-orange-500/20 cursor-pointer';
           }
         }
@@ -1452,7 +1452,7 @@
           addBank = amount - addCash;
         }
 
-        const confirmMsg = `💰 تأكيد إضافة الرصيد الفوري:\n\nهل أنت متأكد من إضافة ${amount.toLocaleString()} EGP إلى [${targetLabel}] للاعب "${selectedPlayer}"؟\n\nسيتم ظهور الرصيد الجديد مباشرة في شاشة اللاعب فوراً.`;
+        const confirmMsg = ` تأكيد إضافة الرصيد الفوري:\n\nهل أنت متأكد من إضافة ${amount.toLocaleString()} EGP إلى [${targetLabel}] للاعب "${selectedPlayer}"؟\n\nسيتم ظهور الرصيد الجديد مباشرة في شاشة اللاعب فوراً.`;
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -1483,7 +1483,7 @@
           const grantEntry = {
             id: `adm_bal_${now}_${Math.random().toString(36).substring(2, 6)}`,
             timestamp: now,
-            action: `إيداع مالي مباشر من الإدارة 💰`,
+            action: `إيداع مالي مباشر من الإدارة `,
             category: 'admin',
             details: `إيداع فوري بقيمة ${amount.toLocaleString()} EGP في [${targetLabel}] بواسطة إدارة اللعبة`,
             amount: amount,
@@ -1584,7 +1584,7 @@
             renderPlayersTable();
           }
 
-          showToast('تمت الإضافة بنجاح 💰', `تمت إضافة ${amount.toLocaleString()} EGP لحساب اللاعب [${selectedPlayer}] فوراً! الرصيد الجديد: ${newCash.toLocaleString()} كاش / ${newBank.toLocaleString()} بنك.`, 'success');
+          showToast('تمت الإضافة بنجاح ', `تمت إضافة ${amount.toLocaleString()} EGP لحساب اللاعب [${selectedPlayer}] فوراً! الرصيد الجديد: ${newCash.toLocaleString()} كاش / ${newBank.toLocaleString()} بنك.`, 'success');
           logAdminAction(`إضافة مبلغ فوري بقيمة ${amount.toLocaleString()} EGP إلى [${targetLabel}] للاعب ${selectedPlayer}`);
 
         } catch (err) {
@@ -1615,7 +1615,7 @@
           return;
         }
 
-        const confirmMsg = `🪙 تأكيد إضافة الذهب الفوري:
+        const confirmMsg = ` تأكيد إضافة الذهب الفوري:
 
 هل أنت متأكد من إضافة ${amount.toLocaleString()} ذهبة للاعب "${selectedPlayer}"؟
 
@@ -1646,7 +1646,7 @@
           const goldGrantEntry = {
             id: `adm_gold_${now}_${Math.random().toString(36).substring(2, 6)}`,
             timestamp: now,
-            action: `منحة ذهب مباشرة من الإدارة 🪙`,
+            action: `منحة ذهب مباشرة من الإدارة `,
             category: 'admin',
             details: `إضافة فورية بقيمة ${amount.toLocaleString()} ذهبة لحساب اللاعب بواسطة إدارة اللعبة`,
             gold: amount,
@@ -1729,7 +1729,7 @@
             renderPlayersTable();
           }
 
-          showToast('تمت إضافة الذهب بنجاح 🪙', `تمت إضافة ${amount.toLocaleString()} ذهبة لحساب اللاعب [${selectedPlayer}] فوراً! الرصيد الجديد: ${newGold.toLocaleString()} ذهبة.`, 'success');
+          showToast('تمت إضافة الذهب بنجاح ', `تمت إضافة ${amount.toLocaleString()} ذهبة لحساب اللاعب [${selectedPlayer}] فوراً! الرصيد الجديد: ${newGold.toLocaleString()} ذهبة.`, 'success');
           logAdminAction(`إضافة ذهب فوري بقيمة ${amount.toLocaleString()} ذهبة للاعب ${selectedPlayer}`);
 
         } catch (err) {
@@ -1923,7 +1923,7 @@
         const newSuspicion = !currentSuspicion;
         const targetUser = selectedPlayer;
         const confirmMsg = newSuspicion
-          ? `⚠️ تأكيد تثبيت شاشة الشبهة:\nهل أنت متأكد من تثبيت شاشة [حسابك تحت الشبهة يرجى التواصل مع صفحة الفيسبوك] على حساب اللاعب "${targetUser}"؟\nستظهر الشاشة فوراً أمامه وتمنعه من اللعب حتى تقوم بإلغائها.`
+          ? ` تأكيد تثبيت شاشة الشبهة:\nهل أنت متأكد من تثبيت شاشة [حسابك تحت الشبهة يرجى التواصل مع صفحة الفيسبوك] على حساب اللاعب "${targetUser}"؟\nستظهر الشاشة فوراً أمامه وتمنعه من اللعب حتى تقوم بإلغائها.`
           : `تأكيد رفع التجميد:\nهل أنت متأكد من إلغاء تثبيت شاشة الشبهة عن حساب اللاعب "${targetUser}"؟`;
 
         if (!confirm(confirmMsg)) return;
@@ -1937,7 +1937,7 @@
           if (selectedPlayerState.state) selectedPlayerState.state.underSuspicion = newSuspicion;
 
           showToast(
-            newSuspicion ? 'تم التثبيت ⚠️' : 'تم رفع التجميد 🔓',
+            newSuspicion ? 'تم التثبيت ' : 'تم رفع التجميد ',
             newSuspicion ? `تم تثبيت شاشة الشبهة على حساب ${targetUser} بنجاح.` : `تم إلغاء تثبيت شاشة الشبهة عن حساب ${targetUser}.`,
             'success'
           );
@@ -1985,7 +1985,7 @@
 
         let confirmMsg ='';
         if (isCurrentlyAdmin) {
-          confirmMsg =`️ تحذير: هل أنت متأكد من سحب صلاحيات الإدارة من اللاعب"${targetUser}" وتحويل حسابه إلى حساب لاعب عادي؟`;
+          confirmMsg =` تحذير: هل أنت متأكد من سحب صلاحيات الإدارة من اللاعب"${targetUser}" وتحويل حسابه إلى حساب لاعب عادي؟`;
         } else {
           confirmMsg =` تأكيد ترقية مسؤول:\nهل أنت متأكد من منح صلاحيات الإدارة الكاملة (Admin) للاعب"${targetUser}"؟\nسيتمكن هذا الحساب من الدخول للوحة التحكم وإدارة كافة مفاصل اللعبة واللاعبين.`;
         }
@@ -2015,7 +2015,7 @@
           toggleAdminRoleBtn.disabled = false;
           if (selectedPlayerState) {
             if (selectedPlayerState.isAdmin) {
-              toggleAdminRoleBtn.innerHTML ='<i class="fa-solid fa-user-shield text-xs"></i> <span>سحب صلاحية الإدارة (إلغاء أدمن) ️</span>';
+              toggleAdminRoleBtn.innerHTML ='<i class="fa-solid fa-user-shield text-xs"></i> <span>سحب صلاحية الإدارة (إلغاء أدمن) </span>';
               toggleAdminRoleBtn.className ='w-full py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5';
             } else {
               toggleAdminRoleBtn.innerHTML ='<i class="fa-solid fa-crown text-xs"></i> <span>نقل صلاحية الإدارة لهذا الحساب (Make Admin) </span>';
@@ -2071,7 +2071,7 @@
           return;
         }
 
-        const confirmMsg = `🏦 تأكيد إعفاء وشطب القرض:\n\nهل أنت متأكد من إعفاء اللاعب "${selectedPlayer}" وشطب مديونية القرض البنكي بالكامل بقيمة ${loanDue.toLocaleString()} EGP وفك أي تجميد بنكي ناتج عن التعثر؟`;
+        const confirmMsg = ` تأكيد إعفاء وشطب القرض:\n\nهل أنت متأكد من إعفاء اللاعب "${selectedPlayer}" وشطب مديونية القرض البنكي بالكامل بقيمة ${loanDue.toLocaleString()} EGP وفك أي تجميد بنكي ناتج عن التعثر؟`;
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -2097,7 +2097,7 @@
           await AppDB.adminSavePlayer(selectedPlayer, selectedPlayerState);
           await AppDB.savePlayerState(selectedPlayer, selectedPlayerState, true);
 
-          showToast('إعفاء من القرض 🏛️', `تم إعفاء اللاعب "${selectedPlayer}" وشطب القرض المستحق بقيمة ${loanDue.toLocaleString()} EGP وفك التجميد بنجاح!`, 'success');
+          showToast('إعفاء من القرض ', `تم إعفاء اللاعب "${selectedPlayer}" وشطب القرض المستحق بقيمة ${loanDue.toLocaleString()} EGP وفك التجميد بنجاح!`, 'success');
           logAdminAction(`إعفاء وشطب قرض بنكي بقيمة ${loanDue.toLocaleString()} EGP للاعب: ${selectedPlayer}`);
 
           selectPlayerForModeration(selectedPlayer);
@@ -2110,7 +2110,7 @@
       });
     }
 
-    // Inspect Player Referral Report Action (👥 فحص دعوات ومكافآت اللاعب)
+    // Inspect Player Referral Report Action ( فحص دعوات ومكافآت اللاعب)
     const inspectReferralsBtn = document.getElementById('btn-admin-inspect-referrals');
     let currentAdminRefTargetUser = '';
 
@@ -2135,18 +2135,18 @@
           showToast('فك الارتباط', 'يرجى اختيار لاعب أولاً من القائمة.', 'warning');
           return;
         }
-        const confirmed = confirm(`⚠️ تأكيد إداري:\n\nهل تريد حذف جميع بصمات الأجهزة المرتبطة بالحساب:\n"${targetUser}"\n\nمن سجل الحماية الأمني؟\n\nسيُسمح للاعب بعدها بإدخال كود دعوة من أي جهاز.`);
+        const confirmed = confirm(` تأكيد إداري:\n\nهل تريد حذف جميع بصمات الأجهزة المرتبطة بالحساب:\n"${targetUser}"\n\nمن سجل الحماية الأمني؟\n\nسيُسمح للاعب بعدها بإدخال كود دعوة من أي جهاز.`);
         if (!confirmed) return;
         try {
           clearDeviceBtn.disabled = true;
           clearDeviceBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-xs"></i><span>جاري المسح...</span>';
           await AppDB.adminClearDeviceFromRegistry(targetUser);
-          showToast('تم بنجاح ✅', `تم فك ارتباط جميع الأجهزة المرتبطة بحساب "${targetUser}" من السجل الأمني.`, 'success');
+          showToast('تم بنجاح ', `تم فك ارتباط جميع الأجهزة المرتبطة بحساب "${targetUser}" من السجل الأمني.`, 'success');
         } catch (err) {
           showToast('خطأ', 'فشل فك الارتباط: ' + err.message, 'error');
         } finally {
           clearDeviceBtn.disabled = false;
-          clearDeviceBtn.innerHTML = '<i class="fa-solid fa-fingerprint text-xs"></i><span>🔓 فك ارتباط الجهاز بالسجل الأمني</span>';
+          clearDeviceBtn.innerHTML = '<i class="fa-solid fa-fingerprint text-xs"></i><span> فك ارتباط الجهاز بالسجل الأمني</span>';
         }
       });
     }
@@ -2223,8 +2223,8 @@
               const transfers = inv.transfersReceived || 0;
               const selfEarned = inv.selfEarned || 0;
               const qualBadge = inv.isQualified
-                ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-black text-[10px] border border-emerald-500/30">مؤهل ✅ (250k+)</span>`
-                : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التأهيل ⏳</span>`;
+                ? `<span class="px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 font-black text-[10px] border border-emerald-500/30">مؤهل (250k+)</span>`
+                : `<span class="px-2 py-0.5 rounded bg-amber-950 text-amber-400 font-bold text-[10px] border border-amber-500/30">قيد التأهيل </span>`;
 
               const devList = (inv.devices && inv.devices.length > 0) ? inv.devices.join(', ') : 'غير مسجل';
               const safeUser = escapeHtml(inv.username);
@@ -2243,7 +2243,7 @@
                   <td class="p-2.5">
                     <button onclick="window.adminUnlinkInvitee('${encodeURIComponent(inv.username)}', '${encodeURIComponent(targetUsername)}')"
                       class="px-2 py-1 bg-rose-950 hover:bg-rose-900 text-rose-300 border border-rose-500/30 rounded text-[10px] font-bold transition cursor-pointer active:scale-95" title="شطب فك ربط هذه الدعوة">
-                      فك الربط ❌
+                      فك الربط 
                     </button>
                   </td>
                 </tr>
@@ -2296,7 +2296,7 @@
           await AppDB.adminSavePlayer(currentAdminRefTargetUser, targetState);
           await AppDB.savePlayerState(currentAdminRefTargetUser, targetState, true);
 
-          showToast('تعديل كود الدعوة 🔑', `تم تغيير كود دعوة اللاعب @${currentAdminRefTargetUser} إلى "${inputCode}" وحفظ السيرفر بنجاح!`, 'success');
+          showToast('تعديل كود الدعوة ', `تم تغيير كود دعوة اللاعب @${currentAdminRefTargetUser} إلى "${inputCode}" وحفظ السيرفر بنجاح!`, 'success');
           logAdminAction(`تعديل كود دعوة اللاعب ${currentAdminRefTargetUser} إلى: ${inputCode}`);
 
           await openAdminReferralModal(currentAdminRefTargetUser);
@@ -2304,7 +2304,7 @@
           showToast('خطأ التعديل', err.message, 'error');
         } finally {
           saveRefCodeBtn.disabled = false;
-          saveRefCodeBtn.textContent = 'تعديل الكود 💾';
+          saveRefCodeBtn.textContent = 'تعديل الكود ';
         }
       });
     }
@@ -2340,7 +2340,7 @@
           await AppDB.adminSavePlayer(currentAdminRefTargetUser, targetState);
           await AppDB.savePlayerState(currentAdminRefTargetUser, targetState, true);
 
-          showToast('ربط صديق 🔗', `تم ربط حساب @${currentAdminRefTargetUser} بكود الصديق "${inputRefBy}" بنجاح!`, 'success');
+          showToast('ربط صديق ', `تم ربط حساب @${currentAdminRefTargetUser} بكود الصديق "${inputRefBy}" بنجاح!`, 'success');
           logAdminAction(`ربط حساب ${currentAdminRefTargetUser} بكود الدعوة: ${inputRefBy}`);
 
           await openAdminReferralModal(currentAdminRefTargetUser);
@@ -2348,7 +2348,7 @@
           showToast('خطأ الربط', err.message, 'error');
         } finally {
           saveReferredByBtn.disabled = false;
-          saveReferredByBtn.textContent = 'ربط 🔗';
+          saveReferredByBtn.textContent = 'ربط ';
         }
       });
     }
@@ -2380,7 +2380,7 @@
           await AppDB.adminSavePlayer(currentAdminRefTargetUser, targetState);
           await AppDB.savePlayerState(currentAdminRefTargetUser, targetState, true);
 
-          showToast('فك الربط ❌', `تم فك ربط كود الصديق للاعب @${currentAdminRefTargetUser} بنجاح!`, 'success');
+          showToast('فك الربط ', `تم فك ربط كود الصديق للاعب @${currentAdminRefTargetUser} بنجاح!`, 'success');
           logAdminAction(`فك ربط كود الصديق للاعب: ${currentAdminRefTargetUser}`);
 
           await openAdminReferralModal(currentAdminRefTargetUser);
@@ -2388,7 +2388,7 @@
           showToast('خطأ فك الربط', err.message, 'error');
         } finally {
           unbindReferredByBtn.disabled = false;
-          unbindReferredByBtn.textContent = 'فك الربط ❌';
+          unbindReferredByBtn.textContent = 'فك الربط ';
         }
       });
     }
@@ -2396,7 +2396,7 @@
     // Global Admin Action: Unlink Specific Invitee from Target Referrer
     window.adminUnlinkInvitee = async function(inviteeUser, referrerUser) {
       if (!inviteeUser) return;
-      if (!confirm(`🚫 تأكيد الإجراء الإداري:\nهل أنت متأكد من فك ربط وشطب الدعوة للاعب @${inviteeUser} من قائمة دعوات @${referrerUser}؟`)) return;
+      if (!confirm(` تأكيد الإجراء الإداري:\nهل أنت متأكد من فك ربط وشطب الدعوة للاعب @${inviteeUser} من قائمة دعوات @${referrerUser}؟`)) return;
 
       try {
         showToast('فك ربط الدعوة', `جاري شطب ربط اللاعب @${inviteeUser}...`, 'info');
@@ -2417,7 +2417,7 @@
         await AppDB.adminSavePlayer(inviteeUser, inviteeState);
         await AppDB.savePlayerState(inviteeUser, inviteeState, true);
 
-        showToast('شطب الدعوة ✂️', `تم فك ربط اللاعب @${inviteeUser} من دعوات @${referrerUser} بنجاح!`, 'success');
+        showToast('شطب الدعوة ', `تم فك ربط اللاعب @${inviteeUser} من دعوات @${referrerUser} بنجاح!`, 'success');
         logAdminAction(`شطب وفك ربط دعوة اللاعب ${inviteeUser} من الموصي ${referrerUser}`);
 
         await openAdminReferralModal(referrerUser);
@@ -2430,10 +2430,10 @@
     async function handleAdminResetPlayerAccount() {
       const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
       if (!targetUser || targetUser === '...' || targetUser === '---' || targetUser === '') {
-        showToast('تنبيه الإدارة ⚠️', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية التصفير.', 'warning');
+        showToast('تنبيه الإدارة ', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية التصفير.', 'warning');
         return;
       }
-      const confirmMsg = `⚠️ تحذير قاطع ورادع:\n\nهل أنت متأكد من تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء؟\n\n• سيتم تصفير الكاش والبنك والأموال المشبوهة (0 EGP).\n• مسح كافة الشركات والمشاريع بالكامل.\n• مسح كافة الأصول العقارية والمخزون.\n• تصفير وإلغاء كافة محافظ الأسهم والاستثمارات.\n• إعادة الرتبة إلى (عامل مبتدئ) وتصفير نقاط الخبرة (0 XP).\n• شطب كافة الديون والملاحقات الأمنية.\n\nهل تريد تنفيذ التصفير الشامل الآن؟`;
+      const confirmMsg = ` تحذير قاطع ورادع:\n\nهل أنت متأكد من تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء؟\n\n• سيتم تصفير الكاش والبنك والأموال المشبوهة (0 EGP).\n• مسح كافة الشركات والمشاريع بالكامل.\n• مسح كافة الأصول العقارية والمخزون.\n• تصفير وإلغاء كافة محافظ الأسهم والاستثمارات.\n• إعادة الرتبة إلى (عامل مبتدئ) وتصفير نقاط الخبرة (0 XP).\n• شطب كافة الديون والملاحقات الأمنية.\n\nهل تريد تنفيذ التصفير الشامل الآن؟`;
       if (!confirm(confirmMsg)) return;
 
       const resetBtn = document.getElementById('btn-admin-reset-player-account');
@@ -2459,7 +2459,7 @@
           }
         }
 
-        showToast('تصفير الحساب ✅', `تم تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء بنجاح (0 EGP).`, 'success');
+        showToast('تصفير الحساب ', `تم تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء بنجاح (0 EGP).`, 'success');
         logAdminAction(`تصفير شامل ونهائي لكافة أرصدة وممتلكات حساب اللاعب: ${targetUser}`);
         if (typeof selectPlayerForModeration === 'function') {
           await selectPlayerForModeration(targetUser);
@@ -2468,7 +2468,7 @@
           await loadAdminPlayersDirectory(false, true);
         }
       } catch (err) {
-        showToast('خطأ تصفير الحساب ❌', err.message || err, 'error');
+        showToast('خطأ تصفير الحساب ', err.message || err, 'error');
       } finally {
         if (resetBtn) {
           resetBtn.disabled = false;
@@ -2488,10 +2488,10 @@
     async function handleAdminDeletePlayerAccount() {
       const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
       if (!targetUser || targetUser === '...' || targetUser === '---' || targetUser === '') {
-        showToast('تنبيه الإدارة ⚠️', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية الحذف.', 'warning');
+        showToast('تنبيه الإدارة ', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية الحذف.', 'warning');
         return;
       }
-      const confirmMsg = `🚨 تحذير أمني نهائي:\n\nهل أنت متأكد تماماً من حذف وثيقة وسجل وحساب اللاعب "${targetUser}" نهائياً من الخوادم؟\n\nلن يمكن استعادة هذا الحساب أو بياناته بعد الحذف.`;
+      const confirmMsg = ` تحذير أمني نهائي:\n\nهل أنت متأكد تماماً من حذف وثيقة وسجل وحساب اللاعب "${targetUser}" نهائياً من الخوادم؟\n\nلن يمكن استعادة هذا الحساب أو بياناته بعد الحذف.`;
       if (!confirm(confirmMsg)) return;
 
       const deleteBtn = document.getElementById('btn-admin-delete-player-account');
@@ -2502,7 +2502,7 @@
           deleteBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري حذف الحساب...</span>';
         }
         await AppDB.adminDeletePlayer(targetUser);
-        showToast('حذف الحساب 🗑️', `تم حذف وثيقة وحساب اللاعب ${targetUser} نهائياً من قاعدة البيانات.`, 'success');
+        showToast('حذف الحساب ', `تم حذف وثيقة وحساب اللاعب ${targetUser} نهائياً من قاعدة البيانات.`, 'success');
         logAdminAction(`حذف نهائي لوثيقة حساب اللاعب: ${targetUser}`);
 
         if (resultCard) resultCard.classList.add('hidden');
@@ -2512,7 +2512,7 @@
           await loadAdminPlayersDirectory(false, true);
         }
       } catch (err) {
-        showToast('خطأ حذف الحساب ❌', err.message || err, 'error');
+        showToast('خطأ حذف الحساب ', err.message || err, 'error');
       } finally {
         if (deleteBtn) {
           deleteBtn.disabled = false;
@@ -2530,7 +2530,7 @@
 
     // ─────────────────────────────────────────────
     // ─────────────────────────────────────────────
-    //  MODULE: LIVE PLAYER ACTIVITY AUDIT & EXPLOIT DETECTION
+    // MODULE: LIVE PLAYER ACTIVITY AUDIT & EXPLOIT DETECTION
     // ─────────────────────────────────────────────
     const inspectLogsBtn = document.getElementById('btn-admin-inspect-logs');
     const logModal = document.getElementById('admin-player-log-modal');
@@ -2773,7 +2773,7 @@
         const goldBadgeHtml = item.gold ? `
           <div class="mt-1">
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/30 font-bold text-[10px]">
-              <i class="fa-solid fa-coins text-yellow-400"></i> +${Number(item.gold).toLocaleString()} ذهبة 🪙
+              <i class="fa-solid fa-coins text-yellow-400"></i> +${Number(item.gold).toLocaleString()} ذهبة 
             </span>
           </div>
         ` : '';
@@ -2787,7 +2787,7 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-bold text-white text-xs truncate ${item.category === 'admin' ? 'text-amber-200' : ''}">${item.action}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category === 'admin' ? 'شحن ومنح الإدارة 👑' : item.category}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category === 'admin' ? 'شحن ومنح الإدارة ' : item.category}</span>
                 </div>
                 <div class="text-[11px] text-slate-300 mt-0.5 leading-tight">${item.details}</div>
                 ${goldBadgeHtml}
@@ -2854,16 +2854,16 @@
 
                 let rewardsSummary = [];
                 if (totalCash > 0) rewardsSummary.push(`+${totalCash.toLocaleString()} ج.م`);
-                if (goldReward > 0) rewardsSummary.push(`+${goldReward.toLocaleString()} ذهبة 🪙`);
+                if (goldReward > 0) rewardsSummary.push(`+${goldReward.toLocaleString()} ذهبة `);
                 if (tp.rewards?.xp) rewardsSummary.push(`+${tp.rewards.xp} XP`);
                 if (tp.rewards?.customBadge) rewardsSummary.push(`وسام [${tp.rewards.customBadge}]`);
 
                 topupLogs.push({
                   id: `topup_${tp.id || ts}`,
                   timestamp: ts,
-                  action: isApproved ? `شحنة معتمدة من الإدارة 👑 (${tp.packageName || 'باقة متجر'})` : `طلب شحن (${tp.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}): ${tp.packageName || 'متجر'}`,
+                  action: isApproved ? `شحنة معتمدة من الإدارة (${tp.packageName || 'باقة متجر'})` : `طلب شحن (${tp.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}): ${tp.packageName || 'متجر'}`,
                   category: 'admin',
-                  details: `المبلغ: ${Number(tp.price || 0).toLocaleString()} ج.م • الحالة: ${isApproved ? 'تم الشحن والاعتماد بنجاح ✅' : tp.status}` +
+                  details: `المبلغ: ${Number(tp.price || 0).toLocaleString()} ج.م • الحالة: ${isApproved ? 'تم الشحن والاعتماد بنجاح ' : tp.status}` +
                            (rewardsSummary.length ? ` • المكافآت: ${rewardsSummary.join(' | ')}` : '') +
                            (tp.reviewerNote ? ` • بيان الإدارة: "${tp.reviewerNote}"` : ''),
                   amount: totalCash > 0 ? totalCash : null,
@@ -2889,7 +2889,7 @@
                 adminMailLogs.push({
                   id: `adm_mail_${mb.id || ts}`,
                   timestamp: ts,
-                  action: isGold ? `منحة ذهب مباشرة من الإدارة 🪙 (+${goldAmt.toLocaleString()} ذهبة)` : `إيداع مالي مباشر من الإدارة 💰 (+${cashAmt.toLocaleString()} ج.م)`,
+                  action: isGold ? `منحة ذهب مباشرة من الإدارة (+${goldAmt.toLocaleString()} ذهبة)` : `إيداع مالي مباشر من الإدارة (+${cashAmt.toLocaleString()} ج.م)`,
                   category: 'admin',
                   details: `إيداع فوري بحساب اللاعب من قبل الإدارة` + (pld.target ? ` في [${pld.target}]` : '') + (mb.message ? ` • الملاحظة: "${mb.message}"` : ''),
                   amount: cashAmt > 0 ? cashAmt : null,
@@ -2909,7 +2909,7 @@
               stateAdminGrants.push({
                 id: ag.id || `ag_${ag.timestamp}`,
                 timestamp: Number(ag.timestamp || Date.now()),
-                action: ag.gold ? `منحة ذهب من الإدارة 🪙` : `إيداع رصيد من الإدارة 💰`,
+                action: ag.gold ? `منحة ذهب من الإدارة ` : `إيداع رصيد من الإدارة `,
                 category: 'admin',
                 details: ag.details || ag.note || 'منحة إدارية مسجلة في ملف اللاعب',
                 amount: Number(ag.amount || ag.cash || 0) || null,
@@ -3125,7 +3125,7 @@
 
       if (targetUserBadge) targetUserBadge.textContent = `@${targetUser}`;
       if (popupMsgInput) popupMsgInput.value = '';
-      if (popupTitleInput) popupTitleInput.value = 'تنبيه إداري مباشر 📢';
+      if (popupTitleInput) popupTitleInput.value = 'تنبيه إداري مباشر ';
       if (popupStyleSelect) popupStyleSelect.value = 'warning';
       if (sendPopupModal) sendPopupModal.classList.remove('hidden');
       if (popupMsgInput) setTimeout(() => popupMsgInput.focus(), 150);
@@ -3196,7 +3196,7 @@
         // 3. Log action
         logAdminAction(`إرسال شاشة منبثقة للاعب [${targetUser}]: "${title}" - ${message.substring(0, 50)}...`);
 
-        showToast('تم الإرسال بنجاح 🚀', `تم إرسال الشاشة المنبثقة للاعب "${targetUser}" بنجاح! ستظهر في منتصف شاشته فوراً.`, 'success');
+        showToast('تم الإرسال بنجاح ', `تم إرسال الشاشة المنبثقة للاعب "${targetUser}" بنجاح! ستظهر في منتصف شاشته فوراً.`, 'success');
 
         closeDirectPopupSender();
       } catch (err) {
@@ -3205,7 +3205,7 @@
         _isSendingPopupInProgress = false;
         if (confirmSendPopupBtn) {
           confirmSendPopupBtn.disabled = false;
-          confirmSendPopupBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال التنبيه الآن 🚀</span>';
+          confirmSendPopupBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال التنبيه الآن </span>';
         }
       }
     }
@@ -3258,7 +3258,7 @@
               const opt = document.createElement('option');
               opt.value = pkg.id;
               const isHidden = (pkg.hidden === true || pkg.visible === false);
-              opt.textContent = `📦 ${pkg.name} (${Number(pkg.price || 0).toLocaleString()} EGP)${isHidden ? ' 🔒 [مخفية بالمتجر]' : ''}`;
+              opt.textContent = ` ${pkg.name} (${Number(pkg.price || 0).toLocaleString()} EGP)${isHidden ? ' [مخفية بالمتجر]' : ''}`;
               templateSelect.appendChild(opt);
             });
           }
@@ -3353,7 +3353,7 @@
       const itemDronesInp = document.getElementById('adm-send-pkg-item-drones');
       const confirmSendPkgBtn = document.getElementById('btn-confirm-send-pkg');
 
-      const pkgName = pkgNameInp ? pkgNameInp.value.trim() : 'حزمة الدعم الإداري 🎁';
+      const pkgName = pkgNameInp ? pkgNameInp.value.trim() : 'حزمة الدعم الإداري ';
       const customBadge = pkgBadgeInp ? pkgBadgeInp.value.trim() : '';
       const addCash = Number(pkgCashInp ? pkgCashInp.value : 0);
       const addBank = Number(pkgBankInp ? pkgBankInp.value : 0);
@@ -3380,7 +3380,7 @@
         return;
       }
 
-      const confirmMsg = `🎁 تأكيد إرسال الحزمة الفورية:\n\nهل أنت متأكد من إرسال [${pkgName}] للاعب "${targetUser}"؟\n` +
+      const confirmMsg = ` تأكيد إرسال الحزمة الفورية:\n\nهل أنت متأكد من إرسال [${pkgName}] للاعب "${targetUser}"؟\n` +
         (addCash > 0 ? `• كاش مالي: +${addCash.toLocaleString()} EGP\n` : '') +
         (addBank > 0 ? `• إيداع بنكي: +${addBank.toLocaleString()} EGP\n` : '') +
         (addXp > 0 ? `• نقاط خبرة: +${addXp.toLocaleString()} XP\n` : '') +
@@ -3528,7 +3528,7 @@
 
         try {
         await AppDB.sendMail('إدارة اللعبة (Financial Team)', targetUser, 'topup_receipt', {
-          title: `🎉 تم استلام [${pkgName}] بنجاح!`,
+          title: ` تم استلام [${pkgName}] بنجاح!`,
           message: note || `مبروك! تم إرسال حزمة [${pkgName}] لحسابك بنجاح من قبل إدارة اللعبة.`,
           topupDetails: topupReceiptData
         });
@@ -3611,7 +3611,7 @@
         if (worthEl) worthEl.textContent = `${newWorth.toLocaleString()} EGP`;
 
         logAdminAction(`إرسال حزمة [${pkgName}] للاعب ${targetUser}: كاش ${addCash.toLocaleString()}، بنك ${addBank.toLocaleString()}، خبرة ${addXp.toLocaleString()}`);
-        showToast('تم إرسال الحزمة بنجاح 🎁', `تم شحن وإرسال حزمة [${pkgName}] للاعب @${targetUser} بنجاح وستظهر في شاشته فوراً!`, 'success');
+        showToast('تم إرسال الحزمة بنجاح ', `تم شحن وإرسال حزمة [${pkgName}] للاعب @${targetUser} بنجاح وستظهر في شاشته فوراً!`, 'success');
 
         closeSendPackageModal();
 
@@ -3626,7 +3626,7 @@
         _isSendingPackageInProgress = false;
         if (confirmSendPkgBtn) {
           confirmSendPkgBtn.disabled = false;
-          confirmSendPkgBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال الحزمة للاعب فوراً 🚀</span>';
+          confirmSendPkgBtn.innerHTML = '<i class="fa-solid fa-paper-plane"></i> <span>إرسال الحزمة للاعب فوراً </span>';
         }
       }
     }
@@ -3702,7 +3702,7 @@
                     icon:'',
                     title:`مشروع: ${b.name}`,
                     grossPerSec: b.profitPerSec,
-                    detail:`مستوى ${b.level} | ${b.workers || 0} عمال | تسعير: ${(b.price || b.optPrice || 0).toLocaleString()} EGP ${b.isFranchise ?'|  فرانشايز' :''}`
+                    detail:`مستوى ${b.level} | ${b.workers || 0} عمال | تسعير: ${(b.price || b.optPrice || 0).toLocaleString()} EGP ${b.isFranchise ?'| فرانشايز' :''}`
                   });
                 });
               }
@@ -3711,7 +3711,7 @@
               if (breakdown.assets && breakdown.assets.length > 0) {
                 breakdown.assets.forEach(a => {
                   breakdownItems.push({
-                    icon:'️',
+                    icon:'',
                     title:`عقار: ${a.name} (عدد ${a.count})`,
                     grossPerSec: a.rentPerSec,
                     detail:`عائد إيجار عقاري: +${a.rentPerUnit.toLocaleString()} EGP/ث لكل وحدة`
@@ -3723,7 +3723,7 @@
               if (breakdown.cars && breakdown.cars.length > 0) {
                 breakdown.cars.forEach(c => {
                   breakdownItems.push({
-                    icon:'️',
+                    icon:'',
                     title:`تأجير سيارة: ${c.name}`,
                     grossPerSec: c.grossRent,
                     netPerSec: c.netProfitPerSec,
@@ -3738,7 +3738,7 @@
                   icon:'',
                   title:'عوائد بنكية (فوائد الإيداع)',
                   grossPerSec: breakdown.bank.profitPerSec,
-                  detail:`رصيد البنك: ${(breakdown.bank.balance || 0).toLocaleString()} EGP ${breakdown.bank.hasRollsBonus ?'|  بونص رولز رويس (+5%)' :''}`
+                  detail:`رصيد البنك: ${(breakdown.bank.balance || 0).toLocaleString()} EGP ${breakdown.bank.hasRollsBonus ?'| بونص رولز رويس (+5%)' :''}`
                 });
               }
 
@@ -3767,7 +3767,7 @@
               if (breakdown.tax && breakdown.tax.active) {
                 taxTierName = (taxReport && taxReport.bracketName) ? taxReport.bracketName :'شريحة ضريبية مفعلة';
                 if (taxReport && taxReport.taxShieldActive) {
-                  taxTierName +=' (️ درع ضريبي مفعل)';
+                  taxTierName +=' ( درع ضريبي مفعل)';
                 }
               } else {
                 taxTierName = (breakdown.tax && breakdown.tax.exemptReason) || 'معفى من الضرائب (لا توجد تدفقات إيجابية)';
@@ -3895,7 +3895,7 @@
       };
 
       const CAR_MAP = {
-        lambo: { name:'Lamborghini Aventador ️', cost: 15000000, rentPerSec: 10000 },
+        lambo: { name:'Lamborghini Aventador ', cost: 15000000, rentPerSec: 10000 },
         rolls: { name:'Rolls-Royce Phantom', cost: 40000000, rentPerSec: 38000 },
         shelby: { name:'Shelby Cobra 1965', cost: 120000000, rentPerSec: 145000 }
       };
@@ -3910,7 +3910,7 @@
         consultant: { name:'مستشار اقتصادي ووزير سابق', xpNeeded: 45000, salary: 2600 },
         bank_governor: { name:'محافظ البنك المركزي', xpNeeded: 110000, salary: 6800 },
         sovereign_head: { name:'رئيس المجلس الاقتصادي الأعلى', xpNeeded: 250000, salary: 18000 },
-        minister: { name:'وزير المالية والاقتصاد السيادي ️', xpNeeded: 500000, salary: 45000 }
+        minister: { name:'وزير المالية والاقتصاد السيادي ', xpNeeded: 500000, salary: 45000 }
       };
 
       const BIZ_MAP = {
@@ -4045,7 +4045,7 @@
       const topSenderSummary = topSenders.length > 0 ?`${topSenders[0][0]} (+${topSenders[0][1].toLocaleString()} EGP)` :'لا يوجد';
 
       // ─────────────────────────────────────────────
-      //  SECTOR AUDITS & FINDINGS
+      // SECTOR AUDITS & FINDINGS
       // ─────────────────────────────────────────────
 
       // VECTOR 1: EXACT MATHEMATICAL NET WORTH
@@ -4450,7 +4450,7 @@
           const variancePct = report.calculatedWorth > 0 ? ((Math.abs(report.worthVariance) / report.calculatedWorth) * 100) : 0;
           if (worthDiffEl) {
             if (variancePct <= 3.0 || Math.abs(report.worthVariance) < 15000000) {
-              worthDiffEl.textContent =`مطابق تماماً ️ (${(100 - Math.min(100, variancePct)).toFixed(1)}%)`;
+              worthDiffEl.textContent =`مطابق تماماً (${(100 - Math.min(100, variancePct)).toFixed(1)}%)`;
               worthDiffEl.className ='numbers-font font-black text-emerald-400 text-xs';
             } else {
               worthDiffEl.textContent =`${report.worthVariance > 0 ?'+' :''}${report.worthVariance.toLocaleString()} EGP (${variancePct.toFixed(1)}%)`;
@@ -4516,7 +4516,7 @@
         try {
           btnRecalibrateWorth.disabled = true;
           await AppDB.adminSetPlayerState(lastAuditTargetUser, { netWorth: newWorth });
-          showToast('معايرة الثروة ️',`تم تصحيح وضبط صافي ثروة ${lastAuditTargetUser} إلى ${newWorth.toLocaleString()} EGP بنجاح.`,'success');
+          showToast('معايرة الثروة ',`تم تصحيح وضبط صافي ثروة ${lastAuditTargetUser} إلى ${newWorth.toLocaleString()} EGP بنجاح.`,'success');
           logAdminAction(`إعادة معايرة وتصحيح صافي ثروة ${lastAuditTargetUser} إلى ${newWorth}`);
           
           // Re-trigger audit to reflect update
@@ -4579,7 +4579,7 @@
     });
 
     // ─────────────────────────────────────────────
-    //  MODULE: MARKET CONTROL & DIRECT PRICING
+    // MODULE: MARKET CONTROL & DIRECT PRICING
     // ─────────────────────────────────────────────
     function renderAdminStockPrices() {
       const symbols = ['COMI','EAST','ETEL','FWRY','CASH','BITC','GOLD','AIX'];
@@ -4814,7 +4814,7 @@
             toastType:'success'
           },
           cbe_rate_hike: {
-            title:'️ قرار المركزي: رفع الفائدة 200 نقطة',
+            title:' قرار المركزي: رفع الفائدة 200 نقطة',
             desc:'البنك المركزي يرفع الفائدة! ارتفاع قوي لسهم CIB وانتكاسة خفيفة باقي الأسهم.',
             targetStocks: ['COMI'],
             multiplier: 1.30,
@@ -4844,7 +4844,7 @@
             toastType:'error'
           },
           tech_hack_scandal: {
-            title:'️ ثغرة وأزمة حماية لشركة فوري',
+            title:' ثغرة وأزمة حماية لشركة فوري',
             desc:'تسريب وتوقف خدمات الدفع الإلكتروني يتسبب بموجة بيع مكثفة ومخاوف استثمارية!',
             targetStocks: ['FWRY'],
             multiplier: 0.70,
@@ -4901,7 +4901,7 @@
     });
 
     // ─────────────────────────────────────────────
-    //  MODULE: BROADCAST & AIRDROP
+    // MODULE: BROADCAST & AIRDROP
     // ─────────────────────────────────────────────
     const broadcastPresets = document.querySelectorAll('.btn-broadcast-preset');
     broadcastPresets.forEach(btn => {
@@ -4941,7 +4941,7 @@
                   'x-admin-token': adminToken
                 },
                 body: JSON.stringify({
-                  title: '📢 بيان رسمي من إدارة رأس المال',
+                  title: ' بيان رسمي من إدارة رأس المال',
                   body: msg,
                   url: '/'
                 })
@@ -4985,7 +4985,7 @@
 
           const res = await AppDB.sendAirdrop(amount, target);
           const targetDesc = res && res.type === 'single' ? `للاعب @${res.target}` : 'لجميع اللاعبين';
-          showToast('نجاح التوزيع 🎁', `تم توزيع المكافأة (+${amount.toLocaleString()} EGP) ${targetDesc} بنجاح! ستصلهم في الكاش فوراً.`, 'success');
+          showToast('نجاح التوزيع ', `تم توزيع المكافأة (+${amount.toLocaleString()} EGP) ${targetDesc} بنجاح! ستصلهم في الكاش فوراً.`, 'success');
           document.getElementById('admin-airdrop-amount').value = '';
           logAdminAction(`توزيع مكافأة مالية: +${amount.toLocaleString()} EGP -> ${target}`);
           updateAirdropStatusUI();
@@ -5034,7 +5034,7 @@
           }
 
           const amt = Number(airdrop.amount);
-          const confirmMsg = `⚡ تأكيد فحص وإيداع الدروب:\n\nهل تريد فحص قاعدة بيانات جميع اللاعبين الآن، وإيداع مبلغ المكافأة (+${amt.toLocaleString()} EGP) في حساب أي لاعب لم تصله هذه المكافأة من قبل؟\n\n(اللاعبون الذين استلموها مسبقاً لن يتكرر لهم شيء)`;
+          const confirmMsg = ` تأكيد فحص وإيداع الدروب:\n\nهل تريد فحص قاعدة بيانات جميع اللاعبين الآن، وإيداع مبلغ المكافأة (+${amt.toLocaleString()} EGP) في حساب أي لاعب لم تصله هذه المكافأة من قبل؟\n\n(اللاعبون الذين استلموها مسبقاً لن يتكرر لهم شيء)`;
           if (!confirm(confirmMsg)) return;
 
           resendUnclaimedBtn.disabled = true;
@@ -5043,7 +5043,7 @@
           const result = await AppDB.retryLatestAirdropToUnclaimed();
 
           const summaryMsg = `تم فحص ${result.totalScanned} لاعب:\n• استلموا مسبقاً: ${result.alreadyClaimedCount} لاعب.\n• تم إيداع المكافأة في حساباتهم الآن: ${result.newlyCreditedCount} لاعب بنجاح!`;
-          showToast('اكتملت إعادة التوزيع 🚀', summaryMsg, 'success');
+          showToast('اكتملت إعادة التوزيع ', summaryMsg, 'success');
           logAdminAction(`إعادة إرسال الدروب (${result.airdropId}): تم إيداع الفلوس لـ ${result.newlyCreditedCount} لاعب لم يستلموا مسبقاً.`);
 
           updateAirdropStatusUI();
@@ -5051,7 +5051,7 @@
           showToast('خطأ إعادة الدروب', err.message, 'error');
         } finally {
           resendUnclaimedBtn.disabled = false;
-          resendUnclaimedBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span>إعادة إرسال الدروب الأخير لمن لم يصله فقط ⚡</span>';
+          resendUnclaimedBtn.innerHTML = '<i class="fa-solid fa-rotate-right"></i> <span>إعادة إرسال الدروب الأخير لمن لم يصله فقط </span>';
         }
       });
     }
@@ -5064,7 +5064,7 @@
         const defaultMsg ='تم إطلاق تحديث وتحسينات هامة للعبة. يجب إعادة تحميل الصفحة الآن لتطبيق التغييرات وضمان استقرار حسابك.';
         const finalMsg = customMsg || defaultMsg;
 
-        const confirmed = confirm("️ تنبيه إداري هام:\n\nهل أنت متأكد من إجبار جميع اللاعبين المتصلين حالياً على إعادة تحميل الصفحة فوراً؟\n\nستظهر شاشة منبثقة إجبارية بملء الشاشة تمنع اللعب ولا تختفي إلا بعد أن يقوم اللاعب بإعادة تحميل الصفحة."
+        const confirmed = confirm(" تنبيه إداري هام:\n\nهل أنت متأكد من إجبار جميع اللاعبين المتصلين حالياً على إعادة تحميل الصفحة فوراً؟\n\nستظهر شاشة منبثقة إجبارية بملء الشاشة تمنع اللعب ولا تختفي إلا بعد أن يقوم اللاعب بإعادة تحميل الصفحة."
         );
         if (!confirmed) return;
 
@@ -5105,17 +5105,17 @@
 
       if (badge) {
         if (isMaint) {
-          badge.textContent = 'وضع التجهيز للموسم الثاني نشط 🚀';
+          badge.textContent = 'وضع التجهيز للموسم الثاني نشط ';
           badge.className = 'text-[10px] px-2.5 py-0.5 bg-amber-500/20 text-amber-300 rounded-full border border-amber-500/40 font-black animate-pulse';
         } else {
-          badge.textContent = 'الخادم متاح للجميع 🟢';
+          badge.textContent = 'الخادم متاح للجميع ';
           badge.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 rounded-full border border-emerald-500/30 font-bold';
         }
       }
       if (toggleBtn) {
         const text = isMaint
-          ? 'إنهاء وضع التجهيز وإعادة فتح اللعبة لجميع اللاعبين 🟢'
-          : 'تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم 🚀';
+          ? 'إنهاء وضع التجهيز وإعادة فتح اللعبة لجميع اللاعبين '
+          : 'تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم ';
         if (btnText) {
           btnText.textContent = text;
         } else {
@@ -5146,7 +5146,7 @@
         const link = `https://rasalmal.online/?tester_pass=${encodeURIComponent(currentTesterPasscode)}`;
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(link).then(() => {
-            showToast('تم نسخ الرابط 📋', 'تم نسخ رابط الدخول المباشر للمختبرين (Tester Access) إلى الحافظة بنجاح!', 'success');
+            showToast('تم نسخ الرابط ', 'تم نسخ رابط الدخول المباشر للمختبرين (Tester Access) إلى الحافظة بنجاح!', 'success');
           }).catch(() => {
             prompt('انسخ رابط التيست المباشر:', link);
           });
@@ -5161,7 +5161,7 @@
     if (revokeTesterBtn && !revokeTesterBtn.dataset.bound) {
       revokeTesterBtn.dataset.bound = 'true';
       revokeTesterBtn.addEventListener('click', async () => {
-        if (!confirm('⚠️ هل أنت متأكد من رغبتك في تدمير وتغيير مفتاح التيست الحالي؟\n\nسيتم فوراً طرد جميع المختبرين وإلغاء صلاحية الرابط القديم حتى ترسل لهم المفتاح الجديد.')) {
+        if (!confirm(' هل أنت متأكد من رغبتك في تدمير وتغيير مفتاح التيست الحالي؟\n\nسيتم فوراً طرد جميع المختبرين وإلغاء صلاحية الرابط القديم حتى ترسل لهم المفتاح الجديد.')) {
           return;
         }
         try {
@@ -5206,7 +5206,7 @@
 
           currentTesterPasscode = newPass;
           updateMaintenanceUIState(Boolean(currentSt.active || currentSt.enabled), newPass);
-          showToast('تم تدمير المفتاح القديم 🗑️', `تم إنشاء مفتاح تيست جديد بنجاح: [ ${newPass} ] وإلغاء الرابط السابق.`, 'success');
+          showToast('تم تدمير المفتاح القديم ', `تم إنشاء مفتاح تيست جديد بنجاح: [ ${newPass} ] وإلغاء الرابط السابق.`, 'success');
           logAdminAction(`تدمير مفتاح التيست وإنشاء مفتاح جديد: ${newPass}`);
         } catch (err) {
           showToast('خطأ في العملية', err.message || err, 'error');
@@ -5231,8 +5231,8 @@
           const nextState = !isCurrentlyMaint;
 
           const confirmMsg = nextState
-            ? "🚀 تنبيه إداري عاجل:\n\nهل أنت متأكد من تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم عن اللاعبين العاديين؟\n\n- ستظهر للاعبين شاشة الموسم الجديد مع تنويه الشاحنين.\n- سيتمكن المختبرون والمشرفون فقط من الدخول عبر رابط التيست السري."
-            : "✅ هل تريد إنهاء وضع التجهيز وإعادة فتح الخوادم لجميع اللاعبين رسمياً؟";
+            ? " تنبيه إداري عاجل:\n\nهل أنت متأكد من تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم عن اللاعبين العاديين؟\n\n- ستظهر للاعبين شاشة الموسم الجديد مع تنويه الشاحنين.\n- سيتمكن المختبرون والمشرفون فقط من الدخول عبر رابط التيست السري."
+            : " هل تريد إنهاء وضع التجهيز وإعادة فتح الخوادم لجميع اللاعبين رسمياً؟";
 
           if (!confirm(confirmMsg)) {
             maintToggleBtn.disabled = false;
@@ -5267,10 +5267,10 @@
           updateMaintenanceUIState(nextState, currentTesterPasscode);
 
           if (nextState) {
-            showToast('وضع الموسم الثاني نشط 🚀', 'تم إغلاق الخوادم وتفعيل وضع التجهيز للموسم الثاني بنجاح!', 'warning');
+            showToast('وضع الموسم الثاني نشط ', 'تم إغلاق الخوادم وتفعيل وضع التجهيز للموسم الثاني بنجاح!', 'warning');
             logAdminAction('تفعيل وضع التجهيز للموسم الثاني وإغلاق الخوادم');
           } else {
-            showToast('الخوادم مفتوحة ✅', 'تم إنهاء وضع التجهيز وإتاحة اللعبة لجميع اللاعبين بنجاح!', 'success');
+            showToast('الخوادم مفتوحة ', 'تم إنهاء وضع التجهيز وإتاحة اللعبة لجميع اللاعبين بنجاح!', 'success');
             logAdminAction('إنهاء وضع التجهيز وفتح اللعبة للجميع');
           }
         } catch (err) {
@@ -5358,7 +5358,7 @@
     }
 
     // ─────────────────────────────────────────────
-    //  MODULE: SYSTEM & DANGER ZONE
+    // MODULE: SYSTEM & DANGER ZONE
     // ─────────────────────────────────────────────
 
 
@@ -5366,7 +5366,7 @@
     const resetAllEconomyBtn = document.getElementById('btn-admin-reset-all-economy');
     if (resetAllEconomyBtn) {
       resetAllEconomyBtn.addEventListener('click', async () => {
-        const confirmMsg ="️ تحذير خطير: هل أنت متأكد من تصفير وتطهير شامل لكافة أرصدة، ومشاريع، وأصول، وأسهم، وأساطيل، وتحويلات، وتحالفات، ورسائل كافة اللاعبين بالكامل؟\n\n ملاحظة هامة: أكواد الهدايا لن تُمس وستبقى مفعلة كما هي.";
+        const confirmMsg =" تحذير خطير: هل أنت متأكد من تصفير وتطهير شامل لكافة أرصدة، ومشاريع، وأصول، وأسهم، وأساطيل، وتحويلات، وتحالفات، ورسائل كافة اللاعبين بالكامل؟\n\n ملاحظة هامة: أكواد الهدايا لن تُمس وستبقى مفعلة كما هي.";
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -5391,7 +5391,7 @@
     const wipeLeaderboardBtn = document.getElementById('btn-admin-wipe-leaderboard');
     if (wipeLeaderboardBtn) {
       wipeLeaderboardBtn.addEventListener('click', async () => {
-        const confirmMsg ="️ تحذير نهائي وقاطع: هل أنت متأكد من مسح وحذف كافة وثائق وحسابات اللاعبين نهائياً، ومسح التحالفات والرسائل والتحويلات والليدربورد بالكامل للبدء من الصفر تماماً؟\n\n ملاحظة هامة: أكواد الهدايا لن تُمس نهائياً وستبقى صالحة للاستخدام.";
+        const confirmMsg =" تحذير نهائي وقاطع: هل أنت متأكد من مسح وحذف كافة وثائق وحسابات اللاعبين نهائياً، ومسح التحالفات والرسائل والتحويلات والليدربورد بالكامل للبدء من الصفر تماماً؟\n\n ملاحظة هامة: أكواد الهدايا لن تُمس نهائياً وستبقى صالحة للاستخدام.";
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -5544,7 +5544,7 @@
     const awardTop25Btn = document.getElementById('btn-admin-award-top25-veterans');
     if (awardTop25Btn) {
       awardTop25Btn.addEventListener('click', async () => {
-        if (!confirm("هل أنت متأكد من رغبتك في منح وسام ولقب [️ مستثمر مخضرم S1] لأفضل 25 لاعباً في السيرفر؟")) return;
+        if (!confirm("هل أنت متأكد من رغبتك في منح وسام ولقب [ مستثمر مخضرم S1] لأفضل 25 لاعباً في السيرفر؟")) return;
 
         try {
           awardTop25Btn.disabled = true;
@@ -5554,7 +5554,7 @@
           const timeoutPromise = new Promise(resolve => setTimeout(() => resolve({ count: 25, players: [] }), 4000));
           const res = await Promise.race([awardPromise, timeoutPromise]);
 
-          showToast('وسام المخضرمين',`تم منح وسام [مستثمر مخضرم S1] بنجاح لـ ${res.count || 25} لاعباً من متصدري السيرفر! ️`,'success');
+          showToast('وسام المخضرمين',`تم منح وسام [مستثمر مخضرم S1] بنجاح لـ ${res.count || 25} لاعباً من متصدري السيرفر! `,'success');
           logAdminAction(`منح وسام ولقب [مستثمر مخضرم S1] للتوب 25 (${res.count || 25} لاعب)`);
           
           // Refresh directory
@@ -6192,11 +6192,11 @@
           alert('كلا الطرفين غير معروفين!');
           return;
         }
-        confirmMsg = `⚠️ هل أنت متأكد من [تصفير كلا الطرفين] (${targetUsers.join(' و ')})؟\n\n` +
+        confirmMsg = ` هل أنت متأكد من [تصفير كلا الطرفين] (${targetUsers.join(' و ')})؟\n\n` +
           `• سيتم مسح الكاش والبنك والأصول والمشاريع بالكامل لكلا الحسابين.\n` +
           `• سيتم إرسال تنبيه أمني عاجل لشاشة كل منهما يفيد بأنه تم كشفه وتصفير حسابه لمخالفة قوانين اللعبة.`;
         actionTitle = 'تصفير الطرفين';
-        popupTitle = '⚠️ تنبيه أمني عاجل: تم كشف الحساب وتصفيره';
+        popupTitle = ' تنبيه أمني عاجل: تم كشف الحساب وتصفيره';
         popupMessage = 'تم رصد محاولة تحايل مالي وتعدد حسابات مخالف لقوانين اللعبة. تم تصفير كافة أرصدتك النقدية والبنكية وأصولك ومشاريعك بالكامل. أي تكرار للمخالفة سيؤدي للحظر النهائي لحسابك وجهازك.';
         doReset = true;
         break;
@@ -6207,11 +6207,11 @@
           alert('كلا الطرفين غير معروفين!');
           return;
         }
-        confirmMsg = `⛔ هل أنت متأكد من [حظر كلا الطرفين] (${targetUsers.join(' و ')}) نهائياً؟\n\n` +
+        confirmMsg = ` هل أنت متأكد من [حظر كلا الطرفين] (${targetUsers.join(' و ')}) نهائياً؟\n\n` +
           `• سيتم حظر الحسابين ومنعهما من الدخول للعبة نهائياً.\n` +
           `• سيتم إرسال تنبيه رسمي بالحظر النهائي لكل منهما.`;
         actionTitle = 'حظر الطرفين';
-        popupTitle = '⛔ تم حظر حسابك نهائياً';
+        popupTitle = ' تم حظر حسابك نهائياً';
         popupMessage = 'تم حظر حسابك نهائياً من قبل إدارة اللعبة لمخالفة القوانين ومحاولة التحايل المالي وتعدد الحسابات ونقل الأموال المشبوهة.';
         doBan = true;
         break;
@@ -6222,11 +6222,11 @@
           alert('كلا الطرفين غير معروفين!');
           return;
         }
-        confirmMsg = `💥 هل أنت متأكد من [تصفير وحظر كلا الطرفين معاً] (${targetUsers.join(' و ')})؟\n\n` +
+        confirmMsg = ` هل أنت متأكد من [تصفير وحظر كلا الطرفين معاً] (${targetUsers.join(' و ')})؟\n\n` +
           `• سيتم تصفير الأرصدة والمشاريع وحظر الحسابين نهائياً من اللعبة.\n` +
           `• سيتم إرسال تنبيه رسمي شديد اللهجة لكل منهما.`;
         actionTitle = 'تصفير وحظر الطرفين';
-        popupTitle = '⛔ حظر وتصفير نهائي للحساب';
+        popupTitle = ' حظر وتصفير نهائي للحساب';
         popupMessage = 'تم تصفير حسابك وحظره نهائياً من قبل إدارة اللعبة لارتكاب مخالفة جسيمة ومحاولة التحايل المالي وتعدد الحسابات.';
         doReset = true;
         doBan = true;
@@ -6237,7 +6237,7 @@
         targetUsers = [validSender];
         confirmMsg = `هل أنت متأكد من تصفير حساب الراسل (${validSender}) فقط وإرسال تنبيه الكشف له؟`;
         actionTitle = 'تصفير الراسل';
-        popupTitle = '⚠️ تنبيه أمني عاجل: تم تصفير حسابك';
+        popupTitle = ' تنبيه أمني عاجل: تم تصفير حسابك';
         popupMessage = 'تم رصد محاولة تحايل مالي وتغذية حسابات مشبوهة. تم تصفير كافة أرصدتك ومشاريعك بالكامل.';
         doReset = true;
         break;
@@ -6247,7 +6247,7 @@
         targetUsers = [validRecipient];
         confirmMsg = `هل أنت متأكد من تصفير حساب المستلم (${validRecipient}) فقط وإرسال تنبيه الكشف له؟`;
         actionTitle = 'تصفير المستلم';
-        popupTitle = '⚠️ تنبيه أمني عاجل: تم تصفير حسابك';
+        popupTitle = ' تنبيه أمني عاجل: تم تصفير حسابك';
         popupMessage = 'تم رصد استقبال أموال مشبوهة من حسابات وهمية. تم تصفير كافة أرصدتك ومشاريعك بالكامل.';
         doReset = true;
         break;
@@ -6257,7 +6257,7 @@
         targetUsers = [validSender];
         confirmMsg = `هل أنت متأكد من حظر حساب الراسل (${validSender}) نهائياً؟`;
         actionTitle = 'حظر الراسل';
-        popupTitle = '⛔ تم حظر حسابك نهائياً';
+        popupTitle = ' تم حظر حسابك نهائياً';
         popupMessage = 'تم حظر حسابك نهائياً من قبل إدارة اللعبة لإنشاء حسابات وهمية ومحاولة التحايل المالي.';
         doBan = true;
         break;
@@ -6267,7 +6267,7 @@
         targetUsers = [validRecipient];
         confirmMsg = `هل أنت متأكد من حظر حساب المستلم (${validRecipient}) نهائياً؟`;
         actionTitle = 'حظر المستلم';
-        popupTitle = '⛔ تم حظر حسابك نهائياً';
+        popupTitle = ' تم حظر حسابك نهائياً';
         popupMessage = 'تم حظر حسابك نهائياً من قبل إدارة اللعبة لاستقبال أموال مشبوهة ومخالفة قوانين اللعبة.';
         doBan = true;
         break;
@@ -6275,7 +6275,7 @@
       case 'delete_sender':
         if (!validSender) { alert('اسم الراسل غير صالح'); return; }
         targetUsers = [validSender];
-        confirmMsg = `🗑️ هل أنت متأكد من [مسح حساب الراسل] (${validSender}) نهائياً من قاعدة البيانات؟`;
+        confirmMsg = ` هل أنت متأكد من [مسح حساب الراسل] (${validSender}) نهائياً من قاعدة البيانات؟`;
         actionTitle = 'مسح الراسل';
         doDelete = true;
         break;
@@ -6283,7 +6283,7 @@
       case 'delete_recipient':
         if (!validRecipient) { alert('اسم المستلم غير صالح'); return; }
         targetUsers = [validRecipient];
-        confirmMsg = `🗑️ هل أنت متأكد من [مسح حساب المستلم] (${validRecipient}) نهائياً من قاعدة البيانات؟`;
+        confirmMsg = ` هل أنت متأكد من [مسح حساب المستلم] (${validRecipient}) نهائياً من قاعدة البيانات؟`;
         actionTitle = 'مسح المستلم';
         doDelete = true;
         break;
@@ -6291,7 +6291,7 @@
       case 'delete_both':
         targetUsers = [validSender, validRecipient].filter(Boolean);
         if (targetUsers.length === 0) { alert('كلا الطرفين غير معروفين!'); return; }
-        confirmMsg = `🗑️ هل أنت متأكد من [مسح كلا الحسابين] (${targetUsers.join(' و ')}) نهائياً من قاعدة البيانات؟`;
+        confirmMsg = ` هل أنت متأكد من [مسح كلا الحسابين] (${targetUsers.join(' و ')}) نهائياً من قاعدة البيانات؟`;
         actionTitle = 'مسح الطرفين';
         doDelete = true;
         break;
@@ -6299,7 +6299,7 @@
       case 'reset_ban_delete_both':
         targetUsers = [validSender, validRecipient].filter(Boolean);
         if (targetUsers.length === 0) { alert('كلا الطرفين غير معروفين!'); return; }
-        confirmMsg = `💥 هل أنت متأكد من [تصفير وحظر ومسح كلا الطرفين] (${targetUsers.join(' و ')}) نهائياً؟`;
+        confirmMsg = ` هل أنت متأكد من [تصفير وحظر ومسح كلا الطرفين] (${targetUsers.join(' و ')}) نهائياً؟`;
         actionTitle = 'تصفير وحظر ومسح الطرفين';
         doReset = true;
         doBan = true;
@@ -6366,7 +6366,7 @@
         }
       }
 
-      notify('تمت العملية بنجاح ✅', `تم تنفيذ ${actionTitle} بنجاح لـ [${targetUsers.join(', ')}] وإرسال شاشة التنبيه لهما.`, 'success');
+      notify('تمت العملية بنجاح ', `تم تنفيذ ${actionTitle} بنجاح لـ [${targetUsers.join(', ')}] وإرسال شاشة التنبيه لهما.`, 'success');
 
       // Refresh admin tables
       if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
@@ -6415,7 +6415,7 @@
     };
 
     const label = actionNames[actionType] || actionType;
-    if (!confirm(`⚠️ هل أنت متأكد من تنفيذ [${label}] على الحسابات التالية (${rawTargets.length} حساب)؟\n\n${rawTargets.join(', ')}`)) {
+    if (!confirm(` هل أنت متأكد من تنفيذ [${label}] على الحسابات التالية (${rawTargets.length} حساب)؟\n\n${rawTargets.join(', ')}`)) {
       return;
     }
 
@@ -6447,7 +6447,7 @@
     }
 
     input.value = '';
-    notify('تم بنجاح ✅', `تمت عملية [${label}] بنجاح لـ ${successCount} من أصل ${rawTargets.length} حساب.`, 'success');
+    notify('تم بنجاح ', `تمت عملية [${label}] بنجاح لـ ${successCount} من أصل ${rawTargets.length} حساب.`, 'success');
 
     if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
     if (window._adminReloadPlayers) window._adminReloadPlayers(false);
@@ -6593,7 +6593,7 @@
       });
 
       if (fakeAccounts.length === 0) {
-        alert('✅ السيرفر نظيف بالكامل: لم يتم العثور على أي حسابات وهمية بدون مشاريع في السحابة!');
+        alert(' السيرفر نظيف بالكامل: لم يتم العثور على أي حسابات وهمية بدون مشاريع في السحابة!');
         return;
       }
 
@@ -6640,7 +6640,7 @@
                   <div class="flex items-center gap-2">
                     <span class="text-slate-500 font-mono text-[10px] w-5 text-center">${idx + 1}.</span>
                     <span class="font-bold text-emerald-300 text-sm line-through decoration-slate-500">${safeUname}</span>
-                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-sans">🛡️ مستثنى (آمن)</span>
+                    <span class="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-sans"> مستثنى (آمن)</span>
                   </div>
                   <div class="flex items-center gap-3 text-[11px]">
                     <span class="text-slate-400 font-bold">${cash} EGP</span>
@@ -6709,7 +6709,7 @@
             } catch (e) {}
           }
 
-          notify('تم التطهير التلقائي ✅', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح وتنظيف قاعدة البيانات.`, 'success');
+          notify('تم التطهير التلقائي ', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح وتنظيف قاعدة البيانات.`, 'success');
 
           if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
           if (window._adminReloadPlayers) window._adminReloadPlayers(false);
@@ -6818,11 +6818,11 @@
 
       const feederUsernames = Object.keys(feederSenders);
       if (feederUsernames.length === 0) {
-        alert(`✅ لم يتم العثور على أي تحويلات مشبوهة من حسابات وهمية (0 مشاريع) إلى الحساب "${recipientUser}".`);
+        alert(` لم يتم العثور على أي تحويلات مشبوهة من حسابات وهمية (0 مشاريع) إلى الحساب "${recipientUser}".`);
         return;
       }
 
-      const confirmMsg = `⚠️ نتائج التحقيق في شبكة الحسابات الوهمية لـ (${recipientUser}):\n\n` +
+      const confirmMsg = ` نتائج التحقيق في شبكة الحسابات الوهمية لـ (${recipientUser}):\n\n` +
         `• عدد حسابات التجميع (Feeders) المكتشفة: ${feederUsernames.length} حساب\n` +
         `• إجمالي الأموال المجمّعة والمحولة: ${totalFunnelledCash.toLocaleString()} EGP\n\n` +
         `قائمة الحسابات الوهمية المجمّعة:\n${feederUsernames.join(', ')}\n\n` +
@@ -6871,7 +6871,7 @@
         console.error('[Feeder Network Audit] Deduction note:', deductErr.message);
       }
 
-      notify('تم تطهير الشبكة واسترداد الأموال ✅', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح، وخصم ${totalFunnelledCash.toLocaleString()} EGP من حساب "${recipientUser}".`, 'success');
+      notify('تم تطهير الشبكة واسترداد الأموال ', `تم مسح وحظر ${purgedCount} حساب وهمي بنجاح، وخصم ${totalFunnelledCash.toLocaleString()} EGP من حساب "${recipientUser}".`, 'success');
 
       if (typeof renderAdminFraudMonitor === 'function') renderAdminFraudMonitor();
       if (window._adminReloadPlayers) window._adminReloadPlayers(false);
@@ -6977,15 +6977,15 @@
                 <select onchange="window.adminHandleFraudDropdown && window.adminHandleFraudDropdown(this, decodeURIComponent('${safeSenderArg}'), decodeURIComponent('${safeRecipientArg}'))"
                   class="px-2 py-1 bg-slate-900/90 hover:bg-slate-800 border border-slate-700 text-slate-300 hover:text-white rounded-lg text-[10px] font-bold cursor-pointer transition focus:outline-none focus:border-cyan-400">
                   <option value="" disabled selected>المزيد ▾</option>
-                  <option value="reset_ban_both">💥 تصفير + حظر الطرفين معاً</option>
-                  <option value="reset_ban_delete_both">💀 تصفير + حظر + مسح نهائي للطرفين</option>
-                  <option value="delete_both">🗑️ مسح كلا الحسابين نهائياً</option>
-                  <option value="reset_sender">⚠️ تصفير الراسل (${sender})</option>
-                  <option value="reset_recipient">⚠️ تصفير المستلم (${recipient})</option>
-                  <option value="ban_sender">⛔ حظر الراسل (${sender})</option>
-                  <option value="ban_recipient">⛔ حظر المستلم (${recipient})</option>
-                  <option value="delete_sender">🗑️ مسح الراسل نهائياً (${sender})</option>
-                  <option value="delete_recipient">🗑️ مسح المستلم نهائياً (${recipient})</option>
+                  <option value="reset_ban_both"> تصفير + حظر الطرفين معاً</option>
+                  <option value="reset_ban_delete_both"> تصفير + حظر + مسح نهائي للطرفين</option>
+                  <option value="delete_both"> مسح كلا الحسابين نهائياً</option>
+                  <option value="reset_sender"> تصفير الراسل (${sender})</option>
+                  <option value="reset_recipient"> تصفير المستلم (${recipient})</option>
+                  <option value="ban_sender"> حظر الراسل (${sender})</option>
+                  <option value="ban_recipient"> حظر المستلم (${recipient})</option>
+                  <option value="delete_sender"> مسح الراسل نهائياً (${sender})</option>
+                  <option value="delete_recipient"> مسح المستلم نهائياً (${recipient})</option>
                 </select>
               </div>
             </td>
@@ -7293,7 +7293,7 @@
                 <div>
                   <span class="font-bold text-white text-xs flex items-center gap-1.5 cursor-pointer hover:text-cyan-400" onclick="window.adminSearchPlayer && window.adminSearchPlayer('${encodedUname}')">
                     ${safeUname}
-                    ${a.is_admin ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 py-0.2 rounded font-bold">مشرف 🛡️</span>' : ''}
+                    ${a.is_admin ? '<span class="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 px-1 py-0.2 rounded font-bold">مشرف </span>' : ''}
                   </span>
                   <span class="text-[10px] text-slate-500 font-sans">آخر ظهور: ${timeStr}</span>
                 </div>
@@ -7305,8 +7305,8 @@
             </td>
             <td class="p-2.5 text-center whitespace-nowrap">
               ${isAccBanned
-                ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">محظور ⛔</span>'
-                : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">نشط 🟢</span>'
+                ? '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">محظور </span>'
+                : '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700">نشط </span>'
               }
             </td>
             <td class="p-2.5 text-center whitespace-nowrap">
@@ -7474,10 +7474,10 @@
     try {
       if (shouldBan) {
         await AppDB.banDevice(deviceId, 'حظر إداري لبصمة هاتف متعدد الحسابات');
-        if (typeof showToast === 'function') showToast('تم الحظر بنجاح 🚫', `تم حظر الجهاز [${deviceId}] بنجاح في السحابة.`, 'success');
+        if (typeof showToast === 'function') showToast('تم الحظر بنجاح ', `تم حظر الجهاز [${deviceId}] بنجاح في السحابة.`, 'success');
       } else {
         await AppDB.unbanDevice(deviceId);
-        if (typeof showToast === 'function') showToast('تم إلغاء الحظر 🔓', `تم فك حظر الجهاز [${deviceId}] بنجاح.`, 'success');
+        if (typeof showToast === 'function') showToast('تم إلغاء الحظر ', `تم فك حظر الجهاز [${deviceId}] بنجاح.`, 'success');
       }
       await renderAdminDeviceFingerprints(true);
     } catch (err) {
@@ -7488,7 +7488,7 @@
   window.adminPurgeDeviceCluster = async function(deviceId, encodedAccountsJson) {
     try {
       const accounts = JSON.parse(decodeURIComponent(encodedAccountsJson));
-      if (!confirm(`⚠️ تحذير خطير!\nهل أنت متأكد من تصفير وحظر كافة الحسابات التالية (${accounts.length} حساب) وحظر بصمة الجهاز نهائياً؟\n\n${accounts.join(', ')}`)) {
+      if (!confirm(` تحذير خطير!\nهل أنت متأكد من تصفير وحظر كافة الحسابات التالية (${accounts.length} حساب) وحظر بصمة الجهاز نهائياً؟\n\n${accounts.join(', ')}`)) {
         return;
       }
 
@@ -7507,7 +7507,7 @@
         await AppDB.banDevice(deviceId, 'حظر إداري شامل للجهاز وتصفير جميع الحسابات المرتبطة به');
       }
 
-      if (typeof showToast === 'function') showToast('تم التطهير الشامل 💀', `تم تصفير وحظر ${accounts.length} حساب وحظر بصمة الجهاز بنجاح!`, 'success');
+      if (typeof showToast === 'function') showToast('تم التطهير الشامل ', `تم تصفير وحظر ${accounts.length} حساب وحظر بصمة الجهاز بنجاح!`, 'success');
       await renderAdminDeviceFingerprints(true);
       if (window._adminReloadPlayers) window._adminReloadPlayers(false);
     } catch (e) {
@@ -7533,7 +7533,7 @@
       } else if (action === 'delete' && AppDB.adminDeletePlayer) {
         await AppDB.adminDeletePlayer(username);
       }
-      if (typeof showToast === 'function') showToast('تم التنفيذ بنجاح ✅', `تمت عملية [${label}] على (${username}) بنجاح.`, 'success');
+      if (typeof showToast === 'function') showToast('تم التنفيذ بنجاح ', `تمت عملية [${label}] على (${username}) بنجاح.`, 'success');
       await renderAdminDeviceFingerprints(true);
       if (window._adminReloadPlayers) window._adminReloadPlayers(false);
     } catch (e) {
@@ -7589,15 +7589,15 @@
 
         const hasGlow = Boolean(m.chatGlow);
         const glowTag = m.chatGlow === 'cyber_rainbow'
-          ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/25 text-purple-300 font-bold border border-purple-500/40">👑 رويال متوهج</span>'
-          : (m.chatGlow ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/25 text-amber-300 font-bold border border-amber-500/40">✨ VIP متوهج</span>' : '');
+          ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-purple-500/25 text-purple-300 font-bold border border-purple-500/40"> رويال متوهج</span>'
+          : (m.chatGlow ? '<span class="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/25 text-amber-300 font-bold border border-amber-500/40"> VIP متوهج</span>' : '');
         const verifiedTag = (m.isVerified)
           ? '<span class="verified-glow-badge text-xs" title="موثق"><svg class="verified-glow-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" style="display:inline-block;vertical-align:-2px;"><path class="verified-star-bg" fill="#0ea5e9" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/><path class="verified-check-fg" fill="#ffffff" d="M10.54 16.2L6.8 12.46l1.41-1.42 2.33 2.33 4.8-5.23 1.47 1.36-6.27 6.7z"/></svg></span>'
           : '';
         const customBadgeVal = m.customBadge ? String(m.customBadge) : '';
         const badgeTag = customBadgeVal
-          ? (customBadgeVal.includes('✔️')
-              ? `<span class="text-xs">${escapeHtml(customBadgeVal.replace(/✔️/g, ''))} ${verifiedTag ? '' : '<span class="verified-glow-badge text-xs" title="موثق"><svg class="verified-glow-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" style="display:inline-block;vertical-align:-2px;"><path class="verified-star-bg" fill="#0ea5e9" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/><path class="verified-check-fg" fill="#ffffff" d="M10.54 16.2L6.8 12.46l1.41-1.42 2.33 2.33 4.8-5.23 1.47 1.36-6.27 6.7z"/></svg></span>'}</span>`
+          ? (customBadgeVal.includes('')
+              ? `<span class="text-xs">${escapeHtml(customBadgeVal.replace(//g, ''))} ${verifiedTag ? '' : '<span class="verified-glow-badge text-xs" title="موثق"><svg class="verified-glow-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" style="display:inline-block;vertical-align:-2px;"><path class="verified-star-bg" fill="#0ea5e9" d="M22.25 12c0-1.43-.88-2.67-2.19-3.34.46-1.39.2-2.9-.81-3.91s-2.52-1.27-3.91-.81c-.66-1.31-1.91-2.19-3.34-2.19s-2.67.88-3.33 2.19c-1.4-.46-2.91-.2-3.92.81s-1.26 2.52-.8 3.91c-1.31.67-2.2 1.91-2.2 3.34s.89 2.67 2.2 3.34c-.46 1.39-.21 2.9.8 3.91s2.52 1.26 3.91.81c.67 1.31 1.91 2.19 3.34 2.19s2.68-.88 3.34-2.19c1.39.45 2.9.2 3.91-.81s1.27-2.52.81-3.91c1.31-.67 2.19-1.91 2.19-3.34z"/><path class="verified-check-fg" fill="#ffffff" d="M10.54 16.2L6.8 12.46l1.41-1.42 2.33 2.33 4.8-5.23 1.47 1.36-6.27 6.7z"/></svg></span>'}</span>`
               : `<span class="text-xs">${escapeHtml(customBadgeVal)}</span>`)
           : '';
 
@@ -7646,12 +7646,12 @@
 
       if (clearBtn) {
         clearBtn.addEventListener('click', async () => {
-          if (!confirm('️ تحذير إداري: هل أنت متأكد من مسح جميع رسائل الشات العام نهائياً؟')) return;
+          if (!confirm(' تحذير إداري: هل أنت متأكد من مسح جميع رسائل الشات العام نهائياً؟')) return;
           try {
             clearBtn.disabled = true;
             await AppDB.clearChatMessages();
             refreshChatUI([]);
-            if (typeof showToast ==='function') showToast('مسح الشات','تم مسح سجل الشات العام بالكامل بنجاح ️','success');
+            if (typeof showToast ==='function') showToast('مسح الشات','تم مسح سجل الشات العام بالكامل بنجاح ','success');
           } catch (e) {
             if (typeof showToast ==='function') showToast('خطأ','فشل مسح الشات.','error');
           } finally {
@@ -8118,7 +8118,7 @@
       logAdminAction(`تحديث مضاعف السيرفر: تم تعيين المضاعف على ${newBoost.toFixed(1)}x`);
       
       await AppDB.sendBroadcast(
-        newBoost > 1.0 ? '⚡ تفعيل مضاعف السيرفر (Server Boost)!' : 'ℹ️ انتهاء مضاعف السيرفر (Server Boost)',
+        newBoost > 1.0 ? ' تفعيل مضاعف السيرفر (Server Boost)!' : 'ℹ انتهاء مضاعف السيرفر (Server Boost)',
         newBoost > 1.0 ? 'قام الأدمن بتفعيل وضع مضاعف الأرباح والخبرة (Double XP & Cash) لجميع اللاعبين حياً!' : 'انتهى وضع مضاعف الأرباح والخبرة وعاد السيرفر للمعدل الطبيعي.'
       );
       
@@ -8133,7 +8133,7 @@
   }
 
   // ─────────────────────────────────────────────
-  //  ONLINE GIFT PANEL — Send gifts to online players
+  // ONLINE GIFT PANEL — Send gifts to online players
   // ─────────────────────────────────────────────
   const ONLINE_GIFT_THRESHOLD = 2.5 * 60 * 1000; // 2.5 minutes
 
@@ -8434,7 +8434,7 @@
   }
 
   // ─────────────────────────────────────────────
-  //  TRANSFER REQUESTS — UI Rendering & State
+  // TRANSFER REQUESTS — UI Rendering & State
   // ─────────────────────────────────────────────
   let lastRequestsFetchTime = 0;
   let cachedIncomingRequests = [];
@@ -8497,13 +8497,13 @@
         let actionButtons ='';
 
         if (r.status ==='accepted') {
-          statusText ='تم القبول والتحويل ️';
+          statusText ='تم القبول والتحويل ';
           statusClass ='text-emerald-400 font-bold';
         } else if (r.status ==='rejected') {
           statusText ='تم الرفض';
           statusClass ='text-rose-400 font-bold';
         } else if (isExpired) {
-          statusText ='منتهي الصلاحية (24س) ️';
+          statusText ='منتهي الصلاحية (24س) ';
           statusClass ='text-slate-500 font-bold';
         } else {
           const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
@@ -8597,13 +8597,13 @@
         let statusClass ='';
 
         if (r.status ==='accepted') {
-          statusText ='تم القبول والتحويل ️';
+          statusText ='تم القبول والتحويل ';
           statusClass ='text-emerald-400 font-bold';
         } else if (r.status ==='rejected') {
           statusText ='تم الرفض';
           statusClass ='text-rose-400 font-bold';
         } else if (isExpired) {
-          statusText ='منتهي الصلاحية ️';
+          statusText ='منتهي الصلاحية ';
           statusClass ='text-slate-500 font-bold';
         } else {
           const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
@@ -8629,7 +8629,7 @@
   }
 
   // ─────────────────────────────────────────────
-  //  AUCTIONS & SPECIAL DEALS — UI Rendering & State
+  // AUCTIONS & SPECIAL DEALS — UI Rendering & State
   // ─────────────────────────────────────────────
   async function fetchAndRenderAuctions() {
     const shelf = document.getElementById('auctions-shelf');
@@ -8867,7 +8867,7 @@
         const targetVal = auc.startConditionValue;
         const condTypeStr = auc.startConditionType ==='players' ?`${regCount} / ${targetVal} لاعبين` :`مؤقت زمني (${targetVal} د)`;
 
-        let statusBadge ='<span class="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded font-bold text-[10px]">بانتظار المسجلين ⏳</span>';
+        let statusBadge ='<span class="px-2 py-0.5 bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 rounded font-bold text-[10px]">بانتظار المسجلين </span>';
         if (auc.status ==='active') {
           statusBadge ='<span class="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded font-bold text-[10px] animate-pulse">نشط جاري المزايدة </span>';
         } else if (auc.status ==='ended') {
@@ -8977,7 +8977,7 @@
           rewardDesc = itName;
         }
 
-        const maxStr = code.maxUses > 0 ?`${code.maxUses}` :'️';
+        const maxStr = code.maxUses > 0 ?`${code.maxUses}` :'';
         const usageText =`${code.usedCount || 0} / ${maxStr}`;
 
         tr.innerHTML =`
@@ -9016,7 +9016,7 @@
   }
 
   // ─────────────────────────────────────────────
-  //  V2 variables & handlers
+  // V2 variables & handlers
   // ─────────────────────────────────────────────
   let lastChatSent = 0;
   let currentActiveDMUser ='';
@@ -9101,7 +9101,7 @@
       adminSendMsgBtn.addEventListener('click', async () => {
         try {
           adminSendMsgBtn.disabled = true;
-          const msg ="️ تنبيه من الإدارة: الإدارة تراقب الشات حالياً. يرجى الالتزام بالقوانين.";
+          const msg =" تنبيه من الإدارة: الإدارة تراقب الشات حالياً. يرجى الالتزام بالقوانين.";
           await AppDB.sendChatMessage("الإدارة","رسمي", msg);
           showToast('تم الإرسال','تم إرسال تنبيه مراقبة الشات بنجاح.','success');
         } catch (err) {
@@ -9584,7 +9584,7 @@
   }
 
   // ─────────────────────────────────────────────
-  //  TOP-UP & MONETIZATION ADMIN CONTROLLER (إدارة الشحن والباقات)
+  // TOP-UP & MONETIZATION ADMIN CONTROLLER (إدارة الشحن والباقات)
   // ─────────────────────────────────────────────
   let _currentTopupFilter ='all';
   _currentTopupPackagesCache = _currentTopupPackagesCache || [];
@@ -10173,7 +10173,7 @@
       const deleteBtn = tr.querySelector('.btn-delete-topup');
       if (deleteBtn) {
         deleteBtn.addEventListener('click', async () => {
-          const confirmDelete = confirm(`حذف طلب الشحن نهائياً 🗑️\n\nهل أنت متأكد من حذف هذا الطلب نهائياً من السجل؟\nاللاعب: @${req.username}\nالباقة: ${req.packageName}\nالمبلغ: ${req.price} EGP\n\nلن يظهر هذا الطلب مجدداً في لوحة الإدارة.`);
+          const confirmDelete = confirm(`حذف طلب الشحن نهائياً \n\nهل أنت متأكد من حذف هذا الطلب نهائياً من السجل؟\nاللاعب: @${req.username}\nالباقة: ${req.packageName}\nالمبلغ: ${req.price} EGP\n\nلن يظهر هذا الطلب مجدداً في لوحة الإدارة.`);
           if (!confirmDelete) return;
 
           try {
@@ -10199,16 +10199,16 @@
   // SEASON 1 TOP 10 BADGES MANAGER (منصة تتويج وإسناد شارات التوب 10)
   // ═══════════════════════════════════════════════════════════════════
   const SEASON_RANKS_DEF = [
-    { rank: 1, code: 'S1T1', label: 'المركز الأول 👑', subtitle: 'بطل الموسم الأول (S1T1)', icon: '👑', bgClass: 'from-amber-500 via-yellow-400 to-amber-600', textClass: 'text-slate-950', borderClass: 'border-amber-400/80', glow: 'shadow-amber-500/30' },
-    { rank: 2, code: 'S1T2', label: 'المركز الثاني 🥈', subtitle: 'وصيف الموسم الأول (S1T2)', icon: '🥈', bgClass: 'from-slate-200 via-slate-100 to-slate-300', textClass: 'text-slate-950', borderClass: 'border-slate-300', glow: 'shadow-slate-300/20' },
-    { rank: 3, code: 'S1T3', label: 'المركز الثالث 🥉', subtitle: 'برونزية الموسم الأول (S1T3)', icon: '🥉', bgClass: 'from-amber-700 via-amber-600 to-yellow-800', textClass: 'text-amber-100', borderClass: 'border-amber-600', glow: 'shadow-amber-700/20' },
-    { rank: 4, code: 'S1T4', label: 'المركز الرابع 💎', subtitle: 'توب 4 الموسم الأول (S1T4)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
-    { rank: 5, code: 'S1T5', label: 'المركز الخامس 💎', subtitle: 'توب 5 الموسم الأول (S1T5)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
-    { rank: 6, code: 'S1T6', label: 'المركز السادس 💎', subtitle: 'توب 6 الموسم الأول (S1T6)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
-    { rank: 7, code: 'S1T7', label: 'المركز السابع 💎', subtitle: 'توب 7 الموسم الأول (S1T7)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
-    { rank: 8, code: 'S1T8', label: 'المركز الثامن 💎', subtitle: 'توب 8 الموسم الأول (S1T8)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
-    { rank: 9, code: 'S1T9', label: 'المركز التاسع 💎', subtitle: 'توب 9 الموسم الأول (S1T9)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
-    { rank: 10, code: 'S1T10', label: 'المركز العاشر 💎', subtitle: 'توب 10 الموسم الأول (S1T10)', icon: '💎', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' }
+    { rank: 1, code: 'S1T1', label: 'المركز الأول ', subtitle: 'بطل الموسم الأول (S1T1)', icon: '', bgClass: 'from-amber-500 via-yellow-400 to-amber-600', textClass: 'text-slate-950', borderClass: 'border-amber-400/80', glow: 'shadow-amber-500/30' },
+    { rank: 2, code: 'S1T2', label: 'المركز الثاني ', subtitle: 'وصيف الموسم الأول (S1T2)', icon: '', bgClass: 'from-slate-200 via-slate-100 to-slate-300', textClass: 'text-slate-950', borderClass: 'border-slate-300', glow: 'shadow-slate-300/20' },
+    { rank: 3, code: 'S1T3', label: 'المركز الثالث ', subtitle: 'برونزية الموسم الأول (S1T3)', icon: '', bgClass: 'from-amber-700 via-amber-600 to-yellow-800', textClass: 'text-amber-100', borderClass: 'border-amber-600', glow: 'shadow-amber-700/20' },
+    { rank: 4, code: 'S1T4', label: 'المركز الرابع ', subtitle: 'توب 4 الموسم الأول (S1T4)', icon: '', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+    { rank: 5, code: 'S1T5', label: 'المركز الخامس ', subtitle: 'توب 5 الموسم الأول (S1T5)', icon: '', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+    { rank: 6, code: 'S1T6', label: 'المركز السادس ', subtitle: 'توب 6 الموسم الأول (S1T6)', icon: '', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+    { rank: 7, code: 'S1T7', label: 'المركز السابع ', subtitle: 'توب 7 الموسم الأول (S1T7)', icon: '', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+    { rank: 8, code: 'S1T8', label: 'المركز الثامن ', subtitle: 'توب 8 الموسم الأول (S1T8)', icon: '', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+    { rank: 9, code: 'S1T9', label: 'المركز التاسع ', subtitle: 'توب 9 الموسم الأول (S1T9)', icon: '', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' },
+    { rank: 10, code: 'S1T10', label: 'المركز العاشر ', subtitle: 'توب 10 الموسم الأول (S1T10)', icon: '', bgClass: 'from-cyan-600 via-blue-600 to-indigo-600', textClass: 'text-white', borderClass: 'border-cyan-500/50', glow: 'shadow-cyan-500/20' }
   ];
 
   let _seasonPlayerSearchDebounce = {};
@@ -10242,7 +10242,7 @@
               <i class="fa-solid fa-magnifying-glass absolute right-2.5 top-2.5 text-slate-400 text-xs"></i>
             </div>
             <div id="season-status-rank-${def.rank}" class="text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1">
-              <span>⚪ أدخل اسم اللاعب</span>
+              <span> أدخل اسم اللاعب</span>
             </div>
           </div>
 
@@ -10292,7 +10292,7 @@
     const u = String(username || '').trim();
     if (!u) {
       statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
-      statusEl.innerHTML = '<span>⚪ أدخل اسم اللاعب</span>';
+      statusEl.innerHTML = '<span> أدخل اسم اللاعب</span>';
       return null;
     }
 
@@ -10310,24 +10310,24 @@
       }
 
       if (!player && Array.isArray(cachedPlayers)) {
-        if (['🎵', '🎶', '♫', '♪'].includes(u)) {
-          player = cachedPlayers.find(p => ['🎵', '🎶', '♫', '♪'].includes(p.username));
+        if (['', '', '', ''].includes(u)) {
+          player = cachedPlayers.find(p => ['', '', '', ''].includes(p.username));
         }
       }
 
       if (player && player.username) {
         const input = document.getElementById(`season-input-rank-${rank}`);
-        if (input && input.value !== player.username && ['🎵', '🎶', '♫', '♪'].includes(u)) {
+        if (input && input.value !== player.username && ['', '', '', ''].includes(u)) {
           input.value = player.username;
         }
         const worth = player.netWorth !== undefined ? player.netWorth : (player.net_worth || 0);
         const currentBadge = player.seasonBadge || (player.state && player.state.seasonBadge) || '';
         statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-emerald-950/80 border border-emerald-500/50 text-emerald-300 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
-        statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> <span>موجود ✅ (${Number(worth).toLocaleString()} EGP)${currentBadge ? ` [${currentBadge}]` : ''}</span>`;
+        statusEl.innerHTML = `<i class="fa-solid fa-circle-check text-emerald-400"></i> <span>موجود (${Number(worth).toLocaleString()} EGP)${currentBadge ? ` [${currentBadge}]` : ''}</span>`;
         return player;
       } else {
         statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-rose-950/80 border border-rose-500/50 text-rose-300 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
-        statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400"></i> <span>اللاعب غير مسجل ❌</span>`;
+        statusEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-rose-400"></i> <span>اللاعب غير مسجل </span>`;
         return null;
       }
     } catch (e) {
@@ -10376,7 +10376,7 @@
           const statusEl = document.getElementById(`season-status-rank-${def.rank}`);
           if (statusEl) {
             statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
-            statusEl.innerHTML = '<span>⚪ شاغر (لم يتم التعيين)</span>';
+            statusEl.innerHTML = '<span> شاغر (لم يتم التعيين)</span>';
           }
         }
       }
@@ -10440,7 +10440,7 @@
       }
 
       if (typeof showToast === 'function') {
-        showToast('تتويج بطل 🏆', `تم إسناد الشارة الملكية [${def.code}] للاعب "${player.username}" بنجاح!`, 'success');
+        showToast('تتويج بطل ', `تم إسناد الشارة الملكية [${def.code}] للاعب "${player.username}" بنجاح!`, 'success');
       }
       if (typeof logAdminAction === 'function') {
         logAdminAction(`إسناد شارة أبطال الموسم الأول [${def.code}] للاعب: ${player.username}`);
@@ -10505,7 +10505,7 @@
       const statusEl = document.getElementById(`season-status-rank-${rank}`);
       if (statusEl) {
         statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
-        statusEl.innerHTML = '<span>⚪ تم سحب الشارة</span>';
+        statusEl.innerHTML = '<span> تم سحب الشارة</span>';
       }
 
       if (typeof showToast === 'function') showToast('سحب الشارة', `تم سحب شارة [${def.code}] بنجاح.`, 'info');
@@ -10561,7 +10561,7 @@
           const statusEl = document.getElementById(`season-status-rank-${def.rank}`);
           if (statusEl) {
             statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
-            statusEl.innerHTML = '<span>⚪ شاغر (تم المسح)</span>';
+            statusEl.innerHTML = '<span> شاغر (تم المسح)</span>';
           }
           continue;
         }
@@ -10619,7 +10619,7 @@
       if (typeof renderAll === 'function') renderAll();
 
       if (typeof showToast === 'function') {
-        showToast('حفظ الشارات 🏆', `تم تحديث واعتماد قائمة الشارات بنجاح (${successCount} شارات مسندة).`, 'success');
+        showToast('حفظ الشارات ', `تم تحديث واعتماد قائمة الشارات بنجاح (${successCount} شارات مسندة).`, 'success');
         if (typeof logAdminAction === 'function') logAdminAction(`تحديث وتعديل قائمة شارات أبطال الموسم الأول`);
       }
 
@@ -10637,7 +10637,7 @@
   };
 
   window.clearAllSeasonBadges = async function() {
-    if (!confirm('⚠️ تحذير: هل أنت متأكد من رغبتك في سحب وإزالة شارات التوب (S1T1 - S1T10) من جميع اللاعبين الحاليين في اللعبة دفعة واحدة؟')) {
+    if (!confirm(' تحذير: هل أنت متأكد من رغبتك في سحب وإزالة شارات التوب (S1T1 - S1T10) من جميع اللاعبين الحاليين في اللعبة دفعة واحدة؟')) {
       return;
     }
 
@@ -10705,14 +10705,14 @@
         const statusEl = document.getElementById(`season-status-rank-${def.rank}`);
         if (statusEl) {
           statusEl.className = 'text-[10px] px-2.5 py-1.5 rounded-lg bg-slate-950/80 border border-slate-800 text-slate-400 font-bold shrink-0 min-w-[140px] text-center flex items-center justify-center gap-1';
-          statusEl.innerHTML = '<span>⚪ شاغر (تم المسح)</span>';
+          statusEl.innerHTML = '<span> شاغر (تم المسح)</span>';
         }
       }
 
       if (typeof renderAll === 'function') renderAll();
 
       if (typeof showToast === 'function') {
-        showToast('سحب الشارات بنجاح 🗑️', `تم سحب شارات التوب من جميع اللاعبين بنجاح (${clearedCount} حسابات).`, 'success');
+        showToast('سحب الشارات بنجاح ', `تم سحب شارات التوب من جميع اللاعبين بنجاح (${clearedCount} حسابات).`, 'success');
       }
       if (typeof logAdminAction === 'function') {
         logAdminAction(`سحب وإزالة شارات التوب 10 من جميع اللاعبين (${clearedCount} حسابات)`);
@@ -10768,7 +10768,7 @@
           }
 
           if (typeof showToast === 'function') {
-            showToast('شارة الموسم 🏆', newBadge ? `تم إسناد الشارة [${newBadge}] للاعب ${selectedPlayer} بنجاح!` : `تم حذف شارة الموسم من اللاعب ${selectedPlayer}.`, 'success');
+            showToast('شارة الموسم ', newBadge ? `تم إسناد الشارة [${newBadge}] للاعب ${selectedPlayer} بنجاح!` : `تم حذف شارة الموسم من اللاعب ${selectedPlayer}.`, 'success');
           }
           if (typeof logAdminAction === 'function') {
             logAdminAction(`${newBadge ? 'إسناد شارة ' + newBadge : 'سحب شارة الموسم'} للاعب: ${selectedPlayer}`);
@@ -10793,9 +10793,9 @@
     frame_fire_dragon: {
       type: 'chat_frame',
       id: 'frame_fire_dragon',
-      name: 'إطار التنين الناري الملكي 🔥',
+      name: 'إطار التنين الناري الملكي ',
       description: 'إطار شات حصري مضيء ونادر جداً يمنح حسابك هيبة مطلقة في الشات العام وملف اللاعب',
-      icon: '🔥',
+      icon: '',
       badge: 'إطار شات حصري',
       rewardData: { frameId: 'frame_fire_dragon' },
       startPrice: 15000000,
@@ -10805,9 +10805,9 @@
     frame_diamond_whale: {
       type: 'chat_frame',
       id: 'frame_diamond_whale',
-      name: 'إطار الحوت الماسي المشع 💎',
+      name: 'إطار الحوت الماسي المشع ',
       description: 'إطار شات ناصع البياض والتوهج الماسي مخصص لكبار حيتان السيرفر',
-      icon: '💎',
+      icon: '',
       badge: 'إطار شات حصري',
       rewardData: { frameId: 'frame_diamond_whale' },
       startPrice: 25000000,
@@ -10817,9 +10817,9 @@
     gold_1000: {
       type: 'gold',
       id: 'gold_pack_custom',
-      name: 'احتياطي الذهب الملكي 🥇',
+      name: 'احتياطي الذهب الملكي ',
       description: 'سبائك ذهب نقي تمنحك قوة استثمارية وسيولة فورية ضخمة في البورصة',
-      icon: '🥇',
+      icon: '',
       badge: 'احتياطي ذهب ملكي',
       rewardData: { gold: 1000 },
       startPrice: 20000000,
@@ -10829,9 +10829,9 @@
     concorde_royale: {
       type: 'aircraft',
       id: 'concorde_royale',
-      name: 'طائرة كونكورد الملكية الخارقة ✈️',
+      name: 'طائرة كونكورد الملكية الخارقة ',
       description: 'طائرة نفاثة خارقة تختصر زمن رحلات المطار والشحن بنسبة 50% مع أرباح مضاعفة',
-      icon: '✈️',
+      icon: '',
       badge: 'أسطول حصري',
       rewardData: { aircraftId: 'concorde_royale' },
       startPrice: 50000000,
@@ -10894,15 +10894,15 @@
 
     if (type === 'gold') {
       if (nameEl && (!nameEl.value || nameEl.value.includes('إطار') || nameEl.value.includes('طائرة'))) {
-        nameEl.value = 'احتياطي الذهب الملكي 🥇';
+        nameEl.value = 'احتياطي الذهب الملكي ';
       }
-      if (iconEl && (!iconEl.value || iconEl.value === '🔥' || iconEl.value === '✈️')) iconEl.value = '🥇';
+      if (iconEl && (!iconEl.value || iconEl.value === '' || iconEl.value === '')) iconEl.value = '';
       if (badgeEl && (!badgeEl.value || badgeEl.value.includes('إطار') || badgeEl.value.includes('أسطول'))) badgeEl.value = 'احتياطي ذهب ملكي';
       if (descEl && (!descEl.value || descEl.value.includes('إطار') || descEl.value.includes('طائرة'))) {
         descEl.value = 'سبائك ذهب نقي تمنحك سيولة فورية وقوة استثمارية كاسحة في البورصة والصفقات';
       }
     } else if (type === 'museum_item') {
-      if (iconEl && (!iconEl.value || iconEl.value === '🔥' || iconEl.value === '🥇')) iconEl.value = '🏺';
+      if (iconEl && (!iconEl.value || iconEl.value === '' || iconEl.value === '')) iconEl.value = '';
       if (badgeEl && (!badgeEl.value || badgeEl.value.includes('إطار'))) badgeEl.value = 'تحفة أثرية ملكية';
     }
   };
@@ -10941,7 +10941,7 @@
   window._adminSubmitCreateAuction = async function() {
     const name = (document.getElementById('adm-input-auc-name')?.value || '').trim();
     const type = document.getElementById('adm-input-auc-type')?.value || 'chat_frame';
-    const icon = (document.getElementById('adm-input-auc-icon')?.value || '🏆').trim();
+    const icon = (document.getElementById('adm-input-auc-icon')?.value || '').trim();
     const badge = (document.getElementById('adm-input-auc-badge')?.value || 'مزاد رسمي').trim();
     const desc = (document.getElementById('adm-input-auc-desc')?.value || '').trim();
     const startPrice = parseSafeMoney(document.getElementById('adm-input-auc-start-price')?.value, 10000000);
@@ -11047,7 +11047,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل تنفيذ ضربة المطرقة.');
 
-      if (typeof showToast === 'function') showToast('المطرقة الإدارية 🔨', data.message || 'تم تنفيذ الضربة بنجاح', 'success');
+      if (typeof showToast === 'function') showToast('المطرقة الإدارية ', data.message || 'تم تنفيذ الضربة بنجاح', 'success');
       if (typeof logAdminAction === 'function') logAdminAction(`تنفيذ إجراء المطرقة: ${action}`);
       window._adminRefreshAuctionTelemetry();
     } catch (e) {
@@ -11077,12 +11077,12 @@
       const strikeBadge = document.getElementById('adm-auc-strike-badge');
 
       if (pill) {
-        pill.textContent = data.status === 'LIVE' ? '🔴 بث حي مباشر' : (data.status === 'SCHEDULED' ? '⏳ مجدول وتنازلي' : (data.status === 'ENDED' ? '👑 تم البيع' : 'خامل'));
+        pill.textContent = data.status === 'LIVE' ? ' بث حي مباشر' : (data.status === 'SCHEDULED' ? ' مجدول وتنازلي' : (data.status === 'ENDED' ? ' تم البيع' : 'خامل'));
         pill.className = `px-2 py-0.5 rounded-full text-[10px] font-black ${data.status === 'LIVE' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`;
       }
 
       if (data.item) {
-        if (icon) icon.textContent = data.item.icon || '🏆';
+        if (icon) icon.textContent = data.item.icon || '';
         if (name) name.textContent = data.item.name || 'غرض ملكي';
         if (desc) desc.textContent = data.item.description || '--';
       }
@@ -11123,7 +11123,7 @@
                       <span class="text-[9px] text-slate-400 font-mono block">ثروة: ${Number(r.netWorth || 0).toLocaleString()} ج.م</span>
                     </div>
                   </div>
-                  <span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] font-bold shrink-0">مؤهل 🟢</span>
+                  <span class="px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 text-[9px] font-bold shrink-0">مؤهل </span>
                 </div>
               `).join('')}
             </div>
@@ -11178,7 +11178,7 @@
         <tr class="hover:bg-slate-900/60 transition">
           <td class="p-2.5">
             <div class="flex items-center gap-2">
-              <span class="text-xl">${item.icon || '🏺'}</span>
+              <span class="text-xl">${item.icon || ''}</span>
               <div>
                 <strong class="text-white block font-bold text-xs">${item.name}</strong>
                 <span class="text-[10px] text-slate-400">${item.edition || 'إصدار ملكي'}</span>
@@ -11202,7 +11202,7 @@
               <button onclick="window._adminLaunchAuctionForRelic('${item.id}')"
                 class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold border border-amber-500/40 transition cursor-pointer flex items-center gap-1">
                 <i class="fa-solid fa-gavel"></i>
-                <span>إطلاق مزاد 🔨</span>
+                <span>إطلاق مزاد </span>
               </button>
               <button onclick="window._adminDeleteMuseumRelic('${item.id}', '${(item.name || '').replace(/'/g, "\\'")}')"
                 class="w-7 h-7 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 flex items-center justify-center text-xs transition cursor-pointer" title="حذف التحفة">
@@ -11219,7 +11219,7 @@
     const name = (document.getElementById('adm-input-mus-name')?.value || '').trim();
     const category = (document.getElementById('adm-input-mus-category')?.value || 'آثار فرعونية ملكية').trim();
     const rarity = document.getElementById('adm-input-mus-rarity')?.value || 'epic';
-    const icon = (document.getElementById('adm-input-mus-icon')?.value || '🏺').trim();
+    const icon = (document.getElementById('adm-input-mus-icon')?.value || '').trim();
     const buybackPrice = Number(document.getElementById('adm-input-mus-buyback')?.value || 25000000);
     const stock = Number(document.getElementById('adm-input-mus-stock')?.value || 1);
     const edition = (document.getElementById('adm-input-mus-edition')?.value || 'نسخة فريدة 1/1').trim();
@@ -11243,7 +11243,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل سك التحفة.');
 
-      if (typeof showToast === 'function') showToast('سك التحف الملكية 🏛️', `تم سك ونشر [${name}] في المتحف الملكي بنجاح!`, 'success');
+      if (typeof showToast === 'function') showToast('سك التحف الملكية ', `تم سك ونشر [${name}] في المتحف الملكي بنجاح!`, 'success');
       else alert(`تم سك ونشر [${name}] في المتحف الملكي بنجاح!`);
 
       if (typeof logAdminAction === 'function') logAdminAction(`سك تحفة جديدة بالمتحف: ${name}`);
@@ -11269,7 +11269,7 @@
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل حذف التحفة.');
 
-      if (typeof showToast === 'function') showToast('حذف تحفة 🗑️', 'تم حذف التحفة من المتحف.', 'info');
+      if (typeof showToast === 'function') showToast('حذف تحفة ', 'تم حذف التحفة من المتحف.', 'info');
       window._adminRefreshMuseumCatalog();
     } catch (e) {
       if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
@@ -11309,7 +11309,7 @@
         window._adminOnAuctionTypeChanged('museum_item');
       }
       if (museumQtyEl) museumQtyEl.value = chosenQty;
-      if (iconEl) iconEl.value = item.icon || '🏺';
+      if (iconEl) iconEl.value = item.icon || '';
       if (badgeEl) badgeEl.value = chosenQty > 1 ? `${chosenQty} قطع / ${item.edition || 'إصدار ملكي'}` : (item.edition || 'تحفة متحف ملكية');
       if (descEl) descEl.value = item.description || 'تحفة أثرية نادرة مسجلة بالمتحف الملكي.';
       if (startPriceEl) startPriceEl.value = Math.max(10000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.8 * chosenQty));
@@ -11328,7 +11328,7 @@
 
       // Scroll to auction form smoothly
       document.getElementById('adm-input-auc-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (typeof showToast === 'function') showToast('تجهيز المزاد 🔨', `تم تجهيز إعدادات المزاد لـ ${chosenQty} قطعة من [${item.name}]! اضغط على نشر المزاد.`, 'info');
+      if (typeof showToast === 'function') showToast('تجهيز المزاد ', `تم تجهيز إعدادات المزاد لـ ${chosenQty} قطعة من [${item.name}]! اضغط على نشر المزاد.`, 'info');
     } catch (e) {}
   };
 

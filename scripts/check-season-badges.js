@@ -4,7 +4,7 @@ const _G_MESH_SALT = 0xA7;
 const key = _RENDER_VIEWPORT_COORDS.map((b, i) => String.fromCharCode(b ^ (_G_MESH_SALT + (i % 31)))).join('');
 const url = SUPABASE_URL;
 
-const players = ['Emad', 'Osama.nasr', 'OSAMA', 'Abdo_123', '🎵', 'MarkEshak', 'MoOka Aziz', 'Bursival', 'Mo_safwat', 'Batman'];
+const players = ['Emad', 'Osama.nasr', 'OSAMA', 'Abdo_123', '', 'MarkEshak', 'MoOka Aziz', 'Bursival', 'Mo_safwat', 'Batman'];
 
 async function check() {
   const res = await fetch(url + '/rest/v1/players?select=username,state', {

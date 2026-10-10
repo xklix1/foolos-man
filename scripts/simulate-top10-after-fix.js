@@ -15,7 +15,7 @@ async function getTop10AfterFix() {
   const players = await res.json();
 
   const EXPLOITERS_FIX = {
-    '♫': { cash: 5947500, bank: 15860000, clearStocks: true, clearIndustry: true },
+    '': { cash: 5947500, bank: 15860000, clearStocks: true, clearIndustry: true },
     'ABDO_1': { cash: 296034, bank: 3327200, clearStocks: true, clearIndustry: true },
     'Emad': { cash: 1305300, bank: 454193, clearStocks: true, clearIndustry: true },
     'MarkEshak': { cash: 1213500, bank: 244815, clearStocks: true, clearIndustry: true },
@@ -75,13 +75,13 @@ async function getTop10AfterFix() {
     const finalNW = calculateNetWorth(cleanState);
 
     let newTitle = 'عامل مبتدئ';
-    if (finalNW >= 1000000000) newTitle = 'إمبراطور رأس المال 👑';
-    else if (finalNW >= 500000000) newTitle = 'قطب الأعمال العالمي 🌍';
-    else if (finalNW >= 100000000) newTitle = 'حوت المال الدولي 🐋';
-    else if (finalNW >= 50000000) newTitle = 'ملياردير عصامي 💎';
-    else if (finalNW >= 10000000) newTitle = 'مليونير فخم 🎩';
-    else if (finalNW >= 1000000) newTitle = 'مستثمر طموح 🚀';
-    else if (finalNW >= 100000) newTitle = 'رائد أعمال 💼';
+    if (finalNW >= 1000000000) newTitle = 'إمبراطور رأس المال ';
+    else if (finalNW >= 500000000) newTitle = 'قطب الأعمال العالمي ';
+    else if (finalNW >= 100000000) newTitle = 'حوت المال الدولي ';
+    else if (finalNW >= 50000000) newTitle = 'ملياردير عصامي ';
+    else if (finalNW >= 10000000) newTitle = 'مليونير فخم ';
+    else if (finalNW >= 1000000) newTitle = 'مستثمر طموح ';
+    else if (finalNW >= 100000) newTitle = 'رائد أعمال ';
 
     leaderboardList.push({
       username: u,
@@ -98,12 +98,12 @@ async function getTop10AfterFix() {
   leaderboardList.sort((a, b) => b.netWorth - a.netWorth);
 
   console.log('========================================================================');
-  console.log('👑 الترتيب النهائي الجديد لعرش الأثرياء (TOP 10 LEADERBOARD) 👑');
+  console.log(' الترتيب النهائي الجديد لعرش الأثرياء (TOP 10 LEADERBOARD) ');
   console.log('========================================================================\n');
 
   const top10 = leaderboardList.slice(0, 10).map((p, idx) => ({
     'المركز': `#${idx + 1}`,
-    'اسم اللاعب': p.username + (p.isAdmin ? ' 🛡️' : ''),
+    'اسم اللاعب': p.username + (p.isAdmin ? ' ' : ''),
     'صافي الثروة': Math.round(p.netWorth).toLocaleString() + ' ج.م',
     'الرتبة': p.title,
     'نقاط الخبرة XP': p.xp.toLocaleString()

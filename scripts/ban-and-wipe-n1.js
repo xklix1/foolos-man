@@ -94,7 +94,7 @@ async function main() {
     })
   });
 
-  console.log('✅ N1 has been stripped of Admin status, banned, wiped, and removed from leaderboard.');
+  console.log(' N1 has been stripped of Admin status, banned, wiped, and removed from leaderboard.');
 }
 
 main().catch(console.error);

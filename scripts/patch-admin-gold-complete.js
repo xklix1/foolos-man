@@ -15,7 +15,7 @@ if (!hqHtml.includes('id="admin-p-gold"')) {
   const replacementBadge = `<span id="admin-p-bank" class="text-sky-400 numbers-font font-black text-xs">0</span> <span class="text-[9px] text-sky-500/70">EGP</span>
                 </div>
                 <div class="p-1.5 px-2.5 rounded-lg bg-amber-950/30 border border-amber-500/20 text-right">
-                  <span class="text-[10px] text-slate-400 block font-bold">🪙 رصيد الذهب:</span>
+                  <span class="text-[10px] text-slate-400 block font-bold"> رصيد الذهب:</span>
                   <span id="admin-p-gold" class="text-amber-400 numbers-font font-black text-xs">0</span> <span class="text-[9px] text-amber-500/70">ذهب</span>
                 </div>`;
   hqHtml = hqHtml.replace(targetBadge, replacementBadge);
@@ -27,7 +27,7 @@ if (!hqHtml.includes('id="admin-input-gold"')) {
   const replacementInput = `<input type="number" id="admin-input-xp" class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-purple-300 border-purple-500/40 focus:border-purple-400 rounded-lg">
                 </div>
                 <div>
-                  <label class="block text-[10px] text-amber-400 mb-1 font-bold">الذهب (Player Gold 🪙)</label>
+                  <label class="block text-[10px] text-amber-400 mb-1 font-bold">الذهب (Player Gold )</label>
                   <input type="number" id="admin-input-gold" class="glass-input w-full p-2.5 text-xs text-center font-bold font-mono text-amber-400 border-amber-500/40 focus:border-amber-400 rounded-lg">
                 </div>`;
   hqHtml = hqHtml.replace(targetInput, replacementInput);
@@ -113,7 +113,7 @@ if (!adminJs.includes("const instantAddGoldBtn = document.getElementById('btn-ad
           return;
         }
 
-        const confirmMsg = \`🪙 تأكيد إضافة الذهب الفوري:\n\nهل أنت متأكد من إضافة \${amount.toLocaleString()} ذهبة للاعب "\${selectedPlayer}"؟\n\nسيتم زيادة الذهب وحفظه في السحابة فوراً مع إشعار اللاعب.\`;
+        const confirmMsg = \` تأكيد إضافة الذهب الفوري:\n\nهل أنت متأكد من إضافة \${amount.toLocaleString()} ذهبة للاعب "\${selectedPlayer}"؟\n\nسيتم زيادة الذهب وحفظه في السحابة فوراً مع إشعار اللاعب.\`;
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -197,7 +197,7 @@ if (!adminJs.includes("const instantAddGoldBtn = document.getElementById('btn-ad
             renderPlayersTable();
           }
 
-          showToast('تمت إضافة الذهب بنجاح 🪙', \`تمت إضافة \${amount.toLocaleString()} ذهبة لحساب اللاعب [\${selectedPlayer}] فوراً! الرصيد الجديد: \${newGold.toLocaleString()} ذهبة.\`, 'success');
+          showToast('تمت إضافة الذهب بنجاح ', \`تمت إضافة \${amount.toLocaleString()} ذهبة لحساب اللاعب [\${selectedPlayer}] فوراً! الرصيد الجديد: \${newGold.toLocaleString()} ذهبة.\`, 'success');
           logAdminAction(\`إضافة ذهب فوري بقيمة \${amount.toLocaleString()} ذهبة للاعب \${selectedPlayer}\`);
 
         } catch (err) {
@@ -223,8 +223,8 @@ const uiJsPath = path.join(rootDir, 'ui.js');
 let uiJs = fs.readFileSync(uiJsPath, 'utf8');
 
 if (!uiJs.includes("m.type === 'admin_gold_grant'")) {
-  const targetMailBlock = `    // 0. Process incoming Direct Admin Popup Messages`;
-  const replacementMailBlock = `    // 0.06. Process incoming Instant Admin Gold Grants (Live in-game gold injection)
+  const targetMailBlock = ` // 0. Process incoming Direct Admin Popup Messages`;
+  const replacementMailBlock = ` // 0.06. Process incoming Instant Admin Gold Grants (Live in-game gold injection)
     const goldMails = mails.filter(m => m.type === 'admin_gold_grant' && (m.status === 'unread' || m.status === 'pending'));
     for (const gm of goldMails) {
       if (!window._processedGoldGrantIds) window._processedGoldGrantIds = new Set();
@@ -258,7 +258,7 @@ if (!uiJs.includes("m.type === 'admin_gold_grant'")) {
         if (typeof renderAll === 'function') renderAll();
 
         showToast(
-          '🪙 إيداع ذهب إداري فوري!',
+          ' إيداع ذهب إداري فوري!',
           \`تمت إضافة +\${addGold.toLocaleString()} ذهبة إلى حسابك فوراً من قبل الإدارة. الرصيد الإجمالي: \${Number(GameEngine.state.gold).toLocaleString()} ذهبة.\`,
           'success'
         );

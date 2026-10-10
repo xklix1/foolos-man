@@ -6,7 +6,7 @@ const dbPath = path.join(__dirname, '../db.js');
 let db = fs.readFileSync(dbPath, 'utf8');
 
 // Remove the /api/admin/process-topup block and make processTopupRequest clean and robust
-const oldProcessTopupFunc = `  async function processTopupRequest(requestId, action, reviewerNote ='') {
+const oldProcessTopupFunc = ` async function processTopupRequest(requestId, action, reviewerNote ='') {
     const ts = Date.now();
     const adminToken = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_admin_auth_token')) ||
                        (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_admin_auth_token'));
@@ -41,13 +41,13 @@ const oldProcessTopupFunc = `  async function processTopupRequest(requestId, act
     }
     const rows = await _api(\`globals?id=eq.topup_requests\`);`;
 
-const newProcessTopupFunc = `  async function processTopupRequest(requestId, action, reviewerNote ='') {
+const newProcessTopupFunc = ` async function processTopupRequest(requestId, action, reviewerNote ='') {
     const ts = Date.now();
     const rows = await _api(\`globals?id=eq.topup_requests\`);`;
 
 if (db.includes(oldProcessTopupFunc)) {
   db = db.replace(oldProcessTopupFunc, newProcessTopupFunc);
-  console.log('✅ Cleaned up processTopupRequest in db.js to use Authoritative _api / mutate bridge');
+  console.log(' Cleaned up processTopupRequest in db.js to use Authoritative _api / mutate bridge');
 }
 
 fs.writeFileSync(dbPath, db, 'utf8');

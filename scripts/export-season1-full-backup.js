@@ -37,7 +37,7 @@ async function fetchAllRows(tableName) {
       hasMore = false;
     } else {
       allRows.push(...rows);
-      console.log(`  -> Fetched ${rows.length} rows (Total so far: ${allRows.length})`);
+      console.log(` -> Fetched ${rows.length} rows (Total so far: ${allRows.length})`);
       if (rows.length < pageSize) {
         hasMore = false;
       } else {
@@ -46,7 +46,7 @@ async function fetchAllRows(tableName) {
     }
   }
 
-  console.log(`✅ Table '${tableName}' fully extracted: ${allRows.length} total records.`);
+  console.log(` Table '${tableName}' fully extracted: ${allRows.length} total records.`);
   return allRows;
 }
 
@@ -59,7 +59,7 @@ async function runFullBackup() {
   }
 
   console.log('====================================================');
-  console.log(`🚀 STARTING SEASON 1 COMPREHENSIVE BACKUP (${timestamp})`);
+  console.log(` STARTING SEASON 1 COMPREHENSIVE BACKUP (${timestamp})`);
   console.log('====================================================');
 
   const tables = ['players', 'transfers', 'mailbox', 'globals', 'security_audit_logs'];
@@ -70,9 +70,9 @@ async function runFullBackup() {
       const data = await fetchAllRows(table);
       fullArchive[table] = data;
       fs.writeFileSync(path.join(backupDir, `${table}.json`), JSON.stringify(data, null, 2), 'utf8');
-      console.log(`💾 Saved ${backupDir}/${table}.json (${data.length} records)`);
+      console.log(` Saved ${backupDir}/${table}.json (${data.length} records)`);
     } catch (e) {
-      console.error(`❌ Error backing up table ${table}:`, e.message);
+      console.error(` Error backing up table ${table}:`, e.message);
     }
   }
 
@@ -91,14 +91,14 @@ async function runFullBackup() {
   fs.writeFileSync(path.join(latestDir, 'season1_unified_master_backup.json'), JSON.stringify(fullArchive, null, 2), 'utf8');
 
   console.log('\n====================================================');
-  console.log(`🎉 BACKUP COMPLETE & VERIFIED SUCCESSFULLY!`);
-  console.log(`📁 Backup Folder: ${backupDir}`);
-  console.log(`📊 Statistics:`);
-  console.log(`   - Players: ${fullArchive.players?.length || 0} accounts`);
-  console.log(`   - Transfers: ${fullArchive.transfers?.length || 0} transactions`);
-  console.log(`   - Mailbox: ${fullArchive.mailbox?.length || 0} messages`);
-  console.log(`   - Globals: ${fullArchive.globals?.length || 0} records`);
-  console.log(`   - Audit Logs: ${fullArchive.security_audit_logs?.length || 0} logs`);
+  console.log(` BACKUP COMPLETE & VERIFIED SUCCESSFULLY!`);
+  console.log(` Backup Folder: ${backupDir}`);
+  console.log(` Statistics:`);
+  console.log(` - Players: ${fullArchive.players?.length || 0} accounts`);
+  console.log(` - Transfers: ${fullArchive.transfers?.length || 0} transactions`);
+  console.log(` - Mailbox: ${fullArchive.mailbox?.length || 0} messages`);
+  console.log(` - Globals: ${fullArchive.globals?.length || 0} records`);
+  console.log(` - Audit Logs: ${fullArchive.security_audit_logs?.length || 0} logs`);
   console.log('====================================================\n');
 }
 

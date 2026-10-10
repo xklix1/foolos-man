@@ -71,9 +71,9 @@ async function deepFinalAudit() {
   }
 
   if (anomalies.length === 0) {
-    console.log('✅ ALL 319 ACCOUNTS FULLY CLEAN! ZERO EXPLOITS OR ANOMALIES REMAINING.');
+    console.log(' ALL 319 ACCOUNTS FULLY CLEAN! ZERO EXPLOITS OR ANOMALIES REMAINING.');
   } else {
-    console.log(`⚠️ Found ${anomalies.length} accounts with potential flags:`);
+    console.log(` Found ${anomalies.length} accounts with potential flags:`);
     console.table(anomalies);
   }
 }

@@ -16,8 +16,8 @@ const MAX_SANITY_WEALTH = 100_000_000_000_000; // 100 Trillion Hard Limit
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════');
-  console.log('🛡️  RAS ALMAL SECURITY SUITE & SENTINEL EXECUTIVE RUNNER');
-  console.log('    Activating: game-anti-cheat-sentinel + supabase-security-hardening');
+  console.log(' RAS ALMAL SECURITY SUITE & SENTINEL EXECUTIVE RUNNER');
+  console.log(' Activating: game-anti-cheat-sentinel + supabase-security-hardening');
   console.log('═══════════════════════════════════════════════════════════════\n');
 
   const report = {
@@ -46,17 +46,17 @@ async function main() {
   // =========================================================================
   // 1. GAME ANTI-CHEAT SENTINEL AUDIT
   // =========================================================================
-  console.log('🔍 [1/3] Executing game-anti-cheat-sentinel Database Audit...');
+  console.log(' [1/3] Executing game-anti-cheat-sentinel Database Audit...');
   
   // Fetch all players
   const playersRes = await fetch(`${supabaseUrl}/rest/v1/players?select=*`, { headers: HEADERS });
   const players = await playersRes.json();
   report.antiCheat.totalAccountsAudited = players.length;
-  console.log(`  -> Retrieved ${players.length} total accounts from Supabase.`);
+  console.log(` -> Retrieved ${players.length} total accounts from Supabase.`);
 
   const bannedAccounts = players.filter(p => p.is_banned === true);
   report.antiCheat.bannedAccounts = bannedAccounts.length;
-  console.log(`  -> Active Banned Accounts: ${bannedAccounts.length}`);
+  console.log(` -> Active Banned Accounts: ${bannedAccounts.length}`);
 
   // Check 1: Wealth Sanity Violations
   for (const p of players) {
@@ -76,7 +76,7 @@ async function main() {
 
       // Auto-remediate if not already banned
       if (!p.is_banned) {
-        console.log(`  🚨 Flagged & Neutralizing Account with Excessive Wealth: ${p.username} (${netWorth})`);
+        console.log(` Flagged & Neutralizing Account with Excessive Wealth: ${p.username} (${netWorth})`);
         await fetch(`${supabaseUrl}/rest/v1/players?id=eq.${p.id}`, {
           method: 'PATCH',
           headers: { ...HEADERS, 'Prefer': 'return=minimal' },
@@ -113,7 +113,7 @@ async function main() {
       }
     }
   });
-  console.log(`  -> Identified ${report.antiCheat.sharedPinClusters.length} suspicious PIN clusters linked to banned accounts.`);
+  console.log(` -> Identified ${report.antiCheat.sharedPinClusters.length} suspicious PIN clusters linked to banned accounts.`);
 
   // Check 3: Device Fingerprint Multi-Accounting Syndicates
   const devMap = new Map();
@@ -135,12 +135,12 @@ async function main() {
       });
     }
   });
-  console.log(`  -> Identified ${report.antiCheat.deviceSyndicates.length} multi-accounting hardware syndicates (>= 3 accounts).`);
+  console.log(` -> Identified ${report.antiCheat.deviceSyndicates.length} multi-accounting hardware syndicates (>= 3 accounts).`);
 
   // =========================================================================
   // 2. SUPABASE SECURITY HARDENING AUDIT & ENFORCEMENT
   // =========================================================================
-  console.log('\n🔒 [2/3] Executing supabase-security-hardening Database Lockdown...');
+  console.log('\n [2/3] Executing supabase-security-hardening Database Lockdown...');
 
   // Fetch globals
   const globalsRes = await fetch(`${supabaseUrl}/rest/v1/globals?select=*`, { headers: HEADERS });
@@ -168,7 +168,7 @@ async function main() {
     })
   });
   report.databaseHardening.details.push(`Synced ${updatedBannedDevs.length} banned device hardware IDs to globals config.`);
-  console.log(`  -> Synced ${updatedBannedDevs.length} hardware fingerprints to database firewall list.`);
+  console.log(` -> Synced ${updatedBannedDevs.length} hardware fingerprints to database firewall list.`);
 
   // Verify Leaderboard Sanitization (strip all banned players)
   const topPlayers = players
@@ -186,12 +186,12 @@ async function main() {
     })
   });
   report.databaseHardening.details.push(`Leaderboard sanitized with top ${topPlayers.length} verified legitimate accounts.`);
-  console.log(`  -> Leaderboard purged of any corrupted or banned entities.`);
+  console.log(` -> Leaderboard purged of any corrupted or banned entities.`);
 
   // =========================================================================
   // 3. CODEBASE STATIC SECURITY SCANNING (CI/CD Hardening)
   // =========================================================================
-  console.log('\n🛡️ [3/3] Executing Frontend & Codebase Static Security Scanning...');
+  console.log('\n [3/3] Executing Frontend & Codebase Static Security Scanning...');
   
   const frontendFiles = [
     'index.html',
@@ -222,23 +222,23 @@ async function main() {
   }
 
   if (report.codebaseSecurity.findings.length === 0) {
-    console.log('  -> All frontend files verified clean: 0 Service Role Key leaks, 0 unsafe eval calls.');
+    console.log(' -> All frontend files verified clean: 0 Service Role Key leaks, 0 unsafe eval calls.');
   } else {
-    console.log('  -> Findings:', report.codebaseSecurity.findings);
+    console.log(' -> Findings:', report.codebaseSecurity.findings);
   }
 
   console.log('\n═══════════════════════════════════════════════════════════════');
-  console.log('✅ SECURITY SUITE RUN COMPLETED SUCCESSFULLY');
+  console.log(' SECURITY SUITE RUN COMPLETED SUCCESSFULLY');
   console.log('═══════════════════════════════════════════════════════════════');
   console.log(JSON.stringify(report, null, 2));
 
   // Save report artifact
   const outPath = path.join(__dirname, '../security-audit-report.json');
   fs.writeFileSync(outPath, JSON.stringify(report, null, 2), 'utf8');
-  console.log(`\n📄 Report saved to: ${outPath}`);
+  console.log(`\n Report saved to: ${outPath}`);
 }
 
 main().catch(err => {
-  console.error('❌ Error executing security suite:', err);
+  console.error(' Error executing security suite:', err);
   process.exit(1);
 });

@@ -83,7 +83,7 @@ async function fetchAllRows(table) {
     }
   }
 
-  console.log(`[Backup] ✓ Fetched ${allRows.length} rows for table '${table}'`);
+  console.log(`[Backup] Fetched ${allRows.length} rows for table '${table}'`);
   return allRows;
 }
 
@@ -97,8 +97,8 @@ async function runBackup() {
   fs.mkdirSync(latestDir, { recursive: true });
 
   console.log(`====================================================`);
-  console.log(`  Ras ALmal Tycoon — Full Database Snapshot Engine  `);
-  console.log(`  Destination: ${backupDir}                         `);
+  console.log(` Ras ALmal Tycoon — Full Database Snapshot Engine `);
+  console.log(` Destination: ${backupDir} `);
   console.log(`====================================================\n`);
 
   const manifest = {
@@ -127,7 +127,7 @@ async function runBackup() {
         manifest.fileHashes[`${table}.json`] = hash;
       }
     } catch (err) {
-      console.error(`[Backup] ❌ Error backing up table ${table}:`, err.message);
+      console.error(`[Backup] Error backing up table ${table}:`, err.message);
       manifest.tables[table] = { error: err.message };
     }
   }
@@ -138,7 +138,7 @@ async function runBackup() {
   fs.writeFileSync(path.join(latestDir, 'manifest.json'), manifestJson, 'utf-8');
 
   console.log('\n====================================================');
-  console.log('✅ BACKUP COMPLETED SUCCESSFULLY');
+  console.log(' BACKUP COMPLETED SUCCESSFULLY');
   console.log('Summary of backed-up tables:');
   console.table(manifest.tables);
   console.log('====================================================');

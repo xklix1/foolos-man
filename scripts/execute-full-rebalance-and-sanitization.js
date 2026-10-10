@@ -2,7 +2,7 @@ const db = require('../db.js');
 const { calculateNetWorth } = require('../server/src/engine/net-worth-engine.js');
 
 async function executeFullRebalance() {
-  console.log('🚀 Starting Full Database Rebalance and Sanitization Execution...\n');
+  console.log(' Starting Full Database Rebalance and Sanitization Execution...\n');
   const token = db._getAnonKey();
 
   // 1. Fetch all players
@@ -19,7 +19,7 @@ async function executeFullRebalance() {
   console.log(`Loaded ${players.length} player records from database.\n`);
 
   const EXPLOITERS_FIX = {
-    '♫': { cash: 5947500, bank: 15860000, clearStocks: true, clearIndustry: true },
+    '': { cash: 5947500, bank: 15860000, clearStocks: true, clearIndustry: true },
     'ABDO_1': { cash: 296034, bank: 3327200, clearStocks: true, clearIndustry: true },
     'Emad': { cash: 1305300, bank: 454193, clearStocks: true, clearIndustry: true },
     'MarkEshak': { cash: 1213500, bank: 244815, clearStocks: true, clearIndustry: true },
@@ -187,12 +187,12 @@ async function executeFullRebalance() {
   });
 
   console.log('\n========================================================================');
-  console.log('✅ REBALANCE COMPLETE! OFFICIAL TOP 10 LEADERBOARD LIVE:');
+  console.log(' REBALANCE COMPLETE! OFFICIAL TOP 10 LEADERBOARD LIVE:');
   console.log('========================================================================\n');
 
   console.table(finalLeaderboard.slice(0, 10).map((p, idx) => ({
     'المركز': `#${idx + 1}`,
-    'اسم اللاعب': p.username + (p.isAdmin ? ' 🛡️' : ''),
+    'اسم اللاعب': p.username + (p.isAdmin ? ' ' : ''),
     'صافي الثروة': Math.round(p.netWorth).toLocaleString() + ' ج.م',
     'الرتبة': p.title,
     'نقاط الخبرة XP': p.xp.toLocaleString()

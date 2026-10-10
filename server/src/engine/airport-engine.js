@@ -7,7 +7,7 @@
 const AIRPORT_FACILITIES = {
   runway: {
     id: 'runway',
-    name: 'مدرج الطائرات الرئيسي 🛫',
+    name: 'مدرج الطائرات الرئيسي ',
     icon: 'fa-road',
     desc: 'يحدد سعة وحجم الطائرات المسموح بهبوطها وإقلاعها',
     levels: {
@@ -19,7 +19,7 @@ const AIRPORT_FACILITIES = {
   },
   terminals: {
     id: 'terminals',
-    name: 'صالات الركاب الدولية 🏢',
+    name: 'صالات الركاب الدولية ',
     icon: 'fa-building-columns',
     desc: 'ترفع من سعة المسافرين وعوائد تذاكر الرحلات',
     levels: {
@@ -31,7 +31,7 @@ const AIRPORT_FACILITIES = {
   },
   hangar: {
     id: 'hangar',
-    name: 'حوض الصيانة وخزانات الوقود 🛠️⛽',
+    name: 'حوض الصيانة وخزانات الوقود ',
     icon: 'fa-wrench',
     desc: 'يقلل زمن الرحلات ويمنح خصماً استراتيجياً على أسعار وقود الطائرات',
     levels: {
@@ -43,7 +43,7 @@ const AIRPORT_FACILITIES = {
   },
     duty_free: {
     id: 'duty_free',
-    name: 'السوق الحرة ومتاجر الترانزيت 🛍️',
+    name: 'السوق الحرة ومتاجر الترانزيت ',
     icon: 'fa-store',
     desc: 'تدر دخلاً سلبياً مستمراً ومتزناً على مدار الساعة',
     levels: {
@@ -58,7 +58,7 @@ const AIRPORT_FACILITIES = {
 const AIRCRAFT_MODELS = {
   cessna_sky: {
     id: 'cessna_sky',
-    name: 'Cessna Sky Courier 🛩️',
+    name: 'Cessna Sky Courier ',
     tier: 1,
     cost: 3000000,
     goldCost: 0,
@@ -76,7 +76,7 @@ const AIRCRAFT_MODELS = {
   },
   airbus_a320: {
     id: 'airbus_a320',
-    name: 'Airbus A320neo ✈️',
+    name: 'Airbus A320neo ',
     tier: 2,
     cost: 15000000,
     goldCost: 0,
@@ -94,7 +94,7 @@ const AIRCRAFT_MODELS = {
   },
   boeing_777: {
     id: 'boeing_777',
-    name: 'Boeing 777-300ER 🌐',
+    name: 'Boeing 777-300ER ',
     tier: 3,
     cost: 55000000,
     goldCost: 0,
@@ -112,7 +112,7 @@ const AIRCRAFT_MODELS = {
   },
   gulfstream_g650: {
     id: 'gulfstream_g650',
-    name: 'Gulfstream G650 VIP Jet 👑🛩️',
+    name: 'Gulfstream G650 VIP Jet ',
     tier: 4,
     cost: 85000000,
     goldCost: 0,
@@ -130,7 +130,7 @@ const AIRCRAFT_MODELS = {
   },
   cargo_beluga: {
     id: 'cargo_beluga',
-    name: 'Airbus BelugaXL Heavy Cargo 📦✈️',
+    name: 'Airbus BelugaXL Heavy Cargo ',
     tier: 4,
     cost: 125000000,
     goldCost: 0,
@@ -148,7 +148,7 @@ const AIRCRAFT_MODELS = {
   },
   airbus_a380: {
     id: 'airbus_a380',
-    name: 'Airbus A380 Superjumbo 🏰✈️',
+    name: 'Airbus A380 Superjumbo ',
     tier: 3,
     cost: 220000000,
     goldCost: 0,
@@ -169,49 +169,49 @@ const AIRCRAFT_MODELS = {
 const FLIGHT_DESTINATIONS = {
   cairo_riyadh: {
     id: 'cairo_riyadh',
-    name: 'الرياض 🇸🇦',
+    name: 'الرياض ',
     distanceMultiplier: 1.0,
     requiredTier: 1,
     city: 'Riyadh'
   },
   cairo_dubai: {
     id: 'cairo_dubai',
-    name: 'دبي 🇦🇪',
+    name: 'دبي ',
     distanceMultiplier: 1.25,
     requiredTier: 1,
     city: 'Dubai'
   },
   cairo_istanbul: {
     id: 'cairo_istanbul',
-    name: 'إسطنبول 🇹🇷',
+    name: 'إسطنبول ',
     distanceMultiplier: 1.5,
     requiredTier: 2,
     city: 'Istanbul'
   },
   cairo_london: {
     id: 'cairo_london',
-    name: 'لندن 🇬🇧',
+    name: 'لندن ',
     distanceMultiplier: 2.0,
     requiredTier: 2,
     city: 'London'
   },
   cairo_paris: {
     id: 'cairo_paris',
-    name: 'باريس 🇫🇷',
+    name: 'باريس ',
     distanceMultiplier: 2.2,
     requiredTier: 2,
     city: 'Paris'
   },
   cairo_newyork: {
     id: 'cairo_newyork',
-    name: 'نيويورك 🇺🇸',
+    name: 'نيويورك ',
     distanceMultiplier: 3.0,
     requiredTier: 3,
     city: 'New York'
   },
   cairo_tokyo: {
     id: 'cairo_tokyo',
-    name: 'طوكيو 🇯🇵',
+    name: 'طوكيو ',
     distanceMultiplier: 3.5,
     requiredTier: 3,
     city: 'Tokyo'
@@ -279,7 +279,7 @@ function getAirportBonuses(airportState) {
 const AIRPORT_MANAGERS = {
   1: {
     tier: 1,
-    name: 'كابتن ليام - مساعد مدير العمليات 📋',
+    name: 'كابتن ليام - مساعد مدير العمليات ',
     title: 'مساعد مدير العمليات الجوية',
     cost: 100000000, // 100 Million cash
     currency: 'cash',
@@ -291,7 +291,7 @@ const AIRPORT_MANAGERS = {
   },
   2: {
     tier: 2,
-    name: 'كابتن ألفا - مدير عمليات الطيران 🎖️',
+    name: 'كابتن ألفا - مدير عمليات الطيران ',
     title: 'مدير عمليات الطيران الدولي',
     packageId: 'pkg_airport_manager_tier2',
     profitBonusPct: 10,
@@ -302,7 +302,7 @@ const AIRPORT_MANAGERS = {
   },
   3: {
     tier: 3,
-    name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران 👑',
+    name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران ',
     title: 'المدير التنفيذي العام لشبكة الطيران العالمية',
     packageId: 'pkg_airport_manager_tier3',
     profitBonusPct: 15,

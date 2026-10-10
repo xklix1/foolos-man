@@ -36,7 +36,7 @@ async function run() {
 
   if (!state.activityLog) state.activityLog = [];
   state.activityLog.push({
-    action: 'تعويض مالي وترقية المستودع 🎁',
+    action: 'تعويض مالي وترقية المستودع ',
     details: `تم إضافة تعويض بقيمة ${compensationAmount.toLocaleString()} EGP وترقية سعة مستودع الاستيراد والتصدير إلى 30 حاوية.`,
     category: 'banking',
     timestamp: nowTs

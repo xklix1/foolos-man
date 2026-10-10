@@ -7,7 +7,7 @@ describe('Live Auction Engine — Configuration & Numeric Parameter Robustness',
   test('Creates auction with comma-formatted numbers ("50,000,000", "15,000,000")', () => {
     const res = auctionService.createAuction({
       item: {
-        name: 'إطار تجريبي ملكي 🔥',
+        name: 'إطار تجريبي ملكي ',
         type: 'chat_frame'
       },
       config: {
@@ -27,7 +27,7 @@ describe('Live Auction Engine — Configuration & Numeric Parameter Robustness',
 
   test('Creates auction with shorthand suffixes ("50M", "10M", "500k")', () => {
     const res = auctionService.createAuction({
-      item: { name: 'شحنة ذهب 🥇', type: 'gold' },
+      item: { name: 'شحنة ذهب ', type: 'gold' },
       config: {
         startingBid: '10M',
         minNetWorth: '50M',
@@ -43,7 +43,7 @@ describe('Live Auction Engine — Configuration & Numeric Parameter Robustness',
 
   test('Creates auction with Arabic digits (٥٠٠٠٠٠٠٠)', () => {
     const res = auctionService.createAuction({
-      item: { name: 'تحفة أثرية 🏺', type: 'museum_item' },
+      item: { name: 'تحفة أثرية ', type: 'museum_item' },
       config: {
         startingBid: '١٥٠٠٠٠٠٠',
         minNetWorth: '٥٠٠٠٠٠٠٠',

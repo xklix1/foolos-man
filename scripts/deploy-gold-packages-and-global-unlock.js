@@ -6,73 +6,73 @@ const rootDir = path.join(__dirname, '..');
 const GOLD_PACKAGES = [
   {
     id: 'gold_pack_starter',
-    name: 'باقة البداية الذهبية 🪙',
+    name: 'باقة البداية الذهبية ',
     price: 100,
     gold: 60,
     cash: 0,
     bank: 0,
     xp: 0,
-    customBadge: '🪙',
+    customBadge: '',
     badgeTitle: 'رصيد ذهب',
     description: '60 ذهبة نقية (تسريع 10 ساعات كاملة) لتسريع الشحنات ونوبات العمل والصفقات فوراً وبأعلى كفاءة.'
   },
   {
     id: 'gold_pack_ingot',
-    name: 'حقيبة السبائك الفاخرة 💼',
+    name: 'حقيبة السبائك الفاخرة ',
     price: 200,
     gold: 130,
     cash: 0,
     bank: 0,
     xp: 0,
-    customBadge: '💼',
+    customBadge: '',
     badgeTitle: 'سبائك ذهبية',
     description: '130 ذهبة (+10 بونص) (تسريع 22 ساعة) لتغطية مستمرة لكافة أنشطة الشركات والتهريب والاستيراد.'
   },
   {
     id: 'gold_pack_elite',
-    name: 'صندوق النخبة الملكي 🏆',
+    name: 'صندوق النخبة الملكي ',
     price: 350,
     gold: 240,
     cash: 0,
     bank: 0,
     xp: 0,
-    customBadge: '🏆',
+    customBadge: '',
     badgeTitle: 'نخبة المستثمرين',
     description: '240 ذهبة (+30 بونص) (تسريع 40 ساعة كاملة) لإنهاء فوري لأقوى مؤقتات القروض والصفقات الكبيرة.'
   },
   {
     id: 'gold_pack_investor',
-    name: 'خزنة كبار المستثمرين 💎',
+    name: 'خزنة كبار المستثمرين ',
     price: 500,
     gold: 360,
     cash: 0,
     bank: 0,
     xp: 0,
-    customBadge: '💎',
+    customBadge: '',
     badgeTitle: 'حوت استثماري',
     description: '360 ذهبة (+60 بونص) (تسريع 60 ساعة = يومان ونصف) لسرعة نمو وتراكم أرباح فائقة للتفوق على المنافسين.'
   },
   {
     id: 'gold_pack_royal',
-    name: 'كنز الملوك والجبابرة 👑',
+    name: 'كنز الملوك والجبابرة ',
     price: 750,
     gold: 580,
     cash: 0,
     bank: 0,
     xp: 0,
-    customBadge: '👑',
+    customBadge: '',
     badgeTitle: 'كنز الملوك',
     description: '580 ذهبة (+130 بونص) (تسريع 96 ساعة = 4 أيام متواصلة) قوة استثمارية ضخمة للسيطرة على المزادات والشركات.'
   },
   {
     id: 'gold_pack_imperial',
-    name: 'الخزينة الإمبراطورية العظمى 🏛️',
+    name: 'الخزينة الإمبراطورية العظمى ',
     price: 1000,
     gold: 850,
     cash: 0,
     bank: 0,
     xp: 0,
-    customBadge: '⚡',
+    customBadge: '',
     badgeTitle: 'إمبراطور الذهب',
     description: '850 ذهبة (+250 بونص) (تسريع 141 ساعة = 6 أيام متواصلة) هيمنة مطلقة لحيتان اللعبة على صدارة التوب العالمي.'
   }
@@ -84,9 +84,9 @@ const GOLD_PACKAGES = [
 const dbPath = path.join(rootDir, 'db.js');
 let dbContent = fs.readFileSync(dbPath, 'utf8');
 
-const targetDefPkg = '  const DEFAULT_TOPUP_PACKAGES = [';
+const targetDefPkg = ' const DEFAULT_TOPUP_PACKAGES = [';
 if (dbContent.includes(targetDefPkg) && !dbContent.includes('gold_pack_starter')) {
-  const goldPackagesJson = GOLD_PACKAGES.map(p => `    ${JSON.stringify(p, null, 6).replace(/\n/g, '\n    ')}`).join(',\n') + ',\n';
+  const goldPackagesJson = GOLD_PACKAGES.map(p => ` ${JSON.stringify(p, null, 6).replace(/\n/g, '\n ')}`).join(',\n') + ',\n';
   dbContent = dbContent.replace(targetDefPkg, targetDefPkg + '\n' + goldPackagesJson);
   fs.writeFileSync(dbPath, dbContent, 'utf8');
   console.log('1. Added gold packages to DEFAULT_TOPUP_PACKAGES in db.js');
@@ -99,7 +99,7 @@ const uiPath = path.join(rootDir, 'ui.js');
 let uiContent = fs.readFileSync(uiPath, 'utf8');
 
 // A. Update isKhaledUser to return true for everyone
-const targetIsKhaled = `  function isKhaledUser() {
+const targetIsKhaled = ` function isKhaledUser() {
     const raw = getActiveUsernameSafe();
     const clean = raw ? raw.trim().toLowerCase() : '';
     // Developer and QA testing accounts (Khaled, خالد, rasalmal, rasalmal1, rasalmal2)
@@ -109,7 +109,7 @@ const targetIsKhaled = `  function isKhaledUser() {
     return isDevName || hasGold;
   }`;
 
-const newIsKhaled = `  function isKhaledUser() {
+const newIsKhaled = ` function isKhaledUser() {
     return true; // متاح رسمياً لجميع اللاعبين (الذهب عملة رئيسية رسمية)
   }`;
 
@@ -118,7 +118,7 @@ if (uiContent.includes(targetIsKhaled)) {
 }
 
 // B. In renderHeader, always show gold counters for all players
-const targetHeaderGold = `    // Update Gold balance (Beta - strictly and literally for Khaled)
+const targetHeaderGold = ` // Update Gold balance (Beta - strictly and literally for Khaled)
     const isKhaled = isKhaledUser();
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
@@ -157,7 +157,7 @@ const targetHeaderGold = `    // Update Gold balance (Beta - strictly and litera
       }
     }`;
 
-const newHeaderGold = `    // Update Gold balance (Official Global Currency for all players)
+const newHeaderGold = ` // Update Gold balance (Official Global Currency for all players)
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
     const goldVal = Math.max(0, Number(s.gold || 0));
@@ -187,7 +187,7 @@ if (uiContent.includes(targetHeaderGold)) {
 if (!uiContent.includes("pkg.gold ?")) {
   const targetRewardBox = `<div class="p-2.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1.5 text-[11px]">`;
   const replacementRewardBox = `<div class="p-2.5 bg-slate-950/90 rounded-2xl border border-slate-800 space-y-1.5 text-[11px]">
-            \${pkg.gold ? \`<div class="flex justify-between items-center text-amber-400 font-black"><span>🪙 رصيد ذهب:</span><span class="numbers-font font-mono text-xs">+\${Number(pkg.gold).toLocaleString()} ذهبة</span></div>\` : ''}`;
+            \${pkg.gold ? \`<div class="flex justify-between items-center text-amber-400 font-black"><span> رصيد ذهب:</span><span class="numbers-font font-mono text-xs">+\${Number(pkg.gold).toLocaleString()} ذهبة</span></div>\` : ''}`;
   uiContent = uiContent.replace(targetRewardBox, replacementRewardBox);
 }
 

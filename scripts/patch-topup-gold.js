@@ -6,7 +6,7 @@ const dbPath = path.join(__dirname, '../db.js');
 let db = fs.readFileSync(dbPath, 'utf8');
 
 // Update processTopupRequest in db.js to handle gold and package fallback
-const oldProcessTopup = `      const pState = playerDoc.state || {};
+const oldProcessTopup = ` const pState = playerDoc.state || {};
       const rewards = req.rewards || {};
       const addedCash = Number(rewards.cash) || 0;
       const addedBank = Number(rewards.bank) || 0;
@@ -23,7 +23,7 @@ const oldProcessTopup = `      const pState = playerDoc.state || {};
       pState.xp = updatedXP;
       pState.netWorth = updatedNetworth;`;
 
-const newProcessTopup = `      const pState = playerDoc.state || {};
+const newProcessTopup = ` const pState = playerDoc.state || {};
       const rewards = req.rewards || {};
       const pkgDef = (typeof DEFAULT_TOPUP_PACKAGES !== 'undefined' && Array.isArray(DEFAULT_TOPUP_PACKAGES)) 
         ? DEFAULT_TOPUP_PACKAGES.find(p => p.id === req.packageId) 
@@ -49,11 +49,11 @@ const newProcessTopup = `      const pState = playerDoc.state || {};
 
 if (db.includes(oldProcessTopup)) {
   db = db.replace(oldProcessTopup, newProcessTopup);
-  console.log('✅ [1/4] Patched db.js processTopupRequest reward calculations with gold support');
+  console.log(' [1/4] Patched db.js processTopupRequest reward calculations with gold support');
 }
 
 // Include gold in the PATCH payload for players
-const oldPatchCall = `      await _api(\`players?username=eq.\${encodeURIComponent(targetUser)}\`, {
+const oldPatchCall = ` await _api(\`players?username=eq.\${encodeURIComponent(targetUser)}\`, {
         method:'PATCH',
         body: JSON.stringify({
           cash: updatedCash,
@@ -65,7 +65,7 @@ const oldPatchCall = `      await _api(\`players?username=eq.\${encodeURICompone
         })
       });`;
 
-const newPatchCall = `      await _api(\`players?username=ilike.\${encodeURIComponent(targetUser)}\`, {
+const newPatchCall = ` await _api(\`players?username=ilike.\${encodeURIComponent(targetUser)}\`, {
         method:'PATCH',
         body: JSON.stringify({
           cash: updatedCash,
@@ -80,11 +80,11 @@ const newPatchCall = `      await _api(\`players?username=ilike.\${encodeURIComp
 
 if (db.includes(oldPatchCall)) {
   db = db.replace(oldPatchCall, newPatchCall);
-  console.log('✅ [2/4] Patched db.js processTopupRequest player PATCH with gold and ilike username');
+  console.log(' [2/4] Patched db.js processTopupRequest player PATCH with gold and ilike username');
 }
 
 // Add gold to topupReceiptData and admin_gold_grant mail
-const oldReceiptData = `      const topupReceiptData = {
+const oldReceiptData = ` const topupReceiptData = {
         packageId: req.packageId,
         packageName: req.packageName,
         price: req.price,
@@ -96,7 +96,7 @@ const oldReceiptData = `      const topupReceiptData = {
         newXp: updatedXP,
         newWorth: updatedNetworth,`;
 
-const newReceiptData = `      const topupReceiptData = {
+const newReceiptData = ` const topupReceiptData = {
         packageId: req.packageId,
         packageName: req.packageName,
         price: req.price,
@@ -112,11 +112,11 @@ const newReceiptData = `      const topupReceiptData = {
 
 if (db.includes(oldReceiptData)) {
   db = db.replace(oldReceiptData, newReceiptData);
-  console.log('✅ [3/4] Patched db.js topupReceiptData with gold fields');
+  console.log(' [3/4] Patched db.js topupReceiptData with gold fields');
 }
 
 // Add admin_gold_grant mail trigger if addedGold > 0
-const oldGrantBlock = `      if (addedCash > 0 || addedBank > 0) {
+const oldGrantBlock = ` if (addedCash > 0 || addedBank > 0) {
         await sendMail('إدارة اللعبة (Financial Team)', targetUser, 'admin_balance_grant', {
           addedCash: addedCash,
           addedBank: addedBank,
@@ -131,7 +131,7 @@ const oldGrantBlock = `      if (addedCash > 0 || addedBank > 0) {
         }).catch(() => {});
       }`;
 
-const newGrantBlock = `      if (addedCash > 0 || addedBank > 0) {
+const newGrantBlock = ` if (addedCash > 0 || addedBank > 0) {
         await sendMail('إدارة اللعبة (Financial Team)', targetUser, 'admin_balance_grant', {
           addedCash: addedCash,
           addedBank: addedBank,
@@ -158,7 +158,7 @@ const newGrantBlock = `      if (addedCash > 0 || addedBank > 0) {
 
 if (db.includes(oldGrantBlock)) {
   db = db.replace(oldGrantBlock, newGrantBlock);
-  console.log('✅ [4/4] Added automatic admin_gold_grant mail in db.js');
+  console.log(' [4/4] Added automatic admin_gold_grant mail in db.js');
 }
 
 fs.writeFileSync(dbPath, db, 'utf8');
@@ -168,7 +168,7 @@ const uiPath = path.join(__dirname, '../ui.js');
 let ui = fs.readFileSync(uiPath, 'utf8');
 
 // Include gold in requestPayload
-const oldReqPayload = `        rewards: {
+const oldReqPayload = ` rewards: {
           cash: _activeSelectedTopupPkg.cash || 0,
           bank: _activeSelectedTopupPkg.bank || 0,
           xp: _activeSelectedTopupPkg.xp || 0,
@@ -177,7 +177,7 @@ const oldReqPayload = `        rewards: {
           items: _activeSelectedTopupPkg.items || {}
         },`;
 
-const newReqPayload = `        rewards: {
+const newReqPayload = ` rewards: {
           cash: _activeSelectedTopupPkg.cash || 0,
           bank: _activeSelectedTopupPkg.bank || 0,
           gold: _activeSelectedTopupPkg.gold || 0,
@@ -189,15 +189,15 @@ const newReqPayload = `        rewards: {
 
 if (ui.includes(oldReqPayload)) {
   ui = ui.replace(oldReqPayload, newReqPayload);
-  console.log('✅ [UI 1/2] Included gold in submitTopupRequest rewards in ui.js');
+  console.log(' [UI 1/2] Included gold in submitTopupRequest rewards in ui.js');
 }
 
 // Handle gold in listenToMailbox topup receipt listener
-const oldReceiptListener = `        const addedCash = Number(details.cash) || 0;
+const oldReceiptListener = ` const addedCash = Number(details.cash) || 0;
         const addedBank = Number(details.bank) || 0;
         const addedXp = Number(details.xp) || 0;`;
 
-const newReceiptListener = `        const addedCash = Number(details.cash) || 0;
+const newReceiptListener = ` const addedCash = Number(details.cash) || 0;
         const addedBank = Number(details.bank) || 0;
         const addedGold = Number(details.gold) || 0;
         const addedXp = Number(details.xp) || 0;
@@ -207,8 +207,8 @@ const newReceiptListener = `        const addedCash = Number(details.cash) || 0;
 
 if (ui.includes(oldReceiptListener)) {
   ui = ui.replace(oldReceiptListener, newReceiptListener);
-  console.log('✅ [UI 2/2] Handled gold reward in listenToMailbox in ui.js');
+  console.log(' [UI 2/2] Handled gold reward in listenToMailbox in ui.js');
 }
 
 fs.writeFileSync(uiPath, ui, 'utf8');
-console.log('🎉 Full topup gold support patch successfully applied!');
+console.log(' Full topup gold support patch successfully applied!');

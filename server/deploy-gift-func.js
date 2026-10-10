@@ -98,7 +98,7 @@ async function deploy() {
   `;
 
   await client.query(sql);
-  console.log('✅ Atomic redeem_gift_code function successfully deployed to PostgreSQL!');
+  console.log(' Atomic redeem_gift_code function successfully deployed to PostgreSQL!');
   await client.end();
 }
 

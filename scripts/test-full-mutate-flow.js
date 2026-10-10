@@ -127,7 +127,7 @@ async function testFullFlow() {
         updated_at: ts
       })
     });
-    console.log('✅ Entire topup approval flow completed with 100% success!');
+    console.log(' Entire topup approval flow completed with 100% success!');
   } else {
     console.log('No pending requests to approve, flow validated.');
   }

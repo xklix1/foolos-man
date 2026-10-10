@@ -6,7 +6,7 @@ const indexPath = path.join(__dirname, '..', 'index.html');
 let indexHtml = fs.readFileSync(indexPath, 'utf8');
 
 // Replace the modal header and view-packages container
-const oldModalSnippet = `      <!-- Modal Body (Scrollable) -->
+const oldModalSnippet = ` <!-- Modal Body (Scrollable) -->
       <div class="flex-1 overflow-y-auto py-3 space-y-4 custom-scrollbar text-xs">
 
         <!-- VIEW 1: PACKAGES SHOWCASE -->
@@ -25,7 +25,7 @@ const oldModalSnippet = `      <!-- Modal Body (Scrollable) -->
             <!-- Dynamically populated from AppDB.getTopupPackages() -->
           </div>`;
 
-const newModalSnippet = `      <!-- Modal Body (Scrollable) -->
+const newModalSnippet = ` <!-- Modal Body (Scrollable) -->
       <div class="flex-1 overflow-y-auto py-3 space-y-4 custom-scrollbar text-xs">
 
         <!-- VIEW 1: PACKAGES SHOWCASE -->
@@ -47,7 +47,7 @@ const newModalSnippet = `      <!-- Modal Body (Scrollable) -->
               <span class="text-[11px] text-slate-400 font-bold">رصيدك الحالي:</span>
               <div class="flex items-center gap-2">
                 <span class="px-2 py-1 bg-amber-500/15 border border-amber-500/30 rounded-lg text-amber-300 font-black text-xs flex items-center gap-1 font-mono">
-                  <span id="topup-modal-player-gold">0</span> 🪙
+                  <span id="topup-modal-player-gold">0</span> 
                 </span>
                 <span class="px-2 py-1 bg-emerald-500/15 border border-emerald-500/30 rounded-lg text-emerald-400 font-black text-xs flex items-center gap-1 font-mono">
                   <span id="topup-modal-player-cash">0</span> ج
@@ -65,7 +65,7 @@ const newModalSnippet = `      <!-- Modal Body (Scrollable) -->
             <button type="button" id="topup-tab-gold" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="gold">
               <i class="fa-solid fa-coins text-amber-400"></i>
               <span>باقات الذهب والتسريع</span>
-              <span class="text-[9px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-black">جديد 🔥</span>
+              <span class="text-[9px] px-1.5 py-0.2 bg-amber-500/20 text-amber-300 rounded font-black">جديد </span>
             </button>
             <button type="button" id="topup-tab-vip" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800 active:scale-95" data-category="vip">
               <i class="fa-solid fa-gem text-cyan-400"></i>
@@ -91,9 +91,9 @@ const normNewSnippet = newModalSnippet.replace(/\r\n/g, '\n');
 
 if (normIndex.includes(normOldSnippet)) {
   indexHtml = normIndex.replace(normOldSnippet, normNewSnippet);
-  console.log('✅ index.html topup modal markup updated');
+  console.log(' index.html topup modal markup updated');
 } else {
-  console.warn('⚠️ oldModalSnippet not exact in index.html, using fallback replacement');
+  console.warn(' oldModalSnippet not exact in index.html, using fallback replacement');
   indexHtml = indexHtml.replace(
     /<div id="topup-packages-container" class="grid grid-cols-1 md:grid-cols-3 gap-3">/,
     `<div class="flex items-center gap-2 overflow-x-auto pb-1 custom-scrollbar">
@@ -103,7 +103,7 @@ if (normIndex.includes(normOldSnippet)) {
       </button>
       <button type="button" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800" data-category="gold">
         <i class="fa-solid fa-coins text-amber-400"></i>
-        <span>باقات الذهب والتسريع 🔥</span>
+        <span>باقات الذهب والتسريع </span>
       </button>
       <button type="button" class="topup-filter-tab px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer bg-slate-900/90 text-slate-300 hover:text-amber-300 hover:bg-slate-800 border border-slate-800" data-category="vip">
         <i class="fa-solid fa-gem text-cyan-400"></i>
@@ -121,7 +121,7 @@ const uiPath = path.join(__dirname, '..', 'ui.js');
 let ui = fs.readFileSync(uiPath, 'utf8');
 
 // Replace renderTopupPackagesList and openTopupModal logic
-const newTopupLogic = `  let _cachedTopupPackagesList = [];
+const newTopupLogic = ` let _cachedTopupPackagesList = [];
   let _activeTopupCategoryFilter = 'all';
 
   async function openTopupModal() {
@@ -223,11 +223,11 @@ const newTopupLogic = `  let _cachedTopupPackagesList = [];
       // Header Tag/Pill
       let topPill = '';
       if (isGoldPkg) {
-        if (goldAmt >= 800) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black">🔥 عرش الأباطرة</span>';
-        else if (goldAmt >= 300) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black">⭐ الأكثر طلباً</span>';
-        else topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 font-black">⚡ تسريع فوري</span>';
+        if (goldAmt >= 800) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black"> عرش الأباطرة</span>';
+        else if (goldAmt >= 300) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black"> الأكثر طلباً</span>';
+        else topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 font-black"> تسريع فوري</span>';
       } else if (badge) {
-        topPill = \`<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-black">💎 VIP وسام مميز</span>\`;
+        topPill = \`<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-black"> VIP وسام مميز</span>\`;
       }
 
       card.innerHTML = \`
@@ -249,7 +249,7 @@ const newTopupLogic = `  let _cachedTopupPackagesList = [];
           <!-- Title & Icon -->
           <div class="flex items-center gap-2.5 pb-2 border-b border-slate-800/80">
             <div class="w-10 h-10 rounded-2xl \${isGoldPkg ? 'bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950' : 'bg-gradient-to-br from-cyan-400 to-blue-600 text-white'} flex items-center justify-center text-lg font-black shrink-0 shadow-md group-hover:rotate-6 transition-transform">
-              \${isGoldPkg ? '🪙' : (badge ? formatCustomBadgeHtml(badge, 'text-xl') : '💎')}
+              \${isGoldPkg ? '' : (badge ? formatCustomBadgeHtml(badge, 'text-xl') : '')}
             </div>
             <div class="min-w-0">
               <h3 class="font-black text-white text-xs sm:text-sm truncate group-hover:text-amber-300 transition-colors">\${pkg.name}</h3>
@@ -262,7 +262,7 @@ const newTopupLogic = `  let _cachedTopupPackagesList = [];
             \${isGoldPkg ? \`
               <div class="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-transparent border border-amber-500/30">
                 <div class="flex items-center gap-1.5 font-black text-amber-300">
-                  <span class="text-sm">🪙</span>
+                  <span class="text-sm"></span>
                   <span>رصيد الذهب:</span>
                 </div>
                 <span class="numbers-font font-black text-amber-400 text-sm font-mono">+\${goldAmt.toLocaleString()} ذهبة</span>
@@ -325,11 +325,11 @@ const newTopupLogic = `  let _cachedTopupPackagesList = [];
   }`;
 
 // Find start and end of topup functions in ui.js
-const targetStart = `  // ─────────────────────────────────────────────
-  //  TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
+const targetStart = ` // ─────────────────────────────────────────────
+  // TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
   // ─────────────────────────────────────────────`;
 
-const targetEnd = `  function selectPackageForTopup(pkg) {`;
+const targetEnd = ` function selectPackageForTopup(pkg) {`;
 
 const startIdx = ui.indexOf(targetStart);
 const endIdx = ui.indexOf(targetEnd);
@@ -340,17 +340,17 @@ ${newTopupLogic}
 
   `;
   ui = ui.substring(0, startIdx) + replacement + ui.substring(endIdx);
-  console.log('✅ ui.js topup controller upgraded');
+  console.log(' ui.js topup controller upgraded');
 } else {
-  console.warn('⚠️ topup controller anchors not found in ui.js');
+  console.warn(' topup controller anchors not found in ui.js');
 }
 
 // Add tab switching event binding to bindTopupModalEvents
-const oldBindSnippet = `  function bindTopupModalEvents() {
+const oldBindSnippet = ` function bindTopupModalEvents() {
     if (_topupModalEventsBound) return;
     _topupModalEventsBound = true;`;
 
-const newBindSnippet = `  function bindTopupModalEvents() {
+const newBindSnippet = ` function bindTopupModalEvents() {
     if (_topupModalEventsBound) return;
     _topupModalEventsBound = true;
 
@@ -376,8 +376,8 @@ const newBindSnippet = `  function bindTopupModalEvents() {
 
 if (ui.includes(oldBindSnippet)) {
   ui = ui.replace(oldBindSnippet, newBindSnippet);
-  console.log('✅ ui.js bindTopupModalEvents filter tabs added');
+  console.log(' ui.js bindTopupModalEvents filter tabs added');
 }
 
 fs.writeFileSync(uiPath, ui, 'utf8');
-console.log('🎉 Store UI aesthetic enhancements applied successfully!');
+console.log(' Store UI aesthetic enhancements applied successfully!');

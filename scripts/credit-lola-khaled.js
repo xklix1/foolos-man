@@ -31,7 +31,7 @@ async function run() {
 
   if (!state.activityLog) state.activityLog = [];
   state.activityLog.push({
-    action: 'حوالة بنكية واردة مؤكدة 💸',
+    action: 'حوالة بنكية واردة مؤكدة ',
     details: `تم تأكيد وقيد الحوالة البنكية الواردة من اللاعب "Tarek" بقيمة ${transferAmount.toLocaleString()} EGP في حسابك المصرفي.`,
     category: 'banking',
     timestamp: nowTs

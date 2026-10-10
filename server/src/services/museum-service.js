@@ -13,11 +13,11 @@ const MUSEUM_STATE_FILE = path.join(__dirname, '../../data/museum-state.json');
 const DEFAULT_MUSEUM_ITEMS = [
   {
     id: 'relic_tut_mask',
-    name: 'قناع توت عنخ آمون الذهبي الخالص 👑🏺',
+    name: 'قناع توت عنخ آمون الذهبي الخالص ',
     category: 'آثار ملكية فرعونية',
     rarity: 'mythic', // common | rare | epic | legendary | mythic
     rarityLabel: 'أثرية أسطورية (Mythic 1/1)',
-    icon: '🏺',
+    icon: '',
     description: 'أعظم تحفة أثرية في التاريخ البشري، مصنوع من الذهب الخالص والأحجار الكريمة، يمنح حامله هيبة مطلقة وقيمة استثمارية أزلية.',
     buybackPrice: 75000000, // 75M EGP base buyback
     stock: 1,
@@ -27,11 +27,11 @@ const DEFAULT_MUSEUM_ITEMS = [
   },
   {
     id: 'relic_hope_diamond',
-    name: 'ماسة الأمل الزرقاء النادرة 💎✨',
+    name: 'ماسة الأمل الزرقاء النادرة ',
     category: 'مجوهرات وأحجار كريمة',
     rarity: 'legendary',
     rarityLabel: 'جوهرة أسطورية (Legendary)',
-    icon: '💎',
+    icon: '',
     description: 'أشهر وأندر ماسة زرقاء في العالم، تمتلك بريقاً يخطف الأبصار وتعتبر ملاذاً آمناً لكبار أثرياء الكوكب.',
     buybackPrice: 50000000, // 50M EGP
     stock: 2,
@@ -41,11 +41,11 @@ const DEFAULT_MUSEUM_ITEMS = [
   },
   {
     id: 'relic_damascus_sword',
-    name: 'سيف الفاتح الدمشقي المرصع ⚔️🌟',
+    name: 'سيف الفاتح الدمشقي المرصع ',
     category: 'أسلحة وتحف حربية',
     rarity: 'epic',
     rarityLabel: 'تحفة نادرة (Epic)',
-    icon: '⚔️',
+    icon: '',
     description: 'سيف فولاذي دمشقي أصيل مرصع بالياقوت والذهب، يجسد تاريخ الانتصارات والعزة.',
     buybackPrice: 25000000, // 25M EGP
     stock: 3,
@@ -55,11 +55,11 @@ const DEFAULT_MUSEUM_ITEMS = [
   },
   {
     id: 'relic_horus_falcon',
-    name: 'تمثال صقر حورس الملكي الذهبي 🦅🥇',
+    name: 'تمثال صقر حورس الملكي الذهبي ',
     category: 'تماثيل مقدسة',
     rarity: 'legendary',
     rarityLabel: 'تمثال أسطوري (Legendary)',
-    icon: '🦅',
+    icon: '',
     description: 'تمثال ذهبي باهر يرمز للقوة والحماية الإلهية لملوك وأمراء العصور الذهبية.',
     buybackPrice: 40000000, // 40M EGP
     stock: 2,
@@ -145,7 +145,7 @@ class MuseumService {
       category: String(category || 'تحف وآثار نادرة').trim(),
       rarity: cleanRarity,
       rarityLabel: rarityLabels[cleanRarity] || cleanRarity,
-      icon: String(icon || '🏺').trim(),
+      icon: String(icon || '').trim(),
       description: String(description || 'تحفة نادرة ومقتنى أثري فاخر مسجل لدى المتحف الملكي.').trim(),
       buybackPrice: cleanPrice,
       stock: cleanStock,

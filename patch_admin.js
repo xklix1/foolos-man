@@ -11,7 +11,7 @@ const standbyJsHook = `// Direct Standby Mode Toggle Hook
       function syncStandbyUI(isStandby, fbUrl) {
         if (standbyBadge) {
           if (isStandby) {
-            standbyBadge.textContent = 'وضع الاستعداد نشط ⏳';
+            standbyBadge.textContent = 'وضع الاستعداد نشط ';
             standbyBadge.className = 'text-[10px] px-2.5 py-0.5 bg-purple-500/20 text-purple-300 rounded border border-purple-500/40 font-bold animate-pulse';
           } else {
             standbyBadge.textContent = 'متوقف';
@@ -57,8 +57,8 @@ const standbyJsHook = `// Direct Standby Mode Toggle Hook
 
             const nextState = !currentActive;
             const confirmMsg = nextState
-              ? "⏳ تنبيه إداري عاجل:\\n\\nهل أنت متأكد من تفعيل وضع الاستعداد لجميع اللاعبين؟\\n\\nستظهر شاشة منبثقة للاعبين تحتوي على زر إعادة التحميل وزر متابعة صفحة الفيسبوك."
-              : "✅ هل تريد إنهاء وضع الاستعداد والعودة للتشغيل الطبيعي للجميع؟";
+              ? " تنبيه إداري عاجل:\\n\\nهل أنت متأكد من تفعيل وضع الاستعداد لجميع اللاعبين؟\\n\\nستظهر شاشة منبثقة للاعبين تحتوي على زر إعادة التحميل وزر متابعة صفحة الفيسبوك."
+              : " هل تريد إنهاء وضع الاستعداد والعودة للتشغيل الطبيعي للجميع؟";
 
             if (!confirm(confirmMsg)) {
               standbyToggleBtn.disabled = false;
@@ -76,9 +76,9 @@ const standbyJsHook = `// Direct Standby Mode Toggle Hook
             syncStandbyUI(nextState, fbUrl);
 
             if (nextState) {
-              showToast('وضع الاستعداد نشط ⏳', 'تم تفعيل وضع الاستعداد وعرض الشاشة لجميع اللاعبين بنجاح!', 'warning');
+              showToast('وضع الاستعداد نشط ', 'تم تفعيل وضع الاستعداد وعرض الشاشة لجميع اللاعبين بنجاح!', 'warning');
             } else {
-              showToast('الخوادم مفتوحة ✅', 'تم إنهاء وضع الاستعداد وإعادة فتح الخوادم بنجاح!', 'success');
+              showToast('الخوادم مفتوحة ', 'تم إنهاء وضع الاستعداد وإعادة فتح الخوادم بنجاح!', 'success');
             }
           } catch (err) {
             syncStandbyUI(currentActive);

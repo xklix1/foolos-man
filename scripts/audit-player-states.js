@@ -21,8 +21,8 @@ const rawData = fs.readFileSync(backupPath, 'utf-8');
 const players = JSON.parse(rawData);
 
 console.log(`====================================================`);
-console.log(`  Ras ALmal Tycoon — Player State Schema Audit      `);
-console.log(`  Total Player Records Analyzed: ${players.length}  `);
+console.log(` Ras ALmal Tycoon — Player State Schema Audit `);
+console.log(` Total Player Records Analyzed: ${players.length} `);
 console.log(`====================================================\n`);
 
 const stateKeyFrequencies = {};
@@ -89,4 +89,4 @@ const auditOutput = {
 
 const reportPath = path.resolve(__dirname, '../backups/snapshot_latest/schema_audit.json');
 fs.writeFileSync(reportPath, JSON.stringify(auditOutput, null, 2), 'utf-8');
-console.log(`\n✅ Detailed schema audit saved to ${reportPath}`);
+console.log(`\n Detailed schema audit saved to ${reportPath}`);

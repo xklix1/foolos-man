@@ -66,7 +66,7 @@ const BUSINESSES = {
   },
   solar_factory: {
     id: 'solar_factory',
-    name: 'مصنع ألواح الطاقة الشمسية ☀️',
+    name: 'مصنع ألواح الطاقة الشمسية ',
     cost: 11900000,
     baseDemand: 253,
     optimumPrice: 1100,
@@ -102,7 +102,7 @@ const BUSINESSES = {
   },
   private_bank: {
     id: 'private_bank',
-    name: 'بنك استثماري وشركة وساطة مالية 🏛️',
+    name: 'بنك استثماري وشركة وساطة مالية ',
     cost: 442000000,
     baseDemand: 805,
     optimumPrice: 8800,
@@ -114,7 +114,7 @@ const BUSINESSES = {
   },
   oil_refinery: {
     id: 'oil_refinery',
-    name: 'مجمع مصافي البترول والطاقة 🛢️',
+    name: 'مجمع مصافي البترول والطاقة ',
     cost: 1360000000,
     baseDemand: 862,
     optimumPrice: 16000,
@@ -165,7 +165,7 @@ const TITLES = [
   { minWorth: 1000000, minXp: 600, title: 'مستثمر طموح' },
   { minWorth: 200000, minXp: 200, title: 'تاجر صاعد' },
   { minWorth: 0, minXp: 80, title: 'موظف متميز' },
-  { minWorth: 0, minXp: 25, title: 'عامل ماهر 🛠️' },
+  { minWorth: 0, minXp: 25, title: 'عامل ماهر ' },
   { minWorth: 0, minXp: 0, title: 'عامل مبتدئ' }
 ];
 

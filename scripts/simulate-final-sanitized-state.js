@@ -3,7 +3,7 @@ const { calculateNetWorth } = require('../server/src/engine/net-worth-engine.js'
 
 async function simulateFinalState() {
   const token = db._getAnonKey();
-  const users = ['♫', 'ABDO_1', 'Emad', 'MarkEshak', 'MoOka Aziz', 'OSAMA', 'Osama.nasr'];
+  const users = ['', 'ABDO_1', 'Emad', 'MarkEshak', 'MoOka Aziz', 'OSAMA', 'Osama.nasr'];
 
   const results = [];
 

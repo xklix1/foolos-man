@@ -57,7 +57,7 @@ async function run() {
 
   if (!state.activityLog) state.activityLog = [];
   state.activityLog.push({
-    action: 'إلغاء الحظر واستعادة الحساب 🔓',
+    action: 'إلغاء الحظر واستعادة الحساب ',
     details: `تم إلغاء الحظر رسمياً واستعادة رصيد البنك (${restoredBank.toLocaleString()} EGP) وإعادة تفعيل كافة الأنشطة والمشاريع.`,
     category: 'system',
     timestamp: nowTs

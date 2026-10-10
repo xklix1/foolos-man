@@ -59,14 +59,14 @@ class AuctionService {
         id: 'gold_pack_1000',
         name: 'شحنة الذهب الملكية (1,000 سبيكة)',
         description: '1,000 سبيكة ذهب نقي تمنحك سيولة فورية وقوة استثمارية هائلة.',
-        icon: '🥇',
+        icon: '',
         badge: 'احتياطي ملكي',
         rewardData: { gold: 1000 }
       },
       config: {
         minNetWorth: 50000000, // 50M EGP minimum net worth
         startingBid: 10000000, // 10M EGP start
-        minBidStep: 1000000,   // 1M EGP step
+        minBidStep: 1000000, // 1M EGP step
         scheduledStartTime: 0,
         hammerDurationSeconds: 60
       },
@@ -205,7 +205,7 @@ class AuctionService {
         id: item.id || `custom_item_${now}`,
         name: String(item.name || 'غرض مزاد ملكي حصري').trim(),
         description: String(item.description || 'عنصر نادر واستثنائي مقدم من إدارة اللعبة.').trim(),
-        icon: String(item.icon || '🏆'),
+        icon: String(item.icon || ''),
         badge: String(item.badge || 'مزاد رسمي'),
         rewardData: item.rewardData || {}
       },
@@ -354,7 +354,7 @@ class AuctionService {
     }
 
     const now = Date.now();
-    const avatar = playerRow.avatar || playerRow.state?.avatar || '👔';
+    const avatar = playerRow.avatar || playerRow.state?.avatar || '';
 
     this.state.live.currentBid = bidAmount;
     this.state.live.highestBidder = {
@@ -394,7 +394,7 @@ class AuctionService {
 
     if (action === 'cancel') {
       this.state.status = 'CANCELLED';
-      this.state.live.hammerStrikeMessage = '❌ تم إلغاء المزاد بقرار من الإدارة.';
+      this.state.live.hammerStrikeMessage = ' تم إلغاء المزاد بقرار من الإدارة.';
       this.state.lastUpdated = now;
       this._savePersistedState();
       return { success: true, action: 'cancel', message: 'تم إلغاء المزاد بنجاح.' };
@@ -409,8 +409,8 @@ class AuctionService {
     if (action === 'strike_1') {
       this.state.live.hammerStrike = 1;
       this.state.live.hammerStrikeMessage = highest 
-        ? `🔨 الضربة الأولى: ${this.state.live.currentBid.toLocaleString()} ج.م لصالح [${highest.username}]... الأولى!`
-        : '🔨 النداء الأول على السعر الافتتاحي!';
+        ? ` الضربة الأولى: ${this.state.live.currentBid.toLocaleString()} ج.م لصالح [${highest.username}]... الأولى!`
+        : ' النداء الأول على السعر الافتتاحي!';
       this.state.lastUpdated = now;
       this._savePersistedState();
       return { success: true, action, message: this.state.live.hammerStrikeMessage };
@@ -419,8 +419,8 @@ class AuctionService {
     if (action === 'strike_2') {
       this.state.live.hammerStrike = 2;
       this.state.live.hammerStrikeMessage = highest 
-        ? `🔨🔨 الضربة الثانية: ${this.state.live.currentBid.toLocaleString()} ج.م لصالح [${highest.username}]... الثانية!`
-        : '🔨🔨 النداء الثاني على السعر الافتتاحي!';
+        ? ` الضربة الثانية: ${this.state.live.currentBid.toLocaleString()} ج.م لصالح [${highest.username}]... الثانية!`
+        : ' النداء الثاني على السعر الافتتاحي!';
       this.state.lastUpdated = now;
       this._savePersistedState();
       return { success: true, action, message: this.state.live.hammerStrikeMessage };
@@ -428,7 +428,7 @@ class AuctionService {
 
     if (action === 'extend_time') {
       this.state.live.hammerExpiryTime = Math.max(now, this.state.live.hammerExpiryTime) + 30000;
-      this.state.live.hammerStrikeMessage = '⏱️ تم تمديد وقت المزاد 30 ثانية إضافية بقرار من الإدارة!';
+      this.state.live.hammerStrikeMessage = ' تم تمديد وقت المزاد 30 ثانية إضافية بقرار من الإدارة!';
       this.state.lastUpdated = now;
       this._savePersistedState();
       return { success: true, action, message: this.state.live.hammerStrikeMessage };
@@ -440,7 +440,7 @@ class AuctionService {
         // No bidders -> end without winner
         this.state.status = 'ENDED';
         this.state.live.hammerStrike = 3;
-        this.state.live.hammerStrikeMessage = '🔨🔨🔨 انتهى المزاد دون تقديم أي مزايدات.';
+        this.state.live.hammerStrikeMessage = ' انتهى المزاد دون تقديم أي مزايدات.';
         this.state.lastUpdated = now;
         this._savePersistedState();
         return { success: true, action, message: 'تم إنهاء المزاد دون مشترٍ.' };
@@ -454,7 +454,7 @@ class AuctionService {
       
       this.state.status = 'ENDED';
       this.state.live.hammerStrike = 3;
-      this.state.live.hammerStrikeMessage = `👑 تم البيع رسميـاً! مبروك للاعب [${winnerUser}] فوزه بالمزاد بمبلغ ${winningAmount.toLocaleString()} ج.م!`;
+      this.state.live.hammerStrikeMessage = ` تم البيع رسميـاً! مبروك للاعب [${winnerUser}] فوزه بالمزاد بمبلغ ${winningAmount.toLocaleString()} ج.م!`;
       this.state.winner = {
         username: winnerUser,
         avatar: highest.avatar,
@@ -477,7 +477,7 @@ class AuctionService {
 
     if (action === 'cancel') {
       this.state.status = 'CANCELLED';
-      this.state.live.hammerStrikeMessage = '❌ تم إلغاء المزاد بقرار من الإدارة.';
+      this.state.live.hammerStrikeMessage = ' تم إلغاء المزاد بقرار من الإدارة.';
       this.state.lastUpdated = now;
       this._savePersistedState();
       return { success: true, action: 'cancel', message: 'تم إلغاء المزاد.' };
@@ -551,7 +551,7 @@ class AuctionService {
           id: `owned_${Date.now()}_${q}_${Math.random().toString(36).substr(2, 4)}`,
           relicId: relicId,
           name: item.name,
-          icon: item.icon || '🏺',
+          icon: item.icon || '',
           rarity: reward.rarity || 'legendary',
           rarityLabel: reward.rarityLabel || 'تحفة أثرية ملكية',
           buybackPrice: Number(reward.buybackPrice || Math.floor(totalAmount * 0.9)),

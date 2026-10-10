@@ -26,12 +26,12 @@ const newSafeCompare = `function safeCompare(a, b) {
 
 if (ar.includes(oldSafeCompare)) {
   ar = ar.replace(oldSafeCompare, newSafeCompare);
-  console.log('✅ [1/3] Fixed safeCompare case sensitivity in admin-routes.js');
+  console.log(' [1/3] Fixed safeCompare case sensitivity in admin-routes.js');
 }
 
 // Add /process-topup endpoint in admin-routes.js
-const targetAnchor = `  fastify.post('/verify', {`;
-const processTopupEndpoint = `  /**
+const targetAnchor = ` fastify.post('/verify', {`;
+const processTopupEndpoint = ` /**
    * POST /api/admin/process-topup
    * Authoritatively processes a top-up request on the server using service_role key.
    */
@@ -348,7 +348,7 @@ const processTopupEndpoint = `  /**
 
 if (ar.includes(targetAnchor) && !ar.includes('/process-topup')) {
   ar = ar.replace(targetAnchor, processTopupEndpoint);
-  console.log('✅ [2/3] Added POST /api/admin/process-topup to admin-routes.js');
+  console.log(' [2/3] Added POST /api/admin/process-topup to admin-routes.js');
 }
 
 fs.writeFileSync(adminRoutesPath, ar, 'utf8');
@@ -357,10 +357,10 @@ fs.writeFileSync(adminRoutesPath, ar, 'utf8');
 const dbPath = path.join(__dirname, '../db.js');
 let db = fs.readFileSync(dbPath, 'utf8');
 
-const oldProcessTopupFunc = `  async function processTopupRequest(requestId, action, reviewerNote ='') {
+const oldProcessTopupFunc = ` async function processTopupRequest(requestId, action, reviewerNote ='') {
     const ts = Date.now();`;
 
-const newProcessTopupFunc = `  async function processTopupRequest(requestId, action, reviewerNote ='') {
+const newProcessTopupFunc = ` async function processTopupRequest(requestId, action, reviewerNote ='') {
     const ts = Date.now();
     const adminToken = (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_admin_auth_token')) ||
                        (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_admin_auth_token'));
@@ -396,8 +396,8 @@ const newProcessTopupFunc = `  async function processTopupRequest(requestId, act
 
 if (db.includes(oldProcessTopupFunc)) {
   db = db.replace(oldProcessTopupFunc, newProcessTopupFunc);
-  console.log('✅ [3/3] Integrated authoritative /api/admin/process-topup call into db.js processTopupRequest');
+  console.log(' [3/3] Integrated authoritative /api/admin/process-topup call into db.js processTopupRequest');
 }
 
 fs.writeFileSync(dbPath, db, 'utf8');
-console.log('🎉 Server-side Authoritative Topup Approval deployed successfully!');
+console.log(' Server-side Authoritative Topup Approval deployed successfully!');

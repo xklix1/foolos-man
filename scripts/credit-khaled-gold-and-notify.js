@@ -24,7 +24,7 @@ async function creditKhaled() {
   const pState = p.state || {};
   pState.gold = newGold;
   pState.adminModifiedTimestamp = ts;
-  pState.customBadge = '⚡';
+  pState.customBadge = '';
   pState.badgeTitle = 'إمبراطور الذهب';
   pState.hasPurchasedTopup = true;
 
@@ -61,14 +61,14 @@ async function creditKhaled() {
       type: 'topup_receipt',
       payload: {
         packageId: 'gold_pack_imperial',
-        packageName: 'الخزينة الإمبراطورية العظمى 🏛️',
+        packageName: 'الخزينة الإمبراطورية العظمى ',
         price: 1000,
         gold: addedGold,
         newGold: newGold,
         cash: 0,
         bank: 0,
         xp: 0,
-        customBadge: '⚡',
+        customBadge: '',
         badgeTitle: 'إمبراطور الذهب',
         isPreApplied: true,
         date: ts,
@@ -98,14 +98,14 @@ async function creditKhaled() {
         newGold: newGold,
         isPreApplied: true,
         timestamp: ts,
-        note: 'شحن معتمد: الخزينة الإمبراطورية العظمى 🏛️'
+        note: 'شحن معتمد: الخزينة الإمبراطورية العظمى '
       },
       status: 'unread',
       created_at: ts
     })
   });
 
-  console.log('✅ 850 Gold successfully credited to "خالد" and receipts dispatched to mailbox!');
+  console.log(' 850 Gold successfully credited to "خالد" and receipts dispatched to mailbox!');
 }
 
 creditKhaled();

@@ -13,7 +13,7 @@ if (fs.existsSync(verJsonPath)) {
   vData.timestamp = Date.now();
   vData.releaseNotes = 'Critical fix: Eliminate false-positive session conflict popup on initial login and action';
   fs.writeFileSync(verJsonPath, JSON.stringify(vData, null, 2), 'utf8');
-  console.log(`✅ Updated version.json to ${NEW_VER}`);
+  console.log(` Updated version.json to ${NEW_VER}`);
 }
 
 // 2. Update version occurrences across files
@@ -24,7 +24,7 @@ filesToUpdate.forEach(f => {
     let content = fs.readFileSync(p, 'utf8');
     content = content.replace(/v8\.4\.0/g, NEW_VER);
     fs.writeFileSync(p, content, 'utf8');
-    console.log(`✅ Updated version in ${f}`);
+    console.log(` Updated version in ${f}`);
   }
 });
 
@@ -34,7 +34,7 @@ const SUPABASE_SERVICE_ROLE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3Mi
 
 async function sendForceReload() {
   const reloadTs = Date.now();
-  console.log(`🚀 Sending Force Reload broadcast to all connected clients (${reloadTs})...`);
+  console.log(` Sending Force Reload broadcast to all connected clients (${reloadTs})...`);
 
   // First fetch current globals
   const url = new URL(`${SUPABASE_URL}/globals?id=eq.system_settings`);
@@ -60,19 +60,19 @@ async function sendForceReload() {
       let data = '';
       res.on('data', chunk => data += chunk);
       res.on('end', () => {
-        console.log(`📡 Supabase response [${res.statusCode}]:`, data);
+        console.log(` Supabase response [${res.statusCode}]:`, data);
         if (res.statusCode >= 200 && res.statusCode < 300) {
-          console.log('✅ Force reload broadcasted successfully via globals table!');
+          console.log(' Force reload broadcasted successfully via globals table!');
           resolve(data);
         } else {
-          console.warn('⚠️ Non-200 response from globals PATCH:', data);
+          console.warn(' Non-200 response from globals PATCH:', data);
           resolve(data);
         }
       });
     });
 
     req.on('error', (e) => {
-      console.error('❌ Failed to send force reload to Supabase:', e.message);
+      console.error(' Failed to send force reload to Supabase:', e.message);
       resolve(null);
     });
 
@@ -82,5 +82,5 @@ async function sendForceReload() {
 }
 
 sendForceReload().then(() => {
-  console.log('🏁 Deployment & Broadcast complete.');
+  console.log(' Deployment & Broadcast complete.');
 });

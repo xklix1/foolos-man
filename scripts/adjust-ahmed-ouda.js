@@ -34,7 +34,7 @@ async function run() {
 
   if (!state.activityLog) state.activityLog = [];
   state.activityLog.push({
-    action: 'تثبيت وترقية إدارية 💼',
+    action: 'تثبيت وترقية إدارية ',
     details: `تم ترقية وظيفتك إلى "مدير تنفيذي"، وتأسيس شركة البرمجيات، وإيداع 60,000 EGP في حسابك البنكي.`,
     category: 'system',
     timestamp: nowTs

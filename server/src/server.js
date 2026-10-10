@@ -187,8 +187,8 @@ async function start() {
   try {
     await app.listen({ port: config.PORT, host: config.HOST });
     console.log(`\n======================================================`);
-    console.log(`🚀 Ras ALmal Authoritative Server Running on port ${config.PORT}`);
-    console.log(`   Health Check: http://localhost:${config.PORT}/health`);
+    console.log(` Ras ALmal Authoritative Server Running on port ${config.PORT}`);
+    console.log(` Health Check: http://localhost:${config.PORT}/health`);
     console.log(`======================================================\n`);
   } catch (err) {
     app.log.error(err);

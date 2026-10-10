@@ -363,7 +363,7 @@
         <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-amber-500/30 bg-gradient-to-r from-amber-950/20 via-slate-900/60 to-slate-950/80 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div class="flex items-center gap-4">
             <div class="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-3xl sm:text-4xl shadow-lg shadow-amber-500/10 shrink-0 ${live.hammerStrike > 0 ? 'hammer-shake' : ''}">
-              ${item.icon || '🏆'}
+              ${item.icon || ''}
             </div>
             <div>
               <div class="flex items-center gap-2">
@@ -435,8 +435,8 @@
               <div class="text-left">
                 <span class="text-[10px] text-slate-400 block font-bold">حالتك في الصالة</span>
                 ${isRegistered 
-                  ? '<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black">مزايد نشط 🟢</span>'
-                  : '<span class="px-2.5 py-1 bg-slate-800 text-slate-400 border border-slate-700 rounded-xl text-xs font-black">مشاهد فقط 👀</span>'
+                  ? '<span class="px-2.5 py-1 bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 rounded-xl text-xs font-black">مزايد نشط </span>'
+                  : '<span class="px-2.5 py-1 bg-slate-800 text-slate-400 border border-slate-700 rounded-xl text-xs font-black">مشاهد فقط </span>'
                 }
               </div>
             </div>
@@ -490,7 +490,7 @@
                 <i class="fa-solid fa-eye"></i>
                 <span>أنت متواجد بصفة مشاهد فقط (Spectator)</span>
               </div>
-              <h4 class="text-xs sm:text-sm font-black text-white">تتابع البث الحي للمزاد مباشرة 📺</h4>
+              <h4 class="text-xs sm:text-sm font-black text-white">تتابع البث الحي للمزاد مباشرة </h4>
               <p class="text-[11px] sm:text-xs text-slate-300 leading-relaxed max-w-md mx-auto">
                 المزايدة التنافسية مقتصرة على المشتركين الذين سجلوا في فترة التسجيل المسبقة. يمكنك الاستمتاع بمشاهدة صراع المزايدات وتغير الأسعار وضربات المطرقة الملكية لحظة بلحظة!
               </p>
@@ -531,7 +531,7 @@
 
             <!-- Free Registration Guarantee Note -->
             <p class="text-[10px] text-amber-300/90 font-bold max-w-md mx-auto bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
-              💡 <strong>تنبيه هام:</strong> التسجيل مجاني تماماً ولا يخصم أي قرش من حسابك. شرط الثروة هو إثبات قدرة مالية فقط، والخصم يتم فقط من الفائز الأخير بالضربة النهائية!
+               <strong>تنبيه هام:</strong> التسجيل مجاني تماماً ولا يخصم أي قرش من حسابك. شرط الثروة هو إثبات قدرة مالية فقط، والخصم يتم فقط من الفائز الأخير بالضربة النهائية!
             </p>
 
             <div>
@@ -551,7 +551,7 @@
         html += `
           <div class="p-6 rounded-2xl bg-gradient-to-b from-emerald-950/40 via-slate-900 to-slate-950 border border-emerald-500/50 text-center space-y-4">
             <div class="w-16 h-16 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 text-3xl mx-auto shadow-xl">
-              👑
+              
             </div>
             <div>
               <span class="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-xs font-black">
@@ -627,7 +627,7 @@
                       </div>
                     </div>
                     <span class="px-1.5 py-0.5 rounded-md bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-bold shrink-0">
-                      جاهز 🟢
+                      جاهز 
                     </span>
                   </div>
                 `).join('')}

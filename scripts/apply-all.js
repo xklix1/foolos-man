@@ -8,7 +8,7 @@ const TOP10 = [
   { rank: 2, code: 'S1T2', user: 'Osama.nasr' },
   { rank: 3, code: 'S1T3', user: 'OSAMA' },
   { rank: 4, code: 'S1T4', user: 'Abdo_123' },
-  { rank: 5, code: 'S1T5', user: '♫' },
+  { rank: 5, code: 'S1T5', user: '' },
   { rank: 6, code: 'S1T6', user: 'MarkEshak' },
   { rank: 7, code: 'S1T7', user: 'MoOka Aziz' },
   { rank: 8, code: 'S1T8', user: 'Bursival' },

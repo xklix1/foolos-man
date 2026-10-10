@@ -117,7 +117,7 @@ async function airportRoutes(fastify, options) {
     const minXp = Number(settings.min_xp || 2500);
     if (Number(s.xp || 0) < minXp) {
       return reply.code(400).send({
-        error: `🚫 يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${Number(s.xp || 0).toLocaleString()} XP)`
+        error: ` يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${Number(s.xp || 0).toLocaleString()} XP)`
       });
     }
 
@@ -127,7 +127,7 @@ async function airportRoutes(fastify, options) {
 
     if (curCash + curBank < cost) {
       return reply.code(400).send({
-        error: `🚫 رصيدك غير كافٍ لدفع رسوم رخصة المطار (${cost.toLocaleString()} ج.م)`
+        error: ` رصيدك غير كافٍ لدفع رسوم رخصة المطار (${cost.toLocaleString()} ج.م)`
       });
     }
 
@@ -151,7 +151,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: `🎉 تهانينا! تم تدشين "${s.airport.name}" ودخول عالم الطيران الدولي بنجاح!`,
+      message: ` تهانينا! تم تدشين "${s.airport.name}" ودخول عالم الطيران الدولي بنجاح!`,
       airport: s.airport,
       cash: s.cash,
       bank: s.bank,
@@ -216,7 +216,7 @@ async function airportRoutes(fastify, options) {
 
     if (curCash + curBank < cost) {
       return reply.code(400).send({
-        error: `🚫 رصيدك غير كافٍ للترقية إلى مستوى ${nextLvl} (${cost.toLocaleString()} ج.م)`
+        error: ` رصيدك غير كافٍ للترقية إلى مستوى ${nextLvl} (${cost.toLocaleString()} ج.م)`
       });
     }
 
@@ -265,7 +265,7 @@ async function airportRoutes(fastify, options) {
     const bonuses = getAirportBonuses(s.airport);
     if (model.tier > bonuses.maxPlaneTier) {
       return reply.code(400).send({
-        error: `🚫 يتطلب شراء هذه الطائرة ترقية المدرج لاستيعاب الفئة ${model.tier}!`
+        error: ` يتطلب شراء هذه الطائرة ترقية المدرج لاستيعاب الفئة ${model.tier}!`
       });
     }
 
@@ -280,7 +280,7 @@ async function airportRoutes(fastify, options) {
 
     if (curCash + curBank < cost) {
       return reply.code(400).send({
-        error: `🚫 رصيدك غير كافٍ لشراء ${model.name} (${cost.toLocaleString()} ج.م)`
+        error: ` رصيدك غير كافٍ لشراء ${model.name} (${cost.toLocaleString()} ج.م)`
       });
     }
 
@@ -314,7 +314,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: `تم شراء وإضافة "${newPlane.customName}" إلى أسطولك الجوي بنجاح! 🛩️`,
+      message: `تم شراء وإضافة "${newPlane.customName}" إلى أسطولك الجوي بنجاح! `,
       plane: newPlane,
       airport: s.airport,
       cash: s.cash,
@@ -342,7 +342,7 @@ async function airportRoutes(fastify, options) {
     const activeFlightsCount = (s.airport.fleet || []).filter(p => p.status === 'in_flight').length;
     if (activeFlightsCount >= 5) {
       return reply.code(400).send({
-        error: '🚫 الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات في أسطولك أولاً.'
+        error: ' الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات في أسطولك أولاً.'
       });
     }
 
@@ -362,7 +362,7 @@ async function airportRoutes(fastify, options) {
 
     if (dest.requiredTier > model.tier) {
       return reply.code(400).send({
-        error: `🚫 هذه الوجهة تتطلب طائرة من الفئة ${dest.requiredTier} أو أعلى للوصول إليها!`
+        error: ` هذه الوجهة تتطلب طائرة من الفئة ${dest.requiredTier} أو أعلى للوصول إليها!`
       });
     }
 
@@ -375,7 +375,7 @@ async function airportRoutes(fastify, options) {
 
     if (totalLiquid < eco.totalOperatingCost) {
       return reply.code(400).send({
-        error: `🚫 رصيدك غير كافٍ لتغطية تكاليف تجهيز الرحلة (وقود + طاقم + رسوم هبوط: ${eco.totalOperatingCost.toLocaleString()} ج.م)`
+        error: ` رصيدك غير كافٍ لتغطية تكاليف تجهيز الرحلة (وقود + طاقم + رسوم هبوط: ${eco.totalOperatingCost.toLocaleString()} ج.م)`
       });
     }
 
@@ -420,7 +420,7 @@ async function airportRoutes(fastify, options) {
     const minStr = Math.floor(eco.durationSec / 60);
     return {
       success: true,
-      message: `🛫 تم تزويد الطائرة بالوقود وإقلاع الرحلة إلى ${dest.name}! وقت الهبوط المتوقع خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`,
+      message: ` تم تزويد الطائرة بالوقود وإقلاع الرحلة إلى ${dest.name}! وقت الهبوط المتوقع خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`,
       plane,
       economics: eco,
       cash: s.cash,
@@ -458,7 +458,7 @@ async function airportRoutes(fastify, options) {
 
     if (curGold < goldCost) {
       return reply.code(400).send({
-        error: `🚫 رصيدك من الذهب غير كافٍ (${goldCost} سبيكة ذهب مطلوبة لتسريع الوقت المتبقي: ${Math.ceil(remSec / 60)} دقيقة)`
+        error: ` رصيدك من الذهب غير كافٍ (${goldCost} سبيكة ذهب مطلوبة لتسريع الوقت المتبقي: ${Math.ceil(remSec / 60)} دقيقة)`
       });
     }
 
@@ -473,7 +473,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: `⚡ تم استخدام التوربين النفاث السريع بـ ${goldCost} ذهب! هبطت الطائرة فورياً وجاهزة للتحصيل.`,
+      message: ` تم استخدام التوربين النفاث السريع بـ ${goldCost} ذهب! هبطت الطائرة فورياً وجاهزة للتحصيل.`,
       gold: s.gold,
       goldCost,
       plane,
@@ -532,7 +532,7 @@ async function airportRoutes(fastify, options) {
       if (now < Number(flight.landingTime || 0)) {
         const remSec = Math.ceil((Number(flight.landingTime) - now) / 1000);
         return reply.code(400).send({
-          error: `⏳ الطائرة لا تزال في الجو! متبقي على الهبوط: ${remSec} ثانية.`
+          error: ` الطائرة لا تزال في الجو! متبقي على الهبوط: ${remSec} ثانية.`
         });
       }
 
@@ -568,7 +568,7 @@ async function airportRoutes(fastify, options) {
 
       return {
         success: true,
-        message: `🛬 هبطت الرحلة بنجاح! تم تحصيل ${profit.toLocaleString()} ج.م و +${xpGain} XP`,
+        message: ` هبطت الرحلة بنجاح! تم تحصيل ${profit.toLocaleString()} ج.م و +${xpGain} XP`,
         profit,
         xpGain,
         cash: s.cash,
@@ -605,7 +605,7 @@ async function airportRoutes(fastify, options) {
     if (s.airport.lastDutyFreeCollectionAt && elapsedMs < minCooldownMs) {
       const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
       return reply.code(400).send({
-        error: `⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`
+        error: ` يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`
       });
     }
 
@@ -614,7 +614,7 @@ async function airportRoutes(fastify, options) {
     // Strict minimum collection threshold: at least 1,000 EGP to prevent rapid spamming
     if (dutyFreeEarnings < 1000) {
       return reply.code(400).send({
-        error: `⏳ الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${dutyFreeEarnings.toLocaleString()} ج.م).`
+        error: ` الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${dutyFreeEarnings.toLocaleString()} ج.م).`
       });
     }
 
@@ -631,7 +631,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: `🛍️ تم تحصيل أرباح مبيعات السوق الحرة: +${dutyFreeEarnings.toLocaleString()} ج.م!`,
+      message: ` تم تحصيل أرباح مبيعات السوق الحرة: +${dutyFreeEarnings.toLocaleString()} ج.م!`,
       earnings: dutyFreeEarnings,
       cash: s.cash,
       airport: s.airport,
@@ -657,7 +657,7 @@ async function airportRoutes(fastify, options) {
     if (s.airport.lastTransitCollectionAt && elapsedMs < minCooldownMs) {
       const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
       return reply.code(400).send({
-        error: `⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`
+        error: ` يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`
       });
     }
 
@@ -666,7 +666,7 @@ async function airportRoutes(fastify, options) {
     // Minimum collection threshold: 500 EGP
     if (accumulatedFee < 500) {
       return reply.code(400).send({
-        error: `⏳ الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${accumulatedFee.toLocaleString()} ج.م).`
+        error: ` الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${accumulatedFee.toLocaleString()} ج.م).`
       });
     }
 
@@ -687,7 +687,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: `✈️ تم تحصيل رسوم هبوط الترانزيت المتراكمة: +${accumulatedFee.toLocaleString()} ج.م!`,
+      message: ` تم تحصيل رسوم هبوط الترانزيت المتراكمة: +${accumulatedFee.toLocaleString()} ج.م!`,
       fee: accumulatedFee,
       earnings: accumulatedFee,
       cash: s.cash,
@@ -737,7 +737,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: `💸 تم بيع طائرة ${model.name} بنجاح واسترداد +${refund.toLocaleString()} ج.م (50% من سعر الشراء)!`,
+      message: ` تم بيع طائرة ${model.name} بنجاح واسترداد +${refund.toLocaleString()} ج.م (50% من سعر الشراء)!`,
       refund,
       cash: s.cash,
       airport: s.airport,
@@ -772,7 +772,7 @@ async function airportRoutes(fastify, options) {
     s.cash = currentCash - HIRE_COST;
     s.airport.manager = {
       tier: 1,
-      name: 'كابتن ليام - مساعد مدير العمليات 📋',
+      name: 'كابتن ليام - مساعد مدير العمليات ',
       title: 'مساعد مدير العمليات الجوية',
       profitBonusPct: 5,
       costDiscountPct: 0,
@@ -787,7 +787,7 @@ async function airportRoutes(fastify, options) {
     // Log in activity
     if (!Array.isArray(s.activityLog)) s.activityLog = [];
     s.activityLog.unshift({
-      action: 'توظيف مساعد مدير المطار 👨‍✈️📋',
+      action: 'توظيف مساعد مدير المطار ',
       details: 'تم تعيين كابتن ليام كمساعد لمدير العمليات الجوية (Tier 1) بنجاح (+5% أرباح على كافة الرحلات).',
       category: 'airport',
       timestamp: Date.now(),
@@ -801,7 +801,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: '👨‍✈️ تهانينا! تم تعيين مساعد مدير المطار (كابتن ليام) بنجاح! تم تفعيل بونص +5% أرباح على كافة الرحلات الجوية.',
+      message: ' تهانينا! تم تعيين مساعد مدير المطار (كابتن ليام) بنجاح! تم تفعيل بونص +5% أرباح على كافة الرحلات الجوية.',
       airport: s.airport,
       cash: s.cash,
       netWorth: s.netWorth
@@ -836,7 +836,7 @@ async function airportRoutes(fastify, options) {
 
     return {
       success: true,
-      message: newStatus ? '🚀 تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸️ تم إيقاف الطيار الآلي مؤقتاً.',
+      message: newStatus ? ' تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸ تم إيقاف الطيار الآلي مؤقتاً.',
       autoPilot: newStatus,
       airport: s.airport
     };

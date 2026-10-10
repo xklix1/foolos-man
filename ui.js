@@ -32,13 +32,13 @@
           if (now - lastUntrustedWarningTime > 3500) {
             lastUntrustedWarningTime = now;
             if (typeof window.showToast === 'function') {
-              window.showToast('حماية النزاهة 🛡️', 'تم حظر نقرة برمجية غير مصرح بها (Auto-Clicker)! اللعبة لا تسمح بالاستعانة بسكريبتات آلية.', 'warning');
+              window.showToast('حماية النزاهة ', 'تم حظر نقرة برمجية غير مصرح بها (Auto-Clicker)! اللعبة لا تسمح بالاستعانة بسكريبتات آلية.', 'warning');
             }
           }
 
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
             const targetDesc = target ? (target.id || target.className || target.tagName) : 'مجهول';
-            window.GameEngine.recordPlayerActivity('رصد أوتو كليكر 🤖', `تم إحباط نقرة غير بشرية على [${targetDesc}] عبر سكريبت غير موثوق`, 'security');
+            window.GameEngine.recordPlayerActivity('رصد أوتو كليكر ', `تم إحباط نقرة غير بشرية على [${targetDesc}] عبر سكريبت غير موثوق`, 'security');
           }
         }
 
@@ -46,7 +46,7 @@
       }
     }, true); // `true` = Capture phase: runs before ANY element handler
   });
-  console.log('[Anti-Cheat] Global Anti-AutoClicker Sentinel active 🛡️');
+  console.log('[Anti-Cheat] Global Anti-AutoClicker Sentinel active ');
 })();
 
 const UIController = (() => {
@@ -73,7 +73,7 @@ const UIController = (() => {
   }
 
   const translationDict = {
-    // Nav / Sidebar"حسابي":"My Account","المهن والوظائف":"Careers & Jobs","إدارة الأعمال":"Businesses","البنك والتحويلات":"Banking & Wire","ممتلكاتي والعقارات":"Real Estate","البورصة والأسهم":"Stock Market","مصلحة الضرائب":"Tax Department","المتجر والمستودع":"VIP Shop & Inventory","المزادات والصفقات الخاصة":"Auctions & Special","السوق السوداء":"Black Market","كازينو التسلية":"Casino & Slots","توب الأغنياء":"Leaderboard","خروج":"Logout","القائمة":"Menu","الدليل":"Guide","الإدارة":"Admin","الإصدار V1 • الإطلاق الرسمي":"Version V1 • Official Launch","الإصدار 1":"Version V1","الإصدار V1.01":"Version V1","الإصدار V2":"Version V1","الإصدار V2.5":"Version V1","خوادم الأونلاين نشطة":"Online Servers Active","جاهز للإقلاع":"Ready for takeoff","المحفظة النشطة":"Active Profile","سيولة الكاش":"Cash Balance","حساب البنك":"Bank Account","التدفق اللحظي":"Passive Cashflow","إجمالي الثروة":"Net Worth","من الصفر إلى عرش المليارات • محاكي إمبراطورية المال والاستثمار":"From Scratch to Billions • Business Empire Tycoon","محفظتك المحفوظة والجاهزة للمتابعة":"Your Saved Wallet Profile","تسجيل الدخول للمحفظة":"Login to Wallet","رأس المال • Ras ALmal":"Ras ALmal Tycoon","أدخل اسم مستخدم فريد ورمز سري لتأسيس محفظتك وحفظ أرباحك السحابية.":"Enter username & PIN to manage your wallet and save progress.","تسجيل الدخول":"Login","إنشاء حساب جديد":"Register","اسم المستخدم (بالأحرف أو الأرقام)":"Username (letters & numbers)","الرقم السري للمحفظة (PIN)":"PIN Code (numbers)","دخول وتزامن الحساب":"Login & Sync","متابعة الإمبراطورية":"Continue Empire","استكمال إدارتك للأموال والمشاريع":"Resume managing funds & business","بدء رحلة جديدة":"Start New Journey","تأسيس محفظة والانطلاق من الصفر":"Create profile & launch from scratch","تسجيل الدخول لمحفظة سابقة":"Login to existing wallet","استعادة حسابك المحفوظ بكلمة المرور (PIN)":"Restore saved wallet via PIN","عرش الأثرياء":"Wealthiest Leaderboard","دليل الملياردير":"Billionaire Guide","الإعدادات":"Settings","إعدادات اللعبة والصوت":"Game & Sound Settings","تخصيص التجربة والمؤثرات الصوتية والبصرية":"Customize audio & visual preferences","المؤثرات الصوتية (Sound FX)":"Sound FX","أصوات النقر والربح والكازينو والتنبيهات":"Click sounds, earnings, casino, and alerts","الموسيقى المحيطية (Ambient Sound)":"Ambient Sound / Synth","موسيقى هادئة سينمائية لأجواء اللعبة":"Quiet cinematic music for game atmosphere","تأثيرات الإضاءة والنيون (Glow FX)":"Glow & Visual FX","تأثير التوهج والفلورسنت (Glow FX)":"Glow & Visual FX","توهج الذهب والجزيئات المتحركة":"Glow details and animated particles","تجربة نغمة الصوت":"Test Sound Tone","حفظ التفضيلات":"Save Preferences","قاعة الشرف وعرش الأثرياء":"Hall of Fame & Leaderboard","أعلى أصحاب الثروات في سيرفر رأس المال (Ras ALmal) المباشر":"Top billionaires on the live Ras ALmal server","دليل الملياردير الإمبراطوري":"Billionaire Imperial Guide","أسرار الهيمنة وصناعة الثروة من الصفر حتى قمة عرش أثرياء رأس المال":"Secrets of wealth and dominance from scratch to the throne of Ras ALmal"," الدليل الإمبراطوري الشامل (المفصل)":" Detailed Billionaire Guide"," الدليل السريع والمختصر":" Compact Quick Guide","الإصدار الشامل ⭐":"Imperial Edition ⭐","إنشاء محفظة جديدة وبدء اللعب":"Create Profile & Play","الرجوع للقائمة الرئيسية":"Return to Menu","فهمت القواعد! انطلق الآن":"Got the Rules! Start Playing"," يمكنك الرجوع للدليل في أي وقت من القائمة أو شريط اللعبة":" You can open this guide at any time from the main menu or HUD","تغيير اللغة / Change Language":"اللغة: العربية","EN":"العربية",
+    // Nav / Sidebar"حسابي":"My Account","المهن والوظائف":"Careers & Jobs","إدارة الأعمال":"Businesses","البنك والتحويلات":"Banking & Wire","ممتلكاتي والعقارات":"Real Estate","البورصة والأسهم":"Stock Market","مصلحة الضرائب":"Tax Department","المتجر والمستودع":"VIP Shop & Inventory","المزادات والصفقات الخاصة":"Auctions & Special","السوق السوداء":"Black Market","كازينو التسلية":"Casino & Slots","توب الأغنياء":"Leaderboard","خروج":"Logout","القائمة":"Menu","الدليل":"Guide","الإدارة":"Admin","الإصدار V1 • الإطلاق الرسمي":"Version V1 • Official Launch","الإصدار 1":"Version V1","الإصدار V1.01":"Version V1","الإصدار V2":"Version V1","الإصدار V2.5":"Version V1","خوادم الأونلاين نشطة":"Online Servers Active","جاهز للإقلاع":"Ready for takeoff","المحفظة النشطة":"Active Profile","سيولة الكاش":"Cash Balance","حساب البنك":"Bank Account","التدفق اللحظي":"Passive Cashflow","إجمالي الثروة":"Net Worth","من الصفر إلى عرش المليارات • محاكي إمبراطورية المال والاستثمار":"From Scratch to Billions • Business Empire Tycoon","محفظتك المحفوظة والجاهزة للمتابعة":"Your Saved Wallet Profile","تسجيل الدخول للمحفظة":"Login to Wallet","رأس المال • Ras ALmal":"Ras ALmal Tycoon","أدخل اسم مستخدم فريد ورمز سري لتأسيس محفظتك وحفظ أرباحك السحابية.":"Enter username & PIN to manage your wallet and save progress.","تسجيل الدخول":"Login","إنشاء حساب جديد":"Register","اسم المستخدم (بالأحرف أو الأرقام)":"Username (letters & numbers)","الرقم السري للمحفظة (PIN)":"PIN Code (numbers)","دخول وتزامن الحساب":"Login & Sync","متابعة الإمبراطورية":"Continue Empire","استكمال إدارتك للأموال والمشاريع":"Resume managing funds & business","بدء رحلة جديدة":"Start New Journey","تأسيس محفظة والانطلاق من الصفر":"Create profile & launch from scratch","تسجيل الدخول لمحفظة سابقة":"Login to existing wallet","استعادة حسابك المحفوظ بكلمة المرور (PIN)":"Restore saved wallet via PIN","عرش الأثرياء":"Wealthiest Leaderboard","دليل الملياردير":"Billionaire Guide","الإعدادات":"Settings","إعدادات اللعبة والصوت":"Game & Sound Settings","تخصيص التجربة والمؤثرات الصوتية والبصرية":"Customize audio & visual preferences","المؤثرات الصوتية (Sound FX)":"Sound FX","أصوات النقر والربح والكازينو والتنبيهات":"Click sounds, earnings, casino, and alerts","الموسيقى المحيطية (Ambient Sound)":"Ambient Sound / Synth","موسيقى هادئة سينمائية لأجواء اللعبة":"Quiet cinematic music for game atmosphere","تأثيرات الإضاءة والنيون (Glow FX)":"Glow & Visual FX","تأثير التوهج والفلورسنت (Glow FX)":"Glow & Visual FX","توهج الذهب والجزيئات المتحركة":"Glow details and animated particles","تجربة نغمة الصوت":"Test Sound Tone","حفظ التفضيلات":"Save Preferences","قاعة الشرف وعرش الأثرياء":"Hall of Fame & Leaderboard","أعلى أصحاب الثروات في سيرفر رأس المال (Ras ALmal) المباشر":"Top billionaires on the live Ras ALmal server","دليل الملياردير الإمبراطوري":"Billionaire Imperial Guide","أسرار الهيمنة وصناعة الثروة من الصفر حتى قمة عرش أثرياء رأس المال":"Secrets of wealth and dominance from scratch to the throne of Ras ALmal"," الدليل الإمبراطوري الشامل (المفصل)":" Detailed Billionaire Guide"," الدليل السريع والمختصر":" Compact Quick Guide","الإصدار الشامل ":"Imperial Edition ","إنشاء محفظة جديدة وبدء اللعب":"Create Profile & Play","الرجوع للقائمة الرئيسية":"Return to Menu","فهمت القواعد! انطلق الآن":"Got the Rules! Start Playing"," يمكنك الرجوع للدليل في أي وقت من القائمة أو شريط اللعبة":" You can open this guide at any time from the main menu or HUD","تغيير اللغة / Change Language":"اللغة: العربية","EN":"العربية",
     // Toast titles & messages & game status terms"تهانينا":"Congratulations","تم ترقيتك لوظيفة:":"You have been promoted to:","خطأ الترقية":"Promotion Error","نجاح التأسيس":"Establishment Successful","تم افتتاح مشروع":"Successfully opened"," بنجاح!":"!","فشل المشروع":"Project Failure","عقود عقارية":"Real Estate Contracts","تم شراء عقار":"Successfully purchased property"," بنجاح وإضافته لمحفظتك.":" and added it to your portfolio.","بيع كلي":"Full Liquidation","تمت بيع وتسييل كامل الأسهم":"Successfully sold and liquidated all shares"," سهم) بقيمة":" shares) for","فشل البيع":"Sale Failed","خطأ رهان":"Bet Error","ربح ملكي!":"Royal Win!","صبت التخمين":"You guessed correctly","التاج الملكي":"Royal Crown","الدرع الدفاعي":"Defense Shield"," كسبت":" won","بونص سلسلة الفوز:":"Win streak bonus:","خسارة الجولة":"Round Lost","لسوء الحظ، استقرت العملة على":"Unfortunately, the coin landed on","التاج":"Heads","الدرع":"Tails"," خسرت":" lost","تحطم الصاروخ":"Rocket Crashed","انفجر الصاروخ عند مضاعف":"Rocket exploded at multiplier","خسرت رهانك":"You lost your bet","عملية سحب ناجحة":"Cashout Successful","تم سحب أرباحك بقيمة":"Your profits were cashed out at"," بمضاعف":" at multiplier","فاتورة متجر":"Store Bill","تم شراء":"Successfully purchased"," ودفع القيمة النقود.":" and paid the cash value.","رصيد معلق":"Insufficient Balance","لا تملك أي أسهم في هذه الشركة لبيعها.":"You do not own any shares in this company to sell.","يرجى تحديد مبلغ رهان صحيح.":"Please enter a valid bet amount.","جاكبوت كاسح!":"Jackpot!"," مبروك! حصلت على الجاكبوت الذهبي الأقصى! ربحت":" Congrats! You hit the golden jackpot! You won","فوز الآلة":"Slots Win","ربحت":"You won","خسرت":"You lost","حظ أوفر":"Better Luck Next Time","خطأ الآلة":"Slots Error","فوز بلاك جاك":"Blackjack Win","تعادل":"Push","خسارة رهان":"Loss","بلاك جاك طبيعي! ربحت":"Natural Blackjack! You won","تجاوز الموزع! ربحت":"Dealer Bust! You won","تفوقت على الموزع! ربحت":"You beat the dealer! You won","تعادل بمجموع":"Push at score","! تم احتسابه فوزاً لصالحك (عضوية VIP)":"! counted as a win (VIP Benefit)","تعادل (Push) بمجموع":"Push at score","؛ تم استرداد الرهان.":"; bet refunded.","تجاوزت الـ 21 (Bust)! خسرت الرهان":"You went over 21 (Bust)! You lost the bet","تغلّب الموزع عليك! خسرت الرهان":"Dealer beat you! You lost the bet","تم التسجيل بنجاح":"Registered Successfully","تم تسجيل اسمك للمزايدة الحية بنجاح.":"Your name has been registered for the live auction.","فشل التسجيل":"Registration Failed","رصيد غير كافي":"Insufficient Funds","لا تملك رصيداً كافياً لتقديم هذا العرض.":"You do not have enough funds to place this bid.","تمت المزايدة":"Bid Placed","لقد قدمت عرض مزايدة أعلى بنجاح!":"You placed a higher bid successfully!","فشل المزايدة":"Bid Failed","لوحة العمل والاستثمار اليومي":"Daily Work & Investment Board","انقر للعمل، أسس مشاريعك الحرة، ودع الأرباح تصب في محفظتك تلقائياً.":"Click to work, build businesses, and accumulate passive income directly.","العمل بنوبة اعتيادية":"Perform Regular Shift","نوبة إضافية مضاعفة (x2.5 راتب + x3 خبرة)":"Double Overtime Shift (x2.5 Pay, x3 XP)","لوحة التحكم والإشراف":"Admin Dashboard","إصدار النظام":"System Version","نوع التخزين":"Storage Type","تحديث الإحصائيات الحية":"Refresh Stats","اللعبة في وضع الصيانة":"Game Under Maintenance","تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة. يرجى المحاولة لاحقاً.":"The game is currently under maintenance. Please try again later.","حسناً":"OK","الخوادم رهن الصيانة الفنية!":"Servers Under Maintenance!","تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات. يرجى الانتظار والمحاولة لاحقاً.":"The game is currently undergoing maintenance. Please try again later.","إعادة فحص حالة الخادم":"Re-check Server Status","بوابة دخول الإدارة والمشرفين (Admin Portal)":"Admin Portal Portal",
 
     // Jobs"عامل باليومية":"Daily Laborer","محاسب صندوق":"Cashier","محاسب مالي قانوني":"Certified Accountant","مدير فرع":"Branch Manager","مدير تنفيذي للمجموعة":"Group CEO","رئيس مجلس الإدارة":"Chairman","مستشار اقتصادي ووزير سابق":"Economic Advisor & Ex-Minister","محافظ البنك المركزي":"Central Bank Governor","رئيس صندوق الاستثمار السيادي":"Sovereign Fund President","إمبراطور كبار المستثمرين":"Emperor of Investors",
@@ -92,14 +92,14 @@ const UIController = (() => {
 
     // Additional Panel Headers & Navigation"الشركات القابضة والمشاريع العملاقة":"Mega Corporations & Holding Projects","شركة الاستيراد والتصدير":"Import & Export Trading Co.","مجمع الصناعات وسلاسل الإمداد":"Industrial Supply Chain Empire","سوق الاستحواذ والشركات المتعثرة":"Distressed Asset Acquisition Market","صالة المزاد العلني المباشر":"Live Public Auctions Hall","الصناعات":"Industries","المزادات":"Auctions","التجارة":"Trade","الشركات":"Corporations","السيارات":"Cars","التهريب":"Smuggling","الكازينو":"Casino","الضرائب":"Taxes","المتجر":"VIP Shop","العقارات":"Real Estate","البورصة":"Stocks","البنك":"Bank","الوظائف":"Jobs","المشاريع":"Businesses",
 
-    // Dashboard terms"كشف حساب المحفظة المفصل":"Detailed Portfolio Statement","النقد المتوفر (الكاش)":"Available Liquid Cash","رصيد حساب الادخار (البنك)":"Bank Savings Balance","أموال مشبوهة (غير مشروعة)":"Black Market Dirty Funds","القيمة الصافية للثروة":"Net Worth Total","التدفق بالساعة":"Hourly Cashflow","التدفق بالساعة:":"Hourly Cashflow:","كشف الحساب":"Statement","كشف":"Statement","الكاش":"Cash","الثروة":"Net Worth","مضاعف السيرفر نشط!":"Server Boost Active!","تنويه هام ️":"Important Notice ️","اسم الحساب":"Account Name","الرتبة الاجتماعية":"Social Rank","الخبرة الكلية المتراكمة":"Accumulated Total XP","شرح الصفحة":"Page Guide","سيولة نقدية شرعية ونظيفة للشراء والاستثمار.":"Legitimate cash ready for purchases and investments.","تراكم فائدة مركبة تلقائية بمرور الوقت لكل دقيقة.":"Automatic compound interest accumulating over time.","أرباح السوق السوداء التي تحتاج لغسيل مالي لإيداعها بالبنك.":"Black market profits that require money laundering before bank deposit.","المجموع الكلي: كاش + بنك + أموال مشبوهة + عقارات + أسهم.":"Total: Cash + Bank + Dirty Cash + Real Estate + Stocks.","نشط (تجميع مستمر)":"Active (Collecting)","متوقف":"Inactive","تجديد ترخيص الإدارة الذاتية (12 ساعة)":"Renew AFK License (12 Hours)","المهام اليومية":"Daily Quests","المهام اليومية المنجزة":"Completed Daily Quests","فتح صندوق المكافأة الكبرى":"Claim Grand Daily Chest","استلام":"Claim","مكتمل":"Completed","متبقي":"Remaining","الوقت المتبقي":"Time Left",
+    // Dashboard terms"كشف حساب المحفظة المفصل":"Detailed Portfolio Statement","النقد المتوفر (الكاش)":"Available Liquid Cash","رصيد حساب الادخار (البنك)":"Bank Savings Balance","أموال مشبوهة (غير مشروعة)":"Black Market Dirty Funds","القيمة الصافية للثروة":"Net Worth Total","التدفق بالساعة":"Hourly Cashflow","التدفق بالساعة:":"Hourly Cashflow:","كشف الحساب":"Statement","كشف":"Statement","الكاش":"Cash","الثروة":"Net Worth","مضاعف السيرفر نشط!":"Server Boost Active!","تنويه هام ":"Important Notice ","اسم الحساب":"Account Name","الرتبة الاجتماعية":"Social Rank","الخبرة الكلية المتراكمة":"Accumulated Total XP","شرح الصفحة":"Page Guide","سيولة نقدية شرعية ونظيفة للشراء والاستثمار.":"Legitimate cash ready for purchases and investments.","تراكم فائدة مركبة تلقائية بمرور الوقت لكل دقيقة.":"Automatic compound interest accumulating over time.","أرباح السوق السوداء التي تحتاج لغسيل مالي لإيداعها بالبنك.":"Black market profits that require money laundering before bank deposit.","المجموع الكلي: كاش + بنك + أموال مشبوهة + عقارات + أسهم.":"Total: Cash + Bank + Dirty Cash + Real Estate + Stocks.","نشط (تجميع مستمر)":"Active (Collecting)","متوقف":"Inactive","تجديد ترخيص الإدارة الذاتية (12 ساعة)":"Renew AFK License (12 Hours)","المهام اليومية":"Daily Quests","المهام اليومية المنجزة":"Completed Daily Quests","فتح صندوق المكافأة الكبرى":"Claim Grand Daily Chest","استلام":"Claim","مكتمل":"Completed","متبقي":"Remaining","الوقت المتبقي":"Time Left",
 
     // Bank"إدارة حساب الادخار والتحويلات":"Savings & Transfers Management","أودع أموالك في البنك لتحميها وتحصل على فائدة مركبة بمعدل 0.005% لكل دورة تيك.":"Deposit money in the bank to protect it and earn compound interest.","السيولة النقدية المتوفرة":"Available Liquid Cash","رصيد الادخار البنكي":"Bank Savings Balance","المبلغ المطلوب إيداعه / سحبه":"Amount to Deposit / Withdraw","أودع 25%":"Deposit 25%","أودع 50%":"Deposit 50%","أودع 100%":"Deposit 100%","إيداع نقدي بالبنك":"Deposit Cash","سحب نقدي من البنك":"Withdraw Cash","سحب 25%":"Withdraw 25%","سحب 50%":"Withdraw 50%","سحب 100%":"Withdraw 100%","تحويل بنكي للاعب آخر":"Transfer to Another Player","اسم اللاعب المستلم":"Recipient Username","المبلغ المراد تحويله":"Amount to Transfer","إرسال الحوالة البنكية":"Send Bank Wire","القروض البنكية والائتمان":"Bank Loans & Credit Facilities","طلب قرض جديد":"Request New Loan","سداد القرض الحالي":"Repay Current Loan","أقصى حد للقرض:":"Maximum Loan Limit:","القرض النشط:":"Active Loan:","المبلغ المستحق:":"Due Amount:","المهلة المتبقية:":"Remaining Time:","سداد 50%":"Repay 50%","سداد كامل":"Repay All","أصول مقفلة في الصناديق الاستثمارية":"Locked Investment Funds Assets","سجل التحويلات والحوالات الأخيرة":"Recent Wire Transfers History",
 
     // Stocks"صالة تداول البورصة والأسهم الحية":"Live Stock Trading Hall","بورصة عالمية موحدة لجميع اللاعبين (تحديثات شمعية حية كل 30 ثانية ومطابقة بدقة 100%).":"Global Unified Stock Market (100% Identical 30s Sessions for All Players).","إغلاق الشمعة وتحديث الأسعار:":"Candle Close & Price Update:","جلسة تداول حية (30ث)":"Live Session (30s)","شريط الأخبار الاقتصادي:":"Economic News Ticker:","الأسهم المملوكة:":"Owned Shares:","متوسط سعر الشراء:":"Avg Buy Price:","قيمة الأسهم الكلية:":"Total Shares Value:","ربح/خسارة المحفظة:":"Portfolio Profit/Loss:","سقف تملك السهم:":"Max Holding Limit:","شراء أسهم":"Buy Shares","بيع أسهم":"Sell Shares","بيع كل الأسهم":"Sell All Shares","شراء 25%":"Buy 25%","شراء 50%":"Buy 50%","شراء أقصى":"Buy Max","بيع 25%":"Sell 25%","بيع 50%":"Sell 50%","بيع الكل":"Sell All",
 
     // Taxes
-    "مصلحة الضرائب والمالية العامة (Tax Authority)":"Tax Authority & Public Finance","إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية":"Tax base management, hourly cashflow tax rates by wealth brackets, and legal tax shields","الرقم الضريبي للممول:":"Taxpayer ID:","ممتثل ضريبياً":"Tax Compliant","متأخرات ضريبية ⚠️":"Tax Arrears ⚠️","الوعاء الضريبي للثروة":"Taxable Wealth Base","الوعاء الضريبي (التدفق الساعي)":"Taxable Base (Hourly Cashflow)","الاستقطاع الضريبي المقدر":"Estimated Tax Deduction","إجمالي الضرائب المسددة":"Total Taxes Paid","درع الإعفاء الضريبي (Shield)":"Tax Exemption Shield","شراء وتفعيل الدرع الضريبي":"Purchase Tax Exemption Shield","تجديد وتمديد الدرع الضريبي":"Renew Tax Exemption Shield","تقديم الإقرار والتسوية":"Submit Tax Return & Settle","دفع الضرائب المستحقة":"Pay Due Taxes",
+    "مصلحة الضرائب والمالية العامة (Tax Authority)":"Tax Authority & Public Finance","إدارة الوعاء الضريبي، نسب الاستقطاع للثروات الكبرى، وتفعيل الدروع الضريبية القانونية":"Tax base management, hourly cashflow tax rates by wealth brackets, and legal tax shields","الرقم الضريبي للممول:":"Taxpayer ID:","ممتثل ضريبياً":"Tax Compliant","متأخرات ضريبية ":"Tax Arrears ","الوعاء الضريبي للثروة":"Taxable Wealth Base","الوعاء الضريبي (التدفق الساعي)":"Taxable Base (Hourly Cashflow)","الاستقطاع الضريبي المقدر":"Estimated Tax Deduction","إجمالي الضرائب المسددة":"Total Taxes Paid","درع الإعفاء الضريبي (Shield)":"Tax Exemption Shield","شراء وتفعيل الدرع الضريبي":"Purchase Tax Exemption Shield","تجديد وتمديد الدرع الضريبي":"Renew Tax Exemption Shield","تقديم الإقرار والتسوية":"Submit Tax Return & Settle","دفع الضرائب المستحقة":"Pay Due Taxes",
 
     // Leaderboard
     "عرش الأثرياء (توب 10)":"Wealthiest Billionaires (Top 10)","جدول الترتيب العام للمتصدرين (أفضل 10 مستثمرين)":"Overall Leaderboard Ranking (Top 10 Investors)","تحديث تلقائي كل ساعة موحد لجميع اللاعبين":"Hourly Unified Auto-Refresh for All Players","الترتيب":"Rank","اللاعب":"Player","اللقب":"Title","صافي الثروة":"Net Worth","أنت (حسابك)":"You (Your Account)",
@@ -133,7 +133,7 @@ const UIController = (() => {
   };
 
   // ─────────────────────────────────────────────
-  //  SMART COMPACT CURRENCY FORMATTER & LOCALIZER
+  // SMART COMPACT CURRENCY FORMATTER & LOCALIZER
   // ─────────────────────────────────────────────
   function getCurrencySymbol() {
     return (window.currentLang ==='en') ?'EGP' :'جنيه';
@@ -391,7 +391,7 @@ const UIController = (() => {
         const jailSec = Number(s.jailTimer || 0);
         goldDeducted = Math.max(1, Math.ceil(jailSec / 600));
         if (currentGold < goldDeducted) {
-          showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
+          showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} `, 'error');
           return;
         }
         s.gold = currentGold - goldDeducted;
@@ -403,7 +403,7 @@ const UIController = (() => {
           const remMs = Math.max(0, Number(s[prop] || 0) - Date.now());
           goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
           if (currentGold < goldDeducted) {
-            showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
+            showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} `, 'error');
             return;
           }
           s.gold = currentGold - goldDeducted;
@@ -416,7 +416,7 @@ const UIController = (() => {
             const remMs = Math.max(0, (sj.endTime || sj.finishTime || sj.expiresAt || 0) - Date.now());
             goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
             if (currentGold < goldDeducted) {
-              showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} 🪙`, 'error');
+              showToast('رصيد ذهب غير كافٍ', `تحتاج إلى ${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: ${currentGold} `, 'error');
               return;
             }
             s.gold = currentGold - goldDeducted;
@@ -474,7 +474,7 @@ const UIController = (() => {
         }).catch(() => {});
       } catch (_) {}
 
-      showToast('تم التسريع بنجاح ⚡', `تم إنهاء المؤقت بنجاح وخصم ${goldDeducted} 🪙 ذهب. الرصيد المتبقي: ${Number(s.gold).toLocaleString()} 🪙`, 'success');
+      showToast('تم التسريع بنجاح ', `تم إنهاء المؤقت بنجاح وخصم ${goldDeducted} ذهب. الرصيد المتبقي: ${Number(s.gold).toLocaleString()} `, 'success');
       if (typeof playMenuSound === 'function') playMenuSound('success');
       if (typeof renderAll === 'function') renderAll();
     } catch (err) {
@@ -569,10 +569,10 @@ const UIController = (() => {
   });
 
   // ─────────────────────────────────────────────
-  //  TOP NOTIFICATIONS (TOAST ENGINE)
+  // TOP NOTIFICATIONS (TOAST ENGINE)
   // ─────────────────────────────────────────────
   // ─────────────────────────────────────────────
-  //  TOP NOTIFICATIONS (TOAST ENGINE)
+  // TOP NOTIFICATIONS (TOAST ENGINE)
   // ─────────────────────────────────────────────
   function showToast(title, message, type ='info', duration = 2400, action = null) {
     const rawTitle = String(title || '');
@@ -1042,7 +1042,7 @@ const UIController = (() => {
       if (isDevKey) {
         e.preventDefault();
         e.stopPropagation();
-        showToast('حماية النزاهة 🛡️', 'أدوات المطورين مغلقة لحماية توازن ونزاهة بيئة اللعبة.', 'warning', 2500);
+        showToast('حماية النزاهة ', 'أدوات المطورين مغلقة لحماية توازن ونزاهة بيئة اللعبة.', 'warning', 2500);
         return false;
       }
     }, true);
@@ -1471,7 +1471,7 @@ const UIController = (() => {
     if (submitPinBtn) submitPinBtn.addEventListener('click', submitChangePinForm);
 
     // ─────────────────────────────────────────────
-    // 🛡️ Security Codes & Account Recovery Handlers
+    // Security Codes & Account Recovery Handlers
     // ─────────────────────────────────────────────
     const securityCodesModal = document.getElementById('modal-security-codes');
     const openSecurityCodesBtn = document.getElementById('btn-open-security-codes-modal');
@@ -1510,7 +1510,7 @@ const UIController = (() => {
               <div class="space-y-0.5">
                 <span class="text-[10px] text-slate-400 font-bold block">رمز #${idx + 1}</span>
                 <div class="font-mono text-sm font-black tracking-wider ${isUsed ? 'line-through text-slate-500' : 'text-indigo-300 font-numbers'}">${codeVal}</div>
-                <span class="text-[9px] font-bold ${isUsed ? 'text-rose-400' : 'text-emerald-400'}">${isUsed ? 'مُستخدم مسبقاً' : 'صالح للاستخدام ✓'}</span>
+                <span class="text-[9px] font-bold ${isUsed ? 'text-rose-400' : 'text-emerald-400'}">${isUsed ? 'مُستخدم مسبقاً' : 'صالح للاستخدام '}</span>
               </div>
               ${!isUsed ? `
                 <button type="button" onclick="window.UI.copySecurityCode('${codeVal}')" class="px-2.5 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/30 border border-indigo-500/30 text-indigo-300 hover:text-white rounded-lg text-xs font-bold transition flex items-center gap-1">
@@ -1593,7 +1593,7 @@ const UIController = (() => {
     if (regenerateSecurityCodesBtn) regenerateSecurityCodesBtn.addEventListener('click', regenerateSecurityCodes);
 
     // ─────────────────────────────────────────────
-    // 🔑 Forgot PIN Recovery Modal Handlers
+    // Forgot PIN Recovery Modal Handlers
     // ─────────────────────────────────────────────
     openForgotPinModal = () => {
       playMenuSound('modal_open');
@@ -1657,7 +1657,7 @@ const UIController = (() => {
 
         const res = await AppDB.recoverAccountWithSecurityCode(u, code, newPin);
 
-        showToast('نجاح الاستعادة 🔑', res.message || 'تم تعيين كلمة السر الجديدة بنجاح! يمكنك تسجيل الدخول الآن.', 'success', 4000);
+        showToast('نجاح الاستعادة ', res.message || 'تم تعيين كلمة السر الجديدة بنجاح! يمكنك تسجيل الدخول الآن.', 'success', 4000);
         playMenuSound('success');
 
         // Pre-fill login screen inputs so the player can log in immediately
@@ -1687,7 +1687,7 @@ const UIController = (() => {
     if (submitForgotPinBtn) submitForgotPinBtn.addEventListener('click', submitForgotPinForm);
 
     // ─────────────────────────────────────────────
-    // 📧 Link Email & OTP Verification Handlers
+    // Link Email & OTP Verification Handlers
     // ─────────────────────────────────────────────
     let _targetLinkEmailUser = '';
     let _linkEmailCountdownTimer = null;
@@ -1793,7 +1793,7 @@ const UIController = (() => {
           throw new Error(data.error || 'فشل إرسال رمز التحقق. يرجى المحاولة لاحقاً.');
         }
 
-        showToast('تم الإرسال 📩', 'تم إرسال رمز التحقق الأمني (OTP) إلى بريدك الإلكتروني بنجاح.', 'success', 4000);
+        showToast('تم الإرسال ', 'تم إرسال رمز التحقق الأمني (OTP) إلى بريدك الإلكتروني بنجاح.', 'success', 4000);
         playMenuSound('success');
 
         // Transition to Step 2
@@ -1886,7 +1886,7 @@ const UIController = (() => {
           await AppDB.bindPlayerEmail(_targetLinkEmailUser, emailVal);
         }
 
-        showToast('تم التوثيق والربط 🛡️', 'تم تأكيد وربط بريدك الإلكتروني بنجاح! جاري دخول اللعبة...', 'success', 4000);
+        showToast('تم التوثيق والربط ', 'تم تأكيد وربط بريدك الإلكتروني بنجاح! جاري دخول اللعبة...', 'success', 4000);
         playMenuSound('success');
 
         closeLinkEmailModal();
@@ -2118,7 +2118,7 @@ const UIController = (() => {
     const container = document.getElementById('start-menu-particles');
     if (!container) return;
     container.innerHTML ='';
-    const symbols = ['','','','','️','','',''];
+    const symbols = ['','','','','','','',''];
     const particleCount = 18;
 
     for (let i = 0; i < particleCount; i++) {
@@ -2223,14 +2223,14 @@ const UIController = (() => {
           authUserEl.value = username;
           authPinEl.value = '';
           showAuthModal('login');
-          showToast('تأكيد الدخول 🔒', 'يرجى إدخال الرقم السري لتأكيد حسابك وتفعيل الحفظ السحابي الفوري.', 'info');
+          showToast('تأكيد الدخول ', 'يرجى إدخال الرقم السري لتأكيد حسابك وتفعيل الحفظ السحابي الفوري.', 'info');
           return;
         }
       }
 
       const playerState = await GameEngine.loadUserSession(username);
       if (!playerState) {
-        showToast('تعذر تحميل الحساب ⚠️', 'تعذر جلب بيانات الحساب من الخادم السحابي، يرجى المحاولة مرة أخرى أو تسجيل الدخول.', 'error');
+        showToast('تعذر تحميل الحساب ', 'تعذر جلب بيانات الحساب من الخادم السحابي، يرجى المحاولة مرة أخرى أو تسجيل الدخول.', 'error');
         showStartMenu();
         return;
       }
@@ -2293,7 +2293,7 @@ const UIController = (() => {
           setTimeout(() => {
             if ('Notification' in window && Notification.permission === 'default') {
               showToast(
-                '🔔 إشعارات اللعبة',
+                ' إشعارات اللعبة',
                 'فعّل إشعارات اللعبة لتصلك تنبيهات الأرباح ونفاد البضائع والحوالات فوراً.',
                 'info',
                 9000,
@@ -2319,7 +2319,7 @@ const UIController = (() => {
           if (rep.seconds >= 10) {
             showOfflineReportModal(rep);
           } else if (rep.expiredDuringAbsence) {
-            showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
+            showToast(' تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
           } else if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
             showOfflineReportModal(rep);
           }
@@ -2433,7 +2433,7 @@ const UIController = (() => {
       const u = (e.detail && e.detail.username) || (typeof activeUsername !== 'undefined' && activeUsername) || '';
       console.warn('[UI] Auth session expired for user:', u);
       if (typeof showToast === 'function') {
-        showToast('انتهت جلسة الأمان 🔒', 'انتهت صلاحية جلسة الاتصال بالسيرفر. يرجى تأكيد الدخول لتجديد التزامن الفوري.', 'warning', 4500);
+        showToast('انتهت جلسة الأمان ', 'انتهت صلاحية جلسة الاتصال بالسيرفر. يرجى تأكيد الدخول لتجديد التزامن الفوري.', 'warning', 4500);
       }
       const authUserEl = document.getElementById('auth-username');
       if (authUserEl && u) authUserEl.value = u;
@@ -2462,7 +2462,7 @@ const UIController = (() => {
             <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl">
               <i class="fa-solid fa-screwdriver-wrench animate-bounce" style="animation-duration: 2s;"></i>
             </div>
-            <h4 class="text-sm font-black text-white mb-1">قائمة التوب مغلقة حالياً للصيانة 🔒</h4>
+            <h4 class="text-sm font-black text-white mb-1">قائمة التوب مغلقة حالياً للصيانة </h4>
             <p class="text-xs text-slate-300 leading-relaxed">
               تخضع قائمة المتصدرين لأعمال تدقيق ومراجعة حسابات شاملة. سيتم إتاحتها قريباً.
             </p>
@@ -2577,7 +2577,7 @@ const UIController = (() => {
           if (!res.ok || !data.success) {
             throw new Error(data.error || 'فشل إعادة إرسال الرمز.');
           }
-          showToast('تم الإرسال 📩', 'تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني بنجاح.', 'success');
+          showToast('تم الإرسال ', 'تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني بنجاح.', 'success');
           playMenuSound('success');
           startResendCountdown();
         } catch (err) {
@@ -2628,7 +2628,7 @@ const UIController = (() => {
           const playerState = await GameEngine.loadUserSession(_stagedRegUsername, null, _stagedRegPin);
           localStorage.setItem('rasalmal_active_session_user', _stagedRegUsername);
 
-          showToast('تم بنجاح 👑', 'تم تأكيد بريدك الإلكتروني وإنشاء إمبراطوريتك بنجاح!', 'success', 4000);
+          showToast('تم بنجاح ', 'تم تأكيد بريدك الإلكتروني وإنشاء إمبراطوريتك بنجاح!', 'success', 4000);
           playMenuSound('start');
 
           // Hide auth screen, start menu & maintenance overlay, show game
@@ -2725,7 +2725,7 @@ const UIController = (() => {
               throw new Error(data.error || 'فشل إرسال رمز التحقق إلى بريدك الإلكتروني.');
             }
 
-            showToast('تم الإرسال 📩', 'تم إرسال رمز التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.', 'success', 4000);
+            showToast('تم الإرسال ', 'تم إرسال رمز التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.', 'success', 4000);
             playMenuSound('success');
 
             // Switch to Step 2: OTP Verification
@@ -2773,7 +2773,7 @@ const UIController = (() => {
             document.getElementById('auth-screen').classList.add('hidden');
             document.getElementById('start-menu-screen').classList.remove('hidden');
             openLinkEmailModal(canonicalUser);
-            showToast('توثيق الحساب 🛡️', 'يرجى إدخال بريدك الإلكتروني وتأكيده برمز التحقق لحماية حسابك واستعادته.', 'info', 5000);
+            showToast('توثيق الحساب ', 'يرجى إدخال بريدك الإلكتروني وتأكيده برمز التحقق لحماية حسابك واستعادته.', 'info', 5000);
             return;
           }
 
@@ -2805,7 +2805,7 @@ const UIController = (() => {
               if (rep.seconds >= 10) {
                 showOfflineReportModal(rep);
               } else if (rep.expiredDuringAbsence) {
-                showToast('⚠️ تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
+                showToast(' تنبيه الإدارة الذاتية', 'انتهت صلاحية ترخيص الـ 12 ساعة أثناء غيابك! يرجى الضغط على زر التجديد لمواصلة جمع الأرباح عند الخروج.', 'warning');
               } else if (rep.earnings > 0 || (rep.breakdown && rep.breakdown.length > 0)) {
                 showOfflineReportModal(rep);
               }
@@ -3127,12 +3127,12 @@ const UIController = (() => {
 
       // Toast alert for loan default
       if (updates.loanDefaulted) {
-        showToast('تعثر مصرفي ️','انتهت مهلة سداد القرض! تم تجميد حسابك البنكي وتطبيق غرامة تأخير دورية 3%.','error');
+        showToast('تعثر مصرفي ','انتهت مهلة سداد القرض! تم تجميد حسابك البنكي وتطبيق غرامة تأخير دورية 3%.','error');
       }
 
       // Toast alert for loan penalty
       if (updates.loanPenaltyApplied) {
-        showToast('غرامة تأخير مصرفية ️',`تم تطبيق غرامة تأخير +${updates.loanPenaltyApplied.penalty.toLocaleString()} EGP على القرض لعدم السداد!`,'error');
+        showToast('غرامة تأخير مصرفية ',`تم تطبيق غرامة تأخير +${updates.loanPenaltyApplied.penalty.toLocaleString()} EGP على القرض لعدم السداد!`,'error');
       }
 
       // Toast alert for supplies exhaustion
@@ -3175,12 +3175,12 @@ const UIController = (() => {
       if (updates.tradeExportsDelivered && updates.tradeExportsDelivered.length > 0) {
         updates.tradeExportsDelivered.forEach(item => {
           showToast(
-            'وصول شحنة تصدير للعميل! 🚢',
+            'وصول شحنة تصدير للعميل! ',
             `وصلت شحنة ${item.name} إلى ${item.buyerName}. أرباحك جاهزة بقيمة ${item.payout.toLocaleString()} EGP!`,
             'success',
             6000,
             {
-              text: 'استلم أرباحك الآن 💰',
+              text: 'استلم أرباحك الآن ',
               icon: 'fa-solid fa-hand-holding-dollar',
               onClick: () => {
                 window.switchTab('trade');
@@ -3260,32 +3260,32 @@ const UIController = (() => {
   function formatCustomBadgeHtml(badge, iconExtraClass = '') {
     if (!badge) return '';
     const str = String(badge).trim();
-    if (str.toUpperCase() === 'SVIP' || str.toUpperCase() === '⚡ SVIP' || str.toUpperCase() === '🔥 SVIP' || str === 'عضو SVIP' || str === 'عضو VIP') {
-      return `<span class="badge-svip-blue-flame inline-flex items-center gap-1 select-none" title="عضوية فائقة التميز SVIP ⚡">
+    if (str.toUpperCase() === 'SVIP' || str.toUpperCase() === ' SVIP' || str.toUpperCase() === ' SVIP' || str === 'عضو SVIP' || str === 'عضو VIP') {
+      return `<span class="badge-svip-blue-flame inline-flex items-center gap-1 select-none" title="عضوية فائقة التميز SVIP ">
         <i class="fa-solid fa-bolt-lightning text-cyan-300 text-[8px] animate-pulse"></i>
         <span>SVIP</span>
       </span>`;
     }
-    if (str === '🔥' || str.includes('لهيب') || str.includes('لهب')) {
-      return `<span class="badge-crimson-flame inline-flex items-center gap-1 select-none" title="وسام لهيب العرش 🔥">
+    if (str === '' || str.includes('لهيب') || str.includes('لهب')) {
+      return `<span class="badge-crimson-flame inline-flex items-center gap-1 select-none" title="وسام لهيب العرش ">
         <i class="fa-solid fa-fire text-amber-300 text-[8px] animate-pulse"></i>
         <span>لهيب العرش</span>
       </span>`;
     }
-    if (str === '👑' || str.includes('👑') || str.includes('ملك') || str.includes('إمبراطور')) {
-      return `<span class="badge-royal-crown inline-flex items-center gap-1 select-none" title="وسام الملك الأسطوري 👑">
+    if (str === '' || str.includes('') || str.includes('ملك') || str.includes('إمبراطور')) {
+      return `<span class="badge-royal-crown inline-flex items-center gap-1 select-none" title="وسام الملك الأسطوري ">
         <i class="fa-solid fa-crown text-slate-950 text-[8px]"></i>
         <span>الملك الأسطوري</span>
       </span>`;
     }
-    if (str === '🌟' || str.includes('🌟') || str.includes('حوت الشات')) {
-      return `<span class="badge-chat-whale inline-flex items-center gap-1 select-none" title="وسام حوت الشات 🌟">
+    if (str === '' || str.includes('') || str.includes('حوت الشات')) {
+      return `<span class="badge-chat-whale inline-flex items-center gap-1 select-none" title="وسام حوت الشات ">
         <i class="fa-solid fa-star text-white text-[8px]"></i>
         <span>حوت الشات</span>
       </span>`;
     }
-    if (str.includes('✔️') || str.includes('موثق')) {
-      return `<span class="badge-verified-glow inline-flex items-center gap-1 select-none" title="حساب موثق رسمي ✔️">
+    if (str.includes('') || str.includes('موثق')) {
+      return `<span class="badge-verified-glow inline-flex items-center gap-1 select-none" title="حساب موثق رسمي ">
         ${getVerifiedBadgeIconHtml(iconExtraClass || 'w-3 h-3')}
         <span>موثق</span>
       </span>`;
@@ -3304,32 +3304,32 @@ const UIController = (() => {
 
     let bgGradient = 'bg-gradient-to-r from-cyan-600 via-blue-600 to-indigo-600';
     let textColor = 'text-white';
-    let icon = '💎';
+    let icon = '';
     let glowStyle = 'box-shadow: 0 0 10px rgba(6, 182, 212, 0.55);';
     let borderStyle = 'border-cyan-400/60';
-    let title = `الموسم ${season} - توب ${rank} 💎`;
+    let title = `الموسم ${season} - توب ${rank} `;
 
     if (rank === 1) {
       bgGradient = 'bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-600';
       textColor = 'text-slate-950';
-      icon = '👑';
+      icon = '';
       glowStyle = 'box-shadow: 0 0 12px rgba(245, 158, 11, 0.85);';
       borderStyle = 'border-amber-300';
-      title = `بطل الموسم ${season} - المركز الأول 👑`;
+      title = `بطل الموسم ${season} - المركز الأول `;
     } else if (rank === 2) {
       bgGradient = 'bg-gradient-to-r from-slate-200 via-slate-100 to-slate-300';
       textColor = 'text-slate-950';
-      icon = '🥈';
+      icon = '';
       glowStyle = 'box-shadow: 0 0 10px rgba(226, 232, 240, 0.7);';
       borderStyle = 'border-slate-300';
-      title = `وصيف الموسم ${season} - المركز الثاني 🥈`;
+      title = `وصيف الموسم ${season} - المركز الثاني `;
     } else if (rank === 3) {
       bgGradient = 'bg-gradient-to-r from-amber-700 via-amber-600 to-yellow-800';
       textColor = 'text-amber-100';
-      icon = '🥉';
+      icon = '';
       glowStyle = 'box-shadow: 0 0 10px rgba(180, 83, 9, 0.6);';
       borderStyle = 'border-amber-500';
-      title = `الموسم ${season} - المركز الثالث 🥉`;
+      title = `الموسم ${season} - المركز الثالث `;
     }
 
     if (playerName) {
@@ -4044,10 +4044,10 @@ const UIController = (() => {
                <span id="biz-mktg-text-${key}">${marketingActive
                  ? (window.currentLang === 'en' ? `Active Ad Campaign (${mktgTimeStr} left)` : `حملة إعلانية نشطة (متبقي ${mktgTimeStr})`)
                  : dailyCapReached
-                 ? (window.currentLang === 'en' ? '⛔ Daily ad campaign limit reached (5/5 — resets tomorrow)' : '⛔ تم استهلاك الحد اليومي للحملات (5/5 — تتجدد غداً)')
+                 ? (window.currentLang === 'en' ? ' Daily ad campaign limit reached (5/5 — resets tomorrow)' : ' تم استهلاك الحد اليومي للحملات (5/5 — تتجدد غداً)')
                  : (window.currentLang === 'en'
-                   ? `Launch 1h Ad Campaign (+40% demand) — ${campaignCost.toLocaleString()} EGP  [${campaignsLeft}/5 left today]`
-                   : `إطلاق حملة إعلانية ساعة كاملة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP  [متبقي ${campaignsLeft}/5 اليوم]`)}</span>
+                   ? `Launch 1h Ad Campaign (+40% demand) — ${campaignCost.toLocaleString()} EGP [${campaignsLeft}/5 left today]`
+                   : `إطلاق حملة إعلانية ساعة كاملة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP [متبقي ${campaignsLeft}/5 اليوم]`)}</span>
             </button>
           </div>
 
@@ -4295,7 +4295,7 @@ const UIController = (() => {
           profitEl.textContent =`+${profitPerTick.toLocaleString()} EGP / دورة`;
           profitEl.className ="numbers-font text-xs font-black text-teal-400";
         } else {
-          profitEl.innerHTML ='<span class="text-rose-400 font-black animate-pulse">متوقف (0 EGP) ️</span>';
+          profitEl.innerHTML ='<span class="text-rose-400 font-black animate-pulse">متوقف (0 EGP) </span>';
         }
       }
 
@@ -4381,10 +4381,10 @@ const UIController = (() => {
             mktgBtnEl.removeAttribute('disabled');
           }
         } else if (capReached) {
-          mktgTextEl.textContent = '⛔ تم استهلاك الحد اليومي للحملات (5/5 — تتجدد غداً)';
+          mktgTextEl.textContent = ' تم استهلاك الحد اليومي للحملات (5/5 — تتجدد غداً)';
           if (mktgBtnEl) mktgBtnEl.setAttribute('disabled', 'true');
         } else {
-          mktgTextEl.textContent = `إطلاق حملة إعلانية ساعة كاملة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP  [متبقي ${capLeft}/5 اليوم]`;
+          mktgTextEl.textContent = `إطلاق حملة إعلانية ساعة كاملة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP [متبقي ${capLeft}/5 اليوم]`;
           if (mktgBtnEl) mktgBtnEl.removeAttribute('disabled');
         }
       }
@@ -4495,7 +4495,7 @@ const UIController = (() => {
           // Daily 5/5 cap reached
           if (input) {
             input.disabled = true;
-            input.placeholder = (window.currentLang === 'en') ? '🔒 Daily Limit Reached (5/5)' : '🔒 تم استهلاك الحد اليومي (5/5)';
+            input.placeholder = (window.currentLang === 'en') ? ' Daily Limit Reached (5/5)' : ' تم استهلاك الحد اليومي (5/5)';
             input.classList.add('opacity-50', 'cursor-not-allowed');
           }
           if (btn) {
@@ -4510,7 +4510,7 @@ const UIController = (() => {
           // Global 2/2 cap reached: disable other cards
           if (input) {
             input.disabled = true;
-            input.placeholder = (window.currentLang === 'en') ? '🔒 Active Max Limit (2/2)' : '🔒 الحد الأقصى نشط (2/2)';
+            input.placeholder = (window.currentLang === 'en') ? ' Active Max Limit (2/2)' : ' الحد الأقصى نشط (2/2)';
             input.classList.add('opacity-50', 'cursor-not-allowed');
           }
           if (btn) {
@@ -4736,7 +4736,7 @@ const UIController = (() => {
           loanTimeEl.className ='numbers-font font-black text-rose-500 animate-pulse';
         }
         if (loanBadgeEl) {
-          loanBadgeEl.textContent ='️ متعثر (الحساب مجمد)';
+          loanBadgeEl.textContent =' متعثر (الحساب مجمد)';
           loanBadgeEl.className ='text-[10px] px-2.5 py-0.5 bg-red-600/30 text-red-300 border border-red-500 rounded-full font-black animate-pulse';
         }
       } else {
@@ -4845,7 +4845,7 @@ const UIController = (() => {
             <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
           </svg>
           <span>مهلة زمنية... ${remaining}ث</span>
-          ${isKhaled ? `<button id="btn-quick-speedup-work" type="button" class="mr-2 px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[10px] shadow cursor-pointer transition flex items-center gap-1 z-20 pointer-events-auto" title="تسريع فوري"><i class="fa-solid fa-bolt"></i> 1 🪙</button>` : ''}
+          ${isKhaled ? `<button id="btn-quick-speedup-work" type="button" class="mr-2 px-2 py-0.5 rounded bg-amber-400 hover:bg-amber-300 text-slate-950 font-black text-[10px] shadow cursor-pointer transition flex items-center gap-1 z-20 pointer-events-auto" title="تسريع فوري"><i class="fa-solid fa-bolt"></i> 1 </button>` : ''}
         </span>
         <div class="absolute bottom-0 right-0 h-0.5 bg-yellow-500/60 transition-all duration-75 rounded-b-lg" style="width: ${barWidth}%; left: 0;"></div>`;
       btn.style.position ='relative';
@@ -5009,7 +5009,7 @@ const UIController = (() => {
         const result = await AppDB.redeemGiftCode(code, GameEngine.activeUsername);
 
         const rText = (result && result.rewardText) ? result.rewardText : (result && result.amount ? `${Number(result.amount).toLocaleString()} EGP كاش` : (typeof result === 'number' ? `${result.toLocaleString()} EGP كاش` : 'مكافأة نقدية'));
-        showToast('تم استرداد الهدية! 🎁', `تهانينا! حصلت على: ${rText}`, 'success');
+        showToast('تم استرداد الهدية! ', `تهانينا! حصلت على: ${rText}`, 'success');
         playMenuSound('success');
 
         // Apply changes to local GameEngine.state immediately
@@ -5122,7 +5122,7 @@ const UIController = (() => {
           const res = GameEngine.performJobShift();
           const boosts = [];
           if (res.isEnergyBoosted) boosts.push(' مشروب الطاقة +12.5%');
-          if (res.isPenBoosted) boosts.push('️ القلم الذهبي +8% XP');
+          if (res.isPenBoosted) boosts.push(' القلم الذهبي +8% XP');
           const boostText = boosts.length > 0 ?` (${boosts.join(' +')})` :'';
 
           showPassiveGainFloat(`+${res.salary.toLocaleString()} EGP`);
@@ -5145,7 +5145,7 @@ const UIController = (() => {
           const res = GameEngine.performOvertimeShift();
           const boosts = [];
           if (res.isEnergyBoosted) boosts.push(' مشروب الطاقة +12.5%');
-          if (res.isPenBoosted) boosts.push('️ القلم الذهبي +8% XP');
+          if (res.isPenBoosted) boosts.push(' القلم الذهبي +8% XP');
           const boostText = boosts.length > 0 ?` (${boosts.join(' +')})` :'';
 
           showPassiveGainFloat(`+${res.earnedSalary.toLocaleString()} EGP`);
@@ -5345,7 +5345,7 @@ const UIController = (() => {
           : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
         const isOwnerKhaled = Boolean(GameEngine.state && GameEngine.state.isAdmin);
         if (!isOwnerKhaled && amount > 5000000) {
-          throw new Error("🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
+          throw new Error(" الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
         }
 
         if (!pin) {
@@ -5354,7 +5354,7 @@ const UIController = (() => {
 
         if (GameEngine.state && GameEngine.state.activeLoan && (Number(GameEngine.state.activeLoan.amount || 0) > 0 || Number(GameEngine.state.activeLoan.totalDue || 0) > 0)) {
           const dueAmt = Number(GameEngine.state.activeLoan.totalDue || GameEngine.state.activeLoan.amount || 0);
-          throw new Error(`🚫 مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString('ar-EG')} ج.م)! يرجى سداد القرض أولاً لفك قيد التحويلات.`);
+          throw new Error(` مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString('ar-EG')} ج.م)! يرجى سداد القرض أولاً لفك قيد التحويلات.`);
         }
 
         const curCash = Number(GameEngine.state.cash) || 0;
@@ -5390,7 +5390,7 @@ const UIController = (() => {
 
         const taxAmt = Math.floor(amount * 0.05);
         const netAmt = amount - taxAmt;
-        showToast('حوالة صادرة بنجاح 💸', `تم تحويل ${amount.toLocaleString()} EGP إلى "${recipient}". (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة البنك المركزي 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
+        showToast('حوالة صادرة بنجاح ', `تم تحويل ${amount.toLocaleString()} EGP إلى "${recipient}". (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة البنك المركزي 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
 
         // Log transaction locally
         addTransferHistoryRow(recipient, amount);
@@ -5915,10 +5915,10 @@ const UIController = (() => {
     let bjSettling = false;
 
     function getCardSuitSymbol(suit) {
-      if (suit ==='H') return'️';
-      if (suit ==='D') return'️';
-      if (suit ==='C') return'️';
-      if (suit ==='S') return'️';
+      if (suit ==='H') return'';
+      if (suit ==='D') return'';
+      if (suit ==='C') return'';
+      if (suit ==='S') return'';
       return suit;
     }
 
@@ -6294,7 +6294,7 @@ const UIController = (() => {
       'panel-careers': {
         title: 'المسار المهني والوظائف',
         desc: `سلم الترقية وزيادة الدخل الأساسي:
-        <br>• <strong>10 مراتب مهنية</strong>: تدرج من عامل باليومية ➔ محاسب ➔ مدير فرع ➔ رئيس مجلس إدارة ➔ وصولاً إلى <strong>إمبراطور كبار المستثمرين</strong>.
+        <br>• <strong>10 مراتب مهنية</strong>: تدرج من عامل باليومية محاسب مدير فرع رئيس مجلس إدارة وصولاً إلى <strong>إمبراطور كبار المستثمرين</strong>.
         <br>• <strong>نقاط الخبرة (XP)</strong>: اكتسب الخبرة من نوبات العمل اليومية والإضافية واستخدام أدوات المتجر للترقي الوظيفي.
         <br>• <strong>حماية الراتب في البنك</strong>: تُضاف الرواتب تلقائياً إلى <strong>حسابك البنكي</strong> لحمايتها من ضرائب السيولة النقدية.`
       },
@@ -6336,7 +6336,7 @@ const UIController = (() => {
       },
       'panel-taxes': {
         title: 'مصلحة الضرائب • موسم العفو الضريبي',
-        desc: `🏛️ <strong class="text-emerald-400">موسم العفو الضريبي سارٍ حالياً</strong>:
+        desc: ` <strong class="text-emerald-400">موسم العفو الضريبي سارٍ حالياً</strong>:
         <br>• <strong>إعفاء شامل بنسبة 100%</strong>: تم تجميد كافة الاستقطاعات الضريبية على الأرباح والتدفقات الساعية لكافة المستثمرين بنسبة 100%.
         <br>• <strong>احتفاظ كامل بالأرباح</strong>: كافة أرباح الشركات، العقارات، والفوائد تضاف لرصيدك بالكامل دون أي خصم.
         <br>• <strong>الدرع الضريبي (Tax Shield)</strong>: يمنحك خصومات 15% إلى 25% على تكاليف توسعة وترقية الشركات والمشاريع.`
@@ -6361,7 +6361,7 @@ const UIController = (() => {
         title: 'مجمع الصناعات وسلاسل الإمداد الوطنية',
         desc: `الصناعة الثقيلة والإنتاج المحلي الاستراتيجي:
         <br>• <strong>5 قطاعات كبرى</strong>: الصناعات الغذائية، صناعة السيارات، أشباه الموصلات، البتروكيماويات، وصناعات الفضاء.
-        <br>• <strong>4 مراحل تكاملية</strong>: المواد الخام ➔ المعالجة والتصنيع ➔ التجميع والتقنية ➔ الأسطول اللوجستي.
+        <br>• <strong>4 مراحل تكاملية</strong>: المواد الخام المعالجة والتصنيع التجميع والتقنية الأسطول اللوجستي.
         <br>• <strong>قاعدة عنق الزجاجة (Bottleneck)</strong>: إنتاج مجمعك مقيد بالمرحلة الأقل تطويراً؛ طور المراحل الأربعة بتوازن لحصد أقصى إنتاج.
         <br>• <strong>البيع المباشر أو التصدير</strong>: يمكنك بيع المنتجات كاش فوراً، أو تحويلها للمستودع لتصديرها للخارج بهوامش أرباح هائلة.`
       },
@@ -6555,7 +6555,7 @@ const UIController = (() => {
         </div>
         <div class="text-left">
           <span class="numbers-font font-black text-xs ${amtClass} block">${amtStr}</span>
-          <span class="text-[9px] text-slate-500 font-bold">مكتملة ️</span>
+          <span class="text-[9px] text-slate-500 font-bold">مكتملة </span>
         </div>`;
       list.appendChild(row);
     });
@@ -6762,7 +6762,7 @@ const UIController = (() => {
             <span><i class="fa-solid fa-clock text-blue-400/80 mr-1"></i> حظر بيع 45ث</span>
           </div>
           <div class="text-[9.5px] text-slate-500 leading-tight">
-            💡 القيمة السوقية = رأس المال + الأرباح | الكاش عند البيع يخصم عمولة 1%
+             القيمة السوقية = رأس المال + الأرباح | الكاش عند البيع يخصم عمولة 1%
           </div>
         </div>
 
@@ -6814,12 +6814,12 @@ const UIController = (() => {
             const fee = res.fee || Math.max(5, Math.floor((res.price * res.shares) * 0.01));
             const isWin = profitOrLoss >= 0;
 
-            const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح 📈' : 'تسييل أسهم (تصفية بخسارة) 📉';
+            const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
             const detailsMsg = `تم بيع كامل الأسهم (${res.shares.toLocaleString()} سهم):
-💵 رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
-${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
-⚖️ عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
-💰 إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
+ رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
+${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
+ عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
+ إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
 
             showToast(title, detailsMsg, isWin ? 'success' : 'info');
             if (res.capHit) {
@@ -6867,12 +6867,12 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           const isWin = profitOrLoss >= 0;
 
           input.value = '';
-          const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح 📈' : 'تسييل أسهم (تصفية بخسارة) 📉';
+          const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
           const detailsMsg = `تم بيع ${res.shares.toLocaleString()} سهم:
-💵 رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
-${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
-⚖️ عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
-💰 إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
+ رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
+${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
+ عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
+ إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
 
           showToast(title, detailsMsg, isWin ? 'success' : 'info');
           if (res.capHit) {
@@ -7086,10 +7086,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (shieldBadge) {
       if (taxReport.taxShieldActive) {
         shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded-full font-bold animate-pulse';
-        shieldBadge.textContent = window.currentLang === 'en' ? 'Active 🛡️ (-50%)' : 'نشط وفعال 🛡️ (-50%)';
+        shieldBadge.textContent = window.currentLang === 'en' ? 'Active (-50%)' : 'نشط وفعال (-50%)';
       } else {
         shieldBadge.className = 'text-[10px] px-2.5 py-0.5 bg-slate-800 text-slate-400 rounded-full font-bold';
-        shieldBadge.textContent = window.currentLang === 'en' ? 'Inactive 🛡️' : 'غير مفعل 🛡️';
+        shieldBadge.textContent = window.currentLang === 'en' ? 'Inactive ' : 'غير مفعل ';
       }
     }
 
@@ -7234,7 +7234,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           </div>
           <div class="text-left whitespace-nowrap mr-3">
             <span class="text-[10px] text-yellow-400 border border-yellow-500/30 px-2 py-1 rounded bg-yellow-500/10 font-bold block mb-1">
-              ⏳ ${window.currentLang ==='en' ?'Self-destruct:' :'تدمير ذاتي:'} <span class="numbers-font">${secRemaining}${window.currentLang ==='en' ?'s' :'ث'}</span>
+               ${window.currentLang ==='en' ?'Self-destruct:' :'تدمير ذاتي:'} <span class="numbers-font">${secRemaining}${window.currentLang ==='en' ?'s' :'ث'}</span>
             </span>
           </div>`;
 
@@ -8305,13 +8305,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
                 if (typeof showDirectAdminPopupModal === 'function') {
                   showDirectAdminPopupModal({
-                    title: 'مكافأة عامة من الإدارة (Airdrop) 🎁',
+                    title: 'مكافأة عامة من الإدارة (Airdrop) ',
                     message: `تهانينا! قامت إدارة اللعبة بتوزيع مكافأة مالية عامة لجميع اللاعبين بقيمة +${amt.toLocaleString()} EGP.\nتم إضافة المبلغ مباشرة إلى سيولة الكاش الخاصة بك!`,
                     style: 'reward',
                     timestamp: airdrop.timestamp
                   });
                 } else {
-                  showToast('مكافأة عامة 🎁', `استلمت مكافأة عامة بقيمة +${amt.toLocaleString()} EGP!`, 'success');
+                  showToast('مكافأة عامة ', `استلمت مكافأة عامة بقيمة +${amt.toLocaleString()} EGP!`, 'success');
                 }
                 renderAll();
               } else {
@@ -8664,7 +8664,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const banner = document.createElement('div');
     banner.id = 'staging-env-banner';
     banner.className = 'fixed top-2 right-2 z-[9999999] px-3 py-1 bg-amber-500/95 text-slate-950 font-black text-[11px] rounded-full shadow-xl border border-amber-300 flex items-center gap-1.5 backdrop-blur-sm pointer-events-none select-none';
-    banner.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-800 animate-ping"></span> <span>🧪 بيئة تجريبية (Staging) | الصيانة معطلة</span>';
+    banner.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-800 animate-ping"></span> <span> بيئة تجريبية (Staging) | الصيانة معطلة</span>';
     document.body.appendChild(banner);
   }
 
@@ -8803,7 +8803,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <div class="my-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 border-2 border-amber-500/50 text-amber-200 text-xs text-right leading-relaxed shadow-lg">
             <div class="font-black text-amber-300 text-xs sm:text-sm mb-1.5 flex items-center gap-1.5">
               <i class="fa-solid fa-gem text-amber-400"></i>
-              <span>تنويه هام لجميع الداعمين والشاحنين 💎:</span>
+              <span>تنويه هام لجميع الداعمين والشاحنين :</span>
             </div>
             <p class="text-[11.5px] text-amber-100/90 leading-relaxed">
               يرجى من جميع اللاعبين الذين قاموا بالشحن سابقاً، <strong class="text-white font-black underline">التواصل معنا عبر رسائل صفحة فيسبوك</strong> لتسجيل وتأكيد إعادة إرسال كامل باقاتهم وشحناتهم لحساباتهم فور انطلاق الموسم الجديد.
@@ -8951,7 +8951,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-3xl">
             <i class="fa-solid fa-arrows-rotate animate-spin" style="animation-duration: 3s;"></i>
           </div>
-          <h3 class="text-xl font-black text-white mb-1.5">️ مطلوب إعادة تحميل الصفحة فوراً</h3>
+          <h3 class="text-xl font-black text-white mb-1.5"> مطلوب إعادة تحميل الصفحة فوراً</h3>
           <div class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-bold rounded-full border border-amber-500/30 mb-3">
             تحديث إداري إجباري
           </div>
@@ -9112,7 +9112,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             <i class="fa-solid fa-ban animate-pulse"></i>
           </div>
           <div class="inline-block px-3.5 py-1 bg-rose-500/20 text-rose-300 text-xs font-black rounded-full border border-rose-500/40 mb-3 uppercase tracking-wider">
-            ⛔ تم حظر الوصول نهائياً
+             تم حظر الوصول نهائياً
           </div>
           <h3 class="text-2xl font-black text-white mb-2">وصول محظور إلى اللعبة</h3>
           <p id="ban-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-6 font-medium">
@@ -9465,7 +9465,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }, 3000);
 
     // ─────────────────────────────────────────────
-    //  MODULE: PLAYERS DIRECTORY & MANAGEMENT
+    // MODULE: PLAYERS DIRECTORY & MANAGEMENT
     // ─────────────────────────────────────────────
     let cachedPlayers = [];
     let selectedPlayer = null;
@@ -9629,9 +9629,9 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (p.isBanned) {
           statusBadge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30">محظور</span>';
         } else if (p.jailTimer > 0) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">سجين (${p.jailTimer}ث)${isPlayerOnline ? ' 🟢' : ''}</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30">سجين (${p.jailTimer}ث)${isPlayerOnline ? ' ' : ''}</span>`;
         } else if (p.isAdmin) {
-          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ⭐${isPlayerOnline ? ' 🟢' : ''}</span>`;
+          statusBadge = `<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">الإدارة ${isPlayerOnline ? ' ' : ''}</span>`;
         }
 
         tr.innerHTML =`
@@ -9740,7 +9740,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const toggleRoleText = document.getElementById('admin-toggle-role-text');
         if (toggleRoleBtn && toggleRoleText) {
           if (state.isAdmin) {
-            toggleRoleText.textContent ='سحب صلاحية الإدارة (إلغاء أدمن) ️';
+            toggleRoleText.textContent ='سحب صلاحية الإدارة (إلغاء أدمن) ';
             toggleRoleBtn.className ='w-full py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5';
           } else {
             toggleRoleText.textContent ='نقل صلاحية الإدارة / تعيين كمسؤول (Make Admin)';
@@ -9782,16 +9782,16 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         if (statusBadge) {
           if (state.isBanned) {
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ⛔';
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center';
           } else if (state.jailTimer > 0) {
-            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block ml-1"></span>سجين (${state.jailTimer}ث) ${isOnline ? '🟢 متصل الآن' : '⚪ غير نشط'}`;
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-amber-400 inline-block ml-1"></span>سجين (${state.jailTimer}ث) ${isOnline ? ' متصل الآن' : ' غير نشط'}`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center';
           } else if (isOnline) {
-            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>نشط ومتصل الآن 🟢 (${lastSeenDetail})`;
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse inline-block ml-1"></span>نشط ومتصل الآن (${lastSeenDetail})`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shadow-sm shadow-emerald-500/20 flex items-center';
           } else {
-            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block ml-1"></span>غير نشط ⚪ (${lastSeenDetail})`;
+            statusBadge.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-slate-400 inline-block ml-1"></span>غير نشط (${lastSeenDetail})`;
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-slate-800/80 text-slate-400 border border-slate-700 flex items-center';
           }
         }
@@ -10604,7 +10604,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         let confirmMsg ='';
         if (isCurrentlyAdmin) {
-          confirmMsg =`️ تحذير: هل أنت متأكد من سحب صلاحيات الإدارة من اللاعب"${targetUser}" وتحويل حسابه إلى حساب لاعب عادي؟`;
+          confirmMsg =` تحذير: هل أنت متأكد من سحب صلاحيات الإدارة من اللاعب"${targetUser}" وتحويل حسابه إلى حساب لاعب عادي؟`;
         } else {
           confirmMsg =` تأكيد ترقية مسؤول:\nهل أنت متأكد من منح صلاحيات الإدارة الكاملة (Admin) للاعب"${targetUser}"؟\nسيتمكن هذا الحساب من الدخول للوحة التحكم وإدارة كافة مفاصل اللعبة واللاعبين.`;
         }
@@ -10634,7 +10634,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           toggleAdminRoleBtn.disabled = false;
           if (selectedPlayerState) {
             if (selectedPlayerState.isAdmin) {
-              toggleAdminRoleBtn.innerHTML ='<i class="fa-solid fa-user-shield text-xs"></i> <span>سحب صلاحية الإدارة (إلغاء أدمن) ️</span>';
+              toggleAdminRoleBtn.innerHTML ='<i class="fa-solid fa-user-shield text-xs"></i> <span>سحب صلاحية الإدارة (إلغاء أدمن) </span>';
               toggleAdminRoleBtn.className ='w-full py-2 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/40 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1.5';
             } else {
               toggleAdminRoleBtn.innerHTML ='<i class="fa-solid fa-crown text-xs"></i> <span>نقل صلاحية الإدارة لهذا الحساب (Make Admin) </span>';
@@ -10649,10 +10649,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     async function handleAdminResetPlayerAccount() {
       const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
       if (!targetUser || targetUser === '...' || targetUser === '---' || targetUser === '') {
-        showToast('تنبيه الإدارة ⚠️', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية التصفير.', 'warning');
+        showToast('تنبيه الإدارة ', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية التصفير.', 'warning');
         return;
       }
-      const confirmMsg = `⚠️ تحذير قاطع ورادع:\n\nهل أنت متأكد من تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء؟\n\n• سيتم تصفير الكاش والبنك والأموال المشبوهة (0 EGP).\n• مسح كافة الشركات والمشاريع بالكامل.\n• مسح كافة الأصول العقارية والمخزون.\n• تصفير وإلغاء كافة محافظ الأسهم والاستثمارات.\n• إعادة الرتبة إلى (عامل مبتدئ) وتصفير نقاط الخبرة (0 XP).\n• شطب كافة الديون والملاحقات الأمنية.\n\nهل تريد تنفيذ التصفير الشامل الآن؟`;
+      const confirmMsg = ` تحذير قاطع ورادع:\n\nهل أنت متأكد من تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء؟\n\n• سيتم تصفير الكاش والبنك والأموال المشبوهة (0 EGP).\n• مسح كافة الشركات والمشاريع بالكامل.\n• مسح كافة الأصول العقارية والمخزون.\n• تصفير وإلغاء كافة محافظ الأسهم والاستثمارات.\n• إعادة الرتبة إلى (عامل مبتدئ) وتصفير نقاط الخبرة (0 XP).\n• شطب كافة الديون والملاحقات الأمنية.\n\nهل تريد تنفيذ التصفير الشامل الآن؟`;
       if (!confirm(confirmMsg)) return;
 
       const resetBtn = document.getElementById('btn-admin-reset-player-account');
@@ -10670,7 +10670,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           renderAll();
         }
 
-        showToast('تصفير الحساب ✅', `تم تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء بنجاح (0 EGP).`, 'success');
+        showToast('تصفير الحساب ', `تم تصفير حساب اللاعب "${targetUser}" بالكامل من كل شيء بنجاح (0 EGP).`, 'success');
         logAdminAction(`تصفير شامل ونهائي لكافة أرصدة وممتلكات حساب اللاعب: ${targetUser}`);
         if (typeof selectPlayerForModeration === 'function') {
           await selectPlayerForModeration(targetUser);
@@ -10679,7 +10679,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           await loadAdminPlayersDirectory(false, true);
         }
       } catch (err) {
-        showToast('خطأ تصفير الحساب ❌', err.message || err, 'error');
+        showToast('خطأ تصفير الحساب ', err.message || err, 'error');
       } finally {
         if (resetBtn) {
           resetBtn.disabled = false;
@@ -10699,10 +10699,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     async function handleAdminDeletePlayerAccount() {
       const targetUser = (selectedPlayer || document.getElementById('admin-p-username')?.textContent || '').replace(/^@/, '').trim();
       if (!targetUser || targetUser === '...' || targetUser === '---' || targetUser === '') {
-        showToast('تنبيه الإدارة ⚠️', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية الحذف.', 'warning');
+        showToast('تنبيه الإدارة ', 'يرجى اختيار وتحديد لاعب أولاً من القائمة لتنفيذ عملية الحذف.', 'warning');
         return;
       }
-      const confirmMsg = `🚨 تحذير أمني نهائي:\n\nهل أنت متأكد تماماً من حذف وثيقة وسجل وحساب اللاعب "${targetUser}" نهائياً من الخوادم؟\n\nلن يمكن استعادة هذا الحساب أو بياناته بعد الحذف.`;
+      const confirmMsg = ` تحذير أمني نهائي:\n\nهل أنت متأكد تماماً من حذف وثيقة وسجل وحساب اللاعب "${targetUser}" نهائياً من الخوادم؟\n\nلن يمكن استعادة هذا الحساب أو بياناته بعد الحذف.`;
       if (!confirm(confirmMsg)) return;
 
       const deleteBtn = document.getElementById('btn-admin-delete-player-account');
@@ -10713,7 +10713,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           deleteBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري حذف الحساب...</span>';
         }
         await AppDB.adminDeletePlayer(targetUser);
-        showToast('حذف الحساب 🗑️', `تم حذف وثيقة وحساب اللاعب ${targetUser} نهائياً من قاعدة البيانات.`, 'success');
+        showToast('حذف الحساب ', `تم حذف وثيقة وحساب اللاعب ${targetUser} نهائياً من قاعدة البيانات.`, 'success');
         logAdminAction(`حذف نهائي لوثيقة حساب اللاعب: ${targetUser}`);
 
         if (resultCard) resultCard.classList.add('hidden');
@@ -10723,7 +10723,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           await loadAdminPlayersDirectory(false, true);
         }
       } catch (err) {
-        showToast('خطأ حذف الحساب ❌', err.message || err, 'error');
+        showToast('خطأ حذف الحساب ', err.message || err, 'error');
       } finally {
         if (deleteBtn) {
           deleteBtn.disabled = false;
@@ -10740,7 +10740,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     // ─────────────────────────────────────────────
-    //  MODULE: LIVE PLAYER ACTIVITY AUDIT LOG
+    // MODULE: LIVE PLAYER ACTIVITY AUDIT LOG
     // ─────────────────────────────────────────────
     const inspectLogsBtn = document.getElementById('btn-admin-inspect-logs');
     const logModal = document.getElementById('admin-player-log-modal');
@@ -10888,7 +10888,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       };
 
       const CAR_MAP = {
-        lambo: { name:'Lamborghini Aventador ️', cost: 15000000, rentPerSec: 10000 },
+        lambo: { name:'Lamborghini Aventador ', cost: 15000000, rentPerSec: 10000 },
         rolls: { name:'Rolls-Royce Phantom', cost: 40000000, rentPerSec: 38000 },
         shelby: { name:'Shelby Cobra 1965', cost: 120000000, rentPerSec: 145000 }
       };
@@ -10903,7 +10903,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         consultant: { name:'مستشار اقتصادي ووزير سابق', xpNeeded: 45000, salary: 320 },
         bank_governor: { name:'محافظ البنك المركزي', xpNeeded: 110000, salary: 550 },
         sovereign_head: { name:'رئيس المجلس الاقتصادي الأعلى', xpNeeded: 250000, salary: 950 },
-        minister: { name:'وزير المالية والاقتصاد السيادي ️', xpNeeded: 500000, salary: 1600 }
+        minister: { name:'وزير المالية والاقتصاد السيادي ', xpNeeded: 500000, salary: 1600 }
       };
 
       const BIZ_MAP = {
@@ -11037,7 +11037,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const topSenderSummary = topSenders.length > 0 ?`${topSenders[0][0]} (+${topSenders[0][1].toLocaleString()} EGP)` :'لا يوجد';
 
       // ─────────────────────────────────────────────
-      //  SECTOR AUDITS & FINDINGS
+      // SECTOR AUDITS & FINDINGS
       // ─────────────────────────────────────────────
 
       // VECTOR 1: EXACT MATHEMATICAL NET WORTH
@@ -11445,7 +11445,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     });
 
     // ─────────────────────────────────────────────
-    //  MODULE: MARKET CONTROL & DIRECT PRICING
+    // MODULE: MARKET CONTROL & DIRECT PRICING
     // ─────────────────────────────────────────────
     function renderAdminStockPrices() {
       const symbols = ['COMI','EAST','ETEL','FWRY','CASH','BITC','GOLD','AIX'];
@@ -11680,7 +11680,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             toastType:'success'
           },
           cbe_rate_hike: {
-            title:'️ قرار المركزي: رفع الفائدة 200 نقطة',
+            title:' قرار المركزي: رفع الفائدة 200 نقطة',
             desc:'البنك المركزي يرفع الفائدة! ارتفاع قوي لسهم CIB وانتكاسة خفيفة باقي الأسهم.',
             targetStocks: ['COMI'],
             multiplier: 1.30,
@@ -11710,7 +11710,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             toastType:'error'
           },
           tech_hack_scandal: {
-            title:'️ ثغرة وأزمة حماية لشركة فوري',
+            title:' ثغرة وأزمة حماية لشركة فوري',
             desc:'تسريب وتوقف خدمات الدفع الإلكتروني يتسبب بموجة بيع مكثفة ومخاوف استثمارية!',
             targetStocks: ['FWRY'],
             multiplier: 0.70,
@@ -11767,7 +11767,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     });
 
     // ─────────────────────────────────────────────
-    //  MODULE: BROADCAST & AIRDROP
+    // MODULE: BROADCAST & AIRDROP
     // ─────────────────────────────────────────────
     const broadcastPresets = document.querySelectorAll('.btn-broadcast-preset');
     broadcastPresets.forEach(btn => {
@@ -11828,7 +11828,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     // ─────────────────────────────────────────────
-    //  MODULE: SYSTEM & DANGER ZONE
+    // MODULE: SYSTEM & DANGER ZONE
     // ─────────────────────────────────────────────
     const maintToggleBtn = document.getElementById('btn-admin-toggle-maintenance');
     if (maintToggleBtn && !maintToggleBtn.dataset.bound) {
@@ -11867,7 +11867,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const resetAllEconomyBtn = document.getElementById('btn-admin-reset-all-economy');
     if (resetAllEconomyBtn) {
       resetAllEconomyBtn.addEventListener('click', async () => {
-        const confirmMsg ="️ تحذير خطير: هل أنت متأكد من تصفير أرصدة وممتلكات المنظومة لكافة اللاعبين المسجلين؟\nسيتم تصفير كاش وبنك وأصول وأسهم وشركات ومخزون كافة الحسابات بالكامل مع الإبقاء على الحسابات وأرقامها السرية.";
+        const confirmMsg =" تحذير خطير: هل أنت متأكد من تصفير أرصدة وممتلكات المنظومة لكافة اللاعبين المسجلين؟\nسيتم تصفير كاش وبنك وأصول وأسهم وشركات ومخزون كافة الحسابات بالكامل مع الإبقاء على الحسابات وأرقامها السرية.";
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -11892,7 +11892,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const wipeLeaderboardBtn = document.getElementById('btn-admin-wipe-leaderboard');
     if (wipeLeaderboardBtn) {
       wipeLeaderboardBtn.addEventListener('click', async () => {
-        const confirmMsg ="️ تحذير نهائي وقاطع: هل أنت متأكد من حذف كافة حسابات اللاعبين نهائياً من قاعدة البيانات عدا حساب الأدمن الرئيسي؟\nهذا الإجراء لا يمكن التراجع عنه!";
+        const confirmMsg =" تحذير نهائي وقاطع: هل أنت متأكد من حذف كافة حسابات اللاعبين نهائياً من قاعدة البيانات عدا حساب الأدمن الرئيسي؟\nهذا الإجراء لا يمكن التراجع عنه!";
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -12624,7 +12624,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       logAdminAction(`تحديث مضاعف السيرفر: تم تعيين المضاعف على ${newBoost.toFixed(1)}x`);
       
       await AppDB.sendBroadcast(
-        newBoost > 1.0 ?' تفعيل مضاعف السيرفر (Server Boost)!' :'ℹ️ انتهاء مضاعف السيرفر (Server Boost)',
+        newBoost > 1.0 ?' تفعيل مضاعف السيرفر (Server Boost)!' :'ℹ انتهاء مضاعف السيرفر (Server Boost)',
         newBoost > 1.0 ?'قام الأدمن بتفعيل وضع مضاعف الأرباح والخبرة (Double XP & Cash) لجميع اللاعبين حياً!' :'انتهى وضع مضاعف الأرباح والخبرة وعاد السيرفر للمعدل الطبيعي.'
       );
       
@@ -12664,7 +12664,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   // ─────────────────────────────────────────────
-  //  TRANSFER REQUESTS — UI Rendering & State
+  // TRANSFER REQUESTS — UI Rendering & State
   // ─────────────────────────────────────────────
   let lastRequestsFetchTime = 0;
   let cachedIncomingRequests = [];
@@ -12727,13 +12727,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         let actionButtons ='';
 
         if (r.status ==='accepted') {
-          statusText ='تم القبول والتحويل ️';
+          statusText ='تم القبول والتحويل ';
           statusClass ='text-emerald-400 font-bold';
         } else if (r.status ==='rejected') {
           statusText ='تم الرفض';
           statusClass ='text-rose-400 font-bold';
         } else if (isExpired) {
-          statusText ='منتهي الصلاحية (24س) ️';
+          statusText ='منتهي الصلاحية (24س) ';
           statusClass ='text-slate-500 font-bold';
         } else {
           const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
@@ -12844,13 +12844,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         let statusClass ='';
 
         if (r.status ==='accepted') {
-          statusText ='تم القبول والتحويل ️';
+          statusText ='تم القبول والتحويل ';
           statusClass ='text-emerald-400 font-bold';
         } else if (r.status ==='rejected') {
           statusText ='تم الرفض';
           statusClass ='text-rose-400 font-bold';
         } else if (isExpired) {
-          statusText ='منتهي الصلاحية ️';
+          statusText ='منتهي الصلاحية ';
           statusClass ='text-slate-500 font-bold';
         } else {
           const remainingHours = Math.floor(remainingMs / (1000 * 60 * 60));
@@ -12876,7 +12876,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   // ─────────────────────────────────────────────
-  //  AUCTIONS & SPECIAL DEALS — UI Rendering & State
+  // AUCTIONS & SPECIAL DEALS — UI Rendering & State
   // ─────────────────────────────────────────────
   async function fetchAndRenderAuctions() {
     const shelf = document.getElementById('auctions-shelf');
@@ -13137,7 +13137,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           rewardDesc = itName;
         }
 
-        const maxStr = code.maxUses > 0 ?`${code.maxUses}` :'️';
+        const maxStr = code.maxUses > 0 ?`${code.maxUses}` :'';
         const usageText =`${code.usedCount || 0} / ${maxStr}`;
 
         tr.innerHTML =`
@@ -13176,7 +13176,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   // ─────────────────────────────────────────────
-  //  V2 variables & handlers
+  // V2 variables & handlers
   // ─────────────────────────────────────────────
   let lastChatSent = 0;
   let currentActiveDMUser ='';
@@ -13198,48 +13198,48 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     },
     {
       id: 'crimson_flame',
-      name: 'لهيب العرش القرمزي VIP 🔥',
+      name: 'لهيب العرش القرمزي VIP ',
       badge: 'لهيب هادئ ملتهب',
       badgeClass: 'bg-rose-950/80 text-rose-300 border-rose-500/40',
       description: 'إطار ناري ملتهب بلون قرمزي هادئ وجمر متقد مع وسم VIP الناري.',
       previewBubbleClass: 'chat-bubble-glow-flame',
-      previewTag: '🔥 لهيب VIP',
+      previewTag: ' لهيب VIP',
       senderGlowClass: 'chat-sender-flame-glow',
       pkgId: 'pkg_vip_crimson_flame',
       isFree: false
     },
     {
       id: 'gold_neon',
-      name: 'حوت الشات الذهبي النيون 🌟',
+      name: 'حوت الشات الذهبي النيون ',
       badge: 'ذهب نيون متوهج',
       badgeClass: 'bg-amber-950/80 text-amber-300 border-yellow-500/40',
       description: 'إطار ذهبي نيون براق ومتحرك مع وسم حوت الشات VIP.',
       previewBubbleClass: 'chat-bubble-glow-gold',
-      previewTag: '✨ لاعب VIP',
+      previewTag: ' لاعب VIP',
       senderGlowClass: 'chat-sender-gold-glow',
       pkgId: 'pkg_vip_chat_glow',
       isFree: false
     },
     {
       id: 'cyber_rainbow',
-      name: 'الملك الأسطوري الملكي 👑',
+      name: 'الملك الأسطوري الملكي ',
       badge: 'سايبر رينبو ملكي',
       badgeClass: 'bg-purple-950/80 text-purple-300 border-purple-500/40',
       description: 'إطار نيون بألوان الطيف المتدرجة المتحركة مع وسم الملك الأسطوري.',
       previewBubbleClass: 'chat-bubble-glow-rainbow',
-      previewTag: '👑 ROYAL VIP',
+      previewTag: ' ROYAL VIP',
       senderGlowClass: 'chat-sender-rainbow-glow',
       pkgId: 'pkg_vip_royal_ultimate',
       isFree: false
     },
     {
       id: 'blue_flame',
-      name: 'لهيب SVIP الأزرق الملكي ⚡',
+      name: 'لهيب SVIP الأزرق الملكي ',
       badge: 'لهيب أزرق مشتعل',
       badgeClass: 'bg-sky-950/80 text-sky-300 border-cyan-500/40',
-      description: 'إطار ناري مشتعل بتدرج أزرق كهربائي ملكي ⚡ مع وسم SVIP الناري.',
+      description: 'إطار ناري مشتعل بتدرج أزرق كهربائي ملكي مع وسم SVIP الناري.',
       previewBubbleClass: 'chat-bubble-glow-blue-flame',
-      previewTag: '⚡ لهيب SVIP',
+      previewTag: ' لهيب SVIP',
       senderGlowClass: 'chat-sender-blue-flame-glow',
       pkgId: 'pkg_vip_svip_blue_flame',
       isFree: false
@@ -13271,13 +13271,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (st.customBadge === 'SVIP' || (st.customBadge && String(st.customBadge).toUpperCase().includes('SVIP')) || (st.badgeTitle && String(st.badgeTitle).toUpperCase().includes('SVIP'))) {
       unlocked.add('blue_flame');
     }
-    if (st.customBadge === '🌟' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
+    if (st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
       unlocked.add('gold_neon');
     }
-    if (st.customBadge === '🔥' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
+    if (st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
       unlocked.add('crimson_flame');
     }
-    if (st.customBadge === '👑✔️' || (st.badgeTitle && (st.badgeTitle.includes('الملك الأسطوري') || st.badgeTitle.includes('إمبراطور')))) {
+    if (st.customBadge === '' || (st.badgeTitle && (st.badgeTitle.includes('الملك الأسطوري') || st.badgeTitle.includes('إمبراطور')))) {
       unlocked.add('cyber_rainbow');
     }
 
@@ -13296,11 +13296,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (activeGlow === 'none' || !activeGlow) {
       labelEl.textContent = 'الإطار: الافتراضي';
     } else if (activeGlow === 'crimson_flame') {
-      labelEl.textContent = 'الإطار: لهيب العرش 🔥';
+      labelEl.textContent = 'الإطار: لهيب العرش ';
     } else if (activeGlow === 'gold_neon') {
-      labelEl.textContent = 'الإطار: حوت الشات 🌟';
+      labelEl.textContent = 'الإطار: حوت الشات ';
     } else if (activeGlow === 'cyber_rainbow') {
-      labelEl.textContent = 'الإطار: الملك الأسطوري 👑';
+      labelEl.textContent = 'الإطار: الملك الأسطوري ';
     } else {
       labelEl.textContent = 'تغيير إطار الرسائل';
     }
@@ -13400,7 +13400,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const frameDef = CHAT_FRAMES_CATALOG.find(f => f.id === frameId);
     const frameName = frameDef ? frameDef.name : 'الإطار الافتراضي';
 
-    showToast('تخصيص الشات', `تم تفعيل ${frameName} بنجاح! ✨`, 'success');
+    showToast('تخصيص الشات', `تم تفعيل ${frameName} بنجاح! `, 'success');
     updateCurrentChatFrameBadge();
     openChatFrameSelectorModal(); // Refresh modal active card
 
@@ -13648,7 +13648,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
 
     // ─────────────────────────────────────────────
-    //  MONEY DROP (رمي نُقطة في الشات) LISTENERS & HANDLERS
+    // MONEY DROP (رمي نُقطة في الشات) LISTENERS & HANDLERS
     // ─────────────────────────────────────────────
     const moneyDropModal = document.getElementById('money-drop-modal');
     const btnOpenMoneyDrop = document.getElementById('btn-open-money-drop-modal');
@@ -13743,7 +13743,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       btnConfirmMoneyDrop.addEventListener('click', async () => {
         const amt = Math.floor(Number(moneyDropAmtInput?.value) || 0);
         const bags = selectedDropBags || 5;
-        const msg = (moneyDropMsgInput?.value || '').trim() || 'نُقطة حلاوة لرجالة السيرفر! 💸';
+        const msg = (moneyDropMsgInput?.value || '').trim() || 'نُقطة حلاوة لرجالة السيرفر! ';
 
         if (amt < 10000) {
           showToast('تنبيه', 'الحد الأدنى لرمي النقطة هو 10,000 ج.م.', 'warning');
@@ -13783,7 +13783,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           updateUI();
 
           moneyDropModal.classList.add('hidden');
-          showToast('تم رمي النُقطة! 💸', `تم إطلاق نُقطة بقيمة ${amt.toLocaleString()} ج.م على ${bags} أكياس في الشات بنجاح!`, 'success');
+          showToast('تم رمي النُقطة! ', `تم إطلاق نُقطة بقيمة ${amt.toLocaleString()} ج.م على ${bags} أكياس في الشات بنجاح!`, 'success');
           if (typeof playMenuSound === 'function') playMenuSound('purchase');
         } catch (err) {
           showToast('خطأ في إطلاق النُقطة', err.message, 'error');
@@ -13823,7 +13823,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         const blockedWord = filter?.findBlockedWord ? filter.findBlockedWord(text) : null;
         if (blockedWord || (filter && filter.containsProfanity(text))) {
           const wordReason = blockedWord ? ` (بسبب كلمة: "${blockedWord}")` : '';
-          showToast('تم حجب الرسالة 🚫', `تم حظر الرسالة لاحتوائها على لفظ محظور${wordReason}. يرجى تعديلها قبل الإرسال.`, 'error');
+          showToast('تم حجب الرسالة ', `تم حظر الرسالة لاحتوائها على لفظ محظور${wordReason}. يرجى تعديلها قبل الإرسال.`, 'error');
           playMenuSound('error');
           return;
         }
@@ -13847,11 +13847,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           if (chatGlow === 'none') {
             chatGlow = '';
           } else if (!chatGlow && GameEngine.state) {
-            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('لهيب'))) {
+            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('لهيب'))) {
               chatGlow = 'crimson_flame';
-            } else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('حوت الشات'))) {
+            } else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('حوت الشات'))) {
               chatGlow = 'gold_neon';
-            } else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️' || (GameEngine.state.customBadge && GameEngine.state.customBadge.includes('👑'))) {
+            } else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '' || (GameEngine.state.customBadge && GameEngine.state.customBadge.includes(''))) {
               chatGlow = 'cyber_rainbow';
             }
           }
@@ -13890,7 +13890,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       adminSendMsgBtn.addEventListener('click', async () => {
         try {
           adminSendMsgBtn.disabled = true;
-          const msg ="️ تنبيه من الإدارة: الإدارة تراقب الشات حالياً. يرجى الالتزام بالقوانين.";
+          const msg =" تنبيه من الإدارة: الإدارة تراقب الشات حالياً. يرجى الالتزام بالقوانين.";
           await AppDB.sendChatMessage("الإدارة","رسمي", msg);
           showToast('تم الإرسال','تم إرسال تنبيه مراقبة الشات بنجاح.','success');
         } catch (err) {
@@ -14444,7 +14444,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         } catch (sndErr) {}
 
         if (typeof showToast === 'function') {
-          showToast('🎉 مكافأة التليجرام! 🎁', data.message || 'تهانينا! حصلت على 50,000$ كاش فوراً لانضمامك لقناة التليجرام الرسمية!', 'success');
+          showToast(' مكافأة التليجرام! ', data.message || 'تهانينا! حصلت على 50,000$ كاش فوراً لانضمامك لقناة التليجرام الرسمية!', 'success');
         }
 
         // 7. Refresh UI states
@@ -14504,10 +14504,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const sidebarSub = document.getElementById('banner-telegram-sidebar-sub');
     if (sidebarSub) {
       if (isClaimed) {
-        sidebarSub.textContent = 'تم استلام 50,000$ ✓ • تسريبات ومزادات';
+        sidebarSub.textContent = 'تم استلام 50,000$ • تسريبات ومزادات';
         sidebarSub.className = 'text-[10px] text-slate-400 font-medium block truncate';
       } else {
-        sidebarSub.innerHTML = '<span class="text-sky-300 font-bold">🎁 مكافأة 50,000$ فورية</span> • أكواد وتسريبات';
+        sidebarSub.innerHTML = '<span class="text-sky-300 font-bold"> مكافأة 50,000$ فورية</span> • أكواد وتسريبات';
         sidebarSub.className = 'text-[10px] text-sky-300/90 font-bold block truncate';
       }
     }
@@ -14523,7 +14523,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const heroTitle = document.getElementById('title-telegram-hero');
     if (heroBtn) {
       if (isClaimed) {
-        heroBtn.innerHTML = '<i class="fa-brands fa-telegram text-base"></i><span>تم الاستلام ✓ (زيارة القناة)</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>';
+        heroBtn.innerHTML = '<i class="fa-brands fa-telegram text-base"></i><span>تم الاستلام (زيارة القناة)</span><i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>';
         heroBtn.className = 'w-full sm:w-auto px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-sky-300 font-bold rounded-xl text-xs flex items-center justify-center gap-2 border border-sky-500/30 transition active:scale-95 cursor-pointer whitespace-nowrap shadow';
       } else {
         heroBtn.innerHTML = '<i class="fa-brands fa-telegram text-base"></i><span>استلم 50,000$ وانضم للقناة</span><i class="fa-solid fa-gift text-xs animate-bounce"></i>';
@@ -14532,18 +14532,18 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
     if (heroBadge) {
       if (isClaimed) {
-        heroBadge.textContent = 'تم استلام 50,000$ ✓';
+        heroBadge.textContent = 'تم استلام 50,000$ ';
         heroBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/40';
       } else {
-        heroBadge.textContent = 'هدية 50,000$ فورية 🎁';
+        heroBadge.textContent = 'هدية 50,000$ فورية ';
         heroBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40 animate-bounce';
       }
     }
     if (heroTitle) {
       if (isClaimed) {
-        heroTitle.textContent = 'قناة رأس المال الرسمية على تليجرام 📢';
+        heroTitle.textContent = 'قناة رأس المال الرسمية على تليجرام ';
       } else {
-        heroTitle.textContent = 'انضم لقناة رأس المال واستلم 50,000$ كاش 🎁';
+        heroTitle.textContent = 'انضم لقناة رأس المال واستلم 50,000$ كاش ';
       }
     }
 
@@ -14551,7 +14551,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const modalBtn = document.getElementById('btn-claim-telegram-modal');
     if (modalBtn) {
       if (isClaimed) {
-        modalBtn.innerHTML = '<span>تم الاستلام ✓</span><i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>';
+        modalBtn.innerHTML = '<span>تم الاستلام </span><i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i>';
         modalBtn.className = 'w-full sm:w-auto px-3.5 py-2 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs shrink-0 transition flex items-center justify-center gap-1.5 border border-slate-700 cursor-pointer whitespace-nowrap';
       } else {
         modalBtn.innerHTML = '<i class="fa-solid fa-gift text-xs"></i><span>استلم 50,000$ وانضم</span>';
@@ -14563,10 +14563,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const mobileDrawerBadge = document.getElementById('badge-mobile-telegram');
     if (mobileDrawerBadge) {
       if (isClaimed) {
-        mobileDrawerBadge.textContent = 'مستلم ✓';
+        mobileDrawerBadge.textContent = 'مستلم ';
         mobileDrawerBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700';
       } else {
-        mobileDrawerBadge.textContent = '50,000$ 🎁';
+        mobileDrawerBadge.textContent = '50,000$ ';
         mobileDrawerBadge.className = 'text-[9px] px-2 py-0.5 rounded-full bg-sky-500/30 text-sky-300 font-bold border border-sky-500/40 animate-pulse';
       }
     }
@@ -14627,36 +14627,36 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           glowType = GameEngine.state.chatGlow;
         } else if (msg.customBadge === 'SVIP' || (msg.customBadge && String(msg.customBadge).toUpperCase().includes('SVIP')) || (msg.senderTitle && String(msg.senderTitle).toUpperCase().includes('SVIP'))) {
           glowType = 'blue_flame';
-        } else if (msg.customBadge === '🔥' || (msg.senderTitle && String(msg.senderTitle).includes('لهيب'))) {
+        } else if (msg.customBadge === '' || (msg.senderTitle && String(msg.senderTitle).includes('لهيب'))) {
           glowType = 'crimson_flame';
-        } else if (msg.customBadge === '🌟' || (msg.senderTitle && String(msg.senderTitle).includes('حوت الشات'))) {
+        } else if (msg.customBadge === '' || (msg.senderTitle && String(msg.senderTitle).includes('حوت الشات'))) {
           glowType = 'gold_neon';
-        } else if (msg.customBadge === '👑✔️' || (msg.customBadge && String(msg.customBadge).includes('👑'))) {
+        } else if (msg.customBadge === '' || (msg.customBadge && String(msg.customBadge).includes(''))) {
           glowType = 'cyber_rainbow';
         } else if (isMe && GameEngine.state && GameEngine.state.chatGlow === undefined) {
           if (GameEngine.state.customBadge === 'SVIP' || (GameEngine.state.customBadge && String(GameEngine.state.customBadge).toUpperCase().includes('SVIP')) || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).toUpperCase().includes('SVIP'))) glowType = 'blue_flame';
-          else if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '🔥') glowType = 'crimson_flame';
-          else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '🌟') glowType = 'gold_neon';
-          else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '👑✔️') glowType = 'cyber_rainbow';
+          else if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '') glowType = 'crimson_flame';
+          else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '') glowType = 'gold_neon';
+          else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '') glowType = 'cyber_rainbow';
         }
       }
 
       if (glowType === 'blue_flame' || glowType === 'svip' || glowType === 'blue') {
         bubbleClass += ' chat-bubble-glow-blue-flame';
         senderNameClass = 'chat-sender-blue-flame-glow';
-        vipTagText = isEn ? '⚡ SVIP FLAME' : '⚡ لهيب SVIP';
+        vipTagText = isEn ? ' SVIP FLAME' : ' لهيب SVIP';
       } else if (glowType === 'crimson_flame' || glowType === 'flame') {
         bubbleClass += ' chat-bubble-glow-flame';
         senderNameClass = 'chat-sender-flame-glow';
-        vipTagText = isEn ? '🔥 FLAME VIP' : '🔥 لهيب VIP';
+        vipTagText = isEn ? ' FLAME VIP' : ' لهيب VIP';
       } else if (glowType === 'gold_neon' || glowType === 'gold') {
         bubbleClass += ' chat-bubble-glow-gold';
         senderNameClass = 'chat-sender-gold-glow';
-        vipTagText = isEn ? '✨ VIP PLAYER' : '✨ لاعب VIP';
+        vipTagText = isEn ? ' VIP PLAYER' : ' لاعب VIP';
       } else if (glowType === 'cyber_rainbow' || glowType === 'rainbow') {
         bubbleClass += ' chat-bubble-glow-rainbow';
         senderNameClass = 'chat-sender-rainbow-glow';
-        vipTagText = isEn ? '👑 ROYAL VIP' : '👑 لاعب ملكي VIP';
+        vipTagText = isEn ? ' ROYAL VIP' : ' لاعب ملكي VIP';
       }
     }
 
@@ -14714,7 +14714,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               </div>
             </div>
             <span class="text-[9px] px-2 py-0.5 rounded-full font-black ${isCompleted ? 'bg-slate-800 text-slate-400 border border-slate-700' : 'bg-red-500/20 text-red-300 border border-red-500/40 animate-pulse'}">
-              ${isCompleted ? 'اكتملت 🏁' : 'نُقطة حية 💸'}
+              ${isCompleted ? 'اكتملت ' : 'نُقطة حية '}
             </span>
           </div>
           <div class="mb-2.5 text-xs text-white font-bold bg-black/40 p-2 rounded-xl border border-amber-500/20">
@@ -14738,11 +14738,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             ${!isCompleted ? `
               <button type="button" onclick="window.UI.claimMoneyDrop('${dropId}', this)" class="btn-claim-money-drop flex-1 py-2 px-3 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/25 active:scale-95 cursor-pointer">
                 <i class="fa-solid fa-hand-holding-dollar text-sm"></i>
-                <span>التقط نصيبك! 🧧</span>
+                <span>التقط نصيبك! </span>
               </button>
             ` : `
               <div class="flex-1 py-2 text-center text-xs font-bold text-slate-400 bg-slate-900/60 rounded-xl border border-slate-800">
-                نفدت جميع الأكياس 🏁
+                نفدت جميع الأكياس 
               </div>
             `}
             <button type="button" onclick="window.UI.viewMoneyDropWinners('${dropId}')" class="px-3 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 shrink-0 cursor-pointer" title="عرض قائمة المحظوظين">
@@ -14762,7 +14762,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const verifiedBadgeHtml = isVipVerified ? getVerifiedBadgeIconHtml('text-[13px] mr-0.5 select-none') : '';
 
       let customBadgeVal = msg.customBadge || (cachedP && cachedP.customBadge) || (isMyMsg && GameEngine.state && GameEngine.state.customBadge) || '';
-      if (isVipVerified && customBadgeVal === '✔️') {
+      if (isVipVerified && customBadgeVal === '') {
         customBadgeVal = '';
       }
       let badgeIconHtml = customBadgeVal ? `<span class="text-[11px] select-none inline-flex items-center" title="شارة خاصة">${formatCustomBadgeHtml(customBadgeVal, 'text-[12px]')}</span>` : '';
@@ -14819,7 +14819,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     // Safety guard: NEVER wipe out already rendered messages if the incoming array is unexpectedly empty
     if (msgs.length === 0) {
       if (!container.children.length || container.querySelector('.chat-empty-placeholder')) {
-        container.innerHTML = '<div class="chat-empty-placeholder text-center text-slate-500 text-xs py-8">لا توجد رسائل سابقة. كن أول من يكتب! 💬</div>';
+        container.innerHTML = '<div class="chat-empty-placeholder text-center text-slate-500 text-xs py-8">لا توجد رسائل سابقة. كن أول من يكتب! </div>';
       }
       return;
     }
@@ -14851,11 +14851,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (m.type === 'money_drop') return;
       if (m.chatGlow && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, m.chatGlow === 'none' ? '' : m.chatGlow);
-      } else if (m.customBadge === '🔥' && m.sender) {
+      } else if (m.customBadge === '' && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'crimson_flame');
-      } else if (m.customBadge === '🌟' && m.sender) {
+      } else if (m.customBadge === '' && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'gold_neon');
-      } else if ((m.customBadge === '👑✔️' || (m.customBadge && m.customBadge.includes('👑'))) && m.sender) {
+      } else if ((m.customBadge === '' || (m.customBadge && m.customBadge.includes(''))) && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'cyber_rainbow');
       }
     });
@@ -14864,10 +14864,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const lbCache = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
     if (Array.isArray(lbCache)) {
       lbCache.forEach(p => {
-        if (p.chatGlow || p.hasChatGlow || p.activePackage === 'pkg_vip_crimson_flame' || p.activePackage === 'pkg_vip_chat_glow' || p.customBadge === '🔥' || p.customBadge === '🌟') {
-          const g = p.chatGlow || (p.activePackage === 'pkg_vip_crimson_flame' || p.customBadge === '🔥' ? 'crimson_flame' : (p.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
+        if (p.chatGlow || p.hasChatGlow || p.activePackage === 'pkg_vip_crimson_flame' || p.activePackage === 'pkg_vip_chat_glow' || p.customBadge === '' || p.customBadge === '') {
+          const g = p.chatGlow || (p.activePackage === 'pkg_vip_crimson_flame' || p.customBadge === '' ? 'crimson_flame' : (p.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
           window._knownVipGlowPlayers.set(p.username, g === 'none' ? '' : g);
-        } else if (p.customBadge === '👑✔️' || (p.customBadge && p.customBadge.includes('👑'))) {
+        } else if (p.customBadge === '' || (p.customBadge && p.customBadge.includes(''))) {
           window._knownVipGlowPlayers.set(p.username, 'cyber_rainbow');
         }
       });
@@ -14989,7 +14989,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (winSenderEl && res.sender) winSenderEl.textContent = `نُقطة حلاوة أطلقها المعلم [${res.sender}]`;
         if (celebrateModal) celebrateModal.classList.remove('hidden');
 
-        showToast('مبروك يا وحش! 🧧', `التقطت كيس نُقطة بقيمة ${amt.toLocaleString()} ج.م تم إيداعها بحسابك البنكي!`, 'success');
+        showToast('مبروك يا وحش! ', `التقطت كيس نُقطة بقيمة ${amt.toLocaleString()} ج.م تم إيداعها بحسابك البنكي!`, 'success');
 
         // Immediately trigger chat sync to update cards
         if (typeof triggerImmediateChatSync === 'function') {
@@ -15002,7 +15002,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (typeof playMenuSound === 'function') playMenuSound('error');
       if (btnEl) {
         btnEl.disabled = false;
-        btnEl.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i><span>التقط نصيبك! 🧧</span>';
+        btnEl.innerHTML = '<i class="fa-solid fa-hand-holding-dollar text-sm"></i><span>التقط نصيبك! </span>';
       }
     }
   }
@@ -15037,7 +15037,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         listEl.innerHTML = `
           <div class="text-center py-6 text-slate-400 text-xs">
             <i class="fa-solid fa-gift-open text-2xl text-amber-400/50 mb-2 block"></i>
-            <span>لم يلتقط أحد من هذه النُقطة بعد! كن أول الفائزين 💸</span>
+            <span>لم يلتقط أحد من هذه النُقطة بعد! كن أول الفائزين </span>
           </div>`;
         return;
       }
@@ -15046,7 +15046,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       claims.forEach((c, idx) => {
         const amt = Number(c.amount || 0);
         const timeStr = c.claimed_at ? new Date(c.claimed_at).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' }) : '';
-        const rankMedal = idx === 0 ? '🥇' : (idx === 1 ? '🥈' : (idx === 2 ? '🥉' : `#${idx + 1}`));
+        const rankMedal = idx === 0 ? '' : (idx === 1 ? '' : (idx === 2 ? '' : `#${idx + 1}`));
 
         html += `
           <div class="flex items-center justify-between p-2.5 rounded-xl bg-slate-900/80 border border-slate-800/90 text-xs hover:border-amber-500/30 transition">
@@ -15229,7 +15229,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
               <div class="flex items-center gap-2">
                 <div class="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center text-xs font-black">
-                  ️
+                  
                 </div>
                 <div>
                   <h4 class="font-black text-rose-300 text-xs sm:text-sm">تعذر اعتماد طلب شحن [${details.packageName ||'باقة شحن'}]</h4>
@@ -15268,7 +15268,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
             <div class="flex items-center gap-2">
               <div class="w-7 h-7 rounded-lg bg-sky-500/20 border border-sky-500/40 text-sky-400 flex items-center justify-center text-xs font-black">
-                📢
+                
               </div>
               <h4 class="font-black text-sky-300 text-xs sm:text-sm">${title}</h4>
             </div>
@@ -15286,18 +15286,18 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       // 2.1 Direct Admin Popup / Urgent Alert Card
       if (mail.type === 'admin_popup' || mail.type === 'urgent_alert') {
-        const title = (mail.payload && mail.payload.title) || mail.title || 'تنبيه إداري مباشر 📢';
+        const title = (mail.payload && mail.payload.title) || mail.title || 'تنبيه إداري مباشر ';
         const message = (mail.payload && (mail.payload.message || mail.payload.text)) || mail.message || '';
         const style = (mail.payload && mail.payload.style) || 'warning';
-        const isReward = style === 'reward' || title.includes('💎') || title.includes('إيداع') || title.includes('استعادة') || title.includes('رصيد');
+        const isReward = style === 'reward' || title.includes('') || title.includes('إيداع') || title.includes('استعادة') || title.includes('رصيد');
         
         const borderClass = isReward 
           ? (isUnread ? 'bg-slate-900/80 border-emerald-500/50 shadow-lg shadow-emerald-500/5' : 'bg-slate-900/30 border-slate-800')
           : (isUnread ? 'bg-slate-900/80 border-amber-500/50 shadow-lg shadow-amber-500/5' : 'bg-slate-900/30 border-slate-800');
         const iconBg = isReward ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-amber-500/20 border-amber-500/40 text-amber-400';
-        const iconSymbol = isReward ? '💎' : '📢';
+        const iconSymbol = isReward ? '' : '';
         const titleColor = isReward ? 'text-emerald-300' : 'text-amber-300';
-        const badgeTag = isReward ? 'مكافأة / استعادة 💎' : 'تنبيه إداري ⚠️';
+        const badgeTag = isReward ? 'مكافأة / استعادة ' : 'تنبيه إداري ';
 
         mailDiv.className = `p-4 rounded-2xl border ${borderClass} text-xs text-slate-200 space-y-3`;
         mailDiv.innerHTML = `
@@ -15337,11 +15337,11 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
             <div class="flex items-center gap-2">
               <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-xs font-black">
-                💰
+                
               </div>
               <div>
                 <h4 class="font-black text-emerald-300 text-xs sm:text-sm">إيداع مالي مباشر من الإدارة</h4>
-                <span class="text-[10px] text-emerald-400 font-bold">تم إيداع الرصيد بحسابك بنجاح ✅</span>
+                <span class="text-[10px] text-emerald-400 font-bold">تم إيداع الرصيد بحسابك بنجاح </span>
               </div>
             </div>
             <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
@@ -15350,13 +15350,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <div class="grid grid-cols-2 gap-2 text-center pt-1">
             ${addedCash > 0 ? `
               <div class="p-2 rounded-xl bg-slate-950/80 border border-emerald-500/20">
-                <span class="text-[10px] text-slate-400 block font-bold">💵 كاش مالي مضاف</span>
+                <span class="text-[10px] text-slate-400 block font-bold"> كاش مالي مضاف</span>
                 <span class="text-xs font-black text-yellow-400 numbers-font">+${addedCash.toLocaleString()} EGP</span>
               </div>
             ` : ''}
             ${addedBank > 0 ? `
               <div class="p-2 rounded-xl bg-slate-950/80 border border-emerald-500/20">
-                <span class="text-[10px] text-slate-400 block font-bold">🏦 إيداع بنكي مضاف</span>
+                <span class="text-[10px] text-slate-400 block font-bold"> إيداع بنكي مضاف</span>
                 <span class="text-xs font-black text-emerald-400 numbers-font">+${addedBank.toLocaleString()} EGP</span>
               </div>
             ` : ''}
@@ -15389,7 +15389,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
             <div class="flex items-center gap-2">
               <div class="w-7 h-7 rounded-lg bg-emerald-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center text-xs font-black">
-                📈
+                
               </div>
               <h4 class="font-black text-emerald-300 text-xs sm:text-sm">أرباح شراكة استثمارية [${bizName}]</h4>
             </div>
@@ -15497,13 +15497,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <span>محادثة خاصة ومباشرة من: ${modName}</span>
             </div>
             <p class="text-slate-200 text-xs leading-relaxed bg-slate-950/70 p-2.5 rounded-xl border border-emerald-500/30">
-              ${msgText || (imgUrl ? '📷 أرسل لك المحقق صورة مرفقة.' : 'رسالة خاصة من المحقق.')}
+              ${msgText || (imgUrl ? ' أرسل لك المحقق صورة مرفقة.' : 'رسالة خاصة من المحقق.')}
             </p>
           </div>`;
         actionsHtml = `
           <button onclick="if(typeof window.openPlayerInvestigationChat==='function') window.openPlayerInvestigationChat();" class="px-3.5 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 font-black rounded-xl text-xs transition flex items-center gap-1.5 shadow-md shadow-emerald-500/20 cursor-pointer">
             <i class="fa-solid fa-comments"></i>
-            <span>فتح الدردشة الخاصة المباشرة 💬</span>
+            <span>فتح الدردشة الخاصة المباشرة </span>
           </button>`;
       }
 
@@ -15524,7 +15524,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                         mail.type === 'transfer_request' ? 'طلب تحويل أموال' :
                         mail.type === 'transfer_received' ? 'حوالة بنكية' :
                         mail.type === 'admin_popup' ? 'تنبيه إداري' :
-                        mail.type === 'investigation_chat' ? 'دردشة خاصة 🛡️' :
+                        mail.type === 'investigation_chat' ? 'دردشة خاصة ' :
                         mail.type === 'admin_balance_grant' ? 'إيداع إداري' : 'رسالة';
 
       mailDiv.innerHTML = `
@@ -15550,7 +15550,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   // ─────────────────────────────────────────────
-  //  CHAT DRAWER TABS & PRIVATE DMs SYSTEM
+  // CHAT DRAWER TABS & PRIVATE DMs SYSTEM
   // ─────────────────────────────────────────────
   let _currentChatDrawerTab = 'public';
 
@@ -15645,13 +15645,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     uniqueDMs.forEach(m => {
       const isModChat = (m.type === 'investigation_chat' || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.recipient === 'MOD_STAFF_CHANNEL');
-      const partner = isModChat ? 'إدارة اللعبة والرقابة 🛡️' : (m.sender === myUser ? m.recipient : m.sender);
+      const partner = isModChat ? 'إدارة اللعبة والرقابة ' : (m.sender === myUser ? m.recipient : m.sender);
       if (!partner) return;
       const ts = Number(m.created_at || m.timestamp || 0);
       const isUnread = (m.recipient === myUser && (m.status === 'unread' || m.status === 'pending'));
       if (isUnread) totalUnread++;
 
-      const msgText = (m.payload && m.payload.message) || (m.payload && m.payload.imageUrl ? '📷 صورة مرفقة' : m.message) || '';
+      const msgText = (m.payload && m.payload.message) || (m.payload && m.payload.imageUrl ? ' صورة مرفقة' : m.message) || '';
       if (!chats[partner] || ts > chats[partner].timestamp) {
         chats[partner] = {
           username: partner,
@@ -15747,7 +15747,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   async function openPrivateChatWith(partnerUsername) {
     if (!partnerUsername) return;
     const cleanName = partnerUsername.trim();
-    if (cleanName === 'إدارة اللعبة والرقابة 🛡️' || cleanName.includes('المحقق') || cleanName.startsWith('MOD-') || cleanName === 'MOD_STAFF_CHANNEL') {
+    if (cleanName === 'إدارة اللعبة والرقابة ' || cleanName.includes('المحقق') || cleanName.startsWith('MOD-') || cleanName === 'MOD_STAFF_CHANNEL') {
       if (typeof window.openPlayerInvestigationChat === 'function') {
         window.openPlayerInvestigationChat();
         return;
@@ -15962,7 +15962,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const blockedWord = filter?.findBlockedWord ? filter.findBlockedWord(text) : null;
     if (blockedWord || (filter && filter.containsProfanity(text))) {
       const wordReason = blockedWord ? ` (بسبب كلمة: "${blockedWord}")` : '';
-      showToast('حجب الرسالة 🚫', `تم حظر الرسالة لاحتوائها على لفظ محظور${wordReason}. يرجى تعديلها قبل الإرسال.`, 'error');
+      showToast('حجب الرسالة ', `تم حظر الرسالة لاحتوائها على لفظ محظور${wordReason}. يرجى تعديلها قبل الإرسال.`, 'error');
       if (typeof playMenuSound === 'function') playMenuSound('error');
       return;
     }
@@ -16036,7 +16036,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             recipient: currentActiveDMUser,
-            title: `💬 رسالة خاصة من ${myUser}`,
+            title: ` رسالة خاصة من ${myUser}`,
             body: text.length > 70 ? text.substring(0, 70) + '...' : text
           })
         }).catch(() => {});
@@ -16061,7 +16061,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   function switchMailboxTab() {}
 
   // ─────────────────────────────────────────────
-  //  DIRECT WIRE MODAL & MUTE CONTROLS
+  // DIRECT WIRE MODAL & MUTE CONTROLS
   // ─────────────────────────────────────────────
   function openDirectWireModal(targetUsername, targetTitle = 'مستثمر طموح') {
     const modal = document.getElementById('direct-wire-modal');
@@ -16117,7 +16117,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
     const isOwnerKhaled = Boolean(GameEngine.state && GameEngine.state.isAdmin);
     if (!isOwnerKhaled && amt > 5000000) {
-      showToast('سقف التحويل اليومي', '🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
+      showToast('سقف التحويل اليومي', ' الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
       return;
     }
 
@@ -16129,7 +16129,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     if (GameEngine.state && GameEngine.state.activeLoan && (Number(GameEngine.state.activeLoan.amount || 0) > 0 || Number(GameEngine.state.activeLoan.totalDue || 0) > 0)) {
       const dueAmt = Number(GameEngine.state.activeLoan.totalDue || GameEngine.state.activeLoan.amount || 0);
-      showToast('حساب مقيد مصرفياً', `🚫 لا يمكنك إجراء حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString('ar-EG')} ج.م)! يرجى سداد القرض أولاً.`, 'error');
+      showToast('حساب مقيد مصرفياً', ` لا يمكنك إجراء حوالات مالية أثناء وجود قرض بنكي نشط (${dueAmt.toLocaleString('ar-EG')} ج.م)! يرجى سداد القرض أولاً.`, 'error');
       return;
     }
 
@@ -16158,7 +16158,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             recipient: target,
-            title: '💸 حوالة بنكية واردة!',
+            title: ' حوالة بنكية واردة!',
             body: `قام اللاعب "${GameEngine.activeUsername}" بتحويل ${amt.toLocaleString()} EGP إلى حسابك البنكي الآن!`
           })
         }).catch(() => {});
@@ -16175,7 +16175,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       const taxAmt = Math.floor(amt * 0.05);
       const netAmt = amt - taxAmt;
-      showToast('تم التحويل بنجاح! 💸', `تم تحويل ${amt.toLocaleString()} EGP إلى اللاعب "${target}" بنجاح! (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
+      showToast('تم التحويل بنجاح! ', `تم تحويل ${amt.toLocaleString()} EGP إلى اللاعب "${target}" بنجاح! (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
       if (typeof playMenuSound === 'function') playMenuSound('cash');
       if (pinEl) pinEl.value = '';
       const dWireTaxBox = document.getElementById('direct-wire-tax-breakdown-box');
@@ -16202,7 +16202,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
     if (idx >= 0) {
       GameEngine.state.mutedUsers.splice(idx, 1);
-      showToast('إلغاء الكتم 🔊', `تم إلغاء كتم رسائل اللاعب "${username}". ستظهر رسائله مجدداً في الشات.`, 'info');
+      showToast('إلغاء الكتم ', `تم إلغاء كتم رسائل اللاعب "${username}". ستظهر رسائله مجدداً في الشات.`, 'info');
       if (btnMutePlayer) {
         btnMutePlayer.className = 'py-2.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
       }
@@ -16210,7 +16210,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (muteText) muteText.textContent = 'كتم في الشات';
     } else {
       GameEngine.state.mutedUsers.push(username);
-      showToast('تم الكتم 🔇', `تم كتم رسائل اللاعب "${username}" بنجاح! لن تظهر أي من رسائله في الشات العام.`, 'warning');
+      showToast('تم الكتم ', `تم كتم رسائل اللاعب "${username}" بنجاح! لن تظهر أي من رسائله في الشات العام.`, 'warning');
       if (btnMutePlayer) {
         btnMutePlayer.className = 'py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
       }
@@ -16784,7 +16784,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (grandCashEl) grandCashEl.textContent =` +${grandCash.toLocaleString()} EGP`;
 
     const grandXpEl = document.getElementById('daily-grand-xp-preview');
-    if (grandXpEl) grandXpEl.textContent =`⭐ +${grandXP} XP`;
+    if (grandXpEl) grandXpEl.textContent =` +${grandXP} XP`;
 
     const btnGrandEl = document.getElementById('btn-claim-grand-daily-bonus');
     const btnGrandText = document.getElementById('btn-claim-grand-text');
@@ -16845,13 +16845,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const seasonBadge = pState.seasonBadge || (pState.state && pState.state.seasonBadge) || '';
 
       const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
-      const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || activePkg === 'pkg_vip_verified' || activePkg === 'pkg_vip_royal_ultimate' || (customBadge && customBadge.includes('✔️')));
+      const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || activePkg === 'pkg_vip_verified' || activePkg === 'pkg_vip_royal_ultimate' || (customBadge && customBadge.includes('')));
 
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
         const fbIconHtml = hasFbVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
         const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
-        const customBadgeHtml = (customBadge && !customBadge.includes('✔️')) ? ` <span class="inline-flex items-center text-sm ml-1 select-none" title="${escapeHtml(badgeTitle || 'وسام خاص')}">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span>` : '';
+        const customBadgeHtml = (customBadge && !customBadge.includes('')) ? ` <span class="inline-flex items-center text-sm ml-1 select-none" title="${escapeHtml(badgeTitle || 'وسام خاص')}">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span>` : '';
         const nameCardHtml = seasonBadge ? getSeasonBadgeHtml(seasonBadge, 'text-xs py-1 px-3', pState.username || '---') : escapeHtml(pState.username || '---');
         // SECURITY: escapeHtml prevents Stored XSS via crafted usernames in profile card
         uCardEl.innerHTML = nameCardHtml + customBadgeHtml + verifiedIconHtml + fbIconHtml;
@@ -16866,7 +16866,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           pwEl.textContent = `${nw.toLocaleString()} EGP`;
         }
       }
-      document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} ⭐`;
+      document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} `;
       document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() : 'غير معروف';
 
       const jobConfig = GameEngine.JOBS && GameEngine.JOBS[pState.jobId];
@@ -16897,32 +16897,32 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
           let cardBg = 'bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-950/60';
           let cardIcon = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i>';
-          let cardText = `وسام نخبة توب 10 💎 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
+          let cardText = `وسام نخبة توب 10 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
 
           if (rNum === 1) {
             cardBg = 'bg-gradient-to-r from-amber-950/90 via-yellow-950/80 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 shadow-md shadow-amber-950/60';
             cardIcon = '<i class="fa-solid fa-crown text-yellow-300 text-sm animate-pulse"></i>';
-            cardText = `وسام بطل الموسم ${sNum} 👑 (المركز الأول TOP 1 - بطل اللعبة)`;
+            cardText = `وسام بطل الموسم ${sNum} (المركز الأول TOP 1 - بطل اللعبة)`;
           } else if (rNum === 2) {
             cardBg = 'bg-gradient-to-r from-slate-900/90 via-slate-800 to-slate-900/90 border-2 border-slate-300 text-slate-200 shadow-md shadow-slate-900/60';
             cardIcon = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i>';
-            cardText = `وسام وصيف الموسم ${sNum} 🥈 (المركز الثاني TOP 2)`;
+            cardText = `وسام وصيف الموسم ${sNum} (المركز الثاني TOP 2)`;
           } else if (rNum === 3) {
             cardBg = 'bg-gradient-to-r from-orange-950/90 via-amber-950/80 to-orange-950/90 border-2 border-orange-500 text-amber-300 shadow-md shadow-orange-950/60';
             cardIcon = '<i class="fa-solid fa-award text-amber-300 text-sm"></i>';
-            cardText = `وسام برونزية الموسم ${sNum} 🥉 (المركز الثالث TOP 3)`;
+            cardText = `وسام برونزية الموسم ${sNum} (المركز الثالث TOP 3)`;
           } else if (rNum >= 4 && rNum <= 10) {
             cardBg = 'bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-950/60';
             cardIcon = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i>';
-            cardText = `وسام نخبة توب 10 💎 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
+            cardText = `وسام نخبة توب 10 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
           } else if (rNum >= 11 && rNum <= 25) {
             cardBg = 'bg-gradient-to-r from-purple-950/90 via-indigo-950/80 to-purple-950/90 border-2 border-purple-400 text-purple-300 shadow-md shadow-purple-950/60';
             cardIcon = '<i class="fa-solid fa-certificate text-purple-300 text-sm"></i>';
-            cardText = `وسام نخبة توب 25 🎖️ (الموسم ${sNum} المركز #${rNum} - مستثمر مخضرم)`;
+            cardText = `وسام نخبة توب 25 (الموسم ${sNum} المركز #${rNum} - مستثمر مخضرم)`;
           } else {
             cardBg = 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-2 border-blue-400 text-blue-300 shadow-md';
             cardIcon = '<i class="fa-solid fa-star text-blue-300 text-sm"></i>';
-            cardText = `وسام نخبة التوب 🌟 (الموسم ${sNum} المركز #${rNum})`;
+            cardText = `وسام نخبة التوب (الموسم ${sNum} المركز #${rNum})`;
           }
 
           sbBadge.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 ${cardBg} text-xs font-black shadow-md`;
@@ -16936,52 +16936,52 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           const liveBadge = document.createElement('div');
           if (liveRank === 1) {
             liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-950/80 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-yellow-500/20';
-            liveBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm animate-pulse"></i><span>متصدر قائمة الأثرياء الحالي 👑 (المركز الأول عالمياً #1)</span>';
+            liveBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm animate-pulse"></i><span>متصدر قائمة الأثرياء الحالي (المركز الأول عالمياً #1)</span>';
           } else if (liveRank === 2) {
             liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-slate-300 text-slate-100 text-xs font-black shadow-md shadow-slate-300/20';
-            liveBadge.innerHTML = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i><span>وصيف قائمة الأثرياء الحالي 🥈 (المركز الثاني عالمياً #2)</span>';
+            liveBadge.innerHTML = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i><span>وصيف قائمة الأثرياء الحالي (المركز الثاني عالمياً #2)</span>';
           } else if (liveRank === 3) {
             liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-950/90 via-amber-950/80 to-orange-950/90 border-2 border-orange-500 text-amber-200 text-xs font-black shadow-md shadow-orange-500/20';
-            liveBadge.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>برونزية قائمة الأثرياء الحالي 🥉 (المركز الثالث عالمياً #3)</span>';
+            liveBadge.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>برونزية قائمة الأثرياء الحالي (المركز الثالث عالمياً #3)</span>';
           } else {
             liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-500/20';
-            liveBadge.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>من نخبة التوب 10 الحاليين 💎 (المركز #${liveRank} في قائمة الأثرياء)</span>`;
+            liveBadge.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>من نخبة التوب 10 الحاليين (المركز #${liveRank} في قائمة الأثرياء)</span>`;
           }
           badgesListEl.appendChild(liveBadge);
         }
 
-        // 3. Custom VIP / Top Badges (👑 الملك الأسطوري / ⚡ SVIP / 🔥 لهيب / 🌟 حوت الشات)
+        // 3. Custom VIP / Top Badges ( الملك الأسطوري / SVIP / لهيب / حوت الشات)
         if (customBadge) {
-          const isRoyalKing = customBadge.includes('👑') || (badgeTitle && (badgeTitle.includes('الملك') || badgeTitle.includes('إمبراطور'))) || activePkg === 'pkg_vip_royal_ultimate';
+          const isRoyalKing = customBadge.includes('') || (badgeTitle && (badgeTitle.includes('الملك') || badgeTitle.includes('إمبراطور'))) || activePkg === 'pkg_vip_royal_ultimate';
           const isSvip = String(customBadge).toUpperCase().includes('SVIP');
-          const isFlame = customBadge.includes('🔥') || (badgeTitle && badgeTitle.includes('لهيب')) || activePkg === 'pkg_vip_crimson_flame';
-          const isChatWhale = customBadge.includes('🌟') || (badgeTitle && badgeTitle.includes('حوت')) || activePkg === 'pkg_vip_chat_glow';
+          const isFlame = customBadge.includes('') || (badgeTitle && badgeTitle.includes('لهيب')) || activePkg === 'pkg_vip_crimson_flame';
+          const isChatWhale = customBadge.includes('') || (badgeTitle && badgeTitle.includes('حوت')) || activePkg === 'pkg_vip_chat_glow';
 
           if (isRoyalKing) {
             badgeCount++;
             const cbBadge = document.createElement('div');
             cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-900/60 to-purple-950/90 border-2 border-amber-400 text-yellow-300 text-xs font-black shadow-lg shadow-amber-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام الملك الأسطوري وإمبراطور اللعبة 👑 (عضوية ملكية Ultimate)</span>';
+            cbBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام الملك الأسطوري وإمبراطور اللعبة (عضوية ملكية Ultimate)</span>';
             badgesListEl.appendChild(cbBadge);
           } else if (isSvip) {
             badgeCount++;
             const cbBadge = document.createElement('div');
             cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-950/90 via-blue-900/60 to-indigo-950/90 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-lg shadow-cyan-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-bolt-lightning text-cyan-300 text-sm animate-pulse"></i><span>وسام النخبة الفائقة SVIP ⚡ (نخبة كبار المستثمرين)</span>';
+            cbBadge.innerHTML = '<i class="fa-solid fa-bolt-lightning text-cyan-300 text-sm animate-pulse"></i><span>وسام النخبة الفائقة SVIP (نخبة كبار المستثمرين)</span>';
             badgesListEl.appendChild(cbBadge);
           } else if (isFlame) {
             badgeCount++;
             const cbBadge = document.createElement('div');
             cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-950/90 via-red-900/60 to-orange-950/90 border-2 border-rose-400 text-rose-300 text-xs font-black shadow-lg shadow-rose-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-fire text-rose-400 text-sm animate-pulse"></i><span>وسام اللهيب الحارق والتأثير الناري 🔥 (نخبة VIP)</span>';
+            cbBadge.innerHTML = '<i class="fa-solid fa-fire text-rose-400 text-sm animate-pulse"></i><span>وسام اللهيب الحارق والتأثير الناري (نخبة VIP)</span>';
             badgesListEl.appendChild(cbBadge);
           } else if (isChatWhale) {
             badgeCount++;
             const cbBadge = document.createElement('div');
             cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-900/60 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-lg shadow-yellow-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-star text-yellow-300 text-sm"></i><span>وسام حوت الشات والوهج الذهبي 🌟 (حوت السوق)</span>';
+            cbBadge.innerHTML = '<i class="fa-solid fa-star text-yellow-300 text-sm"></i><span>وسام حوت الشات والوهج الذهبي (حوت السوق)</span>';
             badgesListEl.appendChild(cbBadge);
-          } else if (customBadge !== '✔️') {
+          } else if (customBadge !== '') {
             badgeCount++;
             const cbBadge = document.createElement('div');
             cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border-2 border-yellow-500/60 text-yellow-300 text-xs font-black shadow-md';
@@ -17075,7 +17075,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           } else if (avatarIcon) {
             avatarBox.innerHTML = '<i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl"></i>';
             const newAvatarIcon = document.getElementById('profile-card-avatar-icon');
-            if (rNum === 1 || hasGold || (customBadge && customBadge.includes('👑')) || liveRank === 1) {
+            if (rNum === 1 || hasGold || (customBadge && customBadge.includes('')) || liveRank === 1) {
               avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 border-2 border-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-yellow-500/50 shrink-0';
               if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-crown text-2xl animate-pulse';
             } else if (rNum === 2 || liveRank === 2) {
@@ -17093,7 +17093,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             } else if (customBadge && String(customBadge).toUpperCase().includes('SVIP')) {
               avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 border-2 border-cyan-300 flex items-center justify-center text-white shadow-xl shadow-cyan-500/50 shrink-0';
               if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-bolt-lightning text-2xl animate-pulse text-yellow-300';
-            } else if (customBadge && (customBadge.includes('🔥') || (badgeTitle && badgeTitle.includes('لهيب')))) {
+            } else if (customBadge && (customBadge.includes('') || (badgeTitle && badgeTitle.includes('لهيب')))) {
               avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-600 border-2 border-rose-300 flex items-center justify-center text-white shadow-xl shadow-rose-500/50 shrink-0';
               if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-fire text-2xl animate-pulse text-yellow-300';
             } else {
@@ -17151,7 +17151,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (btnTransferMoney) {
           btnTransferMoney.classList.remove('hidden');
           btnTransferMoney.className = 'w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95 cursor-pointer';
-          btnTransferMoney.innerHTML = '<i class="fa-solid fa-camera text-sm"></i> <span>تغيير / إدارة صورتك الشخصية 📸</span>';
+          btnTransferMoney.innerHTML = '<i class="fa-solid fa-camera text-sm"></i> <span>تغيير / إدارة صورتك الشخصية </span>';
           btnTransferMoney.onclick = () => window.UI.openAvatarModal();
         }
         if (btnPrivateChat) btnPrivateChat.classList.add('hidden');
@@ -18014,7 +18014,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       if (!hasEarningsEntries) {
         const noMgrMsg = (!rep.wasManagerActive)
-          ? '⚠️ مدير الـ AFK لم يكن نشطاً أثناء غيابك — لم تُجمع أرباح تجارية. اضغط "تجديد الاشتراك" لتفعيله.'
+          ? ' مدير الـ AFK لم يكن نشطاً أثناء غيابك — لم تُجمع أرباح تجارية. اضغط "تجديد الاشتراك" لتفعيله.'
           : 'تم جمع الأرباح وتوريدها للبنك بنجاح.';
         listEl.innerHTML = `
           <div class="p-3 text-center text-slate-400 text-xs bg-slate-900/40 rounded-xl border border-slate-800/60">
@@ -18094,7 +18094,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const closeBtn = document.getElementById('btn-close-offline-report');
     if (closeBtn) {
       if (netAmount > 0) {
-        closeBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>تم إيداع (+${Math.round(netAmount).toLocaleString()} EGP) في البنك بنجاح ✓ (إغلاق)</span>`;
+        closeBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i><span>تم إيداع (+${Math.round(netAmount).toLocaleString()} EGP) في البنك بنجاح (إغلاق)</span>`;
       } else {
         closeBtn.innerHTML = `<i class="fa-solid fa-check"></i><span>إغلاق تقرير الغياب (0 EGP)</span>`;
       }
@@ -18219,28 +18219,28 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500 to-red-700 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-rose-500/30 shrink-0 animate-pulse';
         iconEl.className = 'fa-solid fa-triangle-exclamation';
         badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-bold text-[10px] animate-pulse';
-        badgeEl.textContent = 'إنذار إداري هام ⛔';
+        badgeEl.textContent = 'إنذار إداري هام ';
       } else if (style === 'official') {
         cardEl.className = 'glass-panel w-full max-w-lg rounded-3xl border-2 border-blue-500/60 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4';
         glowEl.className = 'absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-blue-500/25 blur-3xl rounded-full pointer-events-none';
         iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white flex items-center justify-center text-xl font-black shadow-lg shadow-blue-500/30 shrink-0';
         iconEl.className = 'fa-solid fa-shield-halved';
         badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-blue-500/20 border border-blue-500/40 text-blue-300 font-bold text-[10px]';
-        badgeEl.textContent = 'إشعار رسمي من الإدارة 📢';
+        badgeEl.textContent = 'إشعار رسمي من الإدارة ';
       } else if (style === 'reward') {
         cardEl.className = 'glass-panel w-full max-w-lg rounded-3xl border-2 border-emerald-500/60 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4';
         glowEl.className = 'absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-emerald-500/25 blur-3xl rounded-full pointer-events-none';
         iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg shadow-emerald-500/30 shrink-0 animate-bounce';
         iconEl.className = 'fa-solid fa-gift';
         badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-bold text-[10px]';
-        badgeEl.textContent = 'تهنئة ومكافأة خاصة 🎉';
+        badgeEl.textContent = 'تهنئة ومكافأة خاصة ';
       } else {
         cardEl.className = 'glass-panel w-full max-w-lg rounded-3xl border-2 border-amber-500/50 p-5 sm:p-6 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-4';
         glowEl.className = 'absolute -top-20 left-1/2 -translate-x-1/2 w-80 h-32 bg-amber-500/20 blur-3xl rounded-full pointer-events-none';
         iconContainer.className = 'w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950 flex items-center justify-center text-xl font-black shadow-lg shadow-amber-500/25 shrink-0 animate-bounce';
         iconEl.className = 'fa-solid fa-bullhorn';
         badgeEl.className = 'px-2.5 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-[10px]';
-        badgeEl.textContent = 'تنبيه إداري مباشر ⚡';
+        badgeEl.textContent = 'تنبيه إداري مباشر ';
       }
     }
 
@@ -18395,19 +18395,19 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             itemsDesc = itemEntries.map(([k, qty]) => {
               const def = (typeof INVENTORY_ITEM_CATALOG !== 'undefined' && INVENTORY_ITEM_CATALOG[k]) || (GameEngine.STORE_ITEMS && GameEngine.STORE_ITEMS[k]);
               const name = def ? def.name : k;
-              return `📦 مقتنيات: ${name} (x${qty})`;
+              return ` مقتنيات: ${name} (x${qty})`;
             }).join('\n') + '\n';
           }
         }
 
         showDirectAdminPopupModal({
           id: tm.id,
-          title: `🎉 تم اعتماد باقة [${pkgName}] بنجاح!`,
+          title: ` تم اعتماد باقة [${pkgName}] بنجاح!`,
           message: `تم تأكيد واعتماد الشحن بنجاح وإضافة المزايا لحسابك:\n\n` +
-            (addedCash > 0 ? `💵 كاش مالي: +${addedCash.toLocaleString()} EGP\n` : '') +
-            (addedBank > 0 ? `🏦 إيداع بنكي: +${addedBank.toLocaleString()} EGP\n` : '') +
-            (addedXp > 0 ? `⭐ نقاط خبرة: +${addedXp.toLocaleString()} XP\n` : '') +
-            (details.customBadge ? `👑 وسام خاص: [${details.badgeTitle || pkgName}]\n` : '') +
+            (addedCash > 0 ? ` كاش مالي: +${addedCash.toLocaleString()} EGP\n` : '') +
+            (addedBank > 0 ? ` إيداع بنكي: +${addedBank.toLocaleString()} EGP\n` : '') +
+            (addedXp > 0 ? ` نقاط خبرة: +${addedXp.toLocaleString()} XP\n` : '') +
+            (details.customBadge ? ` وسام خاص: [${details.badgeTitle || pkgName}]\n` : '') +
             itemsDesc,
           sender: 'إدارة اللعبة (Financial Team)',
           timestamp: details.date || Date.now(),
@@ -18493,7 +18493,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         // Show toast notification and update HUD immediately without modal
         showToast(
-          '💰 إيداع مالي إداري مباشر!',
+          ' إيداع مالي إداري مباشر!',
           `تم تحويل وإضافة +${totalAmount.toLocaleString()} EGP إلى حسابك فوراً من قبل الإدارة.` +
             (addCash > 0 ? ` (كاش: +${addCash.toLocaleString()})` : '') +
             (addBank > 0 ? ` (بنك: +${addBank.toLocaleString()})` : ''),
@@ -18537,7 +18537,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (typeof renderAll === 'function') renderAll();
 
         showToast(
-          '🪙 إيداع ذهب إداري فوري!',
+          ' إيداع ذهب إداري فوري!',
           `تمت إضافة +${addGold.toLocaleString()} ذهبة إلى حسابك فوراً من قبل الإدارة. الرصيد الإجمالي: ${Number(GameEngine.state.gold).toLocaleString()} ذهبة.`,
           'success'
         );
@@ -18554,7 +18554,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
       showDirectAdminPopupModal({
         id: popup.id,
-        title: (popup.payload && popup.payload.title) || 'تنبيه إداري مباشر 📢',
+        title: (popup.payload && popup.payload.title) || 'تنبيه إداري مباشر ',
         message: (popup.payload && popup.payload.message) || popup.message || '',
         sender: popup.sender || 'إدارة اللعبة (Admin)',
         timestamp: popup.created_at || Date.now(),
@@ -18786,7 +18786,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   // ─────────────────────────────────────────────
-  //  V2: CORPORATIONS UI & ACTIONS
+  // V2: CORPORATIONS UI & ACTIONS
   // ─────────────────────────────────────────────
   async function renderCorporationsTab(force = false) {
     const container = document.getElementById('corporations-main-container');
@@ -19551,7 +19551,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   async function dissolveCorpAction(corpId) {
-    if (!confirm('️ تحذير: سيتم حل الشركة نهائياً وإعادة توزيع الخزينة على المساهمين بحسب حصصهم. هل تريد المتابعة؟')) return;
+    if (!confirm(' تحذير: سيتم حل الشركة نهائياً وإعادة توزيع الخزينة على المساهمين بحسب حصصهم. هل تريد المتابعة؟')) return;
     if (!confirm('تأكيد أخير: هذا الإجراء لا رجعة فيه. هل أنت متأكد 100%؟')) return;
     try {
       await AppDB.dissolveCorporation(corpId);
@@ -19685,7 +19685,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const car = GameEngine.CAR_TEMPLATES[carId];
       if (!confirm(`هل أنت متأكد من شراء سيارة ${car.name} بمبلغ ${car.cost.toLocaleString()} EGP؟`)) return;
       await GameEngine.buyCar(carId);
-      showToast('مبروك السيارة! ️',`تم شراء ${car.name} بنجاح وإضافتها للمرأب.`,'success');
+      showToast('مبروك السيارة! ',`تم شراء ${car.name} بنجاح وإضافتها للمرأب.`,'success');
       playMenuSound('success');
       renderAll();
     } catch (err) {
@@ -19937,7 +19937,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             </span>
             <button type="button" class="btn-speedup-smuggling px-2.5 py-1 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-lg text-[10px] flex items-center gap-1 shadow transition cursor-pointer active:scale-95" data-job-id="${targetJobKey}">
               <i class="fa-solid fa-bolt text-slate-950"></i>
-              <span>إنهاء فوري (${goldCost} 🪙)</span>
+              <span>إنهاء فوري (${goldCost} )</span>
             </button>
           </div>` : ''}
         </div>`;
@@ -20019,7 +20019,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   async function executeStartSmugglingJob(routeId, vehicleType, cargoType) {
     try {
       await GameEngine.startSmugglingJob(routeId, vehicleType, cargoType);
-      showToast('تم انطلاق الشحنة 🛳️', 'انطلقت المركبة وبدأت رحلة التهريب المتوازنة.', 'success');
+      showToast('تم انطلاق الشحنة ', 'انطلقت المركبة وبدأت رحلة التهريب المتوازنة.', 'success');
       playMenuSound('success');
       renderSmugglingSection();
       renderAll();
@@ -20033,7 +20033,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const v = GameEngine.SMUGGLING_VEHICLES[vehicleId];
       if (!confirm(`هل أنت متأكد من شراء ${v.name} بمبلغ ${v.cost.toLocaleString()} EGP؟ (الحد الأقصى: مركبة واحدة)`)) return;
       await GameEngine.buySmugglingVehicle(vehicleId);
-      showToast('مركبة جديدة بالأسطول 🛳️', `تم شراء ${v.name} بنجاح وإضافتها لأسطول التهريب.`, 'success');
+      showToast('مركبة جديدة بالأسطول ', `تم شراء ${v.name} بنجاح وإضافتها لأسطول التهريب.`, 'success');
       playMenuSound('success');
       renderSmugglingSection();
       renderAll();
@@ -20130,10 +20130,10 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       const res = await AppDB.syncProgressToCloud(GameEngine.activeUsername);
       if (res.success) {
-        showToast('تم التزامن السحابي ️', res.message,'success');
+        showToast('تم التزامن السحابي ', res.message,'success');
         playMenuSound('success');
       } else {
-        showToast('تنبيه الحفظ ⏳', res.message,'warning');
+        showToast('تنبيه الحفظ ', res.message,'warning');
       }
     } catch (e) {
       showToast('خطأ في الحفظ', e.message ||'تعذر الاتصال بالسيرفر.','error');
@@ -20417,7 +20417,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           </div>
           <button id="btn-import-order-${key}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition shadow-lg shadow-cyan-500/20 flex items-center justify-center gap-2 cursor-pointer ${isImportFleetFull ?'opacity-50 cursor-not-allowed' :''}" ${isImportFleetFull ?'disabled' :''}>
             <i class="fa-solid fa-plane-departure"></i>
-            <span>${isImportFleetFull ?'أسطول الاستيراد مشغول (2/2) ️' :'تعاقد واستيراد البضاعة'}</span>
+            <span>${isImportFleetFull ?'أسطول الاستيراد مشغول (2/2) ' :'تعاقد واستيراد البضاعة'}</span>
           </button>
         </div>`;
 
@@ -20654,7 +20654,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
         <button id="btn-sign-export-${buyer.id}" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/20 flex items-center justify-center gap-2 cursor-pointer ${isExportDisabled ?'opacity-50 cursor-not-allowed' :''}" ${isExportDisabled ?'disabled' :''}>
           <i class="fa-solid fa-file-contract"></i>
-          <span>${isBuyerFull ?'الحد الأقصى لعقود هذا العميل (1/1) ️' : (isFleetFull ?'أسطول التصدير مشغول بالكامل (2/2) ️' :'توقيع عقد التصدير والشحن ️')}</span>
+          <span>${isBuyerFull ?'الحد الأقصى لعقود هذا العميل (1/1) ' : (isFleetFull ?'أسطول التصدير مشغول بالكامل (2/2) ' :'توقيع عقد التصدير والشحن ')}</span>
         </button>`;
 
       grid.appendChild(card);
@@ -20750,7 +20750,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           try {
             const order = GameEngine.sellExportCargo(commKey, buyer.id, qty);
             playMenuSound('success');
-            showToast('تم توقيع عقد التصدير! 🚢',`تم تصدير ${qty} وحدة إلى "${buyer.name}". إجمالي العقد: ${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP). الشحنة انطلقت الآن!`,'success');
+            showToast('تم توقيع عقد التصدير! ',`تم تصدير ${qty} وحدة إلى "${buyer.name}". إجمالي العقد: ${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP). الشحنة انطلقت الآن!`,'success');
             if (typeof renderDailyQuests === "function") renderDailyQuests();
             preselectedExportCommodity = null;
             switchTradeSubtab('shipments');
@@ -20834,7 +20834,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             <button class="btn-speedup-trade-import w-full mt-2 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-[11px] transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" data-id="${order.id}">
               <i class="fa-solid fa-bolt text-xs"></i>
               <span>تسريع الوصول الفوري</span>
-              <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 600))} 🪙</span>
+              <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 600))} </span>
             </button>
           </div>`}
         </div>`;
@@ -20861,7 +20861,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           </div>
           <div>
             <div class="flex items-center gap-2">
-              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">شحنة تصدير جوية ️</span>
+              <span class="px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold text-[10px] border border-emerald-500/30">شحنة تصدير جوية </span>
               <h4 class="font-black text-white text-sm">${order.commodityName} (${order.quantity} حاوية)</h4>
             </div>
             <p class="text-[11px] text-slate-400 mt-0.5">العميل: <span class="font-bold text-white">${order.buyerName}</span> (${order.region}) — قيمة العقد: <span class="numbers-font font-black text-amber-400">${order.totalPayout.toLocaleString()} EGP</span> <span class="numbers-font font-bold text-emerald-400 mr-1">(صافي ربح: +${(order.estProfit || 0).toLocaleString()} EGP)</span></p>
@@ -20885,7 +20885,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <button class="btn-speedup-trade-export w-full mt-2 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-[11px] transition shadow-md shadow-amber-500/20 flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" data-id="${order.id}">
                 <i class="fa-solid fa-bolt text-xs"></i>
                 <span>تسريع التسليم الفوري</span>
-                <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 600))} 🪙</span>
+                <span class="px-1.5 py-0.5 rounded bg-black/30 text-amber-950 font-black text-[10px] numbers-font" id="speedup-cost-${order.id}">${Math.max(1, Math.ceil(remSec / 600))} </span>
               </button>
             </div>`}
         </div>`;
@@ -20933,7 +20933,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             try { await GameEngine.forceSaveState(true); } catch (e) {}
           }
           playMenuSound('success');
-          showToast('تسريع الاستيراد ⚡', `تم تسريع وصول الشحنة وتفريغ البضاعة بالمستودع فورياً! (تم خصم ${res.goldCost} 🪙 ذهب - المتبقي: ${res.remainingGold} 🪙)`, 'success');
+          showToast('تسريع الاستيراد ', `تم تسريع وصول الشحنة وتفريغ البضاعة بالمستودع فورياً! (تم خصم ${res.goldCost} ذهب - المتبقي: ${res.remainingGold} )`, 'success');
           renderTradePanel();
           renderStatsBar();
         } catch (err) {
@@ -20953,7 +20953,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             try { await GameEngine.forceSaveState(true); } catch (e) {}
           }
           playMenuSound('success');
-          showToast('تسريع التصدير ⚡', `تم تسريع تسليم الشحنة للعميل وأصبحت أرباح الصفقة جاهزة للتحصيل فوراً! (تم خصم ${res.goldCost} 🪙 ذهب - المتبقي: ${res.remainingGold} 🪙)`, 'success');
+          showToast('تسريع التصدير ', `تم تسريع تسليم الشحنة للعميل وأصبحت أرباح الصفقة جاهزة للتحصيل فوراً! (تم خصم ${res.goldCost} ذهب - المتبقي: ${res.remainingGold} )`, 'success');
           renderTradePanel();
           renderStatsBar();
         } catch (err) {
@@ -20990,7 +20990,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         timerEl.textContent = formatCountdownHMS(remSec);
         barEl.style.width =`${progress}%`;
         if (speedupCostEl) {
-          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 600))} 🪙`;
+          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 600))} `;
         }
       }
     });
@@ -21010,7 +21010,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         timerEl.textContent = formatCountdownHMS(remSec);
         barEl.style.width =`${progress}%`;
         if (speedupCostEl) {
-          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 600))} 🪙`;
+          speedupCostEl.textContent = `${Math.max(1, Math.ceil(remSec / 600))} `;
         }
       }
     });
@@ -21381,7 +21381,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                   <span class="text-[10px] text-slate-400">المستوى: <strong class="${isBottleneck ?'text-amber-300' :'text-emerald-400'} numbers-font">${curLvl}</strong>/50</span>
                 </div>
               </div>
-              ${isBottleneck ?'<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">عنق الزجاجة ️</span>' :''}
+              ${isBottleneck ?'<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">عنق الزجاجة </span>' :''}
             </div>
             <p class="text-[11px] text-slate-400 leading-relaxed min-h-[32px]">${stDef.desc}</p>
           </div>
@@ -21433,7 +21433,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
               <span class="text-xs text-slate-400 font-normal">/ <span id="industry-active-stock-cap">${activeInfo.siloCapacity.toLocaleString()}</span> وحدة</span>
             </div>
             <div id="industry-stock-full-badge" class="${activeInfo.isStorageFull ?'' :'hidden'} mb-1">
-              <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">الصوامع ممتلئة ️ توقف الإنتاج</span>
+              <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">الصوامع ممتلئة توقف الإنتاج</span>
             </div>
             <span class="text-[10px] text-yellow-400 block numbers-font">صافي البيع: <strong id="industry-active-stock-rev">${netRevenue.toLocaleString()} EGP</strong> <span class="text-[9px] text-slate-400 font-normal">(بعد خصم 15% تشغيل)</span></span>
           </div>
@@ -21540,7 +21540,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         try {
           playMenuSound('click');
           const res = GameEngine.upgradeIndustryStage(currentIndustrySector, stKey, currentIndustryUpgradeMultiplier);
-          showToast('ترقية خط الإنتاج ️',`تمت ترقية المرحلة بمقدار +${res.upgradedLevels} (المستوى ${res.newLevel})`,'success');
+          showToast('ترقية خط الإنتاج ',`تمت ترقية المرحلة بمقدار +${res.upgradedLevels} (المستوى ${res.newLevel})`,'success');
           renderIndustryPanel();
         } catch (err) {
           showToast('تعذر الترقية', err.message,'error');
@@ -21582,7 +21582,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
   // ─────────────────────────────────────────────
     // ─────────────────────────────────────────────
-  // 🌾 TAB: AGRO FARM TYCOON 2.0 (المزرعة الاستثمارية المتطورة)
+  // TAB: AGRO FARM TYCOON 2.0 (المزرعة الاستثمارية المتطورة)
   // ─────────────────────────────────────────────
   let _activeFarmSubtab = 'fields'; // 'fields' | 'processing' | 'livestock' | 'contracts'
 
@@ -21656,7 +21656,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
           try {
             GameEngine.unlockFarm();
             playMenuSound('success');
-            showToast('استصلاح ناجح 🌾', 'مبروك! تم استصلاح وتملك المزرعة الاستثمارية بنجاح.', 'success');
+            showToast('استصلاح ناجح ', 'مبروك! تم استصلاح وتملك المزرعة الاستثمارية بنجاح.', 'success');
             renderFarmPanel();
             renderStatsBar();
           } catch (e) {
@@ -21716,7 +21716,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const statLiq = document.getElementById('farm-stat-liquidation');
     if (statLiq) {
       if (liqInfo.isUnlimited) {
-        statLiq.innerHTML = `<span class="inline-block text-amber-300 font-bold">غير محدود 👑</span>`;
+        statLiq.innerHTML = `<span class="inline-block text-amber-300 font-bold">غير محدود </span>`;
       } else {
         statLiq.innerHTML = `<span dir="ltr" class="inline-block numbers-font font-bold">${(liqInfo.totalLiquidated || 0).toLocaleString()} / ${(liqInfo.cap || 20000000).toLocaleString()}</span> EGP`;
       }
@@ -21724,7 +21724,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const statLiqBadge = document.getElementById('farm-stat-liquidation-badge');
     if (statLiqBadge) {
       if (liqInfo.isUnlimited) {
-        statLiqBadge.textContent = '👑 غير محدود (المالك)';
+        statLiqBadge.textContent = ' غير محدود (المالك)';
         statLiqBadge.className = 'text-[9px] font-black text-amber-400';
       } else if (liqInfo.remaining <= 0) {
         statLiqBadge.textContent = 'مكتمل (0 EGP)';
@@ -21955,17 +21955,17 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const cropsCatalog = document.getElementById('farm-crops-catalog');
     if (cropsCatalog) {
       const cropTags = {
-        wheat: { label: '⚡ نمو فوري', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
-        tomato: { label: '🍅 متوازن', color: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
-        strawberry: { label: '🍓 عائد ممتاز', color: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
-        coffee: { label: '☕ تجارة تصدير', color: 'bg-yellow-600/20 text-yellow-300 border-yellow-600/30' },
-        dates: { label: '🌴 استثمار استراتيجي', color: 'bg-amber-600/20 text-amber-200 border-amber-600/30' },
-        saffron: { label: '💎 الذهب الأحمر', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' }
+        wheat: { label: ' نمو فوري', color: 'bg-amber-500/20 text-amber-300 border-amber-500/30' },
+        tomato: { label: ' متوازن', color: 'bg-rose-500/20 text-rose-300 border-rose-500/30' },
+        strawberry: { label: ' عائد ممتاز', color: 'bg-pink-500/20 text-pink-300 border-pink-500/30' },
+        coffee: { label: ' تجارة تصدير', color: 'bg-yellow-600/20 text-yellow-300 border-yellow-600/30' },
+        dates: { label: ' استثمار استراتيجي', color: 'bg-amber-600/20 text-amber-200 border-amber-600/30' },
+        saffron: { label: ' الذهب الأحمر', color: 'bg-purple-500/20 text-purple-300 border-purple-500/30' }
       };
 
       let catalogHtml = '';
       Object.values(crops).forEach(c => {
-        const tag = cropTags[c.id] || { label: '🌱 محصول خصب', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
+        const tag = cropTags[c.id] || { label: ' محصول خصب', color: 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30' };
         const seedCost = c.seedCost || 50;
         const baseYield = c.baseYield || 10;
         const sellPrice = c.sellPrice || 10;
@@ -22443,7 +22443,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         try {
           const res = GameEngine.applyCompostFertilizer();
           playMenuSound('success');
-          showToast('تسميد عضوي مكثف 🌿', `تم تسريع نمو ${res.plotsBoosted} أحواض زراعية بنسبة 35% فوراً! المتبقي: ${res.remainingCompost} سماد.`, 'success');
+          showToast('تسميد عضوي مكثف ', `تم تسريع نمو ${res.plotsBoosted} أحواض زراعية بنسبة 35% فوراً! المتبقي: ${res.remainingCompost} سماد.`, 'success');
           renderFarmPanel();
           renderStatsBar();
         } catch (e) {
@@ -22879,7 +22879,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                   </div>
                   <div class="flex items-center gap-1.5 mt-0.5">
                     <span class="text-[9px] px-2 py-0.5 rounded-full ${c.fulfilled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'} font-bold inline-block">
-                      ${c.fulfilled ? 'تم التوريد بنجاح ✅' : (reqStatusList.length > 1 ? `طلبية مجمعة (${reqStatusList.length} أصناف)` : 'عقد توريد معتمد')}
+                      ${c.fulfilled ? 'تم التوريد بنجاح ' : (reqStatusList.length > 1 ? `طلبية مجمعة (${reqStatusList.length} أصناف)` : 'عقد توريد معتمد')}
                     </span>
                   </div>
                 </div>
@@ -22912,7 +22912,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                         <span>${r.itemName}</span>
                       </span>
                       <span class="numbers-font text-[10px] font-bold ${r.isReady ? 'text-emerald-400' : 'text-slate-400'}">
-                        ${r.available.toLocaleString()} / ${r.quantityNeeded.toLocaleString()} ${r.isReady ? '✅' : ''}
+                        ${r.available.toLocaleString()} / ${r.quantityNeeded.toLocaleString()} ${r.isReady ? '' : ''}
                       </span>
                     </div>
                     ${!c.fulfilled ? `
@@ -22954,7 +22954,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                 <button ${(!canFulfillAll || exceedsDailyCap) ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
                   class="w-full py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${canFulfillAll && !exceedsDailyCap ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
                   <i class="${exceedsDailyCap ? 'fa-solid fa-ban text-rose-400' : 'fa-solid fa-truck-fast text-sm'}"></i>
-                  <span>${exceedsDailyCap ? `تجاوز السقف اليومي (المتبقي: ${dailyLiq.remaining.toLocaleString()} EGP)` : (canFulfillAll ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP 🚚' : (missingCount > 1 ? `المخزون ناقص (${missingCount} أصناف)` : 'المخزون غير كافٍ'))}</span>
+                  <span>${exceedsDailyCap ? `تجاوز السقف اليومي (المتبقي: ${dailyLiq.remaining.toLocaleString()} EGP)` : (canFulfillAll ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP ' : (missingCount > 1 ? `المخزون ناقص (${missingCount} أصناف)` : 'المخزون غير كافٍ'))}</span>
                 </button>
               `}
             </div>
@@ -22977,7 +22977,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (!plantFn) throw new Error("دالة زرع كل الأحواض غير متوفرة.");
       const res = plantFn.call(GameEngine, cropId);
       playMenuSound('click');
-      showToast('غرس شامل 🌱', `تم غرس ${res.plantedCount} حوض بنجاح بمحصول "${res.crop.name}"!`, 'success');
+      showToast('غرس شامل ', `تم غرس ${res.plantedCount} حوض بنجاح بمحصول "${res.crop.name}"!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -22994,7 +22994,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       playMenuSound('success');
       const count = res.harvestedCount || res.totalHarvestedPlots || 0;
       const yieldAmt = res.totalYield || 0;
-      showToast('حصاد شامل 🌾', `تم حصد ${count} حوض بنجاح! تم تخزين ${yieldAmt.toLocaleString()} وحدة بالمستودع.`, 'success');
+      showToast('حصاد شامل ', `تم حصد ${count} حوض بنجاح! تم تخزين ${yieldAmt.toLocaleString()} وحدة بالمستودع.`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23009,7 +23009,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.plantFarmCrop(plotIndex, cropId);
-      showToast('تمت الزراعة 🌱', `تم غرس الحوض #${plotIndex + 1} بمحصول "${res.crop.name}" بنجاح!`, 'success');
+      showToast('تمت الزراعة ', `تم غرس الحوض #${plotIndex + 1} بمحصول "${res.crop.name}" بنجاح!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23022,7 +23022,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('success');
       const res = GameEngine.harvestFarmCrop(plotIndex);
-      showToast('حصاد ناجح 🌾', `تم حصاد ${res.yield} وحدة من "${res.crop.name}" وتخزينها بنجاح!`, 'success');
+      showToast('حصاد ناجح ', `تم حصاد ${res.yield} وحدة من "${res.crop.name}" وتخزينها بنجاح!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23045,7 +23045,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.plantFarmCrop(emptyIdx, cropId);
-      showToast('تمت الزراعة 🌱', `تم غرس الحوض #${emptyIdx + 1} بمحصول "${res.crop.name}" بنجاح!`, 'success');
+      showToast('تمت الزراعة ', `تم غرس الحوض #${emptyIdx + 1} بمحصول "${res.crop.name}" بنجاح!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23059,7 +23059,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       playCasinoSound('win');
       const res = GameEngine.sellFarmCrop(cropId);
       const rev = Number(res.totalPrice || res.totalRevenue || 0);
-      showToast('تسييل المحصول ♻️', `تم تفريغ ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بسعر التكلفة الرأسمالية (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود التوريد B2B.`, 'warning');
+      showToast('تسييل المحصول ', `تم تفريغ ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بسعر التكلفة الرأسمالية (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود التوريد B2B.`, 'warning');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر التسييل', e.message, 'error');
@@ -23080,7 +23080,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const soldQty = Number((res && (res.sellQty || res.qty)) || 0);
       const rev = Number((res && (res.totalPrice || res.totalRevenue)) || 0);
       const recipeName = (res && res.recipe && res.recipe.name) || 'المنتج الغذائي';
-      showToast('تسييل اضطراري ♻️', `تم تفريغ ${soldQty.toLocaleString()} عبوة من "${recipeName}" بسعر التكلفة الخام (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود B2B.`, 'warning');
+      showToast('تسييل اضطراري ', `تم تفريغ ${soldQty.toLocaleString()} عبوة من "${recipeName}" بسعر التكلفة الخام (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود B2B.`, 'warning');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر التسييل', e.message, 'error');
@@ -23096,7 +23096,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       playCasinoSound('win');
       const soldQty = Number((res && (res.sellQty || res.qty)) || 0);
       const rev = Number((res && (res.totalPrice || res.totalRevenue)) || 0);
-      showToast('تسييل اضطراري ♻️', `تم تفريغ ${soldQty.toLocaleString()} وحدة من المنتج بسعر التكلفة الرمزية (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود B2B.`, 'warning');
+      showToast('تسييل اضطراري ', `تم تفريغ ${soldQty.toLocaleString()} وحدة من المنتج بسعر التكلفة الرمزية (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود B2B.`, 'warning');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر التسييل', e.message, 'error');
@@ -23110,7 +23110,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.upgradeFarmLand();
-      showToast('توسيع واستصلاح 🏞️', `مبروك! تم استصلاح وتوسيع رقعة المزرعة بنجاح إلى (${res.maxPlots} أحواض)!`, 'success');
+      showToast('توسيع واستصلاح ', `مبروك! تم استصلاح وتوسيع رقعة المزرعة بنجاح إلى (${res.maxPlots} أحواض)!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23123,7 +23123,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.upgradeFarmIrrigation();
-      showToast('ترقية شبكة الري 💧', `تم تركيب "${res.name}" لتسريع نمو المحاصيل بنسبة ${(res.speedBonus * 100).toFixed(0)}%!`, 'success');
+      showToast('ترقية شبكة الري ', `تم تركيب "${res.name}" لتسريع نمو المحاصيل بنسبة ${(res.speedBonus * 100).toFixed(0)}%!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23136,7 +23136,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.upgradeFarmFertilizer();
-      showToast('ترقية المخصبات 🌱', `تم اعتماد "${res.name}" لزيادة إنتاج المحاصيل بنسبة +${(res.yieldBonus * 100).toFixed(0)}%!`, 'success');
+      showToast('ترقية المخصبات ', `تم اعتماد "${res.name}" لزيادة إنتاج المحاصيل بنسبة +${(res.yieldBonus * 100).toFixed(0)}%!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23149,7 +23149,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.hireFarmWorker();
-      showToast('توظيف عامل 👨‍🌾', `تم توظيف العامل #${res.workers} لمراقبة وحصاد المحاصيل آلياً فور نضوجها!`, 'success');
+      showToast('توظيف عامل ', `تم توظيف العامل #${res.workers} لمراقبة وحصاد المحاصيل آلياً فور نضوجها!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23162,7 +23162,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.upgradeFarmSilo();
-      showToast('ترقية الصومعة 🏛️', `تمت توسعة صوامع التخزين إلى "${res.name}" بسعة ${res.capacity.toLocaleString()} وحدة!`, 'success');
+      showToast('ترقية الصومعة ', `تمت توسعة صوامع التخزين إلى "${res.name}" بسعة ${res.capacity.toLocaleString()} وحدة!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23175,7 +23175,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.processFarmCrop(recipeId, batches);
-      showToast('تصنيع غذائي ناجح 🥫', `تم تصنيع ${res.batches} دفعة من "${res.recipe.name}" بقيمة +${res.totalValueAdded.toLocaleString()} EGP!`, 'success');
+      showToast('تصنيع غذائي ناجح ', `تم تصنيع ${res.batches} دفعة من "${res.recipe.name}" بقيمة +${res.totalValueAdded.toLocaleString()} EGP!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23191,7 +23191,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       const soldQty = Number((res && (res.sellQty || res.qty)) || qty || 0);
       const rev = Number((res && (res.totalPrice || res.totalRevenue || res.revenue || res.grandTotal)) || 0);
       const recipeName = (res && res.recipe && res.recipe.name) || 'المنتج الغذائي';
-      showToast('تم بيع المنتج 💰', `تم بيع ${soldQty.toLocaleString()} عبوة من "${recipeName}" بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
+      showToast('تم بيع المنتج ', `تم بيع ${soldQty.toLocaleString()} عبوة من "${recipeName}" بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
@@ -23207,7 +23207,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       playCasinoSound('win');
       const soldUnits = Number((res && (res.totalUnits || res.itemsSold || res.qty)) || 0);
       const rev = Number((res && (res.totalRevenue || res.grandTotal || res.totalPrice || res.revenue)) || 0);
-      showToast('بيع المنتجات الغذائية 🥫', `تم تصريف ${soldUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
+      showToast('بيع المنتجات الغذائية ', `تم تصريف ${soldUnits.toLocaleString()} وحدة منتجات مصنعة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
@@ -23221,7 +23221,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = GameEngine.buyLivestock(type, count);
-      showToast('شراء مواشي ودواجن 🐄', `تم شراء ${res.purchasedCount} من ${res.facility.name} بنجاح! الإجمالي لديك الآن: ${res.currentCount}`, 'success');
+      showToast('شراء مواشي ودواجن ', `تم شراء ${res.purchasedCount} من ${res.facility.name} بنجاح! الإجمالي لديك الآن: ${res.currentCount}`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23235,7 +23235,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       playCasinoSound('win');
       const res = GameEngine.sellLivestockProduce(produceKey, qty);
       const rev = Number(res.revenue || res.totalPrice || res.totalRevenue || 0);
-      showToast('تم البيع 💰', `تم بيع ${res.qty.toLocaleString()} وحدة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
+      showToast('تم البيع ', `تم بيع ${res.qty.toLocaleString()} وحدة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
@@ -23250,7 +23250,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       playCasinoSound('win');
       const res = GameEngine.sellAllLivestockProduce();
       const rev = Number(res.totalRevenue || res.grandTotal || res.revenue || 0);
-      showToast('بيع منتجات المزرعة 🥛🥚', `تم بيع كافة المنتجات الحيوانية بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
+      showToast('بيع منتجات المزرعة ', `تم بيع كافة المنتجات الحيوانية بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
       playMenuSound('error');
       showToast('تعذر البيع', e.message, 'error');
@@ -23264,7 +23264,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('success');
       const res = GameEngine.applyCompostFertilizer();
-      showToast('تسميد عضوي مكثف 🌿', `تم تسريع نمو ${res.plotsBoosted} أحواض زراعية بنسبة 35% فوراً! المتبقي: ${res.remainingCompost} سماد.`, 'success');
+      showToast('تسميد عضوي مكثف ', `تم تسريع نمو ${res.plotsBoosted} أحواض زراعية بنسبة 35% فوراً! المتبقي: ${res.remainingCompost} سماد.`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23277,7 +23277,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playCasinoSound('jackpot');
       const res = GameEngine.fulfillFarmContract(contractId);
-      showToast('توريد صفقة B2B ناجحة 📜🤝', `مبروك! تم توريد طلبية ${res.contract.clientName} بنجاح وقبض +${res.payout.toLocaleString()} EGP (+ ${res.repReward} سمعة)!`, 'success');
+      showToast('توريد صفقة B2B ناجحة ', `مبروك! تم توريد طلبية ${res.contract.clientName} بنجاح وقبض +${res.payout.toLocaleString()} EGP (+ ${res.repReward} سمعة)!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
@@ -23290,7 +23290,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       GameEngine.refreshFarmContracts(true);
       renderFarmPanel();
-      showToast('تحديث العقود 📜', 'تم تجديد قائمة عقود التوريد بنجاح.', 'info');
+      showToast('تحديث العقود ', 'تم تجديد قائمة عقود التوريد بنجاح.', 'info');
     } catch (e) {
       showToast('تعذر التحديث', e.message, 'error');
     }
@@ -23298,7 +23298,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
 
 
   // ─────────────────────────────────────────────
-  //  TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
+  // TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
   // ─────────────────────────────────────────────
   let _activeSelectedTopupPkg = null;
   let _topupModalEventsBound = false;
@@ -23420,20 +23420,20 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       let cardBorder = 'border-emerald-500/40 hover:border-emerald-300 hover:shadow-emerald-500/20';
       let cardBg = 'bg-gradient-to-b from-emerald-950/20 via-slate-900/95 to-slate-950';
       let glowBg = 'bg-emerald-500/10';
-      let iconHtml = '💵';
+      let iconHtml = '';
       let iconBoxBg = 'bg-gradient-to-br from-emerald-400 to-teal-600 text-slate-950';
 
       if (isGoldPkg) {
         cardBorder = 'border-amber-500/40 hover:border-amber-300 hover:shadow-amber-500/20';
         cardBg = 'bg-gradient-to-b from-amber-950/25 via-slate-900/95 to-slate-950';
         glowBg = 'bg-amber-500/10';
-        iconHtml = '🪙';
+        iconHtml = '';
         iconBoxBg = 'bg-gradient-to-br from-amber-400 to-yellow-600 text-slate-950';
       } else if (isCosmeticsPkg) {
         cardBorder = 'border-purple-500/40 hover:border-purple-300 hover:shadow-purple-500/20';
         cardBg = 'bg-gradient-to-b from-purple-950/25 via-slate-900/95 to-slate-950';
         glowBg = 'bg-purple-500/10';
-        iconHtml = badge ? formatCustomBadgeHtml(badge, 'text-xl') : '🎨';
+        iconHtml = badge ? formatCustomBadgeHtml(badge, 'text-xl') : '';
         iconBoxBg = 'bg-gradient-to-br from-purple-400 to-pink-600 text-white';
       }
 
@@ -23442,13 +23442,13 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       // Header Tag/Pill
       let topPill = '';
       if (isGoldPkg) {
-        if (goldAmt >= 800) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black">🔥 عرش الأباطرة</span>';
-        else if (goldAmt >= 300) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black">⭐ الأكثر طلباً</span>';
-        else topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 font-black">⚡ تسريع فوري</span>';
+        if (goldAmt >= 800) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 border border-rose-500/40 text-rose-300 font-black"> عرش الأباطرة</span>';
+        else if (goldAmt >= 300) topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black"> الأكثر طلباً</span>';
+        else topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/15 border border-yellow-500/30 text-yellow-300 font-black"> تسريع فوري</span>';
       } else if (isCosmeticsPkg) {
-        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-black">🎨 مظاهر وإطارات VIP</span>`;
+        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 border border-purple-500/40 text-purple-300 font-black"> مظاهر وإطارات VIP</span>`;
       } else {
-        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-black">💵 سيولة واستثمار</span>`;
+        topPill = `<span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 font-black"> سيولة واستثمار</span>`;
       }
 
       card.innerHTML = `
@@ -23483,7 +23483,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
             ${isGoldPkg ? `
               <div class="flex items-center justify-between p-2 rounded-xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-transparent border border-amber-500/30">
                 <div class="flex items-center gap-1.5 font-black text-amber-300">
-                  <span class="text-sm">🪙</span>
+                  <span class="text-sm"></span>
                   <span>رصيد الذهب:</span>
                 </div>
                 <span class="numbers-font font-black text-amber-400 text-sm font-mono">+${goldAmt.toLocaleString()} ذهبة</span>
@@ -23537,7 +23537,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                 <div class="flex items-center justify-between text-[10px] text-purple-300 font-black border-b border-slate-800 pb-1">
                   <span class="flex items-center gap-1.5"><i class="fa-solid fa-wand-magic-sparkles text-purple-400"></i> معاينة إطار ورسالة الشات:</span>
                   <span class="text-[9px] px-1.5 py-0.2 bg-purple-500/20 rounded font-mono text-purple-200">
-                    ${pkg.features.chatGlow === 'blue_flame' ? '⚡ لهيب أزرق' : (pkg.features.chatGlow === 'crimson_flame' ? '🔥 لهيب قرمزي' : (pkg.features.chatGlow === 'cyber_rainbow' ? '🌈 سايبر ملكي' : '✨ نيون ذهبي'))}
+                    ${pkg.features.chatGlow === 'blue_flame' ? ' لهيب أزرق' : (pkg.features.chatGlow === 'crimson_flame' ? ' لهيب قرمزي' : (pkg.features.chatGlow === 'cyber_rainbow' ? ' سايبر ملكي' : ' نيون ذهبي'))}
                   </span>
                 </div>
                 <div class="chat-message-bubble ${pkg.features.chatGlow === 'blue_flame' ? 'chat-bubble-glow-blue-flame' : (pkg.features.chatGlow === 'crimson_flame' ? 'chat-bubble-glow-flame' : (pkg.features.chatGlow === 'cyber_rainbow' ? 'chat-bubble-glow-rainbow' : 'chat-bubble-glow-gold'))} p-2 rounded-xl text-right text-[11px]">
@@ -23546,7 +23546,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
                     ${badge ? formatCustomBadgeHtml(badge, 'text-[9px]') : ''}
                   </div>
                   <div class="text-white text-[10.5px] font-medium leading-tight">
-                    ${pkg.features.chatGlow === 'blue_flame' ? 'رسالة مميزة بإطار اللهب الأزرق الملكي ⚡' : (pkg.features.chatGlow === 'crimson_flame' ? 'رسالة مشتعلة باللهب القرمزي الملكي! 🔥' : (pkg.features.chatGlow === 'cyber_rainbow' ? 'حضور أسطوري متوهج بألوان السايبر 👑' : 'رسالة ذهبية متوهجة في الشات العام ✨'))}
+                    ${pkg.features.chatGlow === 'blue_flame' ? 'رسالة مميزة بإطار اللهب الأزرق الملكي ' : (pkg.features.chatGlow === 'crimson_flame' ? 'رسالة مشتعلة باللهب القرمزي الملكي! ' : (pkg.features.chatGlow === 'cyber_rainbow' ? 'حضور أسطوري متوهج بألوان السايبر ' : 'رسالة ذهبية متوهجة في الشات العام '))}
                   </div>
                 </div>
               </div>
@@ -23735,7 +23735,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     }
   }
   // ─────────────────────────────────────────────
-  //  NOTIFICATIONS & MESSAGES CENTER CONTROLLER
+  // NOTIFICATIONS & MESSAGES CENTER CONTROLLER
   // ─────────────────────────────────────────────
   let _notificationsModalEventsBound = false;
 
@@ -23818,7 +23818,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
   }
 
   // ─────────────────────────────────────────────
-  //  PLAYER TOOLS & INVENTORY CONTROLLER
+  // PLAYER TOOLS & INVENTORY CONTROLLER
   // ─────────────────────────────────────────────
   const INVENTORY_ITEM_CATALOG = {
     // Top-Up & VIP items
@@ -23848,7 +23848,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'خزنة البنك السويسري السرية',
       icon:'fa-solid fa-vault text-yellow-400',
       category:'vip',
-      badge:'أصول ملكية ️',
+      badge:'أصول ملكية ',
       badgeClass:'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
       desc:'خزنة سرية مؤمنة بنكياً ترفع كفاءة حفظ أموالك واستثماراتك.',
       isUsable: false
@@ -23858,7 +23858,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'خزنة البنك السويسري السرية',
       icon:'fa-solid fa-vault text-yellow-400',
       category:'vip',
-      badge:'أصول ملكية ️',
+      badge:'أصول ملكية ',
       badgeClass:'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
       desc:'خزنة سرية مؤمنة بنكياً ترفع كفاءة حفظ أموالك واستثماراتك.',
       isUsable: false
@@ -23878,7 +23878,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'تذكرة اليانصيب الكبرى',
       icon:'fa-solid fa-ticket text-rose-400',
       category:'vip',
-      badge:'سحب الحظ ️',
+      badge:'سحب الحظ ',
       badgeClass:'bg-rose-500/20 text-rose-300 border-rose-500/40',
       desc:'تذكرة مؤهلة للدخول في سحوبات اليانصيب وتوزيع الجوائز الكبرى.',
       isUsable: false
@@ -23888,7 +23888,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'تذكرة اليانصيب الكبرى',
       icon:'fa-solid fa-ticket text-rose-400',
       category:'vip',
-      badge:'سحب الحظ ️',
+      badge:'سحب الحظ ',
       badgeClass:'bg-rose-500/20 text-rose-300 border-rose-500/40',
       desc:'تذكرة مؤهلة للدخول في سحوبات اليانصيب وتوزيع الجوائز الكبرى.',
       isUsable: false
@@ -23899,7 +23899,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'القلم الذهبي للمدراء',
       icon:'fa-solid fa-pen-nib text-yellow-400',
       category:'store',
-      badge:'خبرة وظيفية ️',
+      badge:'خبرة وظيفية ',
       badgeClass:'bg-yellow-500/20 text-yellow-300 border-yellow-500/40',
       desc:'يزيد خبرتك الوظيفية XP بنسبة +8% لتسريع الترقيات.',
       isUsable: true,
@@ -23910,7 +23910,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'توكيل محامٍ دولي قدير',
       icon:'fa-solid fa-scale-balanced text-amber-400',
       category:'store',
-      badge:'حماية قانونية ️',
+      badge:'حماية قانونية ',
       badgeClass:'bg-amber-500/20 text-amber-300 border-amber-500/40',
       desc:'يخفض خطورة القبض في صفقات السوق المحظورة بنسبة -6%.',
       isUsable: true,
@@ -23932,7 +23932,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'درع الإعفاء والملاذ الضريبي',
       icon:'fa-solid fa-shield-halved text-emerald-400',
       category:'store',
-      badge:'ملاذ ضريبي ️',
+      badge:'ملاذ ضريبي ',
       badgeClass:'bg-emerald-500/20 text-emerald-300 border-emerald-500/40',
       desc:'خصم 4% على ترقيات الشركات ويخفض ضريبة الثروة بنسبة 12.5%.',
       isUsable: true,
@@ -23976,7 +23976,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       name:'ساعة الكرونوس لتسريع العمليات',
       icon:'fa-solid fa-stopwatch text-orange-400',
       category:'store',
-      badge:'تسريع وقت ⏱️',
+      badge:'تسريع وقت ',
       badgeClass:'bg-orange-500/20 text-orange-300 border-orange-500/40',
       desc:'تقلل وقت التبريد وفترات نوبات العمل بنسبة 15%.',
       isUsable: true,
@@ -24078,7 +24078,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     if (!codeText || codeText === 'REF-XXXX') return;
 
     const copySuccess = () => {
-      showToast('تم النسخ 📋', `تم نسخ كود الدعوة "${codeText}"!`, 'success');
+      showToast('تم النسخ ', `تم نسخ كود الدعوة "${codeText}"!`, 'success');
       playMenuSound('click');
     };
 
@@ -24097,7 +24097,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       input.select();
       document.execCommand('copy');
       document.body.removeChild(input);
-      showToast('تم النسخ 📋', `تم نسخ كود الدعوة "${text}"!`, 'success');
+      showToast('تم النسخ ', `تم نسخ كود الدعوة "${text}"!`, 'success');
       playMenuSound('click');
     } catch(e) {
       showToast('كود الدعوة', text, 'info');
@@ -24137,7 +24137,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         GameEngine.forceSaveState(true);
       }
 
-      showToast('نجاح ربط الكود ✅', `تم ربط حسابك بكود الدعوة "${res.code}" (المُوصي: ${res.referrer}) وحفظ ذلك فوراً بالسيرفر!`, 'success');
+      showToast('نجاح ربط الكود ', `تم ربط حسابك بكود الدعوة "${res.code}" (المُوصي: ${res.referrer}) وحفظ ذلك فوراً بالسيرفر!`, 'success');
       playMenuSound('upgrade');
 
       await refreshReferralData();
@@ -24156,7 +24156,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     try {
       playMenuSound('click');
       const res = await GameEngine.claimReferralMilestone(tierId);
-      showToast('مبروك! 🎉', `تم استلام مكافأة المستوى بقيمة +${res.reward.toLocaleString()} EGP!`, 'success');
+      showToast('مبروك! ', `تم استلام مكافأة المستوى بقيمة +${res.reward.toLocaleString()} EGP!`, 'success');
       playMenuSound('upgrade');
       updateHUD();
       await refreshReferralData();
@@ -24415,7 +24415,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     const statusEl = document.getElementById('avatar-upload-status');
     if (statusEl) {
       statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 block';
-      statusEl.textContent = 'جاري معالجة وتصغير أبعاد الصورة... ⏳';
+      statusEl.textContent = 'جاري معالجة وتصغير أبعاد الصورة... ';
     }
 
     const reader = new FileReader();
@@ -24459,7 +24459,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (saveBtn) saveBtn.disabled = false;
         if (statusEl) {
           statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 block';
-          statusEl.textContent = 'الصورة جاهزة! انقر "حفظ وتطبيق الصورة" 📸';
+          statusEl.textContent = 'الصورة جاهزة! انقر "حفظ وتطبيق الصورة" ';
         }
       };
       img.onerror = function() {
@@ -24482,7 +24482,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       }
       if (statusEl) {
         statusEl.className = 'p-2.5 rounded-xl text-center font-bold text-xs bg-amber-500/20 text-amber-300 border border-amber-500/30 block';
-        statusEl.textContent = 'جاري حفظ الصورة وتطبيقها بأمان... 🔒';
+        statusEl.textContent = 'جاري حفظ الصورة وتطبيقها بأمان... ';
       }
 
       let finalAvatarUrl = _stagedAvatarBase64;
@@ -24510,7 +24510,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         await AppDB.savePlayerState(curUser, GameEngine.state, true);
       }
 
-      showToast('تم بنجاح', 'تم حفظ وتحديث صورتك الشخصية بنجاح! 📸', 'success');
+      showToast('تم بنجاح', 'تم حفظ وتحديث صورتك الشخصية بنجاح! ', 'success');
       closeAvatarModal();
 
       if (curUser) {
@@ -24943,7 +24943,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       if (typeof GameEngine !== 'undefined' && typeof GameEngine.resumeEngine === 'function') {
         try { GameEngine.resumeEngine(); } catch (_) {}
       }
-      showToast('🟢 متصل بالإنترنت', 'تمت استعادة الاتصال بالخوادم بنجاح ومزامنة البيانات.', 'success');
+      showToast(' متصل بالإنترنت', 'تمت استعادة الاتصال بالخوادم بنجاح ومزامنة البيانات.', 'success');
       if (typeof GameEngine !== 'undefined' && typeof GameEngine.forceSaveState === 'function') {
         try { GameEngine.forceSaveState(true); } catch (_) {}
       }
@@ -24976,7 +24976,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
         if (ok) {
           hideOfflineScreen();
         } else {
-          showToast('⚠️ لا يزال الاتصال منقطعاً', 'تأكد من تشغيل الواي فاي أو باقة البيانات ثم أعد المحاولة.', 'error');
+          showToast(' لا يزال الاتصال منقطعاً', 'تأكد من تشغيل الواي فاي أو باقة البيانات ثم أعد المحاولة.', 'error');
           if (errDesc) errDesc.textContent = 'فشلت محاولة الاتصال، يرجى فحص الشبكة...';
         }
         retryBtn.disabled = false;
@@ -25004,9 +25004,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     frame_fire_dragon: {
       type: 'chat_frame',
       id: 'frame_fire_dragon',
-      name: 'إطار التنين الناري الملكي 🔥',
+      name: 'إطار التنين الناري الملكي ',
       description: 'إطار شات حصري مضيء ونادر جداً يمنح حسابك هيبة مطلقة في الشات العام وملف اللاعب',
-      icon: '🔥',
+      icon: '',
       badge: 'إطار شات حصري',
       rewardData: { frameId: 'frame_fire_dragon' },
       startPrice: 15000000,
@@ -25016,9 +25016,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     frame_diamond_whale: {
       type: 'chat_frame',
       id: 'frame_diamond_whale',
-      name: 'إطار الحوت الماسي المشع 💎',
+      name: 'إطار الحوت الماسي المشع ',
       description: 'إطار شات ناصع البياض والتوهج الماسي مخصص لكبار حيتان السيرفر',
-      icon: '💎',
+      icon: '',
       badge: 'إطار شات حصري',
       rewardData: { frameId: 'frame_diamond_whale' },
       startPrice: 25000000,
@@ -25028,9 +25028,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     gold_1000: {
       type: 'gold',
       id: 'gold_pack_custom',
-      name: 'احتياطي الذهب الملكي 🥇',
+      name: 'احتياطي الذهب الملكي ',
       description: 'سبائك ذهب نقي تمنحك قوة استثمارية وسيولة فورية ضخمة في البورصة',
-      icon: '🥇',
+      icon: '',
       badge: 'احتياطي ذهب ملكي',
       rewardData: { gold: 1000 },
       startPrice: 20000000,
@@ -25040,9 +25040,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     concorde_royale: {
       type: 'aircraft',
       id: 'concorde_royale',
-      name: 'طائرة كونكورد الملكية الخارقة ✈️',
+      name: 'طائرة كونكورد الملكية الخارقة ',
       description: 'طائرة نفاثة خارقة تختصر زمن رحلات المطار والشحن بنسبة 50% مع أرباح مضاعفة',
-      icon: '✈️',
+      icon: '',
       badge: 'أسطول حصري',
       rewardData: { aircraftId: 'concorde_royale' },
       startPrice: 50000000,
@@ -25074,9 +25074,9 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
         goldBox.classList.add('ring-2', 'ring-amber-500/80', 'bg-amber-950/60');
       }
       if (nameEl && (!nameEl.value || nameEl.value.includes('إطار') || nameEl.value.includes('طائرة'))) {
-        nameEl.value = 'احتياطي الذهب الملكي 🥇';
+        nameEl.value = 'احتياطي الذهب الملكي ';
       }
-      if (iconEl && (!iconEl.value || iconEl.value === '🔥' || iconEl.value === '✈️')) iconEl.value = '🥇';
+      if (iconEl && (!iconEl.value || iconEl.value === '' || iconEl.value === '')) iconEl.value = '';
       if (badgeEl && (!badgeEl.value || badgeEl.value.includes('إطار') || badgeEl.value.includes('أسطول'))) badgeEl.value = 'احتياطي ذهب ملكي';
       if (descEl && (!descEl.value || descEl.value.includes('إطار') || descEl.value.includes('طائرة'))) {
         descEl.value = 'سبائك ذهب نقي تمنحك سيولة فورية وقوة استثمارية كاسحة في البورصة والصفقات';
@@ -25148,7 +25148,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
   window._adminSubmitCreateAuction = async function() {
     const name = (document.getElementById('adm-input-auc-name')?.value || '').trim();
     const type = document.getElementById('adm-input-auc-type')?.value || 'chat_frame';
-    const icon = (document.getElementById('adm-input-auc-icon')?.value || '🏆').trim();
+    const icon = (document.getElementById('adm-input-auc-icon')?.value || '').trim();
     const badge = (document.getElementById('adm-input-auc-badge')?.value || 'مزاد رسمي').trim();
     const desc = (document.getElementById('adm-input-auc-desc')?.value || '').trim();
     const startPrice = parseSafeMoney(document.getElementById('adm-input-auc-start-price')?.value, 10000000);
@@ -25254,7 +25254,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل تنفيذ ضربة المطرقة.');
 
-      if (typeof showToast === 'function') showToast('المطرقة الإدارية 🔨', data.message || 'تم تنفيذ الضربة بنجاح', 'success');
+      if (typeof showToast === 'function') showToast('المطرقة الإدارية ', data.message || 'تم تنفيذ الضربة بنجاح', 'success');
       if (typeof logAdminAction === 'function') logAdminAction(`تنفيذ إجراء المطرقة: ${action}`);
       window._adminRefreshAuctionTelemetry();
     } catch (e) {
@@ -25284,12 +25284,12 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       const strikeBadge = document.getElementById('adm-auc-strike-badge');
 
       if (pill) {
-        pill.textContent = data.status === 'LIVE' ? '🔴 بث حي مباشر' : (data.status === 'SCHEDULED' ? '⏳ مجدول وتنازلي' : (data.status === 'ENDED' ? '👑 تم البيع' : 'خامل'));
+        pill.textContent = data.status === 'LIVE' ? ' بث حي مباشر' : (data.status === 'SCHEDULED' ? ' مجدول وتنازلي' : (data.status === 'ENDED' ? ' تم البيع' : 'خامل'));
         pill.className = `px-2 py-0.5 rounded-full text-[10px] font-black ${data.status === 'LIVE' ? 'bg-rose-500/20 text-rose-400 border border-rose-500/40' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'}`;
       }
 
       if (data.item) {
-        if (icon) icon.textContent = data.item.icon || '🏆';
+        if (icon) icon.textContent = data.item.icon || '';
         if (name) name.textContent = data.item.name || 'غرض ملكي';
         if (desc) desc.textContent = data.item.description || '--';
       }
@@ -25353,7 +25353,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
         <tr class="hover:bg-slate-900/60 transition">
           <td class="p-2.5">
             <div class="flex items-center gap-2">
-              <span class="text-xl">${item.icon || '🏺'}</span>
+              <span class="text-xl">${item.icon || ''}</span>
               <div>
                 <strong class="text-white block font-bold text-xs">${item.name}</strong>
                 <span class="text-[10px] text-slate-400">${item.edition || 'إصدار ملكي'}</span>
@@ -25377,7 +25377,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
               <button onclick="window._adminLaunchAuctionForRelic('${item.id}')"
                 class="px-2.5 py-1 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 text-[10px] font-bold border border-amber-500/40 transition cursor-pointer flex items-center gap-1">
                 <i class="fa-solid fa-gavel"></i>
-                <span>إطلاق مزاد 🔨</span>
+                <span>إطلاق مزاد </span>
               </button>
               <button onclick="window._adminDeleteMuseumRelic('${item.id}', '${(item.name || '').replace(/'/g, "\\'")}')"
                 class="w-7 h-7 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 flex items-center justify-center text-xs transition cursor-pointer" title="حذف التحفة">
@@ -25394,7 +25394,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
     const name = (document.getElementById('adm-input-mus-name')?.value || '').trim();
     const category = (document.getElementById('adm-input-mus-category')?.value || 'آثار فرعونية ملكية').trim();
     const rarity = document.getElementById('adm-input-mus-rarity')?.value || 'epic';
-    const icon = (document.getElementById('adm-input-mus-icon')?.value || '🏺').trim();
+    const icon = (document.getElementById('adm-input-mus-icon')?.value || '').trim();
     const buybackPrice = Number(document.getElementById('adm-input-mus-buyback')?.value || 25000000);
     const stock = Number(document.getElementById('adm-input-mus-stock')?.value || 1);
     const edition = (document.getElementById('adm-input-mus-edition')?.value || 'نسخة فريدة 1/1').trim();
@@ -25418,7 +25418,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل سك التحفة.');
 
-      if (typeof showToast === 'function') showToast('سك التحف الملكية 🏛️', `تم سك ونشر [${name}] في المتحف الملكي بنجاح!`, 'success');
+      if (typeof showToast === 'function') showToast('سك التحف الملكية ', `تم سك ونشر [${name}] في المتحف الملكي بنجاح!`, 'success');
       else alert(`تم سك ونشر [${name}] في المتحف الملكي بنجاح!`);
 
       if (typeof logAdminAction === 'function') logAdminAction(`سك تحفة جديدة بالمتحف: ${name}`);
@@ -25444,7 +25444,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'فشل حذف التحفة.');
 
-      if (typeof showToast === 'function') showToast('حذف تحفة 🗑️', 'تم حذف التحفة من المتحف.', 'info');
+      if (typeof showToast === 'function') showToast('حذف تحفة ', 'تم حذف التحفة من المتحف.', 'info');
       window._adminRefreshMuseumCatalog();
     } catch (e) {
       if (typeof showToast === 'function') showToast('خطأ', e.message, 'error');
@@ -25471,7 +25471,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
 
       if (nameEl) nameEl.value = item.name;
       if (typeEl) typeEl.value = 'museum_item';
-      if (iconEl) iconEl.value = item.icon || '🏺';
+      if (iconEl) iconEl.value = item.icon || '';
       if (badgeEl) badgeEl.value = item.edition || 'تحفة متحف ملكية';
       if (descEl) descEl.value = item.description || 'تحفة أثرية نادرة مسجلة بالمتحف الملكي.';
       if (startPriceEl) startPriceEl.value = Math.max(10000000, Math.floor(Number(item.buybackPrice || 25000000) * 0.8));
@@ -25480,7 +25480,7 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
 
       // Scroll to auction form smoothly
       document.getElementById('adm-input-auc-name')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      if (typeof showToast === 'function') showToast('تجهيز المزاد 🔨', `تم تجهيز إعدادات المزاد للتحفة [${item.name}]! اضغط على نشر المزاد.`, 'info');
+      if (typeof showToast === 'function') showToast('تجهيز المزاد ', `تم تجهيز إعدادات المزاد للتحفة [${item.name}]! اضغط على نشر المزاد.`, 'info');
     } catch (e) {}
   };
 

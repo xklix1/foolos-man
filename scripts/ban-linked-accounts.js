@@ -43,7 +43,7 @@ async function banTarget(username, reason) {
         admin_modified_timestamp: Date.now()
       })
     });
-    console.log(`✅ Player ${username} banned & wiped.`);
+    console.log(` Player ${username} banned & wiped.`);
 
     if (devId) {
       await fetch(`${supabaseUrl}/rest/v1/banned_devices`, {
@@ -61,7 +61,7 @@ async function banTarget(username, reason) {
           banned_at: new Date().toISOString()
         })
       });
-      console.log(`🔒 Device ${devId} permanently banned.`);
+      console.log(` Device ${devId} permanently banned.`);
     }
   }
 }
@@ -92,7 +92,7 @@ async function main() {
       updated_at: Date.now()
     })
   });
-  console.log('🏆 Leaderboard re-sanitized successfully.');
+  console.log(' Leaderboard re-sanitized successfully.');
 }
 
 main().catch(console.error);

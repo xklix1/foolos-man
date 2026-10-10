@@ -213,7 +213,7 @@ class PushService {
             this.alertTracker.set(username, tracker);
 
             const payload = {
-              title: '⚠️ تنبيه الإمدادات: توقفت أرباح مشاريعك!',
+              title: ' تنبيه الإمدادات: توقفت أرباح مشاريعك!',
               body: 'نفدت بضائع الشركات والمشاريع بالكامل أثناء غيابك. ادخل لتوريد شحنة جديدة واستئناف ضخ الأرباح!',
               url: '/'
             };
@@ -233,7 +233,7 @@ class PushService {
 
             const remMinutes = Math.max(1, Math.ceil((afkExpires - now) / 60000));
             const payload = {
-              title: '⏳ ترخيص الإدارة الذاتية (AFK) شارف على الانتهاء!',
+              title: ' ترخيص الإدارة الذاتية (AFK) شارف على الانتهاء!',
               body: `يتبقى ${remMinutes} دقيقة فقط على انتهاء ترخيص الإدارة الذاتية 12-Hour. جدده الآن لضمان استمرار الأرباح!`,
               url: '/'
             };
@@ -255,21 +255,21 @@ class PushService {
               if (tracker.pushedMailIds.has(mail.id)) continue;
               tracker.pushedMailIds.add(mail.id);
 
-              let notifTitle = '📬 إشعار جديد في حسابك';
+              let notifTitle = ' إشعار جديد في حسابك';
               let notifBody = 'لديك رسالة أو تنبيه جديد في صندوق الرسائل.';
 
               if (mail.type === 'transfer_received') {
                 const amt = Number((mail.payload && mail.payload.amount) || 0);
-                notifTitle = '💸 حوالة بنكية واردة!';
+                notifTitle = ' حوالة بنكية واردة!';
                 notifBody = `قام اللاعب "${mail.sender || 'مجهول'}" بتحويل ${amt > 0 ? amt.toLocaleString() + ' EGP' : 'مبلغ مالي'} إلى حسابك البنكي!`;
               } else if (mail.type === 'admin_popup' || mail.type === 'urgent_alert') {
-                notifTitle = (mail.payload && mail.payload.title) || '📢 تنبيه إداري مباشر';
+                notifTitle = (mail.payload && mail.payload.title) || ' تنبيه إداري مباشر';
                 notifBody = (mail.payload && mail.payload.message) || 'وصلك تنبيه إداري جديد من إدارة اللعبة.';
               } else if (mail.type === 'admin_balance_grant') {
-                notifTitle = '💰 منحة مالية إدارية!';
+                notifTitle = ' منحة مالية إدارية!';
                 notifBody = 'أودعت إدارة اللعبة منحة مالية جديدة في رصيدك مباشرة.';
               } else if (mail.type === 'dm') {
-                notifTitle = `💬 رسالة خاصة من ${mail.sender || 'لاعب'}`;
+                notifTitle = ` رسالة خاصة من ${mail.sender || 'لاعب'}`;
                 notifBody = (mail.payload && mail.payload.message) || mail.message || 'أرسل لك رسالة خاصة جديدة.';
               }
 

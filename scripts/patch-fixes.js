@@ -15,7 +15,7 @@ ui = ui.replace(forgotPattern, 'closeForgotPinModal();');
 const launchPattern = /const playerState = await GameEngine\.loadUserSession\(username\);\s+if \(!playerState \|\| playerState\.isBanned \|\| playerState\.is_banned\) \{[\s\S]*?handleBannedUser\('تم حظر هذا الحساب نهائياً من اللعبة لمخالفة قواعد النزاهة\.'\);[\s\S]*?return;[\s\S]*?\}/g;
 const launchReplacement = `const playerState = await GameEngine.loadUserSession(username);
       if (!playerState) {
-        showToast('تعذر تحميل الحساب ⚠️', 'تعذر جلب بيانات الحساب من الخادم السحابي، يرجى المحاولة مرة أخرى أو تسجيل الدخول.', 'error');
+        showToast('تعذر تحميل الحساب ', 'تعذر جلب بيانات الحساب من الخادم السحابي، يرجى المحاولة مرة أخرى أو تسجيل الدخول.', 'error');
         showStartMenu();
         return;
       }

@@ -84,9 +84,9 @@ async function migratePlayers() {
   });
 
   if (insertRes.ok) {
-    console.log(`✅ Successfully migrated ${rows.length} players to Supabase!`);
+    console.log(` Successfully migrated ${rows.length} players to Supabase!`);
   } else {
-    console.error(`❌ Failed to insert players:`, insertRes.status, await insertRes.text());
+    console.error(` Failed to insert players:`, insertRes.status, await insertRes.text());
   }
 }
 
@@ -119,9 +119,9 @@ async function migrateGlobals() {
   });
 
   if (insertRes.ok) {
-    console.log(`✅ Successfully migrated ${rows.length} globals docs to Supabase!`);
+    console.log(` Successfully migrated ${rows.length} globals docs to Supabase!`);
   } else {
-    console.error(`❌ Failed to insert globals:`, insertRes.status, await insertRes.text());
+    console.error(` Failed to insert globals:`, insertRes.status, await insertRes.text());
   }
 }
 
@@ -156,9 +156,9 @@ async function migrateGiftCodes() {
   });
 
   if (insertRes.ok) {
-    console.log(`✅ Successfully migrated ${rows.length} gift codes to Supabase!`);
+    console.log(` Successfully migrated ${rows.length} gift codes to Supabase!`);
   } else {
-    console.error(`❌ Failed to insert gift codes:`, insertRes.status, await insertRes.text());
+    console.error(` Failed to insert gift codes:`, insertRes.status, await insertRes.text());
   }
 }
 
@@ -173,7 +173,7 @@ async function verifySupabase() {
   const list = await checkRes.json();
   console.log(`Total active players now in Supabase: ${list.length}`);
   list.forEach((p, idx) => {
-    console.log(`  ${idx + 1}. ${p.username} | Cash: ${Number(p.cash).toLocaleString()} EGP | NetWorth: ${Number(p.net_worth).toLocaleString()} EGP`);
+    console.log(` ${idx + 1}. ${p.username} | Cash: ${Number(p.cash).toLocaleString()} EGP | NetWorth: ${Number(p.net_worth).toLocaleString()} EGP`);
   });
 }
 
@@ -182,7 +182,7 @@ async function run() {
   await migrateGlobals();
   await migrateGiftCodes();
   await verifySupabase();
-  console.log('\n🎉 ALL DATA MIGRATED WITH 100% INTEGRITY!');
+  console.log('\n ALL DATA MIGRATED WITH 100% INTEGRITY!');
 }
 
 run();

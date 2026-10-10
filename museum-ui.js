@@ -102,12 +102,12 @@
             <div class="relative p-4 sm:p-6 bg-gradient-to-r from-amber-950/60 via-slate-900/90 to-amber-950/60 border-b border-amber-500/30 flex items-center justify-between shrink-0">
               <div class="flex items-center gap-3">
                 <div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 to-yellow-600/30 border border-amber-500/50 flex items-center justify-center text-2xl shadow-lg relic-icon-float">
-                  🏛️
+                  
                 </div>
                 <div>
                   <div class="flex items-center gap-2">
                     <h2 class="text-base sm:text-xl font-black text-white tracking-wide">المتحف الملكي العام والآثار النادرة</h2>
-                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/40">خزينة المقتنيات 👑</span>
+                    <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-black border border-amber-500/40">خزينة المقتنيات </span>
                   </div>
                   <p class="text-[11px] text-slate-400 mt-0.5">معرض التحف التاريخية الخالدة، وملاذ الأثرياء لتداول المقتنيات النادرة واسترداد السيولة</p>
                 </div>
@@ -148,7 +148,7 @@
               <div id="mus-panel-gallery" class="space-y-4">
                 <div class="p-3 rounded-2xl bg-amber-950/20 border border-amber-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-300">
                   <div class="flex items-center gap-2.5">
-                    <span class="text-xl">📜</span>
+                    <span class="text-xl"></span>
                     <span>تُطرح هذه الآثار والتحف حصرياً في <strong>المزادات الملكية الحية</strong>، ويضمن المتحف استردادها وشراءها بالكاش في أي وقت!</span>
                   </div>
                   <div class="text-[11px] text-amber-400 font-bold shrink-0">
@@ -169,7 +169,7 @@
               <div id="mus-panel-collection" class="space-y-4 hidden">
                 <div class="p-3 rounded-2xl bg-cyan-950/20 border border-cyan-500/30 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-300">
                   <div class="flex items-center gap-2.5">
-                    <span class="text-xl">👑</span>
+                    <span class="text-xl"></span>
                     <span>هذه هي التحف التي فزت بها في المزادات. يمكنك الاحتفاظ بها لرفع ثروتك وهيبتك أو <strong>بيعها للمتحف واسترداد قيمتها فوراً</strong>.</span>
                   </div>
                 </div>
@@ -316,13 +316,13 @@
             
             <div class="flex items-start justify-between gap-3">
               <div class="w-14 h-14 rounded-2xl bg-slate-950/80 border border-slate-700/60 flex items-center justify-center text-3xl shrink-0 shadow-inner group-hover:scale-110 transition-transform">
-                ${item.icon || '🏺'}
+                ${item.icon || ''}
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap mb-1">
                   <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">${item.category || 'آثار نادرة'}</span>
                   <span class="text-[9px] px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-bold border border-purple-500/30">${item.edition || 'إصدار ملكي'}</span>
-                  ${!inStock ? '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">مملوكة للاعبين 👑</span>' : ''}
+                  ${!inStock ? '<span class="text-[9px] px-2 py-0.5 rounded-full bg-rose-500/20 text-rose-300 font-bold border border-rose-500/30">مملوكة للاعبين </span>' : ''}
                 </div>
                 <h3 class="text-sm font-black text-white leading-tight truncate">${item.name}</h3>
                 <span class="text-[10px] font-bold text-amber-400 block mt-0.5">${item.rarityLabel || item.rarity}</span>
@@ -356,7 +356,7 @@
       if (!this.playerRelics || this.playerRelics.length === 0) {
         grid.innerHTML = `
           <div class="col-span-full text-center py-12 px-4 rounded-2xl bg-slate-900/40 border border-slate-800 text-slate-400 text-xs space-y-3">
-            <span class="text-4xl block">🏺</span>
+            <span class="text-4xl block"></span>
             <strong class="text-white block text-sm">حقيبة مقتنياتك الأثرية فارغة حالياً</strong>
             <p class="max-w-md mx-auto text-slate-400 text-[11px]">شارك في المزادات الملكية القادمة لامتلاك تحف أثرية نادرة وضمها لمعرضك الخاص أو بيعها للمتحف في أي وقت!</p>
             <button onclick="window.RoyalAuction?.openModal?.(); window.RoyalMuseum.closeModal();"
@@ -377,11 +377,11 @@
             
             <div class="flex items-start justify-between gap-3">
               <div class="w-14 h-14 rounded-2xl bg-slate-950 border border-amber-500/40 flex items-center justify-center text-3xl shrink-0 shadow relic-icon-float">
-                ${relic.icon || '🏺'}
+                ${relic.icon || ''}
               </div>
               <div class="flex-1 min-w-0">
                 <div class="flex items-center gap-1.5 flex-wrap mb-1">
-                  <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">في حوزتك 👑</span>
+                  <span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">في حوزتك </span>
                   <span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">${relic.edition || 'إصدار ملكي'}</span>
                 </div>
                 <h3 class="text-sm font-black text-white leading-tight truncate">${relic.name}</h3>
@@ -438,7 +438,7 @@
             window.GameEngine.state.bank = data.newBankBalance;
           }
           if (typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('بيع تحفة للمتحف 🏛️', `بيع [${relicName}] للمتحف الملكي واستلام (+${buybackPrice.toLocaleString()} ج.م) في الحساب البنكي.`, 'investment');
+            window.GameEngine.recordPlayerActivity('بيع تحفة للمتحف ', `بيع [${relicName}] للمتحف الملكي واستلام (+${buybackPrice.toLocaleString()} ج.م) في الحساب البنكي.`, 'investment');
           }
           if (typeof window.UI?.renderAll === 'function') window.UI.renderAll();
           if (typeof window.UIController?.renderAll === 'function') window.UIController.renderAll();
@@ -446,7 +446,7 @@
 
         this.playCashSound();
         if (window.UI?.showToast) {
-          window.UI.showToast('المتحف الملكي 🏛️', data.message || 'تم بيع التحفة واستلام الكاش بنجاح!', 'success');
+          window.UI.showToast('المتحف الملكي ', data.message || 'تم بيع التحفة واستلام الكاش بنجاح!', 'success');
         } else {
           alert(data.message || 'تم بيع التحفة واستلام الكاش بنجاح!');
         }

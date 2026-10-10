@@ -992,7 +992,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     return {
       success: true,
       avatarUrl: avatarUrl,
-      message: 'تم تحديث صورتك الشخصية بنجاح! 📸'
+      message: 'تم تحديث صورتك الشخصية بنجاح! '
     };
   };
 
@@ -1207,7 +1207,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         cash: s.cash,
         netWorth: s.netWorth,
         title: s.title,
-        message: '🎉 تهانينا! استلمت مكافأة 50,000$ كاش لانضمامك لقناة التليجرام الرسمية!'
+        message: ' تهانينا! استلمت مكافأة 50,000$ كاش لانضمامك لقناة التليجرام الرسمية!'
       });
     } finally {
       session._telegramClaimLock = false;

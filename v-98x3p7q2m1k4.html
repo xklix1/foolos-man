@@ -347,7 +347,7 @@
           </div>
         </div>
         <div id="statTotalPlayers" class="text-xl sm:text-2xl font-black numbers-font text-blue-300">--</div>
-        <div class="text-[10px] text-slate-400 mt-1">اضغط لعرض الكل 🔍</div>
+        <div class="text-[10px] text-slate-400 mt-1">اضغط لعرض الكل </div>
       </div>
 
       <!-- Under Investigation / Flagged -->
@@ -359,7 +359,7 @@
           </div>
         </div>
         <div id="statFlaggedPlayers" class="text-xl sm:text-2xl font-black numbers-font text-amber-300">0</div>
-        <div class="text-[10px] text-amber-400/80 mt-1">حسابات مشبوهة ⚠️</div>
+        <div class="text-[10px] text-amber-400/80 mt-1">حسابات مشبوهة </div>
       </div>
 
       <!-- Frozen Players -->
@@ -371,7 +371,7 @@
           </div>
         </div>
         <div id="statFrozenPlayers" class="text-xl sm:text-2xl font-black numbers-font text-rose-300">0</div>
-        <div class="text-[10px] text-rose-400/80 mt-1">مقيدة بأمر إداري 🔒</div>
+        <div class="text-[10px] text-rose-400/80 mt-1">مقيدة بأمر إداري </div>
       </div>
 
       <!-- Muted in Chat -->
@@ -383,7 +383,7 @@
           </div>
         </div>
         <div id="statMutedPlayers" class="text-xl sm:text-2xl font-black numbers-font text-purple-300">0</div>
-        <div class="text-[10px] text-purple-400/80 mt-1">ممنوعين من الإرسال 🔇</div>
+        <div class="text-[10px] text-purple-400/80 mt-1">ممنوعين من الإرسال </div>
       </div>
     </div>
 
@@ -494,7 +494,7 @@
           <!-- Private Chat Quick Button -->
           <button onclick="switchInspectTab('chat')" class="px-3 py-2 rounded-xl bg-emerald-950/70 hover:bg-emerald-900/80 border border-emerald-500/50 text-emerald-300 hover:text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-md shadow-emerald-950/30 transition min-h-[38px] cursor-pointer" title="فتح المحادثة الخاصة المباشرة مع اللاعب">
             <i class="fa-solid fa-comments text-emerald-400"></i>
-            <span>محادثة خاصة 💬</span>
+            <span>محادثة خاصة </span>
           </button>
           
           <button onclick="closeInspectorModal()" class="hidden sm:flex w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white items-center justify-center transition">
@@ -563,7 +563,7 @@
               </div>
               <button type="button" onclick="openAddBankModal(inspectingPlayer?.username)" class="mt-2 w-full py-1.5 px-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-[11px] font-bold border border-emerald-500/40 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
                 <i class="fa-solid fa-plus-circle text-xs"></i>
-                <span>إيداع كاش فوري بالبنك 🏦</span>
+                <span>إيداع كاش فوري بالبنك </span>
               </button>
             </div>
             <div class="glass-card p-3.5 rounded-xl">
@@ -572,7 +572,7 @@
             </div>
             <div class="glass-card p-3.5 rounded-xl">
               <div class="text-[11px] text-slate-400 mb-1">سبائك الذهب</div>
-              <div id="p_gold" class="text-lg font-black numbers-font text-yellow-300">0 🪙</div>
+              <div id="p_gold" class="text-lg font-black numbers-font text-yellow-300">0 </div>
             </div>
           </div>
 
@@ -586,7 +586,7 @@
                 </div>
                 <button type="button" onclick="openCashflowDetailModal()" class="px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black text-[11px] transition shadow-md flex items-center gap-1 cursor-pointer">
                   <i class="fa-solid fa-chart-pie"></i>
-                  <span>فحص كشف التدفق 📊</span>
+                  <span>فحص كشف التدفق </span>
                 </button>
               </div>
               <div class="grid grid-cols-3 gap-2 text-center pt-1 border-t border-emerald-500/20">
@@ -624,7 +624,7 @@
               </div>
               <button type="button" onclick="quickResetLimitsPlayer(inspectingPlayer?.username)" class="px-3 py-1 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-slate-950 font-black text-xs transition shadow-md flex items-center gap-1.5 cursor-pointer">
                 <i class="fa-solid fa-arrows-rotate"></i>
-                <span>تصفير اللمت الآن 🔄</span>
+                <span>تصفير اللمت الآن </span>
               </button>
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
@@ -682,7 +682,7 @@
                 </button>
                 <button onclick="filterPlayerActivity('admin_grant')" id="actFilter_admin_grant" class="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-amber-500/30">
                   <i class="fa-solid fa-crown text-amber-400"></i>
-                  <span>شحن ومنح الإدارة 👑</span>
+                  <span>شحن ومنح الإدارة </span>
                 </button>
                 <button onclick="filterPlayerActivity('transfer')" id="actFilter_transfer" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">الحوالات</button>
                 <button onclick="filterPlayerActivity('stocks')" id="actFilter_stocks" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">البورصة</button>
@@ -745,7 +745,7 @@
               <h4 class="text-xs font-bold text-yellow-300 flex items-center gap-1.5">
                 <i class="fa-solid fa-book-bookmark text-yellow-400"></i> تدوين ملاحظة سرية في ملف اللاعب:
               </h4>
-              <span class="text-[10px] text-slate-400">🔒 خاصة بطاقم التحقيق والإدارة (لا تظهر للاعب)</span>
+              <span class="text-[10px] text-slate-400"> خاصة بطاقم التحقيق والإدارة (لا تظهر للاعب)</span>
             </div>
             <textarea id="staffNoteInput" rows="3" placeholder="اكتب استنتاجاتك أو ملاحظاتك الاستخباراتية أو الشكوك حول هذا اللاعب وأنشطته..." class="w-full bg-slate-900/90 border border-slate-700 rounded-xl p-3 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-yellow-400 transition"></textarea>
             <div class="flex justify-end">
@@ -872,17 +872,17 @@
               <div>
                 <label class="block text-[11px] text-slate-300 mb-1">نوع الإجراء:</label>
                 <select id="actionTypeSelect" onchange="onActionTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
-                  <option value="add_bank" class="text-emerald-400 font-bold" selected>🏦 إضافة كاش في بنك اللاعب (Add Cash to Bank)</option>
-                  <option value="reset_limits" class="text-cyan-400 font-bold">🔄 تصفير اللمت اليومي بالكامل (شغل + بورصة + تحويلات)</option>
-                  <option value="freeze">🔒 تجميد مؤقت للحساب (Freeze)</option>
-                  <option value="unfreeze">🔓 فك تجميد الحساب (Unfreeze)</option>
-                  <option value="ban" class="text-rose-400 font-bold">⛔ حظر نهائي للحساب (Ban Account)</option>
-                  <option value="unban" class="text-emerald-400 font-bold">🟢 فك الحظر عن الحساب (Unban Account)</option>
-                  <option value="mute">🔇 كتم الشات العام (Mute)</option>
-                  <option value="unmute">🔊 إلغاء كتم الشات (Unmute)</option>
-                  <option value="flag">🏷️ وضع علامة "تحت المراقبة" (Flag)</option>
-                  <option value="unflag">🟢 إزالة علامة المراقبة (Clear Flag)</option>
-                  <option value="warn">⚠️ إرسال تحذير رسمي للاعب (Warning)</option>
+                  <option value="add_bank" class="text-emerald-400 font-bold" selected> إضافة كاش في بنك اللاعب (Add Cash to Bank)</option>
+                  <option value="reset_limits" class="text-cyan-400 font-bold"> تصفير اللمت اليومي بالكامل (شغل + بورصة + تحويلات)</option>
+                  <option value="freeze"> تجميد مؤقت للحساب (Freeze)</option>
+                  <option value="unfreeze"> فك تجميد الحساب (Unfreeze)</option>
+                  <option value="ban" class="text-rose-400 font-bold"> حظر نهائي للحساب (Ban Account)</option>
+                  <option value="unban" class="text-emerald-400 font-bold"> فك الحظر عن الحساب (Unban Account)</option>
+                  <option value="mute"> كتم الشات العام (Mute)</option>
+                  <option value="unmute"> إلغاء كتم الشات (Unmute)</option>
+                  <option value="flag"> وضع علامة "تحت المراقبة" (Flag)</option>
+                  <option value="unflag"> إزالة علامة المراقبة (Clear Flag)</option>
+                  <option value="warn"> إرسال تحذير رسمي للاعب (Warning)</option>
                 </select>
               </div>
 
@@ -953,7 +953,7 @@
                 <!-- Mark as Resolved Button -->
                 <button type="button" onclick="resolveCurrentInspectedPlayerChat()" class="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 text-[11px] text-emerald-200 hover:text-white font-bold border border-emerald-500/50 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="تعليم مشكلة هذا اللاعب كمحلولة ونقل المحادثة للأرشيف">
                   <i class="fa-solid fa-circle-check text-emerald-400"></i>
-                  <span>تم الحل ✅</span>
+                  <span>تم الحل </span>
                 </button>
                 <!-- Quick Shared Task Button -->
                 <button type="button" onclick="createTaskForCurrentChatPlayer()" class="px-2.5 py-1 rounded-lg bg-indigo-600/40 hover:bg-indigo-600 text-[11px] text-indigo-200 hover:text-white font-bold border border-indigo-500/50 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="إضافة مهمة تحقيق مشتركة مسندة لهذا اللاعب في لوحة المهام">
@@ -1139,9 +1139,9 @@
               <i class="fa-solid fa-layer-group text-amber-400 ml-1"></i> مستوى الأولوية:
             </label>
             <select id="newTaskPrioritySelect" class="w-full bg-slate-900 border border-slate-700/80 focus:border-indigo-400 rounded-xl px-3 py-2 text-xs text-white focus:outline-none transition cursor-pointer">
-              <option value="urgent" class="text-rose-400 font-bold">🚨 عاجل جداً (أولوية قصوى)</option>
-              <option value="normal" class="text-amber-300 font-bold" selected>⚠️ متابعة وتحري (عادي)</option>
-              <option value="low" class="text-slate-300">ℹ️ روتيني / غير عاجل</option>
+              <option value="urgent" class="text-rose-400 font-bold"> عاجل جداً (أولوية قصوى)</option>
+              <option value="normal" class="text-amber-300 font-bold" selected> متابعة وتحري (عادي)</option>
+              <option value="low" class="text-slate-300">ℹ روتيني / غير عاجل</option>
             </select>
           </div>
         </div>
@@ -1341,7 +1341,7 @@
         <div class="flex flex-wrap items-center justify-between gap-1.5 text-xs">
           <div class="flex items-center gap-1.5 text-blue-300 font-bold">
             <i class="fa-solid fa-shield-halved text-cyan-400"></i>
-            <span>إرسال رد رسمي باسم: <strong id="globalChatSenderBadge" class="text-white">مراقب معتمد 🛡️</strong></span>
+            <span>إرسال رد رسمي باسم: <strong id="globalChatSenderBadge" class="text-white">مراقب معتمد </strong></span>
           </div>
           <span class="text-[10px] text-slate-400">يظهر برتبة موثقة وتوهج مميز لجميع اللاعبين</span>
         </div>
@@ -1349,10 +1349,10 @@
         <!-- Canned Quick Official Replies -->
         <div class="flex flex-wrap gap-1 text-[10px]">
           <span class="text-slate-400 py-0.5">ردود معتمدة:</span>
-          <button type="button" onclick="applyGlobalChatTemplate('تم التحقق من المشكلة وجاري معالجتها فوراً ✅')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 transition">حل مشكلة</button>
-          <button type="button" onclick="applyGlobalChatTemplate('تم فحص وتدقيق الحساب والتأكد من سلامة وصحة كافة العمليات 🛡️')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">تأكيد التدقيق</button>
-          <button type="button" onclick="applyGlobalChatTemplate('يرجى التواصل عبر الدعم الفني أو شات التحقيقات لتزويدنا بالتفاصيل 📩')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 transition">طلب تفاصيل</button>
-          <button type="button" onclick="applyGlobalChatTemplate('نرجو من جميع اللاعبين الالتزام بقواعد اللعبة للحفاظ على بيئة لعب عادلة للجميع ⚖️')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">تنبيه عام</button>
+          <button type="button" onclick="applyGlobalChatTemplate('تم التحقق من المشكلة وجاري معالجتها فوراً ')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-emerald-300 transition">حل مشكلة</button>
+          <button type="button" onclick="applyGlobalChatTemplate('تم فحص وتدقيق الحساب والتأكد من سلامة وصحة كافة العمليات ')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300 transition">تأكيد التدقيق</button>
+          <button type="button" onclick="applyGlobalChatTemplate('يرجى التواصل عبر الدعم الفني أو شات التحقيقات لتزويدنا بالتفاصيل ')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-amber-300 transition">طلب تفاصيل</button>
+          <button type="button" onclick="applyGlobalChatTemplate('نرجو من جميع اللاعبين الالتزام بقواعد اللعبة للحفاظ على بيئة لعب عادلة للجميع ')" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 transition">تنبيه عام</button>
         </div>
 
         <!-- Input & Send Button -->
@@ -1510,7 +1510,7 @@
         <div class="glass-card p-4 rounded-2xl border border-slate-800 bg-slate-900/80 space-y-2.5">
           <div class="flex items-center justify-between text-xs font-bold text-slate-300 border-b border-slate-800/80 pb-2">
             <span class="flex items-center gap-1.5"><i class="fa-solid fa-scale-balanced text-cyan-400"></i> ميزانية التدفق الساعي (Statement Summary)</span>
-            <span id="cf_statement_status" class="text-[10px] text-emerald-400">تدفق إيجابي مرتفع 🚀</span>
+            <span id="cf_statement_status" class="text-[10px] text-emerald-400">تدفق إيجابي مرتفع </span>
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
             <div class="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800">
@@ -1989,7 +1989,7 @@
         const isFrozen = a.type === 'frozen';
         const borderClass = isHigh ? 'border-rose-500/40 bg-gradient-to-r from-rose-950/30 via-slate-900 to-slate-900' : 'border-amber-500/40 bg-gradient-to-r from-amber-950/30 via-slate-900 to-slate-900';
         const iconClass = isFrozen ? 'fa-snowflake text-rose-400' : (isHigh ? 'fa-triangle-exclamation text-rose-400 animate-pulse' : 'fa-chart-line text-amber-400');
-        const badgeText = isFrozen ? 'حساب مجمد 🔒' : (isHigh ? '🚨 خطر مرتفع' : '⚠️ اشتباه');
+        const badgeText = isFrozen ? 'حساب مجمد ' : (isHigh ? ' خطر مرتفع' : ' اشتباه');
         const badgeColor = isHigh ? 'bg-rose-500/20 text-rose-300 border-rose-500/40' : 'bg-amber-500/20 text-amber-300 border-amber-500/40';
 
         return `
@@ -2079,11 +2079,11 @@
 
       grid.innerHTML = players.map(p => {
         const statusBadges = [];
-        if (p.isBanned) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">محظور ⛔</span>`);
-        if (p.isFrozen) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">مجمد 🔒</span>`);
-        if (p.isMuted) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">مكتوم 🔇</span>`);
-        if (p.staffFlag === 'under_investigation' || (p.staffFlag && p.staffFlag !== 'frozen')) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">مراقبة ⚠️</span>`);
-        if (!statusBadges.length) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">سليم 🟢</span>`);
+        if (p.isBanned) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">محظور </span>`);
+        if (p.isFrozen) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">مجمد </span>`);
+        if (p.isMuted) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/20 text-purple-300 border border-purple-500/40">مكتوم </span>`);
+        if (p.staffFlag === 'under_investigation' || (p.staffFlag && p.staffFlag !== 'frozen')) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">مراقبة </span>`);
+        if (!statusBadges.length) statusBadges.push(`<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">سليم </span>`);
 
         const initial = (p.username || '?').charAt(0).toUpperCase();
 
@@ -2195,17 +2195,17 @@
     // Core Game Definitions Dictionary for Accurate Arabic Translation
     const GAME_DICTIONARY = {
       businesses: {
-        kiosk: { name: 'كشك حلوى وجرائد 🏪', icon: 'fa-shop', baseProfit: 190 },
-        coffee: { name: 'عربة قهوة ومشروبات ☕', icon: 'fa-mug-hot', baseProfit: 640 },
-        tech: { name: 'شركة برمجيات وتطبيقات 💻', icon: 'fa-laptop-code', baseProfit: 3900 },
-        logistics: { name: 'مجمع خدمات لوجستية 🚚', icon: 'fa-truck-fast', baseProfit: 14720 },
-        supermarket: { name: 'سلسلة سوبرماركت وتجزئة 🛒', icon: 'fa-cart-shopping', baseProfit: 48300 },
-        solar_factory: { name: 'مصنع ألواح الطاقة الشمسية ☀️', icon: 'fa-solar-panel', baseProfit: 164450 },
-        private_hospital: { name: 'مستشفى ومجمع طبي تخصصي 🏥', icon: 'fa-hospital', baseProfit: 562800 },
-        media_studio: { name: 'مؤسسة إنتاج إعلامي وسينمائي 🎬', icon: 'fa-film', baseProfit: 1495000 },
-        private_bank: { name: 'بنك استثماري ووساطة مالية 🏛️', icon: 'fa-building-columns', baseProfit: 4186000 },
-        oil_refinery: { name: 'مجمع مصافي البترول والطاقة 🛢️', icon: 'fa-oil-well', baseProfit: 7758000 },
-        space_tech: { name: 'مؤسسة استكشاف الفضاء 🚀', icon: 'fa-rocket', baseProfit: 14720000 }
+        kiosk: { name: 'كشك حلوى وجرائد ', icon: 'fa-shop', baseProfit: 190 },
+        coffee: { name: 'عربة قهوة ومشروبات ', icon: 'fa-mug-hot', baseProfit: 640 },
+        tech: { name: 'شركة برمجيات وتطبيقات ', icon: 'fa-laptop-code', baseProfit: 3900 },
+        logistics: { name: 'مجمع خدمات لوجستية ', icon: 'fa-truck-fast', baseProfit: 14720 },
+        supermarket: { name: 'سلسلة سوبرماركت وتجزئة ', icon: 'fa-cart-shopping', baseProfit: 48300 },
+        solar_factory: { name: 'مصنع ألواح الطاقة الشمسية ', icon: 'fa-solar-panel', baseProfit: 164450 },
+        private_hospital: { name: 'مستشفى ومجمع طبي تخصصي ', icon: 'fa-hospital', baseProfit: 562800 },
+        media_studio: { name: 'مؤسسة إنتاج إعلامي وسينمائي ', icon: 'fa-film', baseProfit: 1495000 },
+        private_bank: { name: 'بنك استثماري ووساطة مالية ', icon: 'fa-building-columns', baseProfit: 4186000 },
+        oil_refinery: { name: 'مجمع مصافي البترول والطاقة ', icon: 'fa-oil-well', baseProfit: 7758000 },
+        space_tech: { name: 'مؤسسة استكشاف الفضاء ', icon: 'fa-rocket', baseProfit: 14720000 }
       },
       stocks: {
         ARAMCO: { name: 'أرامكو للنفط (ARAMCO)', icon: 'fa-droplet text-emerald-400' },
@@ -2257,7 +2257,7 @@
                 </div>
                 <div>
                   <div class="text-xs font-black text-rose-300 flex items-center gap-1.5">
-                    <span>الحساب محظور نهائياً من اللعبة ⛔</span>
+                    <span>الحساب محظور نهائياً من اللعبة </span>
                     ${p.bannedBy ? `<span class="text-[10px] px-2 py-0.5 rounded-md bg-rose-500/20 border border-rose-500/40 text-rose-200 font-normal">بواسطة: ${p.bannedBy}</span>` : ''}
                   </div>
                   <div class="text-[11px] text-slate-300 mt-0.5">${p.banReason ? `السبب: ${p.banReason}` : 'تم الحظر لمخالفة قواعد النظام والنزاهة'}</div>
@@ -2265,7 +2265,7 @@
               </div>
               <button onclick="quickUnbanPlayer('${p.username}')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-lg shadow-emerald-500/30 transition transform hover:scale-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap">
                 <i class="fa-solid fa-key text-sm"></i>
-                <span>فك الحظر وإعادة تفعيل الحساب 🟢</span>
+                <span>فك الحظر وإعادة تفعيل الحساب </span>
               </button>
             </div>
           `;
@@ -2277,14 +2277,14 @@
                   <i class="fa-solid fa-lock-open animate-bounce"></i>
                 </div>
                 <div>
-                  <div class="text-xs font-black text-amber-300">الحساب مجمد ومقيد حالياً ⚠️</div>
+                  <div class="text-xs font-black text-amber-300">الحساب مجمد ومقيد حالياً </div>
                   <div class="text-[11px] text-slate-400">${p.freezeReason ? `السبب: ${p.freezeReason}` : 'تم التجميد بأمر إداري'}</div>
                 </div>
               </div>
               <div class="flex items-center gap-2 w-full sm:w-auto">
                 <button onclick="quickUnfreezePlayer('${p.username}')" class="flex-1 sm:flex-initial px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap">
                   <i class="fa-solid fa-key text-xs"></i>
-                  <span>فك التجميد 🔓</span>
+                  <span>فك التجميد </span>
                 </button>
                 <button onclick="quickBanPlayer('${p.username}')" class="px-3.5 py-2.5 rounded-xl bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 border border-rose-500/40 font-bold text-xs transition flex items-center justify-center gap-1 cursor-pointer">
                   <i class="fa-solid fa-ban text-xs"></i>
@@ -2300,7 +2300,7 @@
               <div class="flex flex-wrap items-center gap-2">
                 <button onclick="quickBanPlayer('${p.username}')" class="px-3 py-1.5 rounded-lg bg-rose-500/15 hover:bg-rose-500/30 border border-rose-500/40 text-rose-300 font-bold text-xs transition flex items-center gap-1.5">
                   <i class="fa-solid fa-ban text-xs"></i>
-                  <span>حظر نهائي ⛔</span>
+                  <span>حظر نهائي </span>
                 </button>
                 <button onclick="quickFreezePlayer('${p.username}')" class="px-3 py-1.5 rounded-lg bg-amber-500/15 hover:bg-amber-500/30 border border-amber-500/40 text-amber-300 font-bold text-xs transition flex items-center gap-1.5">
                   <i class="fa-solid fa-lock text-xs"></i>
@@ -2316,7 +2316,7 @@
                 </button>
                 <button onclick="quickResetLimitsPlayer('${p.username}')" class="px-3 py-1.5 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/30 border border-cyan-500/40 text-cyan-300 font-bold text-xs transition flex items-center gap-1.5" title="تصفير اللمت اليومي للعمل والبورصة وسقف التحويلات">
                   <i class="fa-solid fa-arrows-rotate text-xs"></i>
-                  <span>تصفير اللمت 🔄</span>
+                  <span>تصفير اللمت </span>
                 </button>
               </div>
             </div>
@@ -2328,7 +2328,7 @@
       document.getElementById('p_cash').textContent = fmtMoney(p.cash);
       document.getElementById('p_bank').textContent = fmtMoney(p.bank);
       document.getElementById('p_networth').textContent = fmtMoney(p.netWorth);
-      document.getElementById('p_gold').textContent = (p.gold || 0).toLocaleString('en-US') + ' 🪙';
+      document.getElementById('p_gold').textContent = (p.gold || 0).toLocaleString('en-US') + ' ';
       document.getElementById('p_dirtyCash').textContent = fmtMoney(p.dirtyCash);
       document.getElementById('p_taxes').textContent = fmtMoney(p.totalTaxesPaid);
 
@@ -2396,7 +2396,7 @@
           : `<span class="text-slate-400">غير متصل (آخر ظهور: ${fmtDate(p.lastSeen)})</span>`;
       }
       const gangEl = document.getElementById('p_telemetryGang');
-      if (gangEl) gangEl.textContent = p.gang ? `🛡️ ${p.gang}` : 'لا ينتمي لأي عصابة';
+      if (gangEl) gangEl.textContent = p.gang ? ` ${p.gang}` : 'لا ينتمي لأي عصابة';
       const createdEl = document.getElementById('p_telemetryCreatedAt');
       if (createdEl) createdEl.textContent = p.createdAt ? fmtDate(p.createdAt) : 'غير مسجل';
 
@@ -2430,7 +2430,7 @@
                     </div>
                     <div class="font-bold text-xs text-slate-300 leading-tight">${bInfo.name}</div>
                   </div>
-                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700">🔒 مقفل</span>
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 font-bold border border-slate-700"> مقفل</span>
                 </div>
                 <div class="grid grid-cols-2 gap-2 text-[11px]">
                   <div class="bg-slate-900/50 p-2 rounded-xl border border-slate-800/40">
@@ -2463,7 +2463,7 @@
                   </div>
                   <div class="font-bold text-xs text-white leading-tight">${bInfo.name}</div>
                 </div>
-                ${isFranchise ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">علامة تجارية 🌟</span>' : ''}
+                ${isFranchise ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40">علامة تجارية </span>' : ''}
               </div>
               <div class="grid grid-cols-2 gap-2 text-[11px]">
                 <div class="bg-slate-900/90 p-2 rounded-xl border border-slate-800/60">
@@ -2481,7 +2481,7 @@
               </div>
               <div class="flex items-center justify-between text-[10px] pt-1 border-t border-slate-800/40 text-slate-400">
                 <span>المدير الذاتي (AFK):</span>
-                <span>${hasManager ? '<strong class="text-emerald-400">✅ مفعل</strong>' : '<span class="text-slate-500">غير مفعل</span>'}</span>
+                <span>${hasManager ? '<strong class="text-emerald-400"> مفعل</strong>' : '<span class="text-slate-500">غير مفعل</span>'}</span>
               </div>
             </div>
           `;
@@ -2554,7 +2554,7 @@
           cCars.innerHTML = cKeys.map(c => `
             <div class="flex items-center justify-between py-1 border-b border-slate-800/60 text-xs">
               <span class="text-white font-medium">${c}</span>
-              <span class="text-cyan-400 font-bold">${p.activeCar === c ? '⭐ مستخدمة حالياً' : 'في المرآب'}</span>
+              <span class="text-cyan-400 font-bold">${p.activeCar === c ? ' مستخدمة حالياً' : 'في المرآب'}</span>
             </div>
           `).join('');
         }
@@ -2583,7 +2583,7 @@
             const isGold = g.gold && g.gold > 0;
             const isTopup = g.type === 'topup';
             const icon = isGold ? 'fa-coins text-yellow-400' : (isTopup ? 'fa-gem text-cyan-400' : 'fa-crown text-amber-400');
-            const statusLabel = g.status === 'approved' ? 'تم الاعتماد والشحن ✅' : (g.status === 'pending' ? 'قيد المراجعة ⏳' : 'مرفوض ❌');
+            const statusLabel = g.status === 'approved' ? 'تم الاعتماد والشحن ' : (g.status === 'pending' ? 'قيد المراجعة ' : 'مرفوض ');
             const statusBadgeClass = g.status === 'approved' ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : (g.status === 'pending' ? 'bg-amber-500/20 text-amber-300 border-amber-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40');
             
             return `
@@ -2605,7 +2605,7 @@
                 </div>
                 <div class="pt-1.5 border-t border-slate-800/80 flex items-center gap-2 flex-wrap">
                   ${(g.cash || g.bank || g.amount) ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-mono font-bold text-[10px]"><i class="fa-solid fa-money-bill-wave text-[9px]"></i> +${fmtMoney(g.cash || g.bank || g.amount)}</span>` : ''}
-                  ${g.gold ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono font-bold text-[10px]"><i class="fa-solid fa-coins text-[9px]"></i> +${Number(g.gold).toLocaleString()} ذهبة 🪙</span>` : ''}
+                  ${g.gold ? `<span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 font-mono font-bold text-[10px]"><i class="fa-solid fa-coins text-[9px]"></i> +${Number(g.gold).toLocaleString()} ذهبة </span>` : ''}
                   ${g.price ? `<span class="text-[10px] text-slate-400 font-mono">قيمة الباقة: ${Number(g.price).toLocaleString()} EGP</span>` : ''}
                 </div>
               </div>
@@ -2987,7 +2987,7 @@
                     <div class="text-[10px] text-slate-400 flex items-center gap-2 mt-0.5">
                       <span class="text-emerald-400">إيراد: +${fmtMoney(b.grossProfitPerHour)}</span>
                       ${b.payrollPerHour > 0 ? `<span class="text-rose-400">رواتب: -${fmtMoney(b.payrollPerHour)}</span>` : ''}
-                      ${b.isFranchise ? '<span class="text-amber-400">علامة تجارية 🌟</span>' : ''}
+                      ${b.isFranchise ? '<span class="text-amber-400">علامة تجارية </span>' : ''}
                     </div>
                   </div>
                 </div>
@@ -3068,7 +3068,7 @@
           farmDetails.innerHTML = `
             <div>أرض زراعية: <strong class="text-white">مستوى ${farmData.landLevel || 1}</strong> (${farmData.workers || 0} عمال)</div>
             <div>ثروة حيوانية: <span class="text-emerald-300 font-bold">${farmData.cows || 0} أبقار • ${farmData.chickens || 0} دواجن</span></div>
-            <div class="text-[10px] text-slate-400">${farmData.isProcessing ? 'مصنع الأغذية يعمل بكفاءة ✅' : 'إنتاج زراعي وحيواني مستمر'}</div>
+            <div class="text-[10px] text-slate-400">${farmData.isProcessing ? 'مصنع الأغذية يعمل بكفاءة ' : 'إنتاج زراعي وحيواني مستمر'}</div>
           `;
         }
       }
@@ -3228,7 +3228,7 @@
               <div class="font-bold text-white flex items-center gap-2">
                 <span>برج المراقبة ورسوم الترانزيت بالساعة</span>
                 <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${radar.isReady ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'}">
-                  ${radar.isReady ? 'رسوم ترانزيت جاهزة للتحصيل ✅' : 'جاري تجميع رسوم الهبوط ⏳'}
+                  ${radar.isReady ? 'رسوم ترانزيت جاهزة للتحصيل ' : 'جاري تجميع رسوم الهبوط '}
                 </span>
               </div>
               <div class="text-[10px] text-slate-400">
@@ -3273,8 +3273,8 @@
                             <span>${escapeHtml(plane.customName || plane.modelName)}</span>
                             <span class="text-[9px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono">Tier ${plane.tier}</span>
                             ${isInFlight ? (isArrived ? 
-                              '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold animate-pulse">وصلت الوجهة ✅</span>' : 
-                              '<span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">في الجو ✈️</span>') : 
+                              '<span class="text-[9px] px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold animate-pulse">وصلت الوجهة </span>' : 
+                              '<span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold">في الجو </span>') : 
                               '<span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-bold">متوقفة بالهنجار</span>'
                             }
                           </div>
@@ -3347,25 +3347,25 @@
 
       if (badge) {
         badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse';
-        badge.textContent = 'مزرعة نشطة ومنتجة 🌾';
+        badge.textContent = 'مزرعة نشطة ومنتجة ';
       }
 
       const CROP_DICT = {
-        wheat: { name: 'القمح الذهبي', icon: '🌾' },
-        tomatoes: { name: 'طماطم عضوية', icon: '🍅' },
-        strawberries: { name: 'فراولة فاخرة', icon: '🍓' },
-        coffee: { name: 'بن إثيوبي فاخر', icon: '☕' },
-        dates: { name: 'تمور المجدول الملكية', icon: '🌴' },
-        saffron: { name: 'زعفران سوبر نيجين', icon: '🌸' }
+        wheat: { name: 'القمح الذهبي', icon: '' },
+        tomatoes: { name: 'طماطم عضوية', icon: '' },
+        strawberries: { name: 'فراولة فاخرة', icon: '' },
+        coffee: { name: 'بن إثيوبي فاخر', icon: '' },
+        dates: { name: 'تمور المجدول الملكية', icon: '' },
+        saffron: { name: 'زعفران سوبر نيجين', icon: '' }
       };
 
       const PROCESSED_DICT = {
-        flour_bread: { name: 'دقيق فاخر ومخبوزات', icon: '🥖' },
-        tomato_paste: { name: 'صلصة ومعجون طماطم', icon: '🥫' },
-        strawberry_jam: { name: 'مربى فراولة طبيعي', icon: '🍯' },
-        premium_coffee: { name: 'إسبريسو وبن محمص', icon: '☕' },
-        stuffed_dates: { name: 'تمور محشوة فاخرة', icon: '🌴' },
-        saffron_essence: { name: 'مستخلص الزعفران الصافي', icon: '🧪' }
+        flour_bread: { name: 'دقيق فاخر ومخبوزات', icon: '' },
+        tomato_paste: { name: 'صلصة ومعجون طماطم', icon: '' },
+        strawberry_jam: { name: 'مربى فراولة طبيعي', icon: '' },
+        premium_coffee: { name: 'إسبريسو وبن محمص', icon: '' },
+        stuffed_dates: { name: 'تمور محشوة فاخرة', icon: '' },
+        saffron_essence: { name: 'مستخلص الزعفران الصافي', icon: '' }
       };
 
       const landLvl = Number(farm.landLevel || 1);
@@ -3444,19 +3444,19 @@
               if (!pl) {
                 return `
                   <div class="p-2.5 rounded-xl bg-slate-950/40 border border-slate-800/80 text-center text-slate-500">
-                    <span class="text-sm block mb-1">🟫</span>
+                    <span class="text-sm block mb-1"></span>
                     <span class="text-[10px] block">قطعة #${idx + 1}</span>
                     <span class="text-[9px] text-slate-600">فارغة</span>
                   </div>
                 `;
               }
-              const crop = CROP_DICT[pl.cropId] || { name: pl.cropId || 'محصول', icon: '🌱' };
+              const crop = CROP_DICT[pl.cropId] || { name: pl.cropId || 'محصول', icon: '' };
               const isReady = Boolean(pl.ready);
               return `
                 <div class="p-2.5 rounded-xl ${isReady ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300' : 'bg-slate-900 border-slate-800 text-slate-300'} border text-center">
                   <span class="text-base block mb-0.5">${crop.icon}</span>
                   <span class="text-[10px] font-bold block truncate">${crop.name}</span>
-                  <span class="text-[9px] ${isReady ? 'text-emerald-400 font-bold' : 'text-amber-400'}">${isReady ? 'جاهزة للحصاد ✨' : 'قيد النمو...'}</span>
+                  <span class="text-[9px] ${isReady ? 'text-emerald-400 font-bold' : 'text-amber-400'}">${isReady ? 'جاهزة للحصاد ' : 'قيد النمو...'}</span>
                 </div>
               `;
             }).join('')}
@@ -3477,7 +3477,7 @@
             ${cropKeys.length === 0 ? '<div class="text-xs text-slate-500 py-2">لا توجد محاصيل مخزنة في الصومعة حالياً.</div>' : `
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 ${cropKeys.map(k => {
-                  const crop = CROP_DICT[k] || { name: k, icon: '🌾' };
+                  const crop = CROP_DICT[k] || { name: k, icon: '' };
                   return `
                     <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800 text-xs flex items-center justify-between">
                       <span class="text-slate-300">${crop.icon} ${crop.name}</span>
@@ -3501,17 +3501,17 @@
             <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs">
               <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
                 <span class="text-slate-400 block text-[10px]">الأبقار والماشية</span>
-                <span class="font-bold text-white text-xs">🐄 ${cows} رؤوس</span>
+                <span class="font-bold text-white text-xs"> ${cows} رؤوس</span>
                 <span class="text-[9px] text-cyan-400 block mt-0.5">حليب: ${milkStored} لتر</span>
               </div>
               <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
                 <span class="text-slate-400 block text-[10px]">مزارع الدواجن</span>
-                <span class="font-bold text-white text-xs">🐔 ${chickens} دجاجات</span>
+                <span class="font-bold text-white text-xs"> ${chickens} دجاجات</span>
                 <span class="text-[9px] text-amber-400 block mt-0.5">بيض: ${eggsStored} بيضة</span>
               </div>
               <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
                 <span class="text-slate-400 block text-[10px]">السماد العضوي</span>
-                <span class="font-bold text-emerald-400 text-xs">🧪 ${compost} وحدة</span>
+                <span class="font-bold text-emerald-400 text-xs"> ${compost} وحدة</span>
                 <span class="text-[9px] text-slate-400 block mt-0.5">تخمير دوري</span>
               </div>
             </div>
@@ -3527,7 +3527,7 @@
                 <i class="fa-solid fa-industry text-purple-400"></i>
                 <span>مصنع الأغذية والتحويل</span>
               </div>
-              <span class="text-[10px] ${procUnlocked ? 'text-purple-300 font-bold' : 'text-slate-500'}">${procUnlocked ? 'وحدة نشطة ✅' : 'مغلق'}</span>
+              <span class="text-[10px] ${procUnlocked ? 'text-purple-300 font-bold' : 'text-slate-500'}">${procUnlocked ? 'وحدة نشطة ' : 'مغلق'}</span>
             </div>
             ${!procUnlocked ? '<div class="text-xs text-slate-500 py-2">لم يقم اللاعب بفتح وحدة التصنيع الغذائي بعد.</div>' : `
               <div class="grid grid-cols-2 sm:grid-cols-3 gap-1.5 text-xs">
@@ -3556,7 +3556,7 @@
                 <i class="fa-solid fa-file-signature text-yellow-400"></i>
                 <span>عقود التوريد والسمعة</span>
               </div>
-              <span class="text-[10px] text-yellow-300 font-bold">⭐ ${rep} نقطة سمعة</span>
+              <span class="text-[10px] text-yellow-300 font-bold"> ${rep} نقطة سمعة</span>
             </div>
             <div class="grid grid-cols-2 gap-2 text-xs">
               <div class="p-2 rounded-xl bg-slate-900/80 border border-slate-800">
@@ -3656,9 +3656,9 @@
           if (inspectingPlayer.activityFeed) inspectingPlayer.activityFeed.unshift(noteFeedItem);
           renderPlayerActivityFeed();
 
-          alert('✅ تم حفظ الملاحظة في دفتر التحقيق السري وتسجيلها في الهيستوري بنجاح.');
+          alert(' تم حفظ الملاحظة في دفتر التحقيق السري وتسجيلها في الهيستوري بنجاح.');
         } else {
-          alert('❌ ' + (data.message || 'فشل حفظ الملاحظة'));
+          alert(' ' + (data.message || 'فشل حفظ الملاحظة'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -3684,85 +3684,85 @@
       const dedHour = Number(sum.deductionsPerHour || 0);
 
       let report = `================================================================================\n`;
-      report += `                📄 تقرير التحقيق والتدقيق المالي الشامل (CASE DOSSIER)          \n`;
-      report += `                     بوابة الرقابة والتفتيش | RAS ALMAL TYCOON                  \n`;
+      report += ` تقرير التحقيق والتدقيق المالي الشامل (CASE DOSSIER) \n`;
+      report += ` بوابة الرقابة والتفتيش | RAS ALMAL TYCOON \n`;
       report += `================================================================================\n\n`;
 
-      report += `📌 تاريخ إصدار التقرير: ${nowStr}\n`;
-      report += `🛡️ المحقق المسؤول: ${investigatorName}\n`;
-      report += `🏷️ الحالة العامة للحساب: ${p.isBanned ? 'محظور نهائياً ⛔' : (p.isFrozen ? 'مجمد ومقيد 🔒' : 'نشط وطبيعي 🟢')}\n`;
+      report += ` تاريخ إصدار التقرير: ${nowStr}\n`;
+      report += ` المحقق المسؤول: ${investigatorName}\n`;
+      report += ` الحالة العامة للحساب: ${p.isBanned ? 'محظور نهائياً ' : (p.isFrozen ? 'مجمد ومقيد ' : 'نشط وطبيعي ')}\n`;
       report += `--------------------------------------------------------------------------------\n\n`;
 
-      report += `👤 [1] بيانات الهوية والاتصال (IDENTITY & TELEMETRY):\n`;
-      report += `   • اسم اللاعب: ${p.username}\n`;
-      report += `   • اللقب والوظيفة: ${p.title} (${jobTitle})\n`;
-      report += `   • تاريخ التسجيل: ${p.createdAt ? fmtDate(p.createdAt) : 'غير مسجل'}\n`;
-      report += `   • حالة الاتصال الآن: ${p.isOnline ? 'متصل باللعبة حالياً (Online)' : 'غير متصل (آخر ظهور: ' + fmtDate(p.lastSeen) + ')'}\n`;
-      report += `   • العصابة / الانتماء: ${p.gang || 'لا يوجد'}\n`;
-      report += `   • نقاط الخبرة (XP): ${(p.xp || 0).toLocaleString('en-US')} XP\n\n`;
+      report += ` [1] بيانات الهوية والاتصال (IDENTITY & TELEMETRY):\n`;
+      report += ` • اسم اللاعب: ${p.username}\n`;
+      report += ` • اللقب والوظيفة: ${p.title} (${jobTitle})\n`;
+      report += ` • تاريخ التسجيل: ${p.createdAt ? fmtDate(p.createdAt) : 'غير مسجل'}\n`;
+      report += ` • حالة الاتصال الآن: ${p.isOnline ? 'متصل باللعبة حالياً (Online)' : 'غير متصل (آخر ظهور: ' + fmtDate(p.lastSeen) + ')'}\n`;
+      report += ` • العصابة / الانتماء: ${p.gang || 'لا يوجد'}\n`;
+      report += ` • نقاط الخبرة (XP): ${(p.xp || 0).toLocaleString('en-US')} XP\n\n`;
 
-      report += `💰 [2] المركز المالي والأرصدة (FINANCIAL BALANCES):\n`;
-      report += `   • صافي الثروة (Net Worth): ${fmtMoney(p.netWorth)}\n`;
-      report += `   • الكاش السائل (Cash): ${fmtMoney(p.cash)}\n`;
-      report += `   • رصيد البنك (Bank): ${fmtMoney(p.bank)}\n`;
-      report += `   • سبائك الذهب: ${(p.gold || 0).toLocaleString('en-US')} سبيكة 🪙\n`;
-      report += `   • الأموال غير النظيفة (Dirty Cash): ${fmtMoney(p.dirtyCash)}\n`;
-      report += `   • إجمالي الضرائب المسددة: ${fmtMoney(p.totalTaxesPaid)}\n\n`;
+      report += ` [2] المركز المالي والأرصدة (FINANCIAL BALANCES):\n`;
+      report += ` • صافي الثروة (Net Worth): ${fmtMoney(p.netWorth)}\n`;
+      report += ` • الكاش السائل (Cash): ${fmtMoney(p.cash)}\n`;
+      report += ` • رصيد البنك (Bank): ${fmtMoney(p.bank)}\n`;
+      report += ` • سبائك الذهب: ${(p.gold || 0).toLocaleString('en-US')} سبيكة \n`;
+      report += ` • الأموال غير النظيفة (Dirty Cash): ${fmtMoney(p.dirtyCash)}\n`;
+      report += ` • إجمالي الضرائب المسددة: ${fmtMoney(p.totalTaxesPaid)}\n\n`;
 
-      report += `📊 [3] كشف التدفق المالي والتدقيق المحاسبي (CASHFLOW AUDIT STATEMENT):\n`;
-      report += `   • صافي التدفق الساعي (Net Hourly Flow): +${fmtMoney(netHour)}/ساعة\n`;
-      report += `   • صافي التدفق اليومي (Net Daily Flow): +${fmtMoney(netDay)}/يوم (24 ساعة)\n`;
-      report += `   • صافي التدفق بالدقيقة (Net Per Minute): +${fmtMoney(netMin)}/دقيقة\n`;
-      report += `   • إجمالي الإيرادات التشغيلية الخام: +${fmtMoney(grossHour)}/ساعة\n`;
-      report += `   • استقطاعات الرواتب والصيانة: -${fmtMoney(dedHour)}/ساعة\n`;
-      report += `   • استقطاع ضريبة التدفق: 0 EGP (موسم العفو الضريبي - إعفاء شامل)\n\n`;
+      report += ` [3] كشف التدفق المالي والتدقيق المحاسبي (CASHFLOW AUDIT STATEMENT):\n`;
+      report += ` • صافي التدفق الساعي (Net Hourly Flow): +${fmtMoney(netHour)}/ساعة\n`;
+      report += ` • صافي التدفق اليومي (Net Daily Flow): +${fmtMoney(netDay)}/يوم (24 ساعة)\n`;
+      report += ` • صافي التدفق بالدقيقة (Net Per Minute): +${fmtMoney(netMin)}/دقيقة\n`;
+      report += ` • إجمالي الإيرادات التشغيلية الخام: +${fmtMoney(grossHour)}/ساعة\n`;
+      report += ` • استقطاعات الرواتب والصيانة: -${fmtMoney(dedHour)}/ساعة\n`;
+      report += ` • استقطاع ضريبة التدفق: 0 EGP (موسم العفو الضريبي - إعفاء شامل)\n\n`;
 
-      report += `🏢 [4] تفصيل مشاريع وشركات اللاعب (BUSINESSES & PAYROLL):\n`;
+      report += ` [4] تفصيل مشاريع وشركات اللاعب (BUSINESSES & PAYROLL):\n`;
       const bKeys = Object.keys(p.businesses || {});
       if (!bKeys.length) {
-        report += `   • لا يمتلك أي مشاريع تجارية.\n`;
+        report += ` • لا يمتلك أي مشاريع تجارية.\n`;
       } else {
         const bListItems = (cf.businesses && cf.businesses.list) || [];
         if (bListItems.length > 0) {
           bListItems.forEach((b, idx) => {
             const bInfo = GAME_DICTIONARY.businesses[b.id] || { name: b.name };
-            report += `   ${idx + 1}. ${bInfo.name || b.name}: مستوى ${b.level} | عمال: ${b.workers} | إيراد: +${fmtMoney(b.grossProfitPerHour)}/س | رواتب: -${fmtMoney(b.payrollPerHour)}/س | صافي المالك: +${fmtMoney(b.netPerHour)}/س\n`;
+            report += ` ${idx + 1}. ${bInfo.name || b.name}: مستوى ${b.level} | عمال: ${b.workers} | إيراد: +${fmtMoney(b.grossProfitPerHour)}/س | رواتب: -${fmtMoney(b.payrollPerHour)}/س | صافي المالك: +${fmtMoney(b.netPerHour)}/س\n`;
           });
         } else {
           bKeys.forEach((k, idx) => {
             const b = p.businesses[k] || {};
             const bInfo = GAME_DICTIONARY.businesses[k] || { name: k };
             const lvl = Number(b.level || 0);
-            report += `   ${idx + 1}. ${bInfo.name}: ${lvl > 0 ? `مستوى ${lvl} | العمالة: ${b.workers || 0}` : 'مستوى 0 (غير مفعل 🔒)'}\n`;
+            report += ` ${idx + 1}. ${bInfo.name}: ${lvl > 0 ? `مستوى ${lvl} | العمالة: ${b.workers || 0}` : 'مستوى 0 (غير مفعل )'}\n`;
           });
         }
       }
       report += `\n`;
 
-      report += `📈 [5] محفظة الأسهم والاستثمارات (STOCKS & ASSETS):\n`;
+      report += ` [5] محفظة الأسهم والاستثمارات (STOCKS & ASSETS):\n`;
       const sKeys = Object.keys(p.stocks || {});
       if (!sKeys.length) {
-        report += `   • محفظة الأسهم فارغة.\n`;
+        report += ` • محفظة الأسهم فارغة.\n`;
       } else {
         sKeys.forEach(k => {
           const s = p.stocks[k] || {};
           const sInfo = GAME_DICTIONARY.stocks[k] || { name: k };
           const shares = Number(s.shares || s.amount || 0);
           const price = Number(s.buyPrice || s.avgPrice || 0);
-          report += `   • ${sInfo.name}: ${shares.toLocaleString('en-US')} سهم (القيمة: ${fmtMoney(shares * price)})\n`;
+          report += ` • ${sInfo.name}: ${shares.toLocaleString('en-US')} سهم (القيمة: ${fmtMoney(shares * price)})\n`;
         });
       }
       report += `\n`;
 
-      report += `✈️ [6] المطار والأسطول (AVIATION):\n`;
+      report += ` [6] المطار والأسطول (AVIATION):\n`;
       if (p.airport) {
-        report += `   • مستوى المطار: مستوى ${p.airport.level || 1} | عدد الطائرات: ${Object.keys(p.airport.fleet || {}).length} | الوجهات: ${(p.airport.routes || []).length}\n`;
+        report += ` • مستوى المطار: مستوى ${p.airport.level || 1} | عدد الطائرات: ${Object.keys(p.airport.fleet || {}).length} | الوجهات: ${(p.airport.routes || []).length}\n`;
       } else {
-        report += `   • لم يقم بتفعيل المطار.\n`;
+        report += ` • لم يقم بتفعيل المطار.\n`;
       }
       report += `\n`;
 
-      report += `🌾 [7] المزرعة الاستثمارية والإنتاج الزراعي (AGRO FARM TYCOON):\n`;
+      report += ` [7] المزرعة الاستثمارية والإنتاج الزراعي (AGRO FARM TYCOON):\n`;
       if (p.farm && p.farm.unlocked) {
         const f = p.farm;
         const plotsCount = f.maxPlots || 4;
@@ -3773,60 +3773,60 @@
         const ls = f.livestock || {};
         const proc = f.processing || {};
         const contracts = f.contracts || {};
-        report += `   • البنية التحتية: أرض مستوى ${f.landLevel || 1} (${plotsCount} قطع) | شبكة ري مستوى ${waterLvl} | تسميد مستوى ${fertLvl} | عمال: ${workers} | صوامع مستوى ${siloLvl}\n`;
-        report += `   • إيرادات الحصاد الزراعي: +${fmtMoney(f.stats?.totalRevenue || 0)} (إجمالي حصاد: ${(f.stats?.totalHarvested || 0).toLocaleString()} وحدة)\n`;
-        report += `   • الثروة الحيوانية: أبقار (${ls.cows || 0} - حليب: ${ls.milk || 0}L) | دواجن (${ls.chickens || 0} - بيض: ${ls.eggs || 0}) | سماد: ${ls.compost || 0} | أرباح: +${fmtMoney(ls.stats?.totalRevenue || 0)}\n`;
-        report += `   • مصنع الأغذية: ${proc.unlocked ? `نشط ✅ | أرباح: +${fmtMoney(proc.stats?.totalRevenue || 0)}` : 'غير مفعل'}\n`;
-        report += `   • عقود التوريد: ${contracts.completedCount || 0} عقد منجز | سمعة: ${contracts.reputation || 0} ⭐ | بونص أرباح: +${fmtMoney(contracts.totalBonusEarned || 0)}\n`;
+        report += ` • البنية التحتية: أرض مستوى ${f.landLevel || 1} (${plotsCount} قطع) | شبكة ري مستوى ${waterLvl} | تسميد مستوى ${fertLvl} | عمال: ${workers} | صوامع مستوى ${siloLvl}\n`;
+        report += ` • إيرادات الحصاد الزراعي: +${fmtMoney(f.stats?.totalRevenue || 0)} (إجمالي حصاد: ${(f.stats?.totalHarvested || 0).toLocaleString()} وحدة)\n`;
+        report += ` • الثروة الحيوانية: أبقار (${ls.cows || 0} - حليب: ${ls.milk || 0}L) | دواجن (${ls.chickens || 0} - بيض: ${ls.eggs || 0}) | سماد: ${ls.compost || 0} | أرباح: +${fmtMoney(ls.stats?.totalRevenue || 0)}\n`;
+        report += ` • مصنع الأغذية: ${proc.unlocked ? `نشط | أرباح: +${fmtMoney(proc.stats?.totalRevenue || 0)}` : 'غير مفعل'}\n`;
+        report += ` • عقود التوريد: ${contracts.completedCount || 0} عقد منجز | سمعة: ${contracts.reputation || 0} | بونص أرباح: +${fmtMoney(contracts.totalBonusEarned || 0)}\n`;
       } else {
-        report += `   • لم يقم بتفعيل أو استصلاح المزرعة الاستثمارية.\n`;
+        report += ` • لم يقم بتفعيل أو استصلاح المزرعة الاستثمارية.\n`;
       }
       report += `\n`;
 
-      report += `💸 [8] آخر الحوالات المالية المسجلة (P2P TRANSFERS):\n`;
+      report += ` [8] آخر الحوالات المالية المسجلة (P2P TRANSFERS):\n`;
       if (!p.transfers || !p.transfers.length) {
-        report += `   • لا توجد حوالات مسجلة.\n`;
+        report += ` • لا توجد حوالات مسجلة.\n`;
       } else {
         p.transfers.slice(0, 15).forEach((t, i) => {
           const isSender = String(t.sender).toLowerCase() === p.username.toLowerCase();
-          report += `   ${i + 1}. [${fmtDate(t.created_at)}] ${isSender ? 'صادرة إلى -> ' + t.recipient : 'واردة من <- ' + t.sender} | المبلغ: ${fmtMoney(t.amount)}\n`;
+          report += ` ${i + 1}. [${fmtDate(t.created_at)}] ${isSender ? 'صادرة إلى -> ' + t.recipient : 'واردة من <- ' + t.sender} | المبلغ: ${fmtMoney(t.amount)}\n`;
         });
       }
       report += `\n`;
 
-      report += `👑 [8.5] سجل الشحنات والمنح الإدارية المباشرة والذهب (ADMIN GRANTS & TOP-UPS):\n`;
+      report += ` [8.5] سجل الشحنات والمنح الإدارية المباشرة والذهب (ADMIN GRANTS & TOP-UPS):\n`;
       if (!p.adminGrantsAndTopups || !p.adminGrantsAndTopups.length) {
-        report += `   • لا توجد شحنات أو منح إدارية مسجلة لهذا اللاعب.\n`;
+        report += ` • لا توجد شحنات أو منح إدارية مسجلة لهذا اللاعب.\n`;
       } else {
         p.adminGrantsAndTopups.forEach((g, i) => {
-          const goldStr = g.gold ? ` | ذهب: +${g.gold} 🪙` : '';
+          const goldStr = g.gold ? ` | ذهب: +${g.gold} ` : '';
           const cashStr = (g.cash || g.bank || g.amount) ? ` | رصيد: +${fmtMoney(g.cash || g.bank || g.amount)}` : '';
-          report += `   ${i + 1}. [${fmtDate(g.timestamp)}] (${g.title || 'منحة إدارية'})${cashStr}${goldStr} | الحالة: [${g.status || 'معتمد'}]${g.note ? ' | بيان: ' + g.note : ''}\n`;
+          report += ` ${i + 1}. [${fmtDate(g.timestamp)}] (${g.title || 'منحة إدارية'})${cashStr}${goldStr} | الحالة: [${g.status || 'معتمد'}]${g.note ? ' | بيان: ' + g.note : ''}\n`;
         });
       }
       report += `\n`;
 
-      report += `📔 [9] ملاحظات طاقم التحقيق والرقابة (INTERNAL STAFF NOTES):\n`;
+      report += ` [9] ملاحظات طاقم التحقيق والرقابة (INTERNAL STAFF NOTES):\n`;
       if (!p.staffNotes || !p.staffNotes.length) {
-        report += `   • لا توجد ملاحظات سرية مدونة.\n`;
+        report += ` • لا توجد ملاحظات سرية مدونة.\n`;
       } else {
         p.staffNotes.forEach((n, i) => {
-          report += `   ${i + 1}. [${fmtDate(n.timestamp)}] (${n.modName || 'محقق'}): ${n.note}\n`;
+          report += ` ${i + 1}. [${fmtDate(n.timestamp)}] (${n.modName || 'محقق'}): ${n.note}\n`;
         });
       }
       report += `\n`;
 
-      report += `⚖️ [10] العقوبات والإجراءات الإدارية السابقة (SANCTIONS HISTORY):\n`;
+      report += ` [10] العقوبات والإجراءات الإدارية السابقة (SANCTIONS HISTORY):\n`;
       if (!p.moderatorNotes || !p.moderatorNotes.length) {
-        report += `   • سجل الحساب نظيف من العقوبات الإدارية.\n`;
+        report += ` • سجل الحساب نظيف من العقوبات الإدارية.\n`;
       } else {
         p.moderatorNotes.forEach((n, i) => {
-          report += `   ${i + 1}. [${fmtDate(n.timestamp)}] ${n.action ? n.action.toUpperCase() : 'إجراء'} بواسطة (${n.modName || 'محقق'}): ${n.reason || 'لا يوجد سبب'}\n`;
+          report += ` ${i + 1}. [${fmtDate(n.timestamp)}] ${n.action ? n.action.toUpperCase() : 'إجراء'} بواسطة (${n.modName || 'محقق'}): ${n.reason || 'لا يوجد سبب'}\n`;
         });
       }
 
       report += `\n================================================================================\n`;
-      report += `                          نهاية تقرير القضية المعتمد                           \n`;
+      report += ` نهاية تقرير القضية المعتمد \n`;
       report += `================================================================================\n`;
 
       return report;
@@ -3904,7 +3904,7 @@
         const isActive = Boolean(currentStandbyState.active || currentStandbyState.enabled);
         if (isActive) {
           if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping';
-          if (text) text.innerHTML = '<span class="text-rose-400 font-black">وضع الستاند باي: مفعل ⚠️</span>';
+          if (text) text.innerHTML = '<span class="text-rose-400 font-black">وضع الستاند باي: مفعل </span>';
           if (btn) btn.className = 'px-3.5 py-2 rounded-xl bg-rose-950/60 hover:bg-rose-900/70 text-rose-200 text-xs font-bold border border-rose-600/60 flex items-center gap-2 transition shadow-md shadow-rose-900/30';
         } else {
           if (dot) dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400';
@@ -3988,12 +3988,12 @@
 
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + data.message);
+          alert(' ' + data.message);
           currentStandbyState = data.standby || { active: targetActive };
           closeStandbyModal();
           checkStandbyStatus();
         } else {
-          alert('❌ ' + (data.message || 'فشل تحديث وضع الاستعداد'));
+          alert(' ' + (data.message || 'فشل تحديث وضع الاستعداد'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4210,7 +4210,7 @@
         } else if (item.category === 'admin_grant' || item.category === 'admin') {
           icon = item.gold ? 'fa-coins text-yellow-400' : 'fa-crown text-amber-400';
           cardBg = 'border border-amber-500/50 bg-gradient-to-r from-amber-950/30 via-slate-900 to-yellow-950/20 shadow-md shadow-amber-950/30';
-          catBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 text-[9px]"><i class="fa-solid fa-crown text-[8px] ml-0.5"></i> ${item.gold ? 'منحة ذهب رسمية 🪙' : 'شحن ومنحة إدارة 👑'}</span>`;
+          catBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 text-[9px]"><i class="fa-solid fa-crown text-[8px] ml-0.5"></i> ${item.gold ? 'منحة ذهب رسمية ' : 'شحن ومنحة إدارة '}</span>`;
         } else if (item.category === 'transfer') {
           icon = 'fa-money-bill-transfer text-emerald-400';
           catBadge = `<span class="px-1.5 py-0.2 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-800/40 font-medium">حوالة مالية</span>`;
@@ -4248,7 +4248,7 @@
         if (item.gold) {
           amountBlocks.push(`
             <span class="font-black numbers-font text-xs text-yellow-300 block">
-              +${Number(item.gold).toLocaleString()} ذهبة 🪙
+              +${Number(item.gold).toLocaleString()} ذهبة 
             </span>
           `);
         }
@@ -4471,7 +4471,7 @@
         return;
       }
 
-      const confirmMsg = `🏦 تأكيد إيداع كاش في بنك اللاعب:\n\n• اسم اللاعب: ${target}\n• المبلغ المراد إيداعه: ${amount.toLocaleString('en-US')} EGP (${fmtMoney(amount)})\n• البيان: ${reason}\n\nسيتم إضافة الرصيد إلى بنك اللاعب فوراً وتحديث شاشته. متابعة؟`;
+      const confirmMsg = ` تأكيد إيداع كاش في بنك اللاعب:\n\n• اسم اللاعب: ${target}\n• المبلغ المراد إيداعه: ${amount.toLocaleString('en-US')} EGP (${fmtMoney(amount)})\n• البيان: ${reason}\n\nسيتم إضافة الرصيد إلى بنك اللاعب فوراً وتحديث شاشته. متابعة؟`;
       if (!confirm(confirmMsg)) return;
 
       if (btn) {
@@ -4496,7 +4496,7 @@
 
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + data.message);
+          alert(' ' + data.message);
           closeAddBankModal();
           // Update inspected player state in UI
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === target.toLowerCase()) {
@@ -4505,7 +4505,7 @@
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل إيداع المبلغ في بنك اللاعب'));
+          alert(' ' + (data.message || 'فشل إيداع المبلغ في بنك اللاعب'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4571,7 +4571,7 @@
 
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + data.message);
+          alert(' ' + data.message);
           if (amountInp) amountInp.value = '';
           const preview = document.getElementById('actionAmountPreviewText');
           if (preview) preview.textContent = '';
@@ -4580,7 +4580,7 @@
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل تنفيذ الإجراء'));
+          alert(' ' + (data.message || 'فشل تنفيذ الإجراء'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4594,7 +4594,7 @@
     async function quickResetLimitsPlayer(username) {
       const target = username || (inspectingPlayer && inspectingPlayer.username);
       if (!target) return;
-      const reason = prompt(`🔄 هل تريد تصفير اللمت اليومي بالكامل للاعب "${target}"؟\n(يشمل دورات العمل، أرباح البورصة، كولد داون العمل، وسقف التحويلات البنكية)\n\nاكتب سبب الإجراء:`, 'تصفير اللمت اليومي لفك تعليق النشاط وبطلب الإدارة');
+      const reason = prompt(` هل تريد تصفير اللمت اليومي بالكامل للاعب "${target}"؟\n(يشمل دورات العمل، أرباح البورصة، كولد داون العمل، وسقف التحويلات البنكية)\n\nاكتب سبب الإجراء:`, 'تصفير اللمت اليومي لفك تعليق النشاط وبطلب الإدارة');
       if (!reason || reason.trim().length < 3) {
         alert('يجب كتابة سبب الإجراء بوضوح (3 أحرف على الأقل).');
         return;
@@ -4615,14 +4615,14 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + data.message);
+          alert(' ' + data.message);
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === target.toLowerCase()) {
             inspectPlayer(target);
           }
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل تصفير اللمت'));
+          alert(' ' + (data.message || 'فشل تصفير اللمت'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4632,7 +4632,7 @@
     // Quick 1-Click Ban Action
     async function quickBanPlayer(username) {
       if (!username) return;
-      const reason = prompt(`⚠️ هل أنت متأكد من حظر حساب "${username}" نهائياً؟\nاكتب سبب الحظر (إلزامي للرقابة):`, 'مخالفة شروط اللعبة والتلاعب بالثروات');
+      const reason = prompt(` هل أنت متأكد من حظر حساب "${username}" نهائياً؟\nاكتب سبب الحظر (إلزامي للرقابة):`, 'مخالفة شروط اللعبة والتلاعب بالثروات');
       if (!reason || reason.trim().length < 3) {
         alert('يجب كتابة سبب الحظر بوضوح (3 أحرف على الأقل).');
         return;
@@ -4653,14 +4653,14 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('⛔ ' + data.message);
+          alert(' ' + data.message);
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
             inspectPlayer(username);
           }
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل تنفيذ الحظر'));
+          alert(' ' + (data.message || 'فشل تنفيذ الحظر'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4690,14 +4690,14 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('🟢 ' + (data.message || 'تم فك الحظر عن الحساب بنجاح.'));
+          alert(' ' + (data.message || 'تم فك الحظر عن الحساب بنجاح.'));
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
             inspectPlayer(username);
           }
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل فك الحظر'));
+          alert(' ' + (data.message || 'فشل فك الحظر'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4727,14 +4727,14 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + (data.message || 'تم فك تجميد الحساب بنجاح ورفع كافة القيود.'));
+          alert(' ' + (data.message || 'تم فك تجميد الحساب بنجاح ورفع كافة القيود.'));
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
             inspectPlayer(username);
           }
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل فك التجميد'));
+          alert(' ' + (data.message || 'فشل فك التجميد'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4766,14 +4766,14 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + data.message);
+          alert(' ' + data.message);
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
             inspectPlayer(username);
           }
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل التجميد'));
+          alert(' ' + (data.message || 'فشل التجميد'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4802,14 +4802,14 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + data.message);
+          alert(' ' + data.message);
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
             inspectPlayer(username);
           }
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل الإجراء'));
+          alert(' ' + (data.message || 'فشل الإجراء'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4837,14 +4837,14 @@
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          alert('✅ ' + data.message);
+          alert(' ' + data.message);
           if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === username.toLowerCase()) {
             inspectPlayer(username);
           }
           refreshOverview();
           executeSearch();
         } else {
-          alert('❌ ' + (data.message || 'فشل الإجراء'));
+          alert(' ' + (data.message || 'فشل الإجراء'));
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -4912,7 +4912,7 @@
 
       // STRICT SVG REJECTION (منع صيغ SVG منعاً باتاً لحماية الأمان ومنع ثغرات XSS)
       if (lowerName.endsWith('.svg') || lowerName.includes('.svg') || lowerType.includes('svg') || lowerType === 'image/svg+xml') {
-        alert('⚠️ غير مسموح باختيار أو رفع ملفات بصيغة SVG لدواعي الحماية ومنع الاختراق!\nيُسمح فقط بالصور النقطية المعتمدة (PNG, JPEG, WebP, GIF).');
+        alert(' غير مسموح باختيار أو رفع ملفات بصيغة SVG لدواعي الحماية ومنع الاختراق!\nيُسمح فقط بالصور النقطية المعتمدة (PNG, JPEG, WebP, GIF).');
         fileInput.value = '';
         clearModChatImage();
         return;
@@ -4920,7 +4920,7 @@
 
       // Size validation (Max 3.5MB)
       if (file.size > 3.5 * 1024 * 1024) {
-        alert('⚠️ حجم الصورة كبير جداً! الحد الأقصى المسموح به هو 3.5 ميجابايت.');
+        alert(' حجم الصورة كبير جداً! الحد الأقصى المسموح به هو 3.5 ميجابايت.');
         fileInput.value = '';
         return;
       }
@@ -4928,7 +4928,7 @@
       // Valid mime types check
       const validTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
       if (lowerType && !validTypes.includes(lowerType)) {
-        alert('⚠️ صيغة الملف غير مدعومة! يرجى اختيار صورة صالحة (PNG, JPG, WebP, GIF).');
+        alert(' صيغة الملف غير مدعومة! يرجى اختيار صورة صالحة (PNG, JPG, WebP, GIF).');
         fileInput.value = '';
         return;
       }
@@ -4937,7 +4937,7 @@
       reader.onload = function(e) {
         const result = e.target.result;
         if (typeof result === 'string' && (result.toLowerCase().startsWith('data:image/svg') || result.toLowerCase().includes('svg+xml'))) {
-          alert('❌ تم رفض الملف لأنه يحتوي على بيانات SVG غير آمنة!');
+          alert(' تم رفض الملف لأنه يحتوي على بيانات SVG غير آمنة!');
           clearModChatImage();
           return;
         }
@@ -4959,7 +4959,7 @@
       };
 
       reader.onerror = function() {
-        alert('❌ تعذر قراءة ملف الصورة المختارة.');
+        alert(' تعذر قراءة ملف الصورة المختارة.');
         clearModChatImage();
       };
 
@@ -5001,7 +5001,7 @@
       const input = document.getElementById('startNewChatUsernameInput');
       const username = input ? input.value.trim() : '';
       if (!username) {
-        alert('⚠️ يرجى إدخال اسم اللاعب أولاً لفتح المحادثة معه.');
+        alert(' يرجى إدخال اسم اللاعب أولاً لفتح المحادثة معه.');
         if (input) input.focus();
         return;
       }
@@ -5109,7 +5109,7 @@
       const msg = input ? input.value.trim() : '';
 
       if (!msg && !_modPendingChatImage) {
-        alert('⚠️ يرجى كتابة رسالة أو إرفاق صورة لإرسالها.');
+        alert(' يرجى كتابة رسالة أو إرفاق صورة لإرسالها.');
         return;
       }
 
@@ -5163,7 +5163,7 @@
           clearModChatImage();
           await loadModeratorChatMessages(true);
         } else {
-          alert('❌ ' + (data.message || data.error || 'فشل إرسال الرسالة'));
+          alert(' ' + (data.message || data.error || 'فشل إرسال الرسالة'));
         }
       } catch (err) {
         alert('خطأ في الإرسال: ' + err.message);
@@ -5246,7 +5246,7 @@
             <div class="text-center py-12 text-slate-500 text-xs">
               <i class="fa-solid fa-box-archive text-3xl mb-2.5 text-slate-600 block"></i>
               لا توجد أي محادثات مؤرشفة أو محلولة حالياً.<br>
-              عند النقر على زر <strong class="text-emerald-400">"تم الحل ✅"</strong> في أي محادثة، ستنتقل تلقائياً إلى هنا.
+              عند النقر على زر <strong class="text-emerald-400">"تم الحل "</strong> في أي محادثة، ستنتقل تلقائياً إلى هنا.
             </div>
           `;
         } else {
@@ -5273,9 +5273,9 @@
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-black text-sm text-white truncate">${th.username}</span>
                   ${isArchived 
-                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50">تم الحل ومؤرشفة ✅</span>`
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50">تم الحل ومؤرشفة </span>`
                     : (th.unread 
-                        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">رسالة جديدة 📩</span>`
+                        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">رسالة جديدة </span>`
                         : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">مفتوحة</span>`)
                   }
                   ${th.isSuspended ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300">مجمد</span>' : ''}
@@ -5327,7 +5327,7 @@
         if (res.ok && data.success) {
           await loadStaffChatThreads();
         } else {
-          alert('❌ ' + (data.message || data.error || 'فشل تحديث حالة المحادثة'));
+          alert(' ' + (data.message || data.error || 'فشل تحديث حالة المحادثة'));
         }
       } catch (err) {
         alert('خطأ: ' + err.message);
@@ -5339,7 +5339,7 @@
       if (!targetUser || targetUser === '---') return;
       if (!confirm(`هل تريد تعليم مشكلة واستفسار اللاعب (${targetUser}) كمحلولة ونقل محادثته للأرشيف؟`)) return;
       await toggleThreadResolved(targetUser, true);
-      alert(`✅ تم تعليم مشكلة اللاعب (${targetUser}) كمحلولة ونقل المحادثة للأرشيف بنجاح.`);
+      alert(` تم تعليم مشكلة اللاعب (${targetUser}) كمحلولة ونقل المحادثة للأرشيف بنجاح.`);
     }
 
     async function openChatWithPlayer(username) {
@@ -5386,7 +5386,7 @@
 
       const sName = currentModInfo ? currentModInfo.name : 'محقق';
       const badgeEl = document.getElementById('globalChatSenderBadge');
-      if (badgeEl) badgeEl.textContent = `${sName} (مراقب معتمد 🛡️)`;
+      if (badgeEl) badgeEl.textContent = `${sName} (مراقب معتمد )`;
 
       loadGlobalChatMessages(true);
       if (globalChatPollTimer) clearInterval(globalChatPollTimer);
@@ -5466,7 +5466,7 @@
           const badge = m.customBadge || '';
           const title = m.senderTitle || '';
           const sender = m.sender || '';
-          return badge.includes('مراقب') || title.includes('مراقب') || sender.includes('مراقب') || sender === 'الإدارة' || badge.includes('إدارة') || badge.includes('🛡️');
+          return badge.includes('مراقب') || title.includes('مراقب') || sender.includes('مراقب') || sender === 'الإدارة' || badge.includes('إدارة') || badge.includes('');
         });
       }
 
@@ -5490,7 +5490,7 @@
         const badge = m.customBadge || '';
         const title = m.senderTitle || '';
         const sender = m.sender || '';
-        const isStaff = Boolean(badge.includes('مراقب') || title.includes('مراقب') || sender.includes('مراقب') || sender === 'الإدارة' || badge.includes('إدارة') || badge.includes('🛡️'));
+        const isStaff = Boolean(badge.includes('مراقب') || title.includes('مراقب') || sender.includes('مراقب') || sender === 'الإدارة' || badge.includes('إدارة') || badge.includes(''));
         const isDrop = Boolean(m.type === 'money_drop');
         const ts = m.timestamp ? fmtDate(m.timestamp) : '';
         const msgText = m.message || m.text || '';
@@ -5507,7 +5507,7 @@
               <div class="flex items-center gap-1.5 flex-wrap">
                 <strong class="text-white font-bold">${sender}</strong>
                 ${title ? `<span class="text-[10px] text-slate-400">(${title})</span>` : ''}
-                ${isDrop ? `<span class="text-[10px] px-1.5 py-0.2 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">💰 نقطة مالية</span>` : ''}
+                ${isDrop ? `<span class="text-[10px] px-1.5 py-0.2 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40"> نقطة مالية</span>` : ''}
                 ${badge ? `<span class="text-[10px] px-1.5 py-0.2 rounded font-bold ${isStaff ? 'bg-blue-500/25 text-blue-300 border border-blue-500/50' : 'bg-slate-800 text-yellow-300'}">${badge}</span>` : ''}
                 ${m.isVerified ? `<i class="fa-solid fa-circle-check text-cyan-400 text-[10px]" title="موثق"></i>` : ''}
               </div>
@@ -5616,14 +5616,14 @@
           const sName = currentModInfo ? (currentModInfo.name || 'محقق') : 'محقق';
           const newMsg = {
             id: 'msg_mod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-            sender: `${sName} (مراقب معتمد 🛡️)`,
+            sender: `${sName} (مراقب معتمد )`,
             senderTitle: 'طاقم الرقابة والتحقيقات',
             message: text,
             avatarUrl: '',
             chatGlow: 'cyber_rainbow',
             isVerified: true,
-            customBadge: '🛡️ مراقب معتمد',
-            seasonBadge: '⚖️ رقابة رسمية',
+            customBadge: ' مراقب معتمد',
+            seasonBadge: ' رقابة رسمية',
             timestamp: Date.now()
           };
 
@@ -5663,7 +5663,7 @@
           input.value = '';
           await loadGlobalChatMessages(true);
         } else {
-          alert('❌ تعذر إرسال الرسالة للشات العام حالياً. يرجى إعادة المحاولة.');
+          alert(' تعذر إرسال الرسالة للشات العام حالياً. يرجى إعادة المحاولة.');
         }
       } catch (err) {
         alert('خطأ في الاتصال: ' + err.message);
@@ -5677,7 +5677,7 @@
     async function sendOfficialGlobalReplyToInspectedPlayer() {
       if (!inspectingPlayer) return;
       const targetUser = inspectingPlayer.username;
-      const defaultText = `@${targetUser} مرحباً، تم فحص وتدقيق استفسارك/حسابك من قبل طاقم الرقابة والتأكد من سلامة وصحة العمليات ✅`;
+      const defaultText = `@${targetUser} مرحباً، تم فحص وتدقيق استفسارك/حسابك من قبل طاقم الرقابة والتأكد من سلامة وصحة العمليات `;
       const replyText = prompt(`كتابة رد رسمي لـ "${targetUser}" في الشات العام لجميع اللاعبين:`, defaultText);
       if (!replyText || !replyText.trim()) return;
 
@@ -5709,14 +5709,14 @@
           const sName = currentModInfo ? (currentModInfo.name || 'محقق') : 'محقق';
           const newMsg = {
             id: 'msg_mod_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
-            sender: `${sName} (مراقب معتمد 🛡️)`,
+            sender: `${sName} (مراقب معتمد )`,
             senderTitle: 'طاقم الرقابة والتحقيقات',
             message: fullMessage,
             avatarUrl: '',
             chatGlow: 'cyber_rainbow',
             isVerified: true,
-            customBadge: '🛡️ مراقب معتمد',
-            seasonBadge: '⚖️ رقابة رسمية',
+            customBadge: ' مراقب معتمد',
+            seasonBadge: ' رقابة رسمية',
             timestamp: Date.now()
           };
 
@@ -5750,9 +5750,9 @@
       }
 
       if (sentSuccessfully) {
-        alert(`✅ تم إرسال ردك الرسمي لـ "${targetUser}" في الشات العام بنجاح!`);
+        alert(` تم إرسال ردك الرسمي لـ "${targetUser}" في الشات العام بنجاح!`);
       } else {
-        alert('❌ فشل إرسال الرد للشات العام.');
+        alert(' فشل إرسال الرد للشات العام.');
       }
     }
 
@@ -5982,7 +5982,7 @@
                   <div class="flex flex-wrap items-center gap-1.5">
                     ${prioBadge}
                     ${targetPlayerBadge}
-                    ${isDone ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">منجزة ✅</span>' : ''}
+                    ${isDone ? '<span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-emerald-950/80 text-emerald-300 border border-emerald-700/60">منجزة </span>' : ''}
                   </div>
 
                   <!-- Task Title -->
@@ -6046,7 +6046,7 @@
       const priority = prioritySelect ? prioritySelect.value : 'normal';
 
       if (!text && !details) {
-        alert('⚠️ يرجى كتابة عنوان المهمة أو شرح المشكلة.');
+        alert(' يرجى كتابة عنوان المهمة أو شرح المشكلة.');
         return;
       }
 

@@ -92,7 +92,7 @@ async function testDatabaseHealth() {
 
   const allOk = results.globals?.ok && results.players_read?.ok && results.mailbox_read?.ok && results.transfers_read?.ok;
   console.log('\n======================================================');
-  console.log('Overall Database Connection Status:', allOk ? '✅ 100% HEALTHY, SECURE & FULLY OPERATIONAL' : '❌ ISSUES DETECTED');
+  console.log('Overall Database Connection Status:', allOk ? ' 100% HEALTHY, SECURE & FULLY OPERATIONAL' : ' ISSUES DETECTED');
   console.log('======================================================');
 }
 

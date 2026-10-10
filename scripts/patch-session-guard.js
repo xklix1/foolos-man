@@ -3,7 +3,7 @@ const path = require('path');
 const dbPath = path.join(__dirname, '../db.js');
 let content = fs.readFileSync(dbPath, 'utf8');
 
-const targetStr = `  let _lastSessionCheckTime = 0;
+const targetStr = ` let _lastSessionCheckTime = 0;
   async function _checkSessionImmediate(u) {
     if (_isSessionInvalidated || !u) return;
     const curActive = ((typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '').trim();
@@ -58,7 +58,7 @@ const targetStr = `  let _lastSessionCheckTime = 0;
     }
   }`;
 
-const replacementStr = `  let _lastSessionCheckTime = 0;
+const replacementStr = ` let _lastSessionCheckTime = 0;
   let _sessionClaimedTimestamp = Date.now();
 
   async function _checkSessionImmediate(u) {
@@ -123,7 +123,7 @@ const normalizedTarget = targetStr.replace(/\r\n/g, '\n');
 if (normalizedContent.includes(normalizedTarget)) {
   const newContent = normalizedContent.replace(normalizedTarget, replacementStr);
   fs.writeFileSync(dbPath, newContent, 'utf8');
-  console.log('✅ db.js session guard successfully patched with grace period!');
+  console.log(' db.js session guard successfully patched with grace period!');
 } else {
-  console.log('❌ Target not found in db.js');
+  console.log(' Target not found in db.js');
 }

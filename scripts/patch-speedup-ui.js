@@ -4,10 +4,10 @@ const path = require('path');
 const uiPath = path.join(__dirname, '..', 'ui.js');
 let uiContent = fs.readFileSync(uiPath, 'utf8');
 
-const targetFuncStart = '  async function requestSpeedUp(timerType, targetKey) {';
-const targetFuncEnd = '  function updateJailOverlaySpeedupUI(jailSec) {';
+const targetFuncStart = ' async function requestSpeedUp(timerType, targetKey) {';
+const targetFuncEnd = ' function updateJailOverlaySpeedupUI(jailSec) {';
 
-const newSpeedupFunc = `  async function requestSpeedUp(timerType, targetKey) {
+const newSpeedupFunc = ` async function requestSpeedUp(timerType, targetKey) {
     if (!isKhaledUser()) return;
 
     const username = (typeof getActiveUsernameSafe === 'function' && getActiveUsernameSafe()) || (GameEngine.state && GameEngine.state.username) || 'Khaled';
@@ -25,7 +25,7 @@ const newSpeedupFunc = `  async function requestSpeedUp(timerType, targetKey) {
         const jailSec = Number(s.jailTimer || 0);
         goldDeducted = Math.max(1, Math.ceil(jailSec / 600));
         if (currentGold < goldDeducted) {
-          showToast('رصيد ذهب غير كافٍ', \`تحتاج إلى \${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: \${currentGold} 🪙\`, 'error');
+          showToast('رصيد ذهب غير كافٍ', \`تحتاج إلى \${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: \${currentGold} \`, 'error');
           return;
         }
         s.gold = currentGold - goldDeducted;
@@ -37,7 +37,7 @@ const newSpeedupFunc = `  async function requestSpeedUp(timerType, targetKey) {
           const remMs = Math.max(0, Number(s[prop] || 0) - Date.now());
           goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
           if (currentGold < goldDeducted) {
-            showToast('رصيد ذهب غير كافٍ', \`تحتاج إلى \${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: \${currentGold} 🪙\`, 'error');
+            showToast('رصيد ذهب غير كافٍ', \`تحتاج إلى \${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: \${currentGold} \`, 'error');
             return;
           }
           s.gold = currentGold - goldDeducted;
@@ -50,7 +50,7 @@ const newSpeedupFunc = `  async function requestSpeedUp(timerType, targetKey) {
             const remMs = Math.max(0, (sj.endTime || sj.finishTime || sj.expiresAt || 0) - Date.now());
             goldDeducted = Math.max(1, Math.ceil(remMs / 600000));
             if (currentGold < goldDeducted) {
-              showToast('رصيد ذهب غير كافٍ', \`تحتاج إلى \${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: \${currentGold} 🪙\`, 'error');
+              showToast('رصيد ذهب غير كافٍ', \`تحتاج إلى \${goldDeducted} ذهب لتسريع هذا المؤقت. رصيدك الحالي: \${currentGold} \`, 'error');
               return;
             }
             s.gold = currentGold - goldDeducted;
@@ -108,7 +108,7 @@ const newSpeedupFunc = `  async function requestSpeedUp(timerType, targetKey) {
         }).catch(() => {});
       } catch (_) {}
 
-      showToast('تم التسريع بنجاح ⚡', \`تم إنهاء المؤقت بنجاح وخصم \${goldDeducted} 🪙 ذهب. الرصيد المتبقي: \${Number(s.gold).toLocaleString()} 🪙\`, 'success');
+      showToast('تم التسريع بنجاح ', \`تم إنهاء المؤقت بنجاح وخصم \${goldDeducted} ذهب. الرصيد المتبقي: \${Number(s.gold).toLocaleString()} \`, 'success');
       if (typeof playMenuSound === 'function') playMenuSound('success');
       if (typeof renderAll === 'function') renderAll();
     } catch (err) {

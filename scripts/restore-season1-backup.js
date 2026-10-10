@@ -27,12 +27,12 @@ async function restoreTable(tableName, rows) {
 
     if (!res.ok) {
       const err = await res.text();
-      console.error(`❌ Failed to restore chunk ${i}-${i + chunk.length} of ${tableName}:`, err);
+      console.error(` Failed to restore chunk ${i}-${i + chunk.length} of ${tableName}:`, err);
     } else {
-      console.log(`  -> Restored chunk ${i + 1} to ${Math.min(i + chunkSize, rows.length)} of ${tableName}`);
+      console.log(` -> Restored chunk ${i + 1} to ${Math.min(i + chunkSize, rows.length)} of ${tableName}`);
     }
   }
-  console.log(`✅ Table '${tableName}' restored successfully!`);
+  console.log(` Table '${tableName}' restored successfully!`);
 }
 
 async function runRestore(backupDirName) {
@@ -41,12 +41,12 @@ async function runRestore(backupDirName) {
     : path.join(__dirname, '../backups/season1_latest_backup');
 
   if (!fs.existsSync(targetDir)) {
-    console.error(`❌ Backup directory not found: ${targetDir}`);
+    console.error(` Backup directory not found: ${targetDir}`);
     process.exit(1);
   }
 
   console.log('====================================================');
-  console.log(`🔄 RESTORING DATA FROM: ${targetDir}`);
+  console.log(` RESTORING DATA FROM: ${targetDir}`);
   console.log('====================================================');
 
   const tables = ['players', 'transfers', 'mailbox', 'globals'];
@@ -58,7 +58,7 @@ async function runRestore(backupDirName) {
     }
   }
 
-  console.log('\n🎉 ALL TABLES RESTORED SUCCESSFULLY!');
+  console.log('\n ALL TABLES RESTORED SUCCESSFULLY!');
 }
 
 const dirArg = process.argv[2];

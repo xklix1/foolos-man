@@ -4,7 +4,7 @@ const fs = require('fs');
 // 1. Update index.html
 // ==========================================
 let indexHtml = fs.readFileSync('index.html', 'utf8');
-const modalSuspicionHtml = `  <!-- ==================== ACCOUNT UNDER SUSPICION LOCKED MODAL (شاشة حسابك تحت الشبهة) ==================== -->
+const modalSuspicionHtml = ` <!-- ==================== ACCOUNT UNDER SUSPICION LOCKED MODAL (شاشة حسابك تحت الشبهة) ==================== -->
   <div id="modal-account-under-suspicion" dir="rtl"
     class="hidden fixed inset-0 z-[999999] flex items-center justify-center bg-black/92 backdrop-blur-lg p-4 animate-fade-in text-right">
     <div class="glass-panel w-full max-w-md rounded-3xl border-2 border-amber-500/60 p-6 sm:p-7 shadow-2xl bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden space-y-5">
@@ -19,7 +19,7 @@ const modalSuspicionHtml = `  <!-- ==================== ACCOUNT UNDER SUSPICION 
         </div>
         <div>
           <span class="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-500/40 text-amber-300 font-black text-xs inline-block mb-1.5">
-            تنبيه أمني إداري ⚠️
+            تنبيه أمني إداري 
           </span>
           <h3 class="text-xl font-black text-white">حسابك تحت الشبهة</h3>
         </div>
@@ -40,11 +40,11 @@ const modalSuspicionHtml = `  <!-- ==================== ACCOUNT UNDER SUSPICION 
         <a href="https://www.facebook.com/profile.php?id=61578368735393" target="_blank" rel="noopener noreferrer"
           class="w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-sm flex items-center justify-center gap-2.5 shadow-xl shadow-blue-600/30 transition transform active:scale-95 no-underline">
           <i class="fa-brands fa-facebook text-base"></i>
-          <span>مراسلة صفحة الفيسبوك الرسمية 💬</span>
+          <span>مراسلة صفحة الفيسبوك الرسمية </span>
         </a>
         
         <p class="text-[11px] text-center text-slate-500 font-medium">
-          🔒 هذه الشاشة مثبتة إدارياً ولن يتم إغلاقها حتى مراجعة الحساب.
+           هذه الشاشة مثبتة إدارياً ولن يتم إغلاقها حتى مراجعة الحساب.
         </p>
       </div>
 
@@ -87,8 +87,8 @@ const adminSuspicionFn = `
 `;
 
 if (!dbJs.includes('adminSetPlayerSuspicion')) {
-  dbJs = dbJs.replace('async function adminBanPlayer', adminSuspicionFn + '\n  async function adminBanPlayer');
-  dbJs = dbJs.replace('adminBanPlayer,', 'adminBanPlayer,\n    adminSetPlayerSuspicion,');
+  dbJs = dbJs.replace('async function adminBanPlayer', adminSuspicionFn + '\n async function adminBanPlayer');
+  dbJs = dbJs.replace('adminBanPlayer,', 'adminBanPlayer,\n adminSetPlayerSuspicion,');
   fs.writeFileSync('db.js', dbJs, 'utf8');
   console.log('2. Added adminSetPlayerSuspicion to db.js');
 }
@@ -105,25 +105,25 @@ const suspicionSelectSnippet = `
         const isUnderSuspicion = Boolean(state.underSuspicion || (state.state && state.state.underSuspicion));
         if (suspicionBtn && suspicionText) {
           if (isUnderSuspicion) {
-            suspicionText.textContent = 'إلغاء تثبيت شاشة الشبهة (فك التجميد) 🔓';
+            suspicionText.textContent = 'إلغاء تثبيت شاشة الشبهة (فك التجميد) ';
             suspicionBtn.className = 'w-full py-2 bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-500/50 rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-emerald-500/20 cursor-pointer';
           } else {
-            suspicionText.textContent = 'تثبيت شاشة (حسابك تحت الشبهة) ⚠️';
+            suspicionText.textContent = 'تثبيت شاشة (حسابك تحت الشبهة) ';
             suspicionBtn.className = 'w-full py-2 bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:from-amber-500 hover:to-orange-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-lg shadow-orange-500/20 cursor-pointer';
           }
         }
 `;
 
 if (!adminJs.includes('btn-admin-toggle-suspicion-lock')) {
-  adminJs = adminJs.replace("const fbText = document.getElementById('admin-toggle-fb-text');", suspicionSelectSnippet + "\n        const fbText = document.getElementById('admin-toggle-fb-text');");
+  adminJs = adminJs.replace("const fbText = document.getElementById('admin-toggle-fb-text');", suspicionSelectSnippet + "\n const fbText = document.getElementById('admin-toggle-fb-text');");
 
   // In status badge logic:
   const badgeTarget = "if (state.isBanned) {";
   const badgeReplacement = `if (state.isBanned) {
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ⛔';
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center';
           } else if (isUnderSuspicion) {
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة ⚠️ (الشاشة مثبتة)';
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة (الشاشة مثبتة)';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20 flex items-center';`;
   adminJs = adminJs.replace(badgeTarget, badgeReplacement);
 
@@ -141,7 +141,7 @@ if (!adminJs.includes('btn-admin-toggle-suspicion-lock')) {
         const newSuspicion = !currentSuspicion;
         const targetUser = selectedPlayer;
         const confirmMsg = newSuspicion
-          ? \`⚠️ تأكيد تثبيت شاشة الشبهة:\\nهل أنت متأكد من تثبيت شاشة [حسابك تحت الشبهة يرجى التواصل مع صفحة الفيسبوك] على حساب اللاعب "\${targetUser}"؟\\nستظهر الشاشة فوراً أمامه وتمنعه من اللعب حتى تقوم بإلغائها.\`
+          ? \` تأكيد تثبيت شاشة الشبهة:\\nهل أنت متأكد من تثبيت شاشة [حسابك تحت الشبهة يرجى التواصل مع صفحة الفيسبوك] على حساب اللاعب "\${targetUser}"؟\\nستظهر الشاشة فوراً أمامه وتمنعه من اللعب حتى تقوم بإلغائها.\`
           : \`تأكيد رفع التجميد:\\nهل أنت متأكد من إلغاء تثبيت شاشة الشبهة عن حساب اللاعب "\${targetUser}"؟\`;
 
         if (!confirm(confirmMsg)) return;
@@ -155,7 +155,7 @@ if (!adminJs.includes('btn-admin-toggle-suspicion-lock')) {
           if (selectedPlayerState.state) selectedPlayerState.state.underSuspicion = newSuspicion;
 
           showToast(
-            newSuspicion ? 'تم التثبيت ⚠️' : 'تم رفع التجميد 🔓',
+            newSuspicion ? 'تم التثبيت ' : 'تم رفع التجميد ',
             newSuspicion ? \`تم تثبيت شاشة الشبهة على حساب \${targetUser} بنجاح.\` : \`تم إلغاء تثبيت شاشة الشبهة عن حساب \${targetUser}.\`,
             'success'
           );
@@ -170,7 +170,7 @@ if (!adminJs.includes('btn-admin-toggle-suspicion-lock')) {
     }
 `;
 
-  adminJs = adminJs.replace('// Change Player PIN', clickHandler + '\n    // Change Player PIN');
+  adminJs = adminJs.replace('// Change Player PIN', clickHandler + '\n // Change Player PIN');
   fs.writeFileSync('admin-panel.js', adminJs, 'utf8');
   console.log('3. Added suspicion lock handlers to admin-panel.js');
 }
@@ -192,7 +192,7 @@ const enforceSuspicionCode = `
 `;
 
 if (!uiJs.includes('enforceSuspicionStatus')) {
-  uiJs = uiJs.replace('function showDirectAdminPopupModal', enforceSuspicionCode + '\n  function showDirectAdminPopupModal');
+  uiJs = uiJs.replace('function showDirectAdminPopupModal', enforceSuspicionCode + '\n function showDirectAdminPopupModal');
   
   // In loadUserSession callback:
   uiJs = uiJs.replace(

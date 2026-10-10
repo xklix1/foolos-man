@@ -100,7 +100,7 @@ var PWAManager = (() => {
       } catch (e) {}
 
       if (typeof window.showToast === 'function') {
-        window.showToast('تطبيق رأس المال', '🎉 مبارك! تم تثبيت رأس المال كتطبيق رسمي على جهازك.', 'success');
+        window.showToast('تطبيق رأس المال', ' مبارك! تم تثبيت رأس المال كتطبيق رسمي على جهازك.', 'success');
       }
     });
 
@@ -397,14 +397,14 @@ var PWAManager = (() => {
       if (permission === 'granted') {
         subscribeToPushServer();
 
-        sendNotification('👑 مرحباً بك في نظام التنبيهات الذكي!', {
+        sendNotification(' مرحباً بك في نظام التنبيهات الذكي!', {
           body: 'ستتلقى إشعارات فورية عند نفاد بضائع مشاريعك أو اكتمال مؤقتات الأرباح والحوالات الواردة.',
           icon: '/assets/icon-192.png',
           tag: 'welcome_notification'
         });
 
         if (typeof window.showToast === 'function') {
-          window.showToast('نظام الإشعارات', 'تم تفعيل إشعارات اللعبة بنجاح! 🔔', 'success');
+          window.showToast('نظام الإشعارات', 'تم تفعيل إشعارات اللعبة بنجاح! ', 'success');
         }
         return true;
       } else if (permission === 'denied') {
@@ -479,7 +479,7 @@ var PWAManager = (() => {
       if (!ok) return;
     }
 
-    await sendNotification('🔔 تجربة إشعار رأس المال', {
+    await sendNotification(' تجربة إشعار رأس المال', {
       body: 'تهانينا! نظام الإشعارات يعمل بكفاءة تامة على جهازك وتطبيق PWA.',
       icon: '/assets/icon-192.png',
       tag: 'test_notification'
@@ -529,7 +529,7 @@ var PWAManager = (() => {
       if (res.ok) {
         if (typeof window.showToast === 'function') {
           window.showToast(
-            '🚀 تم جدولة إشعار الخلفية!',
+            ' تم جدولة إشعار الخلفية!',
             `أغلق اللعبة أو اقفل شاشة هاتفك الآن! سيصلك الإشعار بعد ${delaySeconds} ثوانٍ.`,
             'info',
             8000
@@ -566,7 +566,7 @@ var PWAManager = (() => {
         if (!notificationFlags.suppliesWarned) {
           notificationFlags.suppliesWarned = true;
           const bizNames = depletedBiz.map(b => b.name).filter(Boolean).slice(0, 2).join(' و');
-          sendNotification('⚠️ تنبيه الإمدادات: توقفت أرباح مشاريعك!', {
+          sendNotification(' تنبيه الإمدادات: توقفت أرباح مشاريعك!', {
             body: `نفدت بضائع (${depletedBiz.length}) من مشاريعك${bizNames ? ': ' + bizNames : ''}. قم بتوريد شحنة بضائع جديدة لاستئناف الإنتاج وضخ الأرباح!`,
             tag: 'supplies_depleted'
           });
@@ -584,7 +584,7 @@ var PWAManager = (() => {
       if (!notificationFlags.afkWarned) {
         notificationFlags.afkWarned = true;
         const remMin = Math.ceil((afkExpires - now) / 60000);
-        sendNotification('⏳ ترخيص الإدارة الذاتية (AFK) شارف على الانتهاء!', {
+        sendNotification(' ترخيص الإدارة الذاتية (AFK) شارف على الانتهاء!', {
           body: `يتبقى ${remMin} دقيقة فقط على انتهاء ترخيص الإدارة الذاتية 12-Hour. جدده لضمان استمرار الأرباح أثناء غيابك.`,
           tag: 'afk_expiring'
         });

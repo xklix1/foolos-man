@@ -31,7 +31,7 @@ async function run() {
 
   if (!state.activityLog) state.activityLog = [];
   state.activityLog.push({
-    action: 'إيداع إداري مباشر 💰',
+    action: 'إيداع إداري مباشر ',
     details: `تم إضافة وقيد إيداع إداري بقيمة ${grantAmount.toLocaleString()} EGP في حسابك المصرفي.`,
     category: 'banking',
     timestamp: nowTs

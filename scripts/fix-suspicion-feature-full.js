@@ -8,7 +8,7 @@ console.log('=== Starting Full Suspicion Feature Repair ===');
 let dbJs = fs.readFileSync('db.js', 'utf8');
 
 // 1.1 In getPlayerState: update suspicion handling
-const oldKhaledBlock = `      if (isKhaledAccount) {
+const oldKhaledBlock = ` if (isKhaledAccount) {
         stateObj.isBanned = false;
         stateObj.isAdmin = true;
         row.is_banned = false;
@@ -22,7 +22,7 @@ const oldKhaledBlock = `      if (isKhaledAccount) {
         }
       }`;
 
-const newKhaledBlock = `      if (isKhaledAccount) {
+const newKhaledBlock = ` if (isKhaledAccount) {
         stateObj.isBanned = false;
         stateObj.isAdmin = true;
         stateObj.underSuspicion = false;
@@ -51,7 +51,7 @@ if (dbJs.includes(oldKhaledBlock)) {
 }
 
 // 1.2 In adminSetPlayerSuspicion: make sure it sets under_suspicion and sends admin_sync mail
-const oldAdminSusp = `  async function adminSetPlayerSuspicion(username, underSuspicion = true) {
+const oldAdminSusp = ` async function adminSetPlayerSuspicion(username, underSuspicion = true) {
     if (!username) throw new Error('اسم المستخدم مطلوب');
     const u = String(username).trim();
     const now = Date.now();
@@ -71,7 +71,7 @@ const oldAdminSusp = `  async function adminSetPlayerSuspicion(username, underSu
     return true;
   }`;
 
-const newAdminSusp = `  async function adminSetPlayerSuspicion(username, underSuspicion = true) {
+const newAdminSusp = ` async function adminSetPlayerSuspicion(username, underSuspicion = true) {
     if (!username) throw new Error('اسم المستخدم مطلوب');
     const u = String(username).replace(/^@/, '').trim();
     if (['khaled', 'خالد'].includes(u.toLowerCase())) {
@@ -109,11 +109,11 @@ if (dbJs.includes(oldAdminSusp)) {
 }
 
 // 1.3 In _pushStateToCloud recovery block
-const oldPushRecovery = `                window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
+const oldPushRecovery = ` window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
                 window.GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
                 if (fresh.seasonBadge !== undefined || (fresh.state && fresh.state.seasonBadge !== undefined)) {`;
 
-const newPushRecovery = `                window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
+const newPushRecovery = ` window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
                 window.GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
                 const isSuspFresh = Boolean(fresh.underSuspicion || (fresh.state && fresh.state.underSuspicion));
                 window.GameEngine.state.underSuspicion = isSuspFresh;
@@ -147,13 +147,13 @@ let gameJs = fs.readFileSync('game.js', 'utf8');
 
 // 2.1 In INITIAL_STATE: add underSuspicion: false
 if (!gameJs.includes('underSuspicion: false')) {
-  gameJs = gameJs.replace('jailTimer: 0,', 'jailTimer: 0,\n    underSuspicion: false,');
+  gameJs = gameJs.replace('jailTimer: 0,', 'jailTimer: 0,\n underSuspicion: false,');
   console.log('[game.js] Added underSuspicion: false to INITIAL_STATE.');
 }
 
 // 2.2 In loadUserSession: include underSuspicion in wrapStateWithShield
-const oldWrapState = `        dirtyCash: Number(dbState.dirtyCash || 0),`;
-const newWrapState = `        dirtyCash: Number(dbState.dirtyCash || 0),
+const oldWrapState = ` dirtyCash: Number(dbState.dirtyCash || 0),`;
+const newWrapState = ` dirtyCash: Number(dbState.dirtyCash || 0),
         underSuspicion: Boolean(dbState.underSuspicion || (dbState.state && dbState.state.underSuspicion)),`;
 
 if (gameJs.includes(oldWrapState) && !gameJs.includes('underSuspicion: Boolean(dbState.underSuspicion')) {
@@ -170,7 +170,7 @@ fs.writeFileSync('game.js', gameJs, 'utf8');
 let uiJs = fs.readFileSync('ui.js', 'utf8');
 
 // 3.1 Expose enforceSuspicionStatus globally
-const oldEnforceFn = `  function enforceSuspicionStatus(isUnderSuspicion) {
+const oldEnforceFn = ` function enforceSuspicionStatus(isUnderSuspicion) {
     const modal = document.getElementById('modal-account-under-suspicion');
     if (!modal) return;
     if (isUnderSuspicion === true) {
@@ -180,7 +180,7 @@ const oldEnforceFn = `  function enforceSuspicionStatus(isUnderSuspicion) {
     }
   }`;
 
-const newEnforceFn = `  function enforceSuspicionStatus(isUnderSuspicion) {
+const newEnforceFn = ` function enforceSuspicionStatus(isUnderSuspicion) {
     const modal = document.getElementById('modal-account-under-suspicion');
     if (!modal) return;
     if (isUnderSuspicion === true) {
@@ -199,10 +199,10 @@ if (uiJs.includes(oldEnforceFn)) {
 }
 
 // 3.2 In loginPlayer form handler: add enforceSuspicionStatus check
-const oldLoginSuccess = `            playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
+const oldLoginSuccess = ` playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
             localStorage.setItem('rasalmal_active_session_user', canonicalUser);`;
 
-const newLoginSuccess = `            playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
+const newLoginSuccess = ` playerState = await GameEngine.loadUserSession(canonicalUser, loggedUser, pinInput);
             localStorage.setItem('rasalmal_active_session_user', canonicalUser);
             if (playerState && (playerState.underSuspicion === true || (playerState.state && playerState.state.underSuspicion === true))) {
               enforceSuspicionStatus(true);
@@ -214,7 +214,7 @@ if (uiJs.includes(oldLoginSuccess) && !uiJs.includes('if (playerState && (player
 }
 
 // 3.3 In setupRealTimeListeners initial snapshot & snapshot updates
-const oldSnapInit = `            // Initial snapshot: record the current timestamp
+const oldSnapInit = ` // Initial snapshot: record the current timestamp
             if (lastAdminActionTimestamp === null) {
               lastAdminActionTimestamp = Number(data.adminModifiedTimestamp || 0);
               if (data.isBanned) {
@@ -224,7 +224,7 @@ const oldSnapInit = `            // Initial snapshot: record the current timesta
               return;
             }`;
 
-const newSnapInit = `            // Initial snapshot: record the current timestamp
+const newSnapInit = ` // Initial snapshot: record the current timestamp
             if (lastAdminActionTimestamp === null) {
               lastAdminActionTimestamp = Number(data.adminModifiedTimestamp || 0);
               if (data.isBanned) {
@@ -243,8 +243,8 @@ if (uiJs.includes(oldSnapInit)) {
 }
 
 // In realtime admin modifications:
-const oldSnapLive = `              // Deep merge all possessions, businesses, assets, cars, items and perks from state`;
-const newSnapLive = `              const isLiveSusp = Boolean(data.underSuspicion || (data.state && data.state.underSuspicion) || data.is_under_suspicion || data.isUnderSuspicion);
+const oldSnapLive = ` // Deep merge all possessions, businesses, assets, cars, items and perks from state`;
+const newSnapLive = ` const isLiveSusp = Boolean(data.underSuspicion || (data.state && data.state.underSuspicion) || data.is_under_suspicion || data.isUnderSuspicion);
               GameEngine.state.underSuspicion = isLiveSusp;
               enforceSuspicionStatus(isLiveSusp);
 
@@ -264,15 +264,15 @@ fs.writeFileSync('ui.js', uiJs, 'utf8');
 let adminJs = fs.readFileSync('admin-panel.js', 'utf8');
 
 // Fix duplicate badge overwrite
-const oldBadgeDup = `          } else if (isUnderSuspicion) {
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة ⚠️ (الشاشة مثبتة)';
+const oldBadgeDup = ` } else if (isUnderSuspicion) {
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة (الشاشة مثبتة)';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20 flex items-center';
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ⛔';
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-rose-400 inline-block ml-1"></span>محظور نهائياً ';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center';
           }`;
 
-const newBadgeDup = `          } else if (isUnderSuspicion) {
-            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة ⚠️ (الشاشة مثبتة)';
+const newBadgeDup = ` } else if (isUnderSuspicion) {
+            statusBadge.innerHTML = '<span class="w-1.5 h-1.5 rounded-full bg-amber-400 animate-bounce inline-block ml-1"></span>تحت الشبهة (الشاشة مثبتة)';
             statusBadge.className = 'text-[10px] px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm shadow-amber-500/20 flex items-center';
           }`;
 

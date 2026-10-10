@@ -173,7 +173,7 @@ async function pushRoutes(fastify, options) {
     setTimeout(async () => {
       try {
         const payload = {
-          title: '👑 تجربة إشعار بالخلفية (Offline Push)',
+          title: ' تجربة إشعار بالخلفية (Offline Push)',
           body: `مرحباً بك يا ${u}! وصلك هذا الإشعار بنجاح وتطبيق اللعبة مغلق تماماً عبر خادم الـ Web Push.`,
           url: '/'
         };

@@ -16,7 +16,7 @@ if (!hqHtml.includes('id="adm-send-pkg-gold"')) {
   
   const replacementFinancialGrid = `<div class="grid grid-cols-1 sm:grid-cols-4 gap-2.5">
         <div>
-          <label class="block text-xs text-amber-400 mb-1 font-bold">رصيد ذهب (Gold 🪙):</label>
+          <label class="block text-xs text-amber-400 mb-1 font-bold">رصيد ذهب (Gold ):</label>
           <input type="number" id="adm-send-pkg-gold" value="0" placeholder="0"
             class="w-full p-2.5 text-xs text-center bg-slate-900 border border-slate-800 text-amber-400 font-mono font-bold rounded-xl outline-none focus:border-amber-500">
         </div>
@@ -57,9 +57,9 @@ if (!adminJs.includes("const addGold = Number(goldInp ? goldInp.value : 0);")) {
   const replacementValidation = `if (addCash <= 0 && addBank <= 0 && addXp <= 0 && addGold <= 0 && !customBadge && Object.keys(items).length === 0) {`;
   adminJs = adminJs.replace(targetValidation, replacementValidation);
 
-  const targetConfirmMsg = `const confirmMsg = \`🎁 تأكيد إرسال الحزمة الفورية:\n\nهل أنت متأكد من إرسال [\${pkgName}] للاعب "\${targetUser}"؟\n\` +`;
-  const replacementConfirmMsg = `const confirmMsg = \`🎁 تأكيد إرسال الحزمة الفورية:\n\nهل أنت متأكد من إرسال [\${pkgName}] للاعب "\${targetUser}"؟\n\` +
-        (addGold > 0 ? \`• رصيد ذهب: +\${addGold.toLocaleString()} 🪙\n\` : '') +`;
+  const targetConfirmMsg = `const confirmMsg = \` تأكيد إرسال الحزمة الفورية:\n\nهل أنت متأكد من إرسال [\${pkgName}] للاعب "\${targetUser}"؟\n\` +`;
+  const replacementConfirmMsg = `const confirmMsg = \` تأكيد إرسال الحزمة الفورية:\n\nهل أنت متأكد من إرسال [\${pkgName}] للاعب "\${targetUser}"؟\n\` +
+        (addGold > 0 ? \`• رصيد ذهب: +\${addGold.toLocaleString()} \n\` : '') +`;
   adminJs = adminJs.replace(targetConfirmMsg, replacementConfirmMsg);
 
   const targetCredit = `freshPlayer.cash = newCash;

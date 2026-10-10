@@ -15,17 +15,17 @@ const PROTECTED_ADMIN_ACCOUNTS = ['khaled', 'rasalmal', 'rasalmal1', 'rasalmal2'
 
 async function executeWipe() {
   console.log('====================================================');
-  console.log('🧹 EXECUTING SEASON 1 PLAYER ACCOUNTS WIPE');
+  console.log(' EXECUTING SEASON 1 PLAYER ACCOUNTS WIPE');
   console.log('====================================================');
 
   // Verify backup exists
   const latestBackupPath = path.join(__dirname, '../backups/season1_latest_backup/players.json');
   if (!fs.existsSync(latestBackupPath)) {
-    throw new Error('❌ ABORTED: Latest backup players.json not found! Cannot wipe without verified backup.');
+    throw new Error(' ABORTED: Latest backup players.json not found! Cannot wipe without verified backup.');
   }
 
   const backupData = JSON.parse(fs.readFileSync(latestBackupPath, 'utf8'));
-  console.log(`✅ Verified local backup exists with ${backupData.length} accounts.`);
+  console.log(` Verified local backup exists with ${backupData.length} accounts.`);
 
   // 1. Fetch all current players
   console.log('\n[1/4] Fetching players to delete...');
@@ -83,10 +83,10 @@ async function executeWipe() {
       deletedCount += (Array.isArray(deletedRows) ? deletedRows.length : chunk.length);
     }
 
-    process.stdout.write(`  -> Deleted ${deletedCount}/${playersToDelete.length} players...\r`);
+    process.stdout.write(` -> Deleted ${deletedCount}/${playersToDelete.length} players...\r`);
   }
 
-  console.log(`\n✅ Deleted ${deletedCount} player accounts successfully.`);
+  console.log(`\n Deleted ${deletedCount} player accounts successfully.`);
 
   // 3. Clear transfers and mailbox
   console.log('\n[3/4] Clearing old transfers and mailbox...');
@@ -95,7 +95,7 @@ async function executeWipe() {
       method: 'DELETE',
       headers
     });
-    console.log('✅ Transfers table wiped clean.');
+    console.log(' Transfers table wiped clean.');
   } catch (e) {
     console.warn('Transfers wipe note:', e.message);
   }
@@ -105,7 +105,7 @@ async function executeWipe() {
       method: 'DELETE',
       headers
     });
-    console.log('✅ Mailbox table wiped clean.');
+    console.log(' Mailbox table wiped clean.');
   } catch (e) {
     console.warn('Mailbox wipe note:', e.message);
   }
@@ -123,15 +123,15 @@ async function executeWipe() {
       headers,
       body: JSON.stringify({ data: { messages: [] }, updated_at: Date.now() })
     });
-    console.log('✅ Leaderboard and chat feed reset.');
+    console.log(' Leaderboard and chat feed reset.');
   } catch (e) {
     console.warn('Globals reset note:', e.message);
   }
 
   console.log('\n====================================================');
-  console.log('🎉 SEASON 1 CLEAN WIPE COMPLETED SUCCESSFULLY!');
-  console.log('🛡️ All backups safely stored in: ./backups/season1_latest_backup');
-  console.log('🔄 To restore at any time, run: node scripts/restore-season1-backup.js');
+  console.log(' SEASON 1 CLEAN WIPE COMPLETED SUCCESSFULLY!');
+  console.log(' All backups safely stored in: ./backups/season1_latest_backup');
+  console.log(' To restore at any time, run: node scripts/restore-season1-backup.js');
   console.log('====================================================\n');
 }
 

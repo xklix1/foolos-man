@@ -8,11 +8,11 @@ let ui = fs.readFileSync(uiPath, 'utf8');
 // A. isKhaledUser
 ui = ui.replace(
   /function isKhaledUser\(\) \{[\s\S]*?return isDevName \|\| hasGold;\s*\}/,
-  'function isKhaledUser() {\n    return true; // متاح رسمياً لكافة اللاعبين في اللعبة\n  }'
+  'function isKhaledUser() {\n return true; // متاح رسمياً لكافة اللاعبين في اللعبة\n }'
 );
 
 // B. Header gold rendering
-const headerSearch = `    // Update Gold balance (Beta - strictly and literally for Khaled)
+const headerSearch = ` // Update Gold balance (Beta - strictly and literally for Khaled)
     const isKhaled = isKhaledUser();
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
@@ -51,7 +51,7 @@ const headerSearch = `    // Update Gold balance (Beta - strictly and literally 
       }
     }`;
 
-const headerReplace = `    // Update Gold balance (Unlocked globally for all players)
+const headerReplace = ` // Update Gold balance (Unlocked globally for all players)
     const goldDesktopContainer = document.getElementById('stat-gold-container-desktop');
     const goldMobileContainer = document.getElementById('stat-gold-container-mobile');
     if (s.gold === undefined || s.gold === null) {
@@ -82,14 +82,14 @@ const normReplace = headerReplace.replace(/\r\n/g, '\n');
 
 if (normUi.includes(normSearch)) {
   ui = normUi.replace(normSearch, normReplace);
-  console.log('✅ ui.js header gold logic updated');
+  console.log(' ui.js header gold logic updated');
 } else {
-  console.warn('⚠️ Header gold search not exact, trying regex...');
+  console.warn(' Header gold search not exact, trying regex...');
   ui = ui.replace(
     /\/\/\s*Update Gold balance[\s\S]*?const gmEl = document\.getElementById\('stat-gold-mobile'\);[\s\S]*?gmEl\.textContent = goldVal\.toLocaleString\(\);\s*\}\s*\}\s*\}\s*else\s*\{[\s\S]*?goldMobileContainer\.style\.display = 'none';\s*\}\s*\}/,
     headerReplace
   );
-  console.log('✅ ui.js regex replaced header');
+  console.log(' ui.js regex replaced header');
 }
 
 ui = ui.replace('تسريع فوري (Beta)', 'تسريع فوري');
@@ -103,7 +103,7 @@ actionRoutes = actionRoutes.replace(
   '// Speed-up is now officially available for all players globally'
 );
 fs.writeFileSync(actionRoutesPath, actionRoutes, 'utf8');
-console.log('✅ action-routes.js updated');
+console.log(' action-routes.js updated');
 
 // 3. Patch admin-routes.js
 const adminRoutesPath = path.join(__dirname, '..', 'server', 'src', 'routes', 'admin-routes.js');
@@ -113,16 +113,16 @@ adminRoutes = adminRoutes.replace(
   '// Gold currency can now be granted to any valid player'
 );
 fs.writeFileSync(adminRoutesPath, adminRoutes, 'utf8');
-console.log('✅ admin-routes.js updated');
+console.log(' admin-routes.js updated');
 
 // 4. Patch event-service.js
 const eventServicePath = path.join(__dirname, '..', 'server', 'src', 'services', 'event-service.js');
 let eventService = fs.readFileSync(eventServicePath, 'utf8');
 eventService = eventService.replace(
   /async getActiveEventsForUser\(username\) \{\s*if \(!username \|\| username\.trim\(\)\.toLowerCase\(\) !== 'khaled'\) \{\s*return \[\];\s*\}\s*return await this\.getActiveEvents\(\);\s*\}/,
-  'async getActiveEventsForUser(username) {\n    return await this.getActiveEvents();\n  }'
+  'async getActiveEventsForUser(username) {\n return await this.getActiveEvents();\n }'
 );
 fs.writeFileSync(eventServicePath, eventService, 'utf8');
-console.log('✅ event-service.js updated');
+console.log(' event-service.js updated');
 
-console.log('🎉 All patches applied successfully!');
+console.log(' All patches applied successfully!');

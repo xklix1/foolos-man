@@ -1102,15 +1102,15 @@ async function moderatorRoutes(fastify, options) {
 
         let rewardsSummary = [];
         if (totalCash > 0) rewardsSummary.push(`+${totalCash.toLocaleString()} ج.م`);
-        if (goldReward > 0) rewardsSummary.push(`+${goldReward.toLocaleString()} 🪙 ذهب`);
+        if (goldReward > 0) rewardsSummary.push(`+${goldReward.toLocaleString()} ذهب`);
         if (tp.rewards?.xp) rewardsSummary.push(`+${tp.rewards.xp} XP`);
         if (tp.rewards?.customBadge) rewardsSummary.push(`وسام [${tp.rewards.customBadge}]`);
 
         const topupFeedItem = {
           id: `topup_${tp.id || ts}`,
           category: 'admin_grant',
-          title: isApproved ? `شحنة معتمدة من الإدارة 👑 (${tp.packageName || 'باقة متجر'})` : `طلب شحن (${tp.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}): ${tp.packageName || 'متجر'}`,
-          desc: `المبلغ: ${Number(tp.price || 0).toLocaleString()} ج.م • الحالة: ${isApproved ? 'تم الشحن والاعتماد ✅' : tp.status}` +
+          title: isApproved ? `شحنة معتمدة من الإدارة (${tp.packageName || 'باقة متجر'})` : `طلب شحن (${tp.status === 'pending' ? 'قيد المراجعة' : 'مرفوض'}): ${tp.packageName || 'متجر'}`,
+          desc: `المبلغ: ${Number(tp.price || 0).toLocaleString()} ج.م • الحالة: ${isApproved ? 'تم الشحن والاعتماد ' : tp.status}` +
                 (rewardsSummary.length ? ` • المكافآت: ${rewardsSummary.join(' | ')}` : '') +
                 (tp.reviewerNote ? ` • بيان الإدارة: "${tp.reviewerNote}"` : ''),
           amount: totalCash > 0 ? totalCash : null,
@@ -1148,7 +1148,7 @@ async function moderatorRoutes(fastify, options) {
           const mailGrantItem = {
             id: `adm_mail_${mb.id || ts}`,
             category: 'admin_grant',
-            title: isGold ? `منحة ذهب مباشرة من الإدارة 🪙 (+${goldAmt.toLocaleString()} ذهبة)` : `منحة مالية مباشرة من الإدارة 💰 (+${cashAmt.toLocaleString()} ج.م)`,
+            title: isGold ? `منحة ذهب مباشرة من الإدارة (+${goldAmt.toLocaleString()} ذهبة)` : `منحة مالية مباشرة من الإدارة (+${cashAmt.toLocaleString()} ج.م)`,
             desc: `إيداع فوري بحساب اللاعب من قبل الإدارة` + (pld.target ? ` في [${pld.target}]` : '') + (mb.message ? ` • الملاحظة: "${mb.message}"` : ''),
             amount: cashAmt > 0 ? cashAmt : null,
             gold: goldAmt > 0 ? goldAmt : null,
@@ -1182,7 +1182,7 @@ async function moderatorRoutes(fastify, options) {
           masterFeed.push({
             id: ag.id || `ag_${ts}`,
             category: 'admin_grant',
-            title: ag.gold ? `منحة ذهب من الإدارة 🪙 (+${ag.gold} ذهبة)` : `منحة رصيد من الإدارة 💰 (+${val > 0 ? Number(val).toLocaleString() : '0'} ج.م)`,
+            title: ag.gold ? `منحة ذهب من الإدارة (+${ag.gold} ذهبة)` : `منحة رصيد من الإدارة (+${val > 0 ? Number(val).toLocaleString() : '0'} ج.م)`,
             desc: (ag.title ? `${ag.title} / ` : '') + (ag.note || ag.details || 'منحة إدارية مسجلة في ملف اللاعب'),
             amount: val || null,
             gold: Number(ag.gold || 0) || null,
@@ -1696,7 +1696,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_warning',
               payload: {
-                title: '🔒 تم تجميد حسابك مؤقتاً',
+                title: ' تم تجميد حسابك مؤقتاً',
                 message: `تم إيقاف حسابك مؤقتاً لمدة ${durationMinutes} دقيقة للتحقيق والمراجعة.\nالسبب: ${cleanReason}`,
                 timestamp: ts
               },
@@ -1734,7 +1734,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_announcement',
               payload: {
-                title: '🔓 تم فك تجميد ورفع القيد عن حسابك',
+                title: ' تم فك تجميد ورفع القيد عن حسابك',
                 message: `تمت مراجعة وتدقيق حسابك بنجاح ورفع القيد والتجميد.\nالبيان: ${cleanReason}`,
                 timestamp: ts
               },
@@ -1768,7 +1768,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_warning',
               payload: {
-                title: '🔇 تم كتمك في الشات العام',
+                title: ' تم كتمك في الشات العام',
                 message: `تم حظر إرسالك للرسائل في الشات لمدة ${durationMinutes} دقيقة.\nالسبب: ${cleanReason}`,
                 timestamp: ts
               },
@@ -1845,7 +1845,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_warning',
               payload: {
-                title: '⚠️ تحذير رسمي من إدارة اللعبة',
+                title: ' تحذير رسمي من إدارة اللعبة',
                 message: cleanReason,
                 timestamp: ts
               },
@@ -1879,7 +1879,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_warning',
               payload: {
-                title: '⛔ تم حظر حسابك نهائياً',
+                title: ' تم حظر حسابك نهائياً',
                 message: `تم إصدار قرار حظر نهائي لحسابك بسبب مخالفة القواعد.\nالسبب: ${cleanReason}`,
                 timestamp: ts
               },
@@ -1912,7 +1912,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_announcement',
               payload: {
-                title: '🟢 تم فك الحظر عن حسابك',
+                title: ' تم فك الحظر عن حسابك',
                 message: `تمت مراجعة حسابك ورفع قرار الحظر بنجاح.\nالبيان: ${cleanReason}`,
                 timestamp: ts
               },
@@ -1976,7 +1976,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_announcement',
               payload: {
-                title: '🔄 تم تصفير حدودك اليومية',
+                title: ' تم تصفير حدودك اليومية',
                 message: `تم تصفير عداد دورات العمل والبورصة وسقف التحويلات البنكية لحسابك بنجاح بواسطة الإدارة.\nالبيان: ${cleanReason}`,
                 timestamp: ts
               },
@@ -2040,7 +2040,7 @@ async function moderatorRoutes(fastify, options) {
               recipient: pDoc.username,
               type: 'system_announcement',
               payload: {
-                title: '🏦 إيداع بنكي معتمد من الرقابة',
+                title: ' إيداع بنكي معتمد من الرقابة',
                 message: `تم إيداع مبلغ $${addAmount.toLocaleString('en-US')} في حسابك البنكي بنجاح بواسطة إدارة الرقابة.\nالبيان: ${cleanReason}`,
                 amount: addAmount,
                 addedBank: addAmount,
@@ -2265,7 +2265,7 @@ async function moderatorRoutes(fastify, options) {
 
           threadsMap.set(pKey, {
             username: player,
-            lastMessage: (r.payload && r.payload.message) || (r.payload && r.payload.imageUrl ? '📷 صورة مرفقة' : ''),
+            lastMessage: (r.payload && r.payload.message) || (r.payload && r.payload.imageUrl ? ' صورة مرفقة' : ''),
             lastSender: r.sender,
             lastTimestamp: msgTimestamp,
             unread: r.status === 'unread' && r.recipient === 'MOD_STAFF_CHANNEL',
@@ -2422,7 +2422,7 @@ async function moderatorRoutes(fastify, options) {
     // Immediate check: strictly disallow SVG in Data URL header
     const lowerRaw = imageBase64.substring(0, 120).toLowerCase();
     if (lowerRaw.includes('image/svg') || lowerRaw.includes('svg+xml') || lowerRaw.includes('.svg')) {
-      return reply.code(400).send({ error: '❌ غير مسموح برفع ملفات SVG لمنع الاختراق وحماية النظام! يُسمح فقط بصور (PNG, JPEG, WebP, GIF).' });
+      return reply.code(400).send({ error: ' غير مسموح برفع ملفات SVG لمنع الاختراق وحماية النظام! يُسمح فقط بصور (PNG, JPEG, WebP, GIF).' });
     }
 
     // Strip Data URL prefix if present
@@ -2458,7 +2458,7 @@ async function moderatorRoutes(fastify, options) {
       imageUrl,
       filename,
       mimeType: validation.mimeType,
-      message: 'تم فحص الصورة واعتمادها بنجاح 📸'
+      message: 'تم فحص الصورة واعتمادها بنجاح '
     });
   });
 
@@ -2770,11 +2770,11 @@ async function moderatorRoutes(fastify, options) {
       const modMsg = {
         id: 'msg_mod_' + ts + '_' + Math.random().toString(36).substring(2, 6),
         sender: request.modSession.name || 'المحقق',
-        senderTitle: 'مراقب معتمد 🛡️',
+        senderTitle: 'مراقب معتمد ',
         message: cleanMsg,
         facebookVerified: true,
         isVerified: true,
-        customBadge: '🛡️ مراقب',
+        customBadge: ' مراقب',
         chatGlow: 'cyber_rainbow',
         seasonBadge: 'badge_official_staff',
         timestamp: ts
@@ -2994,7 +2994,7 @@ async function moderatorRoutes(fastify, options) {
 
       return reply.send({
         success: true,
-        message: newStatus ? 'تم تعليم المهمة كمنجزة بنجاح ✅' : 'تمت إعادة فتح المهمة 🔄',
+        message: newStatus ? 'تم تعليم المهمة كمنجزة بنجاح ' : 'تمت إعادة فتح المهمة ',
         task,
         tasks,
         pendingCount,

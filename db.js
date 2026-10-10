@@ -11,7 +11,7 @@ var AppDB = (() => {
   console.log('[DB] Cloud Engine Loaded (v=200)');
 
   // ─────────────────────────────────────────────
-  //  CONFIG & CREDENTIALS
+  // CONFIG & CREDENTIALS
   // ─────────────────────────────────────────────
   const CLIENT_VERSION ='V5.2';
   const SUPABASE_URL ='https://rasalmal.online';
@@ -35,7 +35,7 @@ var AppDB = (() => {
   let _lastVerifiedCloudTime = 0;
 
   // ─────────────────────────────────────────────
-  //  CONCURRENT SESSION & MULTI-DEVICE PROTECTION
+  // CONCURRENT SESSION & MULTI-DEVICE PROTECTION
   // ─────────────────────────────────────────────
   function _generateSecureRandomHex(byteCount = 16) {
     try {
@@ -184,8 +184,8 @@ var AppDB = (() => {
 
 
   // ─────────────────────────────────────────────
-  //  SECURE SERVER-ANCHORED MONOTONIC TIME ENGINE
-  //  (IMMUNE TO SYSTEM CLOCK TAMPERING / TIME CHEATS)
+  // SECURE SERVER-ANCHORED MONOTONIC TIME ENGINE
+  // (IMMUNE TO SYSTEM CLOCK TAMPERING / TIME CHEATS)
   // ─────────────────────────────────────────────
   let _baseServerTime = Date.now();
   let _basePerfTime = (typeof performance !== 'undefined' && performance.now) ? performance.now() : 0;
@@ -315,7 +315,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  LOCAL ENCRYPTION CACHE
+  // LOCAL ENCRYPTION CACHE
   // ─────────────────────────────────────────────
   function _xorEncrypt(input, key = "FoolosMan_2026_SecureKey") {
     const utf8Str = unescape(encodeURIComponent(input));
@@ -372,7 +372,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  IDLE & VISIBILITY NETWORK CONTROLLER (EGRESS ZERO-LEAK)
+  // IDLE & VISIBILITY NETWORK CONTROLLER (EGRESS ZERO-LEAK)
   // ─────────────────────────────────────────────
   const IDLE_TIMEOUT_MS = 90000; // 90 seconds of no interaction = IDLE
   let _isUserIdle = false;
@@ -457,7 +457,7 @@ var AppDB = (() => {
 
 
   // ─────────────────────────────────────────────
-  //  INITIALIZATION
+  // INITIALIZATION
   // ─────────────────────────────────────────────
   async function init() {
     if (window.Capacitor && window.Capacitor.isNativePlatform()) {
@@ -472,7 +472,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  PLAYER AUTH & STATE MANAGEMENT
+  // PLAYER AUTH & STATE MANAGEMENT
   // ─────────────────────────────────────────────
   async function hashPin(pin) {
     // SECURITY: Never return a hardcoded fallback — reject empty pins at call site
@@ -511,10 +511,10 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  DEVICE FINGERPRINTING & HARDWARE INTEGRITY
+  // DEVICE FINGERPRINTING & HARDWARE INTEGRITY
   // ─────────────────────────────────────────────
   // ─────────────────────────────────────────────
-  //  DEVICE IDENTITY & INTEGRITY (100% Guaranteed Multi-Layer UUID)
+  // DEVICE IDENTITY & INTEGRITY (100% Guaranteed Multi-Layer UUID)
   // ─────────────────────────────────────────────
   const DeviceFingerprint = (() => {
     let _cachedUuid = null;
@@ -679,7 +679,7 @@ var AppDB = (() => {
   })();
 
   // ─────────────────────────────────────────────
-  //  DEVICE BAN VERIFICATION
+  // DEVICE BAN VERIFICATION
   // ─────────────────────────────────────────────
   async function checkVersion() {
     try {
@@ -737,7 +737,7 @@ var AppDB = (() => {
     return { isBanned: false };
   }
 
-  //  DEVICE REGISTRY & FRAUD AUDITING
+  // DEVICE REGISTRY & FRAUD AUDITING
   // ─────────────────────────────────────────────
   async function getDeviceRegistry() {
     try {
@@ -875,7 +875,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  SIMILARITY & GIBBERISH DETECTION HEURISTICS
+  // SIMILARITY & GIBBERISH DETECTION HEURISTICS
   // ─────────────────────────────────────────────
   function levenshteinDistance(s1, s2) {
     s1 = (s1 || '').toLowerCase().trim();
@@ -929,7 +929,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  ANTI-FEEDER & TRANSFER FRAUD GATEKEEPER
+  // ANTI-FEEDER & TRANSFER FRAUD GATEKEEPER
   // ─────────────────────────────────────────────
   async function checkWireTransferFraud(senderUsername, recipientUsername, amount) {
     const sUser = (senderUsername || '').trim();
@@ -988,7 +988,7 @@ var AppDB = (() => {
         device: fp,
         details: `رصد ارتباط واستخدام نفس الجهاز بين الحسابين (${sUser} و ${rUser})`
       });
-      throw new Error('🚫 مرفوض أمنياً: تم رصد ارتباط بين الحسابين على نفس الجهاز، وتمنع قواعد اللعبة التحويلات المالية بين حسابات المستخدم الواحد.');
+      throw new Error(' مرفوض أمنياً: تم رصد ارتباط بين الحسابين على نفس الجهاز، وتمنع قواعد اللعبة التحويلات المالية بين حسابات المستخدم الواحد.');
     }
 
     // 3. Feeder Account Progression Check
@@ -1008,7 +1008,7 @@ var AppDB = (() => {
         device: fp,
         details: `حساب بدون أي نشاط أو تقدم في اللعبة يحاول تحويل ${amt.toLocaleString()} EGP إلى ${rUser}`
       });
-      throw new Error('🚫 مرفوض أمنياً: حسابك لم يقم بأي نشاط أو تقدم تجاري في اللعبة بعد. تمنع قواعد اللعبة تحويل الأموال من حسابات فارغة لمنع الحسابات الوهمية (Feeder Accounts). يرجى اللعب وتطوير مشاريعك أولاً!');
+      throw new Error(' مرفوض أمنياً: حسابك لم يقم بأي نشاط أو تقدم تجاري في اللعبة بعد. تمنع قواعد اللعبة تحويل الأموال من حسابات فارغة لمنع الحسابات الوهمية (Feeder Accounts). يرجى اللعب وتطوير مشاريعك أولاً!');
     }
 
     // 4. Sender Account Age Check
@@ -1024,7 +1024,7 @@ var AppDB = (() => {
         device: fp,
         details: `حساب حديث (عمره ${senderAgeHours.toFixed(1)} ساعة) يحاول تحويل ${amt.toLocaleString()} EGP`
       });
-      throw new Error('🚫 مرفوض أمنياً: يجب أن يمر ساعتان على الأقل على إنشاء الحساب وتطوير المشاريع قبل إمكانية إجراء تحويلات مالية.');
+      throw new Error(' مرفوض أمنياً: يجب أن يمر ساعتان على الأقل على إنشاء الحساب وتطوير المشاريع قبل إمكانية إجراء تحويلات مالية.');
     }
 
     // 5. Clone / Similar Name Heuristics
@@ -1039,7 +1039,7 @@ var AppDB = (() => {
         device: fp,
         details: `تشابه كبير في أسماء الحسابات النمطية (${sUser} -> ${rUser})`
       });
-      throw new Error('🚫 تم رفض التحويل أمنياً: تم رصد نمط حسابات وهمية متطابقة (Clone/Feeder Accounts). يرجى اللعب وتطوير المشاريع بشكل مستقل.');
+      throw new Error(' تم رفض التحويل أمنياً: تم رصد نمط حسابات وهمية متطابقة (Clone/Feeder Accounts). يرجى اللعب وتطوير المشاريع بشكل مستقل.');
     }
 
     // 6. Rapid Multi-Account Feeders to Single Recipient
@@ -1064,17 +1064,17 @@ var AppDB = (() => {
           device: fp,
           details: `المستلم ${rUser} يتلقى تدفقات متكررة من ${recentSenders.size + 1} حسابات مختلفة خلال 12 ساعة`
         });
-        throw new Error('🚫 تم إيقاف التحويل أمنياً: يتلقى حساب المستلم تدفقات متكررة من عدة حسابات حديثة. تم حظر المعاملة وإحالتها للفحص الأمني.');
+        throw new Error(' تم إيقاف التحويل أمنياً: يتلقى حساب المستلم تدفقات متكررة من عدة حسابات حديثة. تم حظر المعاملة وإحالتها للفحص الأمني.');
       }
     } catch (e) {
-      if (e.message && e.message.includes('🚫')) throw e;
+      if (e.message && e.message.includes('')) throw e;
     }
 
     return true;
   }
 
   // ─────────────────────────────────────────────
-  //  REGISTRATION & STRICT SINGLE-ACCOUNT PER DEVICE
+  // REGISTRATION & STRICT SINGLE-ACCOUNT PER DEVICE
   // ─────────────────────────────────────────────
   async function registerPlayer(username, pin, referralCodeInput = '', emailInput = '') {
     if (!username || !pin) throw new Error('يرجى إدخال اسم المستخدم ورمز PIN.');
@@ -1277,7 +1277,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  REFERRAL SYSTEM & ANTI-CHEAT ENGINE
+  // REFERRAL SYSTEM & ANTI-CHEAT ENGINE
   // ─────────────────────────────────────────────
   async function bindReferralCode(username, codeInput) {
     if (!username || !codeInput) throw new Error("يرجى إدخال كود الدعوة.");
@@ -1307,7 +1307,7 @@ var AppDB = (() => {
       if (registry.devices && registry.devices[fp]) {
         const boundUser = registry.devices[fp];
         if (boundUser && boundUser.toLowerCase() !== u.toLowerCase()) {
-          throw new Error(`🚫 لا يمكن إدخال كود دعوة! هذا الجهاز يحتوي على حساب آخر مسجل ("${boundUser}").`);
+          throw new Error(` لا يمكن إدخال كود دعوة! هذا الجهاز يحتوي على حساب آخر مسجل ("${boundUser}").`);
         }
       }
     }
@@ -1335,7 +1335,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  ADMIN: CLEAR DEVICE REGISTRY ENTRY
+  // ADMIN: CLEAR DEVICE REGISTRY ENTRY
   // ─────────────────────────────────────────────
   async function adminClearDeviceFromRegistry(fingerprintOrUsername) {
     if (!fingerprintOrUsername) throw new Error('يرجى تحديد بصمة الجهاز أو اسم الحساب.');
@@ -2564,11 +2564,11 @@ var AppDB = (() => {
     const s = (window.GameEngine && window.GameEngine.state) || getDecryptedLocalState(`rasalmal_state_${username}`);
     if (!s) return { success: false, message:'لا توجد بيانات لحفظها.' };
     await savePlayerState(username, s, true);
-    return { success: true, message:'تم حفظ ومزامنة التقدم مع السحابة بنجاح! ️' };
+    return { success: true, message:'تم حفظ ومزامنة التقدم مع السحابة بنجاح! ' };
   }
 
   // ─────────────────────────────────────────────
-  //  WIRE TRANSFERS (BANK-GRADE ATOMIC SQL FUNCTION)
+  // WIRE TRANSFERS (BANK-GRADE ATOMIC SQL FUNCTION)
   // ─────────────────────────────────────────────
   async function executeWireTransfer(senderUsername, recipientUsername, amount, senderPin) {
     if (!senderUsername || !recipientUsername) throw new Error('بيانات التحويل غير مكتملة.');
@@ -2577,7 +2577,7 @@ var AppDB = (() => {
     if (isNaN(amt) || amt <= 0) throw new Error('مبلغ التحويل يجب أن يكون أكبر من صفر.');
 
     const pin = String(senderPin || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.pin) || '').trim();
-    if (!pin) throw new Error('🚫 مطلوب إدخال الرقم السري (PIN) الخاص بحسابك لتأكيد التحويل.');
+    if (!pin) throw new Error(' مطلوب إدخال الرقم السري (PIN) الخاص بحسابك لتأكيد التحويل.');
 
     // Security & Anti-Feeder / Multi-Account Gatekeeper
     await checkWireTransferFraud(senderUsername, recipientUsername, amt);
@@ -2686,10 +2686,10 @@ var AppDB = (() => {
       const registry = await getDeviceRegistry();
       const regRecipientDevs = (registry.accounts && registry.accounts[recipientUsername.trim()]) || [];
       if (regRecipientDevs.includes(fp) || (registry.devices && registry.devices[fp] === recipientUsername.trim())) {
-        throw new Error('🚫 لا يمكن إرسال طلب تحويل لحساب مرتبط بنفس الجهاز.');
+        throw new Error(' لا يمكن إرسال طلب تحويل لحساب مرتبط بنفس الجهاز.');
       }
     } catch (reqSecErr) {
-      if (reqSecErr.message && reqSecErr.message.includes('🚫')) throw reqSecErr;
+      if (reqSecErr.message && reqSecErr.message.includes('')) throw reqSecErr;
     }
 
     let createdReq = null;
@@ -2814,7 +2814,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  GIFT CODES
+  // GIFT CODES
   // ─────────────────────────────────────────────
   async function redeemGiftCode(code, username) {
     if (!code || !username) throw new Error('رمز الكود غير صالح.');
@@ -2843,7 +2843,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  MAILBOX & NOTIFICATIONS
+  // MAILBOX & NOTIFICATIONS
   // ─────────────────────────────────────────────
   async function sendMail(sender, recipient, type, payload) {
     const isInteractive = ['friend_request','job_offer','partnership_invite','transfer_request','system_add_employee','system_add_partner','dividend_claim','auction_win'].includes(type);
@@ -2965,7 +2965,7 @@ var AppDB = (() => {
                   const amtStr = amt > 0 ? `${amt.toLocaleString()} EGP` : '';
                   
                   _notifyUser(
-                    '💸 حوالة بنكية واردة!',
+                    ' حوالة بنكية واردة!',
                     `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي!`,
                     'success',
                     'cash'
@@ -3000,7 +3000,7 @@ var AppDB = (() => {
 
                   // Native OS / Browser Push Notification
                   if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
-                    window.PWAManager.sendNotification(`💸 استلام حوالة بنكية (${amtStr})`, {
+                    window.PWAManager.sendNotification(` استلام حوالة بنكية (${amtStr})`, {
                       body: `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي الآن!`,
                       tag: `transfer_${m.id || Date.now()}`
                     });
@@ -3016,7 +3016,7 @@ var AppDB = (() => {
                   // In-app toast if player is not actively viewing this conversation
                   if (!isViewingThisSender || !isDrawerOpen) {
                     _notifyUser(
-                      `💬 رسالة خاصة من ${sender}`,
+                      ` رسالة خاصة من ${sender}`,
                       `"${msgText.length > 60 ? msgText.substring(0, 60) + '...' : msgText}"`,
                       'info',
                       'success'
@@ -3034,7 +3034,7 @@ var AppDB = (() => {
                   // Native OS / Browser Push Notification (when window is blurred or backgrounded)
                   if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
                     if (document.hidden || !isDrawerOpen || !isViewingThisSender) {
-                      window.PWAManager.sendNotification(`💬 رسالة خاصة من ${sender}`, {
+                      window.PWAManager.sendNotification(` رسالة خاصة من ${sender}`, {
                         body: msgText,
                         tag: `dm_${sender}_${Date.now()}`
                       });
@@ -3044,7 +3044,7 @@ var AppDB = (() => {
                 // 2.5 Moderator / Investigator Private Live Chat Received
                 else if (type === 'investigation_chat') {
                   const senderName = payload.senderName || sender || 'المحقق';
-                  const msgText = payload.message || m.message || (payload.imageUrl ? '📷 أرسل لك صورة مرفقة.' : 'رسالة جديدة من فريق التحقيق والمراقبة.');
+                  const msgText = payload.message || m.message || (payload.imageUrl ? ' أرسل لك صورة مرفقة.' : 'رسالة جديدة من فريق التحقيق والمراقبة.');
 
                   // Open the live private chat window directly on the player's screen!
                   if (typeof window !== 'undefined' && typeof window.openPlayerInvestigationChat === 'function') {
@@ -3087,7 +3087,7 @@ var AppDB = (() => {
 
                   // Native OS / Browser Push Notification
                   if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
-                    window.PWAManager.sendNotification(`🛡️ محادثة خاصة من ${senderName}`, {
+                    window.PWAManager.sendNotification(` محادثة خاصة من ${senderName}`, {
                       body: msgText,
                       tag: `mod_chat_${m.id || Date.now()}`
                     });
@@ -3095,7 +3095,7 @@ var AppDB = (() => {
                 }
                 // 3. Other System/Player Notifications
                 else {
-                  const title = payload.title || m.title || '📬 إشعار جديد';
+                  const title = payload.title || m.title || ' إشعار جديد';
                   const msg = payload.message || m.message || 'وصلك إشعار جديد في صندوق الرسائل.';
                   _notifyUser(title, msg, 'info', 'success');
                 }
@@ -3208,7 +3208,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  GLOBALS (BROADCASTS, CONFIG, MAINTENANCE)
+  // GLOBALS (BROADCASTS, CONFIG, MAINTENANCE)
   // ─────────────────────────────────────────────
   async function sendBroadcast(title, message) {
     await _api('globals', {
@@ -3244,7 +3244,7 @@ var AppDB = (() => {
 
       // Send a direct reward popup to their mailbox
       await sendMail('إدارة اللعبة (Admin)', cleanTarget, 'admin_popup', {
-        title: 'مكافأة مالية خاصة 🎁',
+        title: 'مكافأة مالية خاصة ',
         message: `تهانينا! قررت إدارة اللعبة منحك مكافأة مالية خاصة بقيمة +${amt.toLocaleString()} EGP.\nتم إيداع المبلغ في كاش محفظتك فوراً بنجاح!`,
         style: 'reward',
         sentAt: ts
@@ -3272,7 +3272,7 @@ var AppDB = (() => {
     });
 
     // 2. Also send broadcast message in globals so all players see the news
-    await sendBroadcast('مكافأة عامة للجميع 🎁', `قامت إدارة اللعبة بتوزيع إيردروب مالي بقيمة +${amt.toLocaleString()} EGP لجميع المستثمرين!`);
+    await sendBroadcast('مكافأة عامة للجميع ', `قامت إدارة اللعبة بتوزيع إيردروب مالي بقيمة +${amt.toLocaleString()} EGP لجميع المستثمرين!`);
 
     return { type: 'all', amount: amt, airdropId };
   }
@@ -3362,7 +3362,7 @@ var AppDB = (() => {
       // Send mail notification
       try {
         await sendMail('إدارة اللعبة (Admin)', uname, 'admin_popup', {
-          title: 'مكافأة عامة متأخرة 🎁',
+          title: 'مكافأة عامة متأخرة ',
           message: `تم إيداع مكافأة الإيردروب المستحقة لك بقيمة +${amt.toLocaleString()} EGP مباشرة في كاش محفظتك!`,
           style: 'reward',
           sentAt: ts
@@ -3589,78 +3589,78 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  TOP-UP & RECHARGE SYSTEM (باقات الشحن والدعم)
+  // TOP-UP & RECHARGE SYSTEM (باقات الشحن والدعم)
   // ─────────────────────────────────────────────
   const DEFAULT_TOPUP_PACKAGES = [
     {
           "id": "gold_pack_starter",
-          "name": "باقة البداية الذهبية 🪙",
+          "name": "باقة البداية الذهبية ",
           "price": 100,
           "gold": 60,
           "cash": 0,
           "bank": 0,
           "xp": 0,
-          "customBadge": "🪙",
+          "customBadge": "",
           "badgeTitle": "رصيد ذهب",
           "description": "60 ذهبة نقية (تسريع 10 ساعات كاملة) لتسريع الشحنات ونوبات العمل والصفقات فوراً وبأعلى كفاءة."
     },
     {
           "id": "gold_pack_ingot",
-          "name": "حقيبة السبائك الفاخرة 💼",
+          "name": "حقيبة السبائك الفاخرة ",
           "price": 200,
           "gold": 130,
           "cash": 0,
           "bank": 0,
           "xp": 0,
-          "customBadge": "💼",
+          "customBadge": "",
           "badgeTitle": "سبائك ذهبية",
           "description": "130 ذهبة (+10 بونص) (تسريع 22 ساعة) لتغطية مستمرة لكافة أنشطة الشركات والتهريب والاستيراد."
     },
     {
           "id": "gold_pack_elite",
-          "name": "صندوق النخبة الملكي 🏆",
+          "name": "صندوق النخبة الملكي ",
           "price": 350,
           "gold": 240,
           "cash": 0,
           "bank": 0,
           "xp": 0,
-          "customBadge": "🏆",
+          "customBadge": "",
           "badgeTitle": "نخبة المستثمرين",
           "description": "240 ذهبة (+30 بونص) (تسريع 40 ساعة كاملة) لإنهاء فوري لأقوى مؤقتات القروض والصفقات الكبيرة."
     },
     {
           "id": "gold_pack_investor",
-          "name": "خزنة كبار المستثمرين 💎",
+          "name": "خزنة كبار المستثمرين ",
           "price": 500,
           "gold": 360,
           "cash": 0,
           "bank": 0,
           "xp": 0,
-          "customBadge": "💎",
+          "customBadge": "",
           "badgeTitle": "حوت استثماري",
           "description": "360 ذهبة (+60 بونص) (تسريع 60 ساعة = يومان ونصف) لسرعة نمو وتراكم أرباح فائقة للتفوق على المنافسين."
     },
     {
           "id": "gold_pack_royal",
-          "name": "كنز الملوك والجبابرة 👑",
+          "name": "كنز الملوك والجبابرة ",
           "price": 750,
           "gold": 580,
           "cash": 0,
           "bank": 0,
           "xp": 0,
-          "customBadge": "👑",
+          "customBadge": "",
           "badgeTitle": "كنز الملوك",
           "description": "580 ذهبة (+130 بونص) (تسريع 96 ساعة = 4 أيام متواصلة) قوة استثمارية ضخمة للسيطرة على المزادات والشركات."
     },
     {
           "id": "gold_pack_imperial",
-          "name": "الخزينة الإمبراطورية العظمى 🏛️",
+          "name": "الخزينة الإمبراطورية العظمى ",
           "price": 1000,
           "gold": 850,
           "cash": 0,
           "bank": 0,
           "xp": 0,
-          "customBadge": "⚡",
+          "customBadge": "",
           "badgeTitle": "إمبراطور الذهب",
           "description": "850 ذهبة (+250 بونص) (تسريع 141 ساعة = 6 أيام متواصلة) هيمنة مطلقة لحيتان اللعبة على صدارة التوب العالمي."
     },
@@ -3697,9 +3697,9 @@ var AppDB = (() => {
       bank: 1000000,
       xp: 6000,
       items: { vip_casino_pass: 1, offshore_account: 1, swiss_safe: 1 },
-      customBadge:'👑',
+      customBadge:'',
       badgeTitle:'الحوت الملكي',
-      description:'حزمة الدعم الملكية: 5 مليون كاش، مليون بالبنك، 6000 خبرة، خزنة سويسرية وحساب خارجي وتاج الملك 👑.',
+      description:'حزمة الدعم الملكية: 5 مليون كاش، مليون بالبنك، 6000 خبرة، خزنة سويسرية وحساب خارجي وتاج الملك .',
       hidden: false
     },
     {
@@ -3709,7 +3709,7 @@ var AppDB = (() => {
       cash: 3000000,
       bank: 1000000,
       xp: 5000,
-      customBadge:'✔️',
+      customBadge:'',
       badgeTitle:'حساب موثق رسمي',
       features: { verified: true, customAvatar: true, title:'شخصية موثقة' },
       items: { vip_casino_pass: 1, legalShield: 2 },
@@ -3723,11 +3723,11 @@ var AppDB = (() => {
       cash: 2500000,
       bank: 500000,
       xp: 4000,
-      customBadge:'🌟',
+      customBadge:'',
       badgeTitle:'حوت الشات',
       features: { chatGlow:'gold_neon', stickersPack: true, title:'حوت الشات' },
       items: { lottery_ticket: 5 },
-      description:'رسائل شات متوهجة ومميزة بلون نيون ذهبي 🌟 + فتح حزمة ملصقات الشات التعبيرية + 2.5 مليون كاش.',
+      description:'رسائل شات متوهجة ومميزة بلون نيون ذهبي + فتح حزمة ملصقات الشات التعبيرية + 2.5 مليون كاش.',
       hidden: true
     },
     {
@@ -3737,7 +3737,7 @@ var AppDB = (() => {
       cash: 10000000,
       bank: 3000000,
       xp: 15000,
-      customBadge:'👑✔️',
+      customBadge:'',
       badgeTitle:'الملك الأسطوري',
       features: { verified: true, customAvatar: true, chatGlow:'cyber_rainbow', stickersPack: true, title:'إمبراطور السيرفر' },
       items: { vip_casino_pass: 2, offshore_account: 2, swiss_safe: 2 },
@@ -3751,16 +3751,16 @@ var AppDB = (() => {
       cash: 3000000,
       bank: 1000000,
       xp: 5000,
-      customBadge:'🔥',
+      customBadge:'',
       badgeTitle:'لهيب العرش VIP',
       features: { chatGlow:'crimson_flame', stickersPack: true, title:'لهيب العرش VIP' },
       items: { vip_casino_pass: 1, safe_lock: 3 },
-      description:'إطار شات ناري ملتهب بلون قرمزي هادئ وأنيق 🔥 + وسام لهيب العرش + حزمة الملصقات + 3 مليون كاش وخزائن أمان.',
+      description:'إطار شات ناري ملتهب بلون قرمزي هادئ وأنيق + وسام لهيب العرش + حزمة الملصقات + 3 مليون كاش وخزائن أمان.',
       hidden: true
     },
     {
       id:'pkg_vip_svip_blue_flame',
-      name:'حزمة لهيب SVIP الأزرق الملكي ⚡',
+      name:'حزمة لهيب SVIP الأزرق الملكي ',
       price: 200,
       cash: 5000000,
       bank: 2000000,
@@ -3769,7 +3769,7 @@ var AppDB = (() => {
       badgeTitle:'SVIP',
       features: { chatGlow:'blue_flame', stickersPack: true, title:'لهيب SVIP الأزرق' },
       items: { vip_casino_pass: 2, swiss_safe: 1 },
-      description:'إطار شات ناري مشتعل بتدرج أزرق كهربائي ملكي ⚡ + شارة SVIP المشتعلة + حزمة الملصقات + 5 مليون كاش وخزائن سويسرية.',
+      description:'إطار شات ناري مشتعل بتدرج أزرق كهربائي ملكي + شارة SVIP المشتعلة + حزمة الملصقات + 5 مليون كاش وخزائن سويسرية.',
       hidden: true
     }
   ];
@@ -4016,7 +4016,7 @@ var AppDB = (() => {
         if (!pState.airport) pState.airport = { unlocked: true, facilities: { runway: 1, terminals: 1, hangar: 1, duty_free: 0 }, fleet: [] };
         pState.airport.manager = {
           tier: 2,
-          name: 'كابتن ألفا - مدير عمليات الطيران 🎖️',
+          name: 'كابتن ألفا - مدير عمليات الطيران ',
           title: 'مدير عمليات الطيران الدولي',
           profitBonusPct: 10,
           costDiscountPct: 5,
@@ -4027,7 +4027,7 @@ var AppDB = (() => {
         if (!pState.airport) pState.airport = { unlocked: true, facilities: { runway: 1, terminals: 1, hangar: 1, duty_free: 0 }, fleet: [] };
         pState.airport.manager = {
           tier: 3,
-          name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران 👑',
+          name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران ',
           title: 'المدير التنفيذي العام لشبكة الطيران العالمية',
           profitBonusPct: 15,
           costDiscountPct: 10,
@@ -4061,7 +4061,7 @@ var AppDB = (() => {
       const topupEntry = {
         id: `topup_${requestId}`,
         timestamp: ts,
-        action: `شحنة معتمدة من الإدارة 👑 (${req.packageName || 'باقة متجر'})`,
+        action: `شحنة معتمدة من الإدارة (${req.packageName || 'باقة متجر'})`,
         category: 'admin',
         details: `تم اعتماد وشحن باقة "${req.packageName}" بنجاح (${reviewerNote || 'معتمد بواسطة الإدارة'})`,
         amount: addedCash + addedBank,
@@ -4201,7 +4201,7 @@ var AppDB = (() => {
       };
 
       await sendMail('SYSTEM', req.username,'topup_receipt', {
-        title:`️ تعذر اعتماد طلب شحن [${req.packageName}]`,
+        title:` تعذر اعتماد طلب شحن [${req.packageName}]`,
         message:`نعتذر، لم تتمكن الإدارة من اعتماد طلب الشحن الخاص بك.\nالسبب: ${req.reviewerNote}\nيرجى التواصل مع الإدارة أو التأكد من بيانات التحويل وإعادة الطلب.`,
         topupDetails: topupRejectData
       }).catch(() => {});
@@ -4246,7 +4246,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  SYSTEM STATS & ADMIN PANEL
+  // SYSTEM STATS & ADMIN PANEL
   // ─────────────────────────────────────────────
   const HIDDEN_ADMIN_USERNAMES = ['khaled', 'newu', 'rasalmal', 'rasalmal1', 'rasalmal2'];
 
@@ -5010,7 +5010,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  TOTAL SYSTEM RESET & WIPE (EXCEPT GIFT CODES)
+  // TOTAL SYSTEM RESET & WIPE (EXCEPT GIFT CODES)
   // ─────────────────────────────────────────────
   async function adminResetAllPlayers() {
     const now = Date.now();
@@ -5254,7 +5254,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  CORPORATIONS & AUCTIONS
+  // CORPORATIONS & AUCTIONS
   // ─────────────────────────────────────────────
   async function createCorporation(arg1, arg2, arg3, arg4) {
     let corpId ='';
@@ -5813,7 +5813,7 @@ var AppDB = (() => {
     return true;
   }
 
-  //  Unified Official Hourly Leaderboard Document Engine
+  // Unified Official Hourly Leaderboard Document Engine
   const HIDDEN_TEST_USERS = new Set(['newu', 'khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2', 'asd', '7ablas', 'osos', 'tito2761']);
   function isHiddenPlayer(username, isAdmin) {
     if (!username) return false;
@@ -5945,7 +5945,7 @@ var AppDB = (() => {
     return await _rebuildAndSaveLeaderboard();
   }
 
-  //  Live In-Game Public Chat (Egress-Optimized with Metadata Polling)
+  // Live In-Game Public Chat (Egress-Optimized with Metadata Polling)
   let _lastChatUpdatedAt = 0;
   let _cachedChatMessages = [];
   let _chatPollInterval = null;
@@ -5953,7 +5953,7 @@ var AppDB = (() => {
   const _chatCallbacks = new Set();
 
   // ─────────────────────────────────────────────
-  //  Advanced Anti-Profanity & Swear Filter Engine
+  // Advanced Anti-Profanity & Swear Filter Engine
   // ─────────────────────────────────────────────
   const ProfanityFilter = (() => {
     // Severe roots/words that are always offensive regardless of context
@@ -6180,11 +6180,11 @@ var AppDB = (() => {
 
     // Auto-detect player VIP glow from Cloud/State or customBadge if not provided in extraMeta
     if (!msgObj.chatGlow && sender && sender !== 'الإدارة') {
-      if (extraMeta && (extraMeta.customBadge === '🔥' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('لهيب')))) {
+      if (extraMeta && (extraMeta.customBadge === '' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('لهيب')))) {
         msgObj.chatGlow = 'crimson_flame';
-      } else if (extraMeta && (extraMeta.customBadge === '🌟' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('حوت الشات')))) {
+      } else if (extraMeta && (extraMeta.customBadge === '' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('حوت الشات')))) {
         msgObj.chatGlow = 'gold_neon';
-      } else if (extraMeta && (extraMeta.customBadge === '👑✔️' || (extraMeta.customBadge && extraMeta.customBadge.includes('👑')))) {
+      } else if (extraMeta && (extraMeta.customBadge === '' || (extraMeta.customBadge && extraMeta.customBadge.includes('')))) {
         msgObj.chatGlow = 'cyber_rainbow';
       } else {
         try {
@@ -6193,11 +6193,11 @@ var AppDB = (() => {
             const st = pRows[0].state;
             if (st.chatGlow) {
               msgObj.chatGlow = st.chatGlow;
-            } else if (st.activePackage === 'pkg_vip_crimson_flame' || st.customBadge === '🔥' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
+            } else if (st.activePackage === 'pkg_vip_crimson_flame' || st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
               msgObj.chatGlow = 'crimson_flame';
-            } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow' || st.customBadge === '🌟' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
+            } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow' || st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
               msgObj.chatGlow = 'gold_neon';
-            } else if (st.activePackage === 'pkg_vip_royal_ultimate' || st.customBadge === '👑✔️' || (st.customBadge && st.customBadge.includes('👑'))) {
+            } else if (st.activePackage === 'pkg_vip_royal_ultimate' || st.customBadge === '' || (st.customBadge && st.customBadge.includes(''))) {
               msgObj.chatGlow = 'cyber_rainbow';
             }
             if (st.avatarUrl && !msgObj.avatarUrl) msgObj.avatarUrl = st.avatarUrl;
@@ -6419,7 +6419,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  MONEY DROP & LIVE CHAT TIPPING (نظام النقطة والفشخرة)
+  // MONEY DROP & LIVE CHAT TIPPING (نظام النقطة والفشخرة)
   // ─────────────────────────────────────────────
   async function createMoneyDrop(sender, senderTitle, message, amount, bags) {
     if (!sender) throw new Error('يرجى تسجيل الدخول أولاً.');
@@ -6434,7 +6434,7 @@ var AppDB = (() => {
       body: JSON.stringify({
         p_sender: sender.trim(),
         p_sender_title: senderTitle || 'سيد الأعمال',
-        p_message: message || 'نُقطة حلاوة لرجالة السيرفر! 💸',
+        p_message: message || 'نُقطة حلاوة لرجالة السيرفر! ',
         p_amount: amt,
         p_bags: bg
       })
@@ -6511,7 +6511,7 @@ var AppDB = (() => {
   }
 
   // ─────────────────────────────────────────────
-  //  COMPATIBILITY LAYER (MOCKS FIREBASE FOR ANY DIRECT UI CALLS)
+  // COMPATIBILITY LAYER (MOCKS FIREBASE FOR ANY DIRECT UI CALLS)
   // ─────────────────────────────────────────────
   if (typeof window !=='undefined') {
     const mockCollection = (collName) => ({
@@ -6847,7 +6847,7 @@ var AppDB = (() => {
     return true;
   }
 
-  //  PUBLIC API EXPORT
+  // PUBLIC API EXPORT
   // ─────────────────────────────────────────────
   return {
     init,

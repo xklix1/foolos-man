@@ -2,7 +2,7 @@ const db = require('../db.js');
 
 async function auditSpentBreakdown() {
   const token = db._getAnonKey();
-  const users = ['♫', 'ABDO_1', 'Emad', 'MarkEshak', 'MoOka Aziz', 'OSAMA', 'Osama.nasr'];
+  const users = ['', 'ABDO_1', 'Emad', 'MarkEshak', 'MoOka Aziz', 'OSAMA', 'Osama.nasr'];
 
   console.log('=== DETAILED ASSET & SPEND BREAKDOWN ===\n');
 
@@ -17,9 +17,9 @@ async function auditSpentBreakdown() {
     const s = p.state || {};
 
     console.log(`=======================================================`);
-    console.log(`👤 اللاعب: ${p.username}`);
-    console.log(`💰 الأرصدة الحالية: كاش = ${Number(p.cash || 0).toLocaleString()} | بنك = ${Number(p.bank || 0).toLocaleString()} | صافي الثروة = ${Number(p.net_worth || 0).toLocaleString()}`);
-    console.log(`⭐ الخبرة: ${p.xp} | الرتبة: ${p.title}`);
+    console.log(` اللاعب: ${p.username}`);
+    console.log(` الأرصدة الحالية: كاش = ${Number(p.cash || 0).toLocaleString()} | بنك = ${Number(p.bank || 0).toLocaleString()} | صافي الثروة = ${Number(p.net_worth || 0).toLocaleString()}`);
+    console.log(` الخبرة: ${p.xp} | الرتبة: ${p.title}`);
 
     // 1. Stocks
     const stocks = s.stocks || {};
@@ -29,7 +29,7 @@ async function auditSpentBreakdown() {
         stockDetails.push(`${sym}: ${st.shares.toLocaleString()} سهم (متوسط السعر: ${Math.round(st.avgPrice || 0).toLocaleString()})`);
       }
     }
-    console.log(`📈 محفظة الأسهم: ${stockDetails.length > 0 ? stockDetails.join(' | ') : 'لا توجد أسهم'}`);
+    console.log(` محفظة الأسهم: ${stockDetails.length > 0 ? stockDetails.join(' | ') : 'لا توجد أسهم'}`);
 
     // 2. Real Estate / Assets
     const assets = s.assets || {};
@@ -39,7 +39,7 @@ async function auditSpentBreakdown() {
         assetDetails.push(`${k}: ${count}`);
       }
     }
-    console.log(`🏢 العقارات والأصول: ${assetDetails.length > 0 ? assetDetails.join(' | ') : 'لا توجد عقارات'}`);
+    console.log(` العقارات والأصول: ${assetDetails.length > 0 ? assetDetails.join(' | ') : 'لا توجد عقارات'}`);
 
     // 3. Cars
     const cars = s.cars || {};
@@ -50,7 +50,7 @@ async function auditSpentBreakdown() {
         carDetails.push(`${k}: ${count}`);
       }
     }
-    console.log(`🚗 أسطول السيارات: ${carDetails.length > 0 ? carDetails.join(' | ') : 'لا توجد سيارات'}`);
+    console.log(` أسطول السيارات: ${carDetails.length > 0 ? carDetails.join(' | ') : 'لا توجد سيارات'}`);
 
     // 4. Industry / Supply Chain Factories
     const industry = s.industry || s.factories || {};
@@ -61,7 +61,7 @@ async function auditSpentBreakdown() {
         indDetails.push(`${secId} (${stageList || 'مرخص'})`);
       }
     }
-    console.log(`🏭 سلاسل الإمداد والمصانع: ${indDetails.length > 0 ? indDetails.join(' | ') : 'لا توجد مصانع'}`);
+    console.log(` سلاسل الإمداد والمصانع: ${indDetails.length > 0 ? indDetails.join(' | ') : 'لا توجد مصانع'}`);
 
     // 5. Businesses & Workers
     const biz = s.businesses || {};
@@ -71,7 +71,7 @@ async function auditSpentBreakdown() {
         bizList.push(`${k}: Lv${v.level} (عمال: ${v.workers || 0})`);
       }
     }
-    console.log(`🏬 المشاريع والشركات: ${bizList.length > 0 ? bizList.join(' | ') : 'لا توجد مشاريع'}`);
+    console.log(` المشاريع والشركات: ${bizList.length > 0 ? bizList.join(' | ') : 'لا توجد مشاريع'}`);
 
     // 6. Outgoing Transfers
     const trRes = await fetch(`https://rasalmal.online/rest/v1/transfers?sender=ilike.${encodeURIComponent(u)}&select=recipient,amount,created_at`, {
@@ -80,12 +80,12 @@ async function auditSpentBreakdown() {
     if (trRes.ok) {
       const trs = await trRes.json();
       if (trs.length > 0) {
-        console.log(`💸 الحوالات الصادرة منه (${trs.length} حوالة):`);
+        console.log(` الحوالات الصادرة منه (${trs.length} حوالة):`);
         for (const t of trs) {
-          console.log(`   - أرسل إلى [${t.recipient}]: ${Number(t.amount).toLocaleString()} ج.م بتاريخ ${new Date(t.created_at).toLocaleString()}`);
+          console.log(` - أرسل إلى [${t.recipient}]: ${Number(t.amount).toLocaleString()} ج.م بتاريخ ${new Date(t.created_at).toLocaleString()}`);
         }
       } else {
-        console.log(`💸 الحوالات الصادرة منه: لم يقم بإرسال حوالات`);
+        console.log(` الحوالات الصادرة منه: لم يقم بإرسال حوالات`);
       }
     }
     console.log('\n');

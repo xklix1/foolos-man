@@ -38,9 +38,9 @@ async function triggerServerWideReload(customMessage) {
   });
 
   if (res.ok) {
-    console.log('✅ Server-wide force reload broadcasted successfully! All players will automatically update within 3 seconds.');
+    console.log(' Server-wide force reload broadcasted successfully! All players will automatically update within 3 seconds.');
   } else {
-    console.error('❌ Failed to broadcast force reload:', await res.text());
+    console.error(' Failed to broadcast force reload:', await res.text());
   }
 }
 

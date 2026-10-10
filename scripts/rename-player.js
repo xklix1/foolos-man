@@ -26,7 +26,7 @@ async function run() {
   state.adminModifiedTimestamp = lockTs;
   if (!state.activityLog) state.activityLog = [];
   state.activityLog.push({
-    action: 'تغيير الاسم الرسمي 📝',
+    action: 'تغيير الاسم الرسمي ',
     details: `تم تغيير الاسم الإداري للحساب رسمياً من "${oldName}" إلى "${newName}".`,
     category: 'system',
     timestamp: nowTs

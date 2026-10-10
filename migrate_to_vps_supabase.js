@@ -35,7 +35,7 @@ async function insertToNew(table, rows) {
 }
 
 async function runMigration() {
-  console.log('🚀 Starting Data Migration to Hostinger VPS Supabase...\n');
+  console.log(' Starting Data Migration to Hostinger VPS Supabase...\n');
 
   // 1. Players
   console.log('1. Fetching players from old database...');
@@ -45,23 +45,23 @@ async function runMigration() {
   for (let i = 0; i < players.length; i += 50) {
     const chunk = players.slice(i, i + 50);
     await insertToNew('players', chunk);
-    console.log(`   Inserted players ${i + 1} to ${Math.min(i + 50, players.length)}`);
+    console.log(` Inserted players ${i + 1} to ${Math.min(i + 50, players.length)}`);
   }
-  console.log('✅ Players migration completed!');
+  console.log(' Players migration completed!');
 
   // 2. Globals
   console.log('\n2. Fetching globals...');
   const globals = await fetchFromOld('globals?select=*');
   console.log(`Found ${globals.length} global records. Inserting...`);
   await insertToNew('globals', globals);
-  console.log('✅ Globals migration completed!');
+  console.log(' Globals migration completed!');
 
   // 3. Gift Codes
   console.log('\n3. Fetching gift codes...');
   const giftCodes = await fetchFromOld('gift_codes?select=*');
   console.log(`Found ${giftCodes.length} gift codes. Inserting...`);
   await insertToNew('gift_codes', giftCodes);
-  console.log('✅ Gift codes migration completed!');
+  console.log(' Gift codes migration completed!');
 
   // 4. Mailbox (latest 200)
   console.log('\n4. Fetching latest 200 mailbox messages...');
@@ -73,11 +73,11 @@ async function runMigration() {
       await insertToNew('mailbox', chunk);
     }
   }
-  console.log('✅ Mailbox migration completed!');
+  console.log(' Mailbox migration completed!');
 
-  console.log('\n🎉 ALL DATA MIGRATED TO VPS SUPABASE SUCCESSFULLY!');
+  console.log('\n ALL DATA MIGRATED TO VPS SUPABASE SUCCESSFULLY!');
 }
 
 runMigration().catch(err => {
-  console.error('❌ Migration error:', err);
+  console.error(' Migration error:', err);
 });

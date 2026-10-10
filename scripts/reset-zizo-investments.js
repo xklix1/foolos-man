@@ -28,7 +28,7 @@ async function run() {
 
   if (!state.activityLog) state.activityLog = [];
   state.activityLog.push({
-    action: 'تصفير عداد الصناديق الاستثمارية 🔄',
+    action: 'تصفير عداد الصناديق الاستثمارية ',
     details: 'تم تصفير عداد الصناديق الاستثمارية لليوم (متاح 5/5 استثمارات بالكامل).',
     category: 'investment',
     timestamp: nowTs

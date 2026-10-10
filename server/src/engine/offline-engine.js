@@ -5,10 +5,10 @@
  * 1. Time Source: Server Monotonic / Linux NTP Clock only (Immune to client clock spoofing).
  * 2. Hard Cap: Strict Math.min(43200, elapsedSeconds) — 12 hours maximum.
  * 3. AFK Manager Validation: Profits are generated strictly during the interval when
- *    afkManagerExpiresAt was active. If it expired during absence, only the active
- *    seconds yield profit; the remaining hours yield $0.
+ * afkManagerExpiresAt was active. If it expired during absence, only the active
+ * seconds yield profit; the remaining hours yield $0.
  * 4. Supplies Depletion: Supplies are consumed by real elapsed time. If a business
- *    runs out of supplies, production halts for that business.
+ * runs out of supplies, production halts for that business.
  * 5. Jail Sentence: Decrements by real elapsed time.
  */
 
@@ -223,7 +223,7 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
         playerState.bank = (Number(playerState.bank) || 0) + payout;
         if (!playerState.activityLog) playerState.activityLog = [];
         playerState.activityLog.unshift({
-          action: 'استحقاق أرباح صندوق استثماري 🏛️',
+          action: 'استحقاق أرباح صندوق استثماري ',
           details: `اكتملت مدة الاستثمار في "${inv.name || 'الصندوق الاستثماري'}". تم إيداع رأس المال والأرباح بالكامل في حسابك البنكي (+${payout.toLocaleString()} EGP).`,
           category: 'banking',
           timestamp: serverNow,
@@ -392,7 +392,7 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
       assets: { title: 'إيجارات العقارات والأصول', amount: totalAssetEarnings, items: assetBreakdown },
       cars: { title: 'إيجارات أسطول السيارات', amount: totalCarGross, items: carBreakdown },
       bank: { title: 'فوائد الودائع البنكية', amount: bankInterestEarned },
-      airport: airportAutoReport ? { title: 'أرباح الطيار الآلي لمدير المطار ✈️', amount: airportAutoReport.totalProfit } : undefined
+      airport: airportAutoReport ? { title: 'أرباح الطيار الآلي لمدير المطار ', amount: airportAutoReport.totalProfit } : undefined
     },
     deductions: {
       payroll: { title: 'أجور ورواتب العمال والموظفين', amount: totalBizPayroll },

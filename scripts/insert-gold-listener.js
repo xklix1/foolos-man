@@ -4,10 +4,10 @@ const path = require('path');
 const adminJsPath = path.join(__dirname, '..', 'admin-panel.js');
 let adminJs = fs.readFileSync(adminJsPath, 'utf8');
 
-const searchStr = '    // Business Moderation Event Listeners';
+const searchStr = ' // Business Moderation Event Listeners';
 
 if (!adminJs.includes('btn-admin-instant-add-gold')) {
-  const instantGoldCode = `    // Instant Gold Addition Action (Direct Real-time Sync to player)
+  const instantGoldCode = ` // Instant Gold Addition Action (Direct Real-time Sync to player)
     const instantAddGoldBtn = document.getElementById('btn-admin-instant-add-gold');
     if (instantAddGoldBtn) {
       instantAddGoldBtn.addEventListener('click', async () => {
@@ -25,7 +25,7 @@ if (!adminJs.includes('btn-admin-instant-add-gold')) {
           return;
         }
 
-        const confirmMsg = \`🪙 تأكيد إضافة الذهب الفوري:\n\nهل أنت متأكد من إضافة \${amount.toLocaleString()} ذهبة للاعب "\${selectedPlayer}"؟\n\nسيتم زيادة الذهب وحفظه في السحابة فوراً مع إشعار اللاعب.\`;
+        const confirmMsg = \` تأكيد إضافة الذهب الفوري:\n\nهل أنت متأكد من إضافة \${amount.toLocaleString()} ذهبة للاعب "\${selectedPlayer}"؟\n\nسيتم زيادة الذهب وحفظه في السحابة فوراً مع إشعار اللاعب.\`;
         if (!confirm(confirmMsg)) return;
 
         try {
@@ -109,7 +109,7 @@ if (!adminJs.includes('btn-admin-instant-add-gold')) {
             renderPlayersTable();
           }
 
-          showToast('تمت إضافة الذهب بنجاح 🪙', \`تمت إضافة \${amount.toLocaleString()} ذهبة لحساب اللاعب [\${selectedPlayer}] فوراً! الرصيد الجديد: \${newGold.toLocaleString()} ذهبة.\`, 'success');
+          showToast('تمت إضافة الذهب بنجاح ', \`تمت إضافة \${amount.toLocaleString()} ذهبة لحساب اللاعب [\${selectedPlayer}] فوراً! الرصيد الجديد: \${newGold.toLocaleString()} ذهبة.\`, 'success');
           logAdminAction(\`إضافة ذهب فوري بقيمة \${amount.toLocaleString()} ذهبة للاعب \${selectedPlayer}\`);
 
         } catch (err) {

@@ -18,7 +18,7 @@ window.AirportUI = (() => {
 
   const FACILITY_META = {
     runway: {
-      name: 'مدرج الطائرات الرئيسي 🛫',
+      name: 'مدرج الطائرات الرئيسي ',
       icon: 'fa-road text-sky-400',
       levels: {
         1: { name: 'مدرج إقليمي معبد', cost: 0, maxPlaneTier: 1, desc: 'يستوعب طائرات الفئة 1 (Cessna VIP)' },
@@ -28,7 +28,7 @@ window.AirportUI = (() => {
       }
     },
     terminals: {
-      name: 'صالات الركاب الدولية 🏢',
+      name: 'صالات الركاب الدولية ',
       icon: 'fa-building-columns text-amber-400',
       levels: {
         1: { name: 'صالة ركاب أساسية', cost: 0, ticketBonus: 1.0, desc: 'رسوم تذاكر قياسية' },
@@ -38,7 +38,7 @@ window.AirportUI = (() => {
       }
     },
     hangar: {
-      name: 'حوض الصيانة وخزانات الوقود 🛠️⛽',
+      name: 'حوض الصيانة وخزانات الوقود ',
       icon: 'fa-wrench text-emerald-400',
       levels: {
         1: { name: 'مرآب صيانة يدوي', cost: 0, timeReduction: 0, fuelDiscount: 0, desc: 'زمن رحلات وتكلفة وقود قياسية' },
@@ -48,7 +48,7 @@ window.AirportUI = (() => {
       }
     },
     duty_free: {
-      name: 'السوق الحرة ومتاجر الترانزيت 🛍️',
+      name: 'السوق الحرة ومتاجر الترانزيت ',
       icon: 'fa-store text-fuchsia-400',
       levels: {
         1: { name: 'أكشاك هدايا وتذكارات', cost: 5000000, passivePerMin: 100, desc: 'دخل سلبي: 100 ج.م/دقيقة (6 آلاف/ساعة)' },
@@ -62,7 +62,7 @@ window.AirportUI = (() => {
   const AIRPORT_MANAGERS_META = {
     1: {
       tier: 1,
-      name: 'كابتن ليام - مساعد مدير العمليات 📋',
+      name: 'كابتن ليام - مساعد مدير العمليات ',
       title: 'مساعد مدير العمليات الجوية',
       hireCost: 100000000,
       profitBonusPct: 5,
@@ -77,7 +77,7 @@ window.AirportUI = (() => {
     },
     2: {
       tier: 2,
-      name: 'كابتن ألفا - مدير عمليات الطيران 🎖️',
+      name: 'كابتن ألفا - مدير عمليات الطيران ',
       title: 'مدير عمليات الطيران الدولي',
       packageId: 'pkg_airport_manager_tier2',
       profitBonusPct: 10,
@@ -92,7 +92,7 @@ window.AirportUI = (() => {
     },
     3: {
       tier: 3,
-      name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران 👑',
+      name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران ',
       title: 'المدير التنفيذي العام لشبكة الطيران العالمية',
       packageId: 'pkg_airport_manager_tier3',
       profitBonusPct: 15,
@@ -111,7 +111,7 @@ window.AirportUI = (() => {
   const AIRCRAFT_META = {
     cessna_sky: {
       id: 'cessna_sky',
-      name: 'Cessna Sky Courier 🛩️',
+      name: 'Cessna Sky Courier ',
       tier: 1,
       cost: 3000000,
       capacity: '8 ركاب VIP',
@@ -127,7 +127,7 @@ window.AirportUI = (() => {
     },
     airbus_a320: {
       id: 'airbus_a320',
-      name: 'Airbus A320neo ✈️',
+      name: 'Airbus A320neo ',
       tier: 2,
       cost: 15000000,
       capacity: '180 مسافر',
@@ -143,7 +143,7 @@ window.AirportUI = (() => {
     },
     boeing_777: {
       id: 'boeing_777',
-      name: 'Boeing 777-300ER 🌐',
+      name: 'Boeing 777-300ER ',
       tier: 3,
       cost: 55000000,
       capacity: '390 مسافر',
@@ -159,7 +159,7 @@ window.AirportUI = (() => {
     },
     gulfstream_g650: {
       id: 'gulfstream_g650',
-      name: 'Gulfstream G650 VIP 👑🛩️',
+      name: 'Gulfstream G650 VIP ',
       tier: 4,
       cost: 85000000,
       capacity: 'نخبة رجال الأعمال والأمراء VIP',
@@ -175,7 +175,7 @@ window.AirportUI = (() => {
     },
     cargo_beluga: {
       id: 'cargo_beluga',
-      name: 'Airbus BelugaXL Heavy Cargo 📦✈️',
+      name: 'Airbus BelugaXL Heavy Cargo ',
       tier: 4,
       cost: 125000000,
       capacity: '50 طن بضائع ومعدات ثقيلة',
@@ -191,7 +191,7 @@ window.AirportUI = (() => {
     },
     airbus_a380: {
       id: 'airbus_a380',
-      name: 'Airbus A380 Superjumbo 🏰✈️',
+      name: 'Airbus A380 Superjumbo ',
       tier: 3,
       cost: 220000000,
       capacity: '615 مسافر (طابقين)',
@@ -208,13 +208,13 @@ window.AirportUI = (() => {
   };
 
   const DESTINATIONS_META = [
-    { id: 'cairo_riyadh', name: 'الرياض 🇸🇦', mult: 1.0, tier: 1 },
-    { id: 'cairo_dubai', name: 'دبي 🇦🇪', mult: 1.25, tier: 1 },
-    { id: 'cairo_istanbul', name: 'إسطنبول 🇹🇷', mult: 1.5, tier: 2 },
-    { id: 'cairo_london', name: 'لندن 🇬🇧', mult: 2.0, tier: 2 },
-    { id: 'cairo_paris', name: 'باريس 🇫🇷', mult: 2.2, tier: 2 },
-    { id: 'cairo_newyork', name: 'نيويورك 🇺🇸', mult: 3.0, tier: 3 },
-    { id: 'cairo_tokyo', name: 'طوكيو 🇯🇵', mult: 3.5, tier: 3 }
+    { id: 'cairo_riyadh', name: 'الرياض ', mult: 1.0, tier: 1 },
+    { id: 'cairo_dubai', name: 'دبي ', mult: 1.25, tier: 1 },
+    { id: 'cairo_istanbul', name: 'إسطنبول ', mult: 1.5, tier: 2 },
+    { id: 'cairo_london', name: 'لندن ', mult: 2.0, tier: 2 },
+    { id: 'cairo_paris', name: 'باريس ', mult: 2.2, tier: 2 },
+    { id: 'cairo_newyork', name: 'نيويورك ', mult: 3.0, tier: 3 },
+    { id: 'cairo_tokyo', name: 'طوكيو ', mult: 3.5, tier: 3 }
   ];
 
   function init() {
@@ -270,7 +270,7 @@ window.AirportUI = (() => {
               <span>مشروع استراتيجي عملاق • Aviation Authority</span>
             </div>
             <h2 class="text-2xl sm:text-4xl font-black text-white tracking-wide">
-              مطار الطيران الدولي والأسطول الجوي 🛫
+              مطار الطيران الدولي والأسطول الجوي 
             </h2>
             <p class="text-xs sm:text-sm text-slate-300 leading-relaxed">
               امتلك مطارك الخاص، وشيّد المدارج الدولية، وأسس أسطول طائرات يربط بين عواصم العالم لجلب تدفقات أرباح بالملايين وخبرة استثنائية!
@@ -329,7 +329,7 @@ window.AirportUI = (() => {
           <button id="btn-airport-submit-unlock"
             class="w-full py-4 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-600 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm shadow-xl shadow-sky-500/25 transition active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer">
             <i class="fa-solid fa-plane-departure"></i>
-            <span>شراء رخصة المطار وتدشين الأسطول الجوي 🛫</span>
+            <span>شراء رخصة المطار وتدشين الأسطول الجوي </span>
           </button>
         </div>
       </div>
@@ -406,7 +406,7 @@ window.AirportUI = (() => {
                 if (window.renderHeader) window.renderHeader();
               }
               if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-                window.GameEngine.recordPlayerActivity('افتتاح المطار الدولي 🛫', `دفع رسوم ترخيص وتدشين "${airportName}" بنجاح`, 'business');
+                window.GameEngine.recordPlayerActivity('افتتاح المطار الدولي ', `دفع رسوم ترخيص وتدشين "${airportName}" بنجاح`, 'business');
               }
               renderAirportPanel();
               return;
@@ -425,14 +425,14 @@ window.AirportUI = (() => {
           const minXp = 2500;
           const curXp = Number(liveState.xp || 0);
           if (!isAdmin && curXp < minXp) {
-            throw new Error(`🚫 يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${curXp.toLocaleString()} XP)`);
+            throw new Error(` يتطلب فتح المطار خبرة لا تقل عن ${minXp.toLocaleString()} XP (خبرتك الحالية: ${curXp.toLocaleString()} XP)`);
           }
 
           const cost = 30000000;
           const curCash = Number(liveState.cash || 0);
           const curBank = Number(liveState.bank || 0);
           if (!isAdmin && (curCash + curBank) < cost) {
-            throw new Error(`🚫 رصيدك غير كافٍ لدفع رسوم رخصة المطار (${cost.toLocaleString()} ج.م)`);
+            throw new Error(` رصيدك غير كافٍ لدفع رسوم رخصة المطار (${cost.toLocaleString()} ج.م)`);
           }
 
           // Deduct cost if not admin free bypass
@@ -483,16 +483,16 @@ window.AirportUI = (() => {
             window.GameEngine.saveState();
           }
           if (typeof window.GameEngine?.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('افتتاح المطار الدولي 🛫', `دفع رسوم ترخيص وتدشين "${airportName}" بمبلغ ${(cost || 30000000).toLocaleString()} ج.م`, 'business');
+            window.GameEngine.recordPlayerActivity('افتتاح المطار الدولي ', `دفع رسوم ترخيص وتدشين "${airportName}" بمبلغ ${(cost || 30000000).toLocaleString()} ج.م`, 'business');
           }
           if (window.renderHeader) window.renderHeader();
 
-          showAirportToast(`🛫 تم تدشين ${airportName} بنجاح وإضافة طائرة Cessna إلى الأسطول!`, 'success');
+          showAirportToast(` تم تدشين ${airportName} بنجاح وإضافة طائرة Cessna إلى الأسطول!`, 'success');
           renderAirportPanel();
         } catch (err) {
           showAirportToast(err.message || 'فشل تفعيل المطار', 'error');
           btnUnlock.disabled = false;
-          btnUnlock.innerHTML = '<i class="fa-solid fa-passport"></i> <span>تفعيل رخصة المطار وتدشين الأسطول الجوي 🛫</span>';
+          btnUnlock.innerHTML = '<i class="fa-solid fa-passport"></i> <span>تفعيل رخصة المطار وتدشين الأسطول الجوي </span>';
         }
       });
     }
@@ -573,11 +573,11 @@ window.AirportUI = (() => {
         </button>
         <button data-subtab="transit" class="airport-nav-subtab px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${_activeSubtab === 'transit' ? 'bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/20' : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800'}">
           <i class="fa-solid fa-tower-broadcast"></i>
-          <span>برج المراقبة والترانزيت 📡</span>
+          <span>برج المراقبة والترانزيت </span>
         </button>
         <button data-subtab="managers" class="airport-nav-subtab px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${_activeSubtab === 'managers' ? 'bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/20' : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800'}">
           <i class="fa-solid fa-user-tie"></i>
-          <span>مدراء المطار 👨‍✈️</span>
+          <span>مدراء المطار </span>
           ${airport.manager?.tier ? `<span class="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[9px]">T${airport.manager.tier}</span>` : ''}
         </button>
       </div>
@@ -620,7 +620,7 @@ window.AirportUI = (() => {
           <h3 class="text-base font-black text-white">لا توجد طائرات في حظيرتك حالياً!</h3>
           <p class="text-xs text-slate-400 max-w-sm mx-auto">توجه إلى قسم "متجر وحظيرة الطائرات" لشراء طائرات وتسيير رحلاتك الدولية.</p>
           <button onclick="window.AirportUI.setSubtab('fleet')" class="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold rounded-xl text-xs transition cursor-pointer">
-            شراء طائرة جديدة 🛒
+            شراء طائرة جديدة 
           </button>
         </div>
       `;
@@ -778,7 +778,7 @@ window.AirportUI = (() => {
               <div class="flex justify-between text-[11px] font-bold">
                 <span class="text-slate-400">حالة الرحلة:</span>
                 <span id="timer-${plane.id}" class="text-sky-400 font-black numbers-font" data-landing="${landingTime}">
-                  ${isLanded ? '🛬 وصلت الوجهة!' : `متبقي: ${formatSeconds(remSec)}`}
+                  ${isLanded ? ' وصلت الوجهة!' : `متبقي: ${formatSeconds(remSec)}`}
                 </span>
               </div>
               <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
@@ -826,27 +826,27 @@ window.AirportUI = (() => {
             <!-- Operating Costs Breakdown Card -->
             <div id="eco-preview-${plane.id}" class="p-3 rounded-2xl bg-slate-950 border border-slate-800 space-y-1.5 text-[11px]">
               <div class="flex justify-between text-slate-300">
-                <span>💵 إجمالي عوائد التذاكر:</span>
+                <span> إجمالي عوائد التذاكر:</span>
                 <strong class="text-emerald-400 numbers-font font-bold">+${eco.grossRevenue.toLocaleString()} ج.م</strong>
               </div>
               <div class="flex justify-between text-slate-400">
-                <span>⛽ وقود الطيران ${eco.fuelDiscountPct > 0 ? `<span class="text-emerald-400 text-[9px]">(-${eco.fuelDiscountPct}%)</span>` : ''}:</span>
+                <span> وقود الطيران ${eco.fuelDiscountPct > 0 ? `<span class="text-emerald-400 text-[9px]">(-${eco.fuelDiscountPct}%)</span>` : ''}:</span>
                 <span class="text-rose-400 numbers-font">-${eco.fuelCost.toLocaleString()} ج.م</span>
               </div>
               <div class="flex justify-between text-slate-400">
-                <span>👨‍✈️ طاقم الملاحة والضيافة:</span>
+                <span> طاقم الملاحة والضيافة:</span>
                 <span class="text-rose-400 numbers-font">-${eco.crewCost.toLocaleString()} ج.م</span>
               </div>
               <div class="flex justify-between text-slate-400">
-                <span>🛬 رسوم الهبوط الدولي:</span>
+                <span> رسوم الهبوط الدولي:</span>
                 <span class="text-rose-400 numbers-font">-${eco.landingFee.toLocaleString()} ج.م</span>
               </div>
               <div class="pt-1 border-t border-slate-800 flex justify-between items-center text-xs font-black">
-                <span class="text-sky-400">💰 صافي الأرباح المتوقعة:</span>
+                <span class="text-sky-400"> صافي الأرباح المتوقعة:</span>
                 <strong class="text-emerald-400 numbers-font text-sm">+${eco.netProfit.toLocaleString()} ج.م</strong>
               </div>
               <div class="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
-                <span>⏱️ مدة الرحلة: <strong class="text-slate-300">${formatDurationHuman(eco.durationSec)}</strong></span>
+                <span> مدة الرحلة: <strong class="text-slate-300">${formatDurationHuman(eco.durationSec)}</strong></span>
                 <span>تكلفة الإقلاع الفورية: <strong class="text-rose-400 font-bold">${eco.totalOperatingCost.toLocaleString()} ج.م</strong></span>
               </div>
             </div>
@@ -855,7 +855,7 @@ window.AirportUI = (() => {
               <button onclick="window.AirportUI.launchFlight('${plane.id}')"
                 class="flex-1 py-2.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
                 <i class="fa-solid fa-plane-departure"></i>
-                <span>تزويد الوقود وإقلاع الرحلة 🛫</span>
+                <span>تزويد الوقود وإقلاع الرحلة </span>
               </button>
               <button onclick="window.AirportUI.sellPlane('${plane.id}')"
                 title="بيع الطائرة بنصف سعر الشراء (+${Math.floor(model.cost * 0.5).toLocaleString()} ج.م)"
@@ -891,27 +891,27 @@ window.AirportUI = (() => {
 
     previewContainer.innerHTML = `
       <div class="flex justify-between text-slate-300">
-        <span>💵 إجمالي عوائد التذاكر:</span>
+        <span> إجمالي عوائد التذاكر:</span>
         <strong class="text-emerald-400 numbers-font font-bold">+${eco.grossRevenue.toLocaleString()} ج.م</strong>
       </div>
       <div class="flex justify-between text-slate-400">
-        <span>⛽ وقود الطيران ${eco.fuelDiscountPct > 0 ? `<span class="text-emerald-400 text-[9px]">(-${eco.fuelDiscountPct}%)</span>` : ''}:</span>
+        <span> وقود الطيران ${eco.fuelDiscountPct > 0 ? `<span class="text-emerald-400 text-[9px]">(-${eco.fuelDiscountPct}%)</span>` : ''}:</span>
         <span class="text-rose-400 numbers-font">-${eco.fuelCost.toLocaleString()} ج.م</span>
       </div>
       <div class="flex justify-between text-slate-400">
-        <span>👨‍✈️ طاقم الملاحة والضيافة:</span>
+        <span> طاقم الملاحة والضيافة:</span>
         <span class="text-rose-400 numbers-font">-${eco.crewCost.toLocaleString()} ج.م</span>
       </div>
       <div class="flex justify-between text-slate-400">
-        <span>🛬 رسوم الهبوط الدولي:</span>
+        <span> رسوم الهبوط الدولي:</span>
         <span class="text-rose-400 numbers-font">-${eco.landingFee.toLocaleString()} ج.م</span>
       </div>
       <div class="pt-1 border-t border-slate-800 flex justify-between items-center text-xs font-black">
-        <span class="text-sky-400">💰 صافي الأرباح المتوقعة:</span>
+        <span class="text-sky-400"> صافي الأرباح المتوقعة:</span>
         <strong class="text-emerald-400 numbers-font text-sm">+${eco.netProfit.toLocaleString()} ج.م</strong>
       </div>
       <div class="flex justify-between items-center text-[10px] text-slate-500 pt-0.5">
-        <span>⏱️ مدة الرحلة: <strong class="text-slate-300">${formatDurationHuman(eco.durationSec)}</strong></span>
+        <span> مدة الرحلة: <strong class="text-slate-300">${formatDurationHuman(eco.durationSec)}</strong></span>
         <span>تكلفة الإقلاع الفورية: <strong class="text-rose-400 font-bold">${eco.totalOperatingCost.toLocaleString()} ج.م</strong></span>
       </div>
     `;
@@ -944,7 +944,7 @@ window.AirportUI = (() => {
           </div>
           <button onclick="window.AirportUI.setSubtab('facilities')" class="px-3.5 py-1.5 bg-sky-500/20 hover:bg-sky-500/30 text-sky-400 rounded-xl font-bold transition cursor-pointer text-xs flex items-center gap-1.5 border border-sky-500/30">
             <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
-            <span>ترقية المدرج 🏗️</span>
+            <span>ترقية المدرج </span>
           </button>
         </div>
 
@@ -991,7 +991,7 @@ window.AirportUI = (() => {
                         </div>
                       </div>
                       <span class="px-2 py-0.5 rounded-md text-[9px] font-black shrink-0 ${isFlight ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30' : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'}">
-                        ${isFlight ? '🛫 في الجو' : '✅ جاهزة للإقلاع'}
+                        ${isFlight ? ' في الجو' : ' جاهزة للإقلاع'}
                       </span>
                     </div>
 
@@ -1019,7 +1019,7 @@ window.AirportUI = (() => {
           <div class="flex items-center justify-between">
             <h3 class="text-sm font-black text-white flex items-center gap-2">
               <i class="fa-solid fa-cart-shopping text-emerald-400"></i>
-              <span>متجر شراء الطائرات الدولية المتاحة 🛒</span>
+              <span>متجر شراء الطائرات الدولية المتاحة </span>
             </h3>
             <span class="text-xs text-slate-400">اختر طراز الطائرة لشرائها وضمها لأسطولك</span>
           </div>
@@ -1080,7 +1080,7 @@ window.AirportUI = (() => {
                       <button onclick="window.AirportUI.buyPlane('${m.id}')" ${!canAfford ? 'disabled' : ''}
                         class="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs rounded-xl shadow-lg transition active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-cart-shopping"></i>
-                        <span>شراء وإضافة للأسطول 🛒</span>
+                        <span>شراء وإضافة للأسطول </span>
                       </button>
                     `)}
                   </div>
@@ -1128,7 +1128,7 @@ window.AirportUI = (() => {
                 </div>
                 <div>
                   <span class="px-2.5 py-1 rounded-xl ${isMax ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30' : 'bg-slate-800 text-slate-400'} text-[10px] font-black">
-                    ${isMax ? '🏆 أقصى تطوير' : `الترقية: Lv.${nextLvl}`}
+                    ${isMax ? ' أقصى تطوير' : `الترقية: Lv.${nextLvl}`}
                   </span>
                 </div>
               </div>
@@ -1163,7 +1163,7 @@ window.AirportUI = (() => {
                 <button onclick="window.AirportUI.upgradeFacility('${k}')" ${!canAfford ? 'disabled' : ''}
                   class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs rounded-xl shadow-lg transition active:scale-[0.98] disabled:opacity-40 disabled:pointer-events-none cursor-pointer flex items-center justify-center gap-2">
                   <i class="fa-solid fa-arrow-up-from-bracket"></i>
-                  <span>ترقية ${fac.name} إلى Lv.${nextLvl} 🏗️</span>
+                  <span>ترقية ${fac.name} إلى Lv.${nextLvl} </span>
                 </button>
               ` : ''}
             </div>
@@ -1219,7 +1219,7 @@ window.AirportUI = (() => {
         </div>
 
         <div class="space-y-2 max-w-md mx-auto">
-          <h3 class="text-xl font-black text-white">برج المراقبة ورادار الطائرات العابرة 📡</h3>
+          <h3 class="text-xl font-black text-white">برج المراقبة ورادار الطائرات العابرة </h3>
           <p class="text-xs text-slate-300">
             تستقبل أجواء مطارك رحلات طيران دولية عابرة تطلب الهبوط والتزود بالوقود. تتراكم رسوم الترانزيت بالساعة تلقائياً بحد أقصى 8 ساعات!
           </p>
@@ -1256,11 +1256,11 @@ window.AirportUI = (() => {
         <button id="btn-airport-transit" onclick="window.AirportUI.acceptTransit()" ${canCollect ? '' : 'disabled'}
           class="px-8 py-3.5 bg-gradient-to-r from-sky-500 to-indigo-600 hover:from-sky-400 hover:to-indigo-500 text-white font-black text-sm rounded-2xl shadow-xl shadow-sky-500/25 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2 mx-auto disabled:opacity-40 disabled:pointer-events-none">
           <i class="fa-solid fa-passport"></i>
-          <span>${onCooldown ? `يرجى الانتظار (${remSec}ث)` : (accumulatedFee < 500 ? 'جاري تتبع الرحلات (الحد الأدنى 500 ج.م)' : `تحصيل رسوم الترانزيت المتراكمة (+${accumulatedFee.toLocaleString()} ج.م) 🛬`)}</span>
+          <span>${onCooldown ? `يرجى الانتظار (${remSec}ث)` : (accumulatedFee < 500 ? 'جاري تتبع الرحلات (الحد الأدنى 500 ج.م)' : `تحصيل رسوم الترانزيت المتراكمة (+${accumulatedFee.toLocaleString()} ج.م) `)}</span>
         </button>
 
         <p class="text-[10px] text-slate-400 max-w-sm mx-auto">
-          💡 تتراكم الأرباح تلقائياً في السيرفر وتتوقف عند بلوغ 8 ساعات حتى تقوم بالتحصيل. ترقية مدرج المطار ترفع العائد بالساعة.
+           تتراكم الأرباح تلقائياً في السيرفر وتتوقف عند بلوغ 8 ساعات حتى تقوم بالتحصيل. ترقية مدرج المطار ترفع العائد بالساعة.
         </p>
       </div>
     `;
@@ -1287,7 +1287,7 @@ window.AirportUI = (() => {
               </div>
               <h3 class="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
                 <i class="fa-solid fa-user-tie text-sky-400"></i>
-                <span>فريق مدراء المطار التنفيذي 👨‍✈️👑</span>
+                <span>فريق مدراء المطار التنفيذي </span>
               </h3>
               <p class="text-xs text-slate-300 leading-relaxed">
                 عين نخبة مدراء الطيران لزيادة أرباح الرحلات بنسبة تصل إلى <strong class="text-emerald-400">+15%</strong> وخفض تكاليف التشغيل بنسبة <strong class="text-sky-400">-10%</strong>، بالإضافة لتشغيل المطار تلقائياً بالكامل عبر <strong class="text-purple-400 font-bold">الطيار الآلي الذكي (Smart Auto-Pilot)</strong> حتى 72 ساعة أوفلاين.
@@ -1331,7 +1331,7 @@ window.AirportUI = (() => {
                 <div class="space-y-3.5">
                   <div class="w-full h-48 rounded-2xl overflow-hidden relative border border-slate-700/60 bg-slate-900">
                     <img src="${meta.avatar}" alt="${meta.name}" class="w-full h-full object-cover object-top transition duration-500 hover:scale-105"
-                      onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect fill=\\'%231e293b\\' width=\\'100\\' height=\\'100\\'/><text fill=\\'%2394a3b8\\' font-size=\\'30\\' font-family=\\'sans-serif\\' x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'central\\' text-anchor=\\'middle\\'>👨‍✈️</text></svg>';">
+                      onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect fill=\\'%231e293b\\' width=\\'100\\' height=\\'100\\'/><text fill=\\'%2394a3b8\\' font-size=\\'30\\' font-family=\\'sans-serif\\' x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'central\\' text-anchor=\\'middle\\'></text></svg>';">
                     <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
                     <div class="absolute bottom-2.5 right-3 left-3 flex justify-between items-end">
                       <span class="px-2 py-0.5 rounded-lg bg-slate-900/90 border border-slate-700 text-slate-200 text-[10px] font-black">
@@ -1398,7 +1398,7 @@ window.AirportUI = (() => {
                     ${curTier === 2 ? `
                       <div class="w-full py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-center text-xs font-black text-amber-300 flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-award text-amber-400"></i>
-                        <span>مدير العمليات الدولية معين ✅</span>
+                        <span>مدير العمليات الدولية معين </span>
                       </div>
                     ` : curTier > 2 ? `
                       <div class="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center text-xs font-bold text-slate-400 flex items-center justify-center gap-1.5">
@@ -1417,12 +1417,12 @@ window.AirportUI = (() => {
                       <div class="space-y-2">
                         <div class="w-full py-2 rounded-xl bg-purple-500/20 border border-purple-500/40 text-center text-xs font-black text-purple-300 flex items-center justify-center gap-1.5">
                           <i class="fa-solid fa-crown text-amber-400"></i>
-                          <span>الرئيس التنفيذي للمطار معين 👑</span>
+                          <span>الرئيس التنفيذي للمطار معين </span>
                         </div>
                         <button onclick="window.AirportUI.toggleAutopilot()" id="btn-toggle-airport-autopilot"
                           class="w-full py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer ${isAutopilot ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'}">
                           <i class="fa-solid ${isAutopilot ? 'fa-toggle-on text-base' : 'fa-toggle-off text-base text-slate-500'}"></i>
-                          <span>${isAutopilot ? 'الطيار الآلي الذكي: مفعل 🚀' : 'الطيار الآلي الذكي: معطل ⏸️'}</span>
+                          <span>${isAutopilot ? 'الطيار الآلي الذكي: مفعل ' : 'الطيار الآلي الذكي: معطل ⏸'}</span>
                         </button>
                       </div>
                     ` : `
@@ -1515,7 +1515,7 @@ window.AirportUI = (() => {
       const bar = document.getElementById(`bar-${planeId}`);
 
       if (remSec <= 0) {
-        el.textContent = '🛬 وصلت الوجهة!';
+        el.textContent = ' وصلت الوجهة!';
         el.classList.add('text-emerald-400');
         el.classList.remove('text-sky-400');
         if (bar) bar.style.width = '100%';
@@ -1597,7 +1597,7 @@ window.AirportUI = (() => {
           }
         } else {
           btnTransit.disabled = false;
-          btnTransit.innerHTML = `<i class="fa-solid fa-passport"></i> <span>تحصيل رسوم الترانزيت المتراكمة (+${amt.toLocaleString()} ج.م) 🛬</span>`;
+          btnTransit.innerHTML = `<i class="fa-solid fa-passport"></i> <span>تحصيل رسوم الترانزيت المتراكمة (+${amt.toLocaleString()} ج.م) </span>`;
         }
       }
     }
@@ -1715,12 +1715,12 @@ window.AirportUI = (() => {
 
         if (lastClaim > 0 && elapsedMs < 60000) {
           const remSec = Math.ceil((60000 - elapsedMs) / 1000);
-          showAirportToast(`⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`, 'warning');
+          showAirportToast(` يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`, 'warning');
           return;
         }
 
         if (amt < 1000) {
-          showAirportToast(`⏳ الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${amt.toLocaleString()} ج.م).`, 'error');
+          showAirportToast(` الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${amt.toLocaleString()} ج.م).`, 'error');
           return;
         }
 
@@ -1741,9 +1741,9 @@ window.AirportUI = (() => {
               }
               persistGameState();
               if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-                window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار 🛍️', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${(res.earnings || amt).toLocaleString()} ج.م)`, 'business');
+                window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار ', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${(res.earnings || amt).toLocaleString()} ج.م)`, 'business');
               }
-              showAirportToast(res.message || `🛍️ تم تحصيل +${(res.earnings || amt).toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
+              showAirportToast(res.message || ` تم تحصيل +${(res.earnings || amt).toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
               renderAirportPanel();
               return;
             } else {
@@ -1776,9 +1776,9 @@ window.AirportUI = (() => {
 
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار 🛍️', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${amt.toLocaleString()} ج.م)`, 'business');
+            window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار ', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${amt.toLocaleString()} ج.م)`, 'business');
           }
-          showAirportToast(`🛍️ تم تحصيل +${amt.toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
+          showAirportToast(` تم تحصيل +${amt.toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
         }
         renderAirportPanel();
       });
@@ -1794,7 +1794,7 @@ window.AirportUI = (() => {
     const inFlightCount = ap.fleet.filter(p => p.status === 'in_flight').length;
     if (inFlightCount >= 5) {
       if (!targetDestId) {
-        showAirportToast('🚫 الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات.', 'error');
+        showAirportToast(' الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات.', 'error');
       }
       return;
     }
@@ -1809,7 +1809,7 @@ window.AirportUI = (() => {
     if (!model) return;
 
     if (dest.requiredTier > model.tier) {
-      showAirportToast(`🚫 هذه الوجهة تتطلب طائرة من الفئة ${dest.requiredTier} أو أعلى للوصول إليها!`, 'error');
+      showAirportToast(` هذه الوجهة تتطلب طائرة من الفئة ${dest.requiredTier} أو أعلى للوصول إليها!`, 'error');
       return;
     }
 
@@ -1818,7 +1818,7 @@ window.AirportUI = (() => {
     const curBank = Number(liveState.bank || 0);
 
     if ((curCash + curBank) < eco.totalOperatingCost) {
-      showAirportToast(`🚫 رصيدك غير كافٍ لتغطية تكاليف تجهيز الرحلة (${eco.totalOperatingCost.toLocaleString()} ج.م)`, 'error');
+      showAirportToast(` رصيدك غير كافٍ لتغطية تكاليف تجهيز الرحلة (${eco.totalOperatingCost.toLocaleString()} ج.م)`, 'error');
       return;
     }
 
@@ -1844,10 +1844,10 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('إقلاع رحلة طيران 🛫', `تسيير رحلة طائرة (${plane.customName || model.name}) إلى وجهة ${dest.name} بتكاليف تجهيز ${eco.totalOperatingCost.toLocaleString()} ج.م`, 'business');
+            window.GameEngine.recordPlayerActivity('إقلاع رحلة طيران ', `تسيير رحلة طائرة (${plane.customName || model.name}) إلى وجهة ${dest.name} بتكاليف تجهيز ${eco.totalOperatingCost.toLocaleString()} ج.م`, 'business');
           }
           const minStr = Math.floor(eco.durationSec / 60);
-          showAirportToast(res.message || `🛫 أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}.`, 'success');
+          showAirportToast(res.message || ` أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}.`, 'success');
           renderAirportPanel();
           return;
         } else {
@@ -1905,10 +1905,10 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('إقلاع رحلة طيران 🛫', `تسيير رحلة طائرة (${plane.customName || model.name}) إلى وجهة ${dest.name} بتكاليف تجهيز ${eco.totalOperatingCost.toLocaleString()} ج.م`, 'business');
+      window.GameEngine.recordPlayerActivity('إقلاع رحلة طيران ', `تسيير رحلة طائرة (${plane.customName || model.name}) إلى وجهة ${dest.name} بتكاليف تجهيز ${eco.totalOperatingCost.toLocaleString()} ج.م`, 'business');
     }
     const minStr = Math.floor(eco.durationSec / 60);
-    showAirportToast(`🛫 أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`, 'success');
+    showAirportToast(` أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`, 'success');
     renderAirportPanel();
   }
 
@@ -1932,7 +1932,7 @@ window.AirportUI = (() => {
     const curGold = Number(liveState.gold || 0);
 
     if (curGold < costGold) {
-      showAirportToast(`تحتاج إلى ${costGold} سبيكة ذهب للتسريع الفوري! (المتبقي: ${Math.ceil(remSec / 60)} دقيقة | رصيدك: ${curGold} 🪙)`, 'error');
+      showAirportToast(`تحتاج إلى ${costGold} سبيكة ذهب للتسريع الفوري! (المتبقي: ${Math.ceil(remSec / 60)} دقيقة | رصيدك: ${curGold} )`, 'error');
       return;
     }
 
@@ -1954,9 +1954,9 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ⚡', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
+            window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
           }
-          showAirportToast(res.message || '⚡ تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
+          showAirportToast(res.message || ' تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
           renderAirportPanel();
           return;
         } else {
@@ -1985,9 +1985,9 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ⚡', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
+      window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
     }
-    showAirportToast('⚡ تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
+    showAirportToast(' تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
     renderAirportPanel();
   }
 
@@ -2015,7 +2015,7 @@ window.AirportUI = (() => {
       plane.currentFlight = null;
       plane.activeFlight = null;
       persistGameState();
-      showAirportToast('⚠️ عوائد هذه الرحلة تم تحصيلها مسبقاً!', 'info');
+      showAirportToast(' عوائد هذه الرحلة تم تحصيلها مسبقاً!', 'info');
       renderAirportPanel();
       return;
     }
@@ -2059,9 +2059,9 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ✈️', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) (${res.message || 'عوائد الرحلة'})`, 'business');
+            window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) (${res.message || 'عوائد الرحلة'})`, 'business');
           }
-          showAirportToast(res.message || '🛬 تم تحصيل عوائد الرحلة بنجاح!', 'success');
+          showAirportToast(res.message || ' تم تحصيل عوائد الرحلة بنجاح!', 'success');
           _claimingPlanes.delete(planeId);
           renderAirportPanel();
           return;
@@ -2080,7 +2080,7 @@ window.AirportUI = (() => {
           plane.currentFlight = null;
           plane.activeFlight = null;
           persistGameState();
-          showAirportToast('⚠️ عوائد هذه الرحلة تم تحصيلها وتحديث رصيدك بالفعل.', 'info');
+          showAirportToast(' عوائد هذه الرحلة تم تحصيلها وتحديث رصيدك بالفعل.', 'info');
           renderAirportPanel();
           return;
         }
@@ -2126,9 +2126,9 @@ window.AirportUI = (() => {
 
             persistGameState();
             if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-              window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ✈️', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+              window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
             }
-            showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (يرجى إعادة تأكيد كلمة السر لتحديث الحفظ السحابي)`, 'warning');
+            showAirportToast(` هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (يرجى إعادة تأكيد كلمة السر لتحديث الحفظ السحابي)`, 'warning');
             renderAirportPanel();
 
             setTimeout(() => {
@@ -2153,7 +2153,7 @@ window.AirportUI = (() => {
     if (trustedNow < Number(f.landingTime || 0)) {
       _claimingPlanes.delete(planeId);
       const remSec = Math.ceil((Number(f.landingTime) - trustedNow) / 1000);
-      showAirportToast(`⏳ الطائرة لا تزال في الجو! متبقي: ${remSec} ثانية.`, 'error');
+      showAirportToast(` الطائرة لا تزال في الجو! متبقي: ${remSec} ثانية.`, 'error');
       renderAirportPanel();
       return;
     }
@@ -2194,9 +2194,9 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ✈️', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+      window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
     }
-    showAirportToast(`🛬 هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (صافي ربح: +${netProfit.toLocaleString()} ج.م) و +${xp} XP`, 'success');
+    showAirportToast(` هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (صافي ربح: +${netProfit.toLocaleString()} ج.م) و +${xp} XP`, 'success');
     _claimingPlanes.delete(planeId);
     renderAirportPanel();
   }
@@ -2211,7 +2211,7 @@ window.AirportUI = (() => {
 
     const plane = ap.fleet[planeIdx];
     if (plane.status === 'in_flight') {
-      showAirportToast('🚫 لا يمكن بيع الطائرة وهي في الجو! انتظر هبوطها وتحصيل الرحلة أولاً.', 'error');
+      showAirportToast(' لا يمكن بيع الطائرة وهي في الجو! انتظر هبوطها وتحصيل الرحلة أولاً.', 'error');
       return;
     }
 
@@ -2241,9 +2241,9 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('بيع طائرة 💸', `بيع طائرة (${plane.customName || model.name}) واسترداد (+${refund.toLocaleString()} ج.م) (50% من سعر الشراء)`, 'assets');
+            window.GameEngine.recordPlayerActivity('بيع طائرة ', `بيع طائرة (${plane.customName || model.name}) واسترداد (+${refund.toLocaleString()} ج.م) (50% من سعر الشراء)`, 'assets');
           }
-          showAirportToast(res.message || `💸 تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
+          showAirportToast(res.message || ` تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
           renderAirportPanel();
           return;
         } else {
@@ -2270,9 +2270,9 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('بيع طائرة 💸', `بيع طائرة (${plane.customName || model.name}) واسترداد (+${refund.toLocaleString()} ج.م) (50% من سعر الشراء)`, 'assets');
+      window.GameEngine.recordPlayerActivity('بيع طائرة ', `بيع طائرة (${plane.customName || model.name}) واسترداد (+${refund.toLocaleString()} ج.م) (50% من سعر الشراء)`, 'assets');
     }
-    showAirportToast(`💸 تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
+    showAirportToast(` تم بيع طائرة ${model.name} واسترداد +${refund.toLocaleString()} ج.م بنجاح!`, 'success');
     renderAirportPanel();
   }
 
@@ -2287,7 +2287,7 @@ window.AirportUI = (() => {
     const facilities = ap.facilities || {};
     const maxTier = Number(facilities.runway || 1);
     if (model.tier > maxTier) {
-      showAirportToast(`🚫 يتطلب شراء هذه الطائرة ترقية المدرج أولاً لاستيعاب الفئة ${model.tier}!`, 'error');
+      showAirportToast(` يتطلب شراء هذه الطائرة ترقية المدرج أولاً لاستيعاب الفئة ${model.tier}!`, 'error');
       return;
     }
 
@@ -2329,9 +2329,9 @@ window.AirportUI = (() => {
 
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('شراء طائرة 🛩️', `شراء طائرة ${model.name} وإضافتها للأسطول الجوي بقيمة ${model.cost.toLocaleString()} ج.م`, 'assets');
+            window.GameEngine.recordPlayerActivity('شراء طائرة ', `شراء طائرة ${model.name} وإضافتها للأسطول الجوي بقيمة ${model.cost.toLocaleString()} ج.م`, 'assets');
           }
-          showAirportToast(res.message || `🎉 تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
+          showAirportToast(res.message || ` تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
           renderAirportPanel();
           return;
         } else {
@@ -2376,9 +2376,9 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('شراء طائرة 🛩️', `شراء طائرة ${model.name} وإضافتها للأسطول الجوي بقيمة ${model.cost.toLocaleString()} ج.م`, 'assets');
+      window.GameEngine.recordPlayerActivity('شراء طائرة ', `شراء طائرة ${model.name} وإضافتها للأسطول الجوي بقيمة ${model.cost.toLocaleString()} ج.م`, 'assets');
     }
-    showAirportToast(`🎉 تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
+    showAirportToast(` تم شراء وإضافة ${model.name} إلى أسطولك الجوي بنجاح!`, 'success');
     renderAirportPanel();
   }
 
@@ -2425,9 +2425,9 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('تطوير مرفق بالمطار 🏢', `ترقية مرفق (${fac.name}) بالمطار إلى المستوى ${nextLvl} بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
+            window.GameEngine.recordPlayerActivity('تطوير مرفق بالمطار ', `ترقية مرفق (${fac.name}) بالمطار إلى المستوى ${nextLvl} بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
           }
-          showAirportToast(res.message || `🏗️ تم ترقية ${fac.name} إلى المستوى ${nextLvl} بنجاح!`, 'success');
+          showAirportToast(res.message || ` تم ترقية ${fac.name} إلى المستوى ${nextLvl} بنجاح!`, 'success');
           renderAirportPanel();
           return;
         } else {
@@ -2460,9 +2460,9 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('تطوير مرفق بالمطار 🏢', `ترقية مرفق (${fac.name}) بالمطار إلى المستوى ${nextLvl} بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
+      window.GameEngine.recordPlayerActivity('تطوير مرفق بالمطار ', `ترقية مرفق (${fac.name}) بالمطار إلى المستوى ${nextLvl} بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
     }
-    showAirportToast(`🏗️ تم ترقية ${fac.name} إلى المستوى ${nextLvl} بنجاح!`, 'success');
+    showAirportToast(` تم ترقية ${fac.name} إلى المستوى ${nextLvl} بنجاح!`, 'success');
     renderAirportPanel();
   }
 
@@ -2477,12 +2477,12 @@ window.AirportUI = (() => {
     const cooldownMs = 60 * 1000; // 60s minimum interval
     if (lastCollect > 0 && elapsed < cooldownMs) {
       const remSec = Math.ceil((cooldownMs - elapsed) / 1000);
-      showAirportToast(`⏳ يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`, 'warning');
+      showAirportToast(` يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`, 'warning');
       return;
     }
 
     if (amt < 500) {
-      showAirportToast(`⏳ الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${amt.toLocaleString()} ج.م).`, 'warning');
+      showAirportToast(` الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${amt.toLocaleString()} ج.م).`, 'warning');
       return;
     }
 
@@ -2501,9 +2501,9 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت 🛬', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${(res.fee || amt).toLocaleString()} ج.م)`, 'business');
+            window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت ', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${(res.fee || amt).toLocaleString()} ج.م)`, 'business');
           }
-          showAirportToast(res.message || `🛬 تم تحصيل رسوم الترانزيت المتراكمة بنجاح (+${(res.fee || amt).toLocaleString()} ج.م)!`, 'success');
+          showAirportToast(res.message || ` تم تحصيل رسوم الترانزيت المتراكمة بنجاح (+${(res.fee || amt).toLocaleString()} ج.م)!`, 'success');
           renderAirportPanel();
           return;
         } else {
@@ -2515,7 +2515,7 @@ window.AirportUI = (() => {
         const errMsg = err?.message || '';
         // CRITICAL: Block offline fallback on server business rejection!
         if (err?.status === 400 || err?.status === 403 || errMsg.includes('رادار') || errMsg.includes('انتظار') || errMsg.includes('دقيقة') || errMsg.includes('ثانية') || errMsg.includes('أدنى') || errMsg.includes('ترانزيت')) {
-          showAirportToast(errMsg || '⏳ لا توجد رسوم ترانزيت قابلة للتحصيل حالياً', 'warning');
+          showAirportToast(errMsg || ' لا توجد رسوم ترانزيت قابلة للتحصيل حالياً', 'warning');
           renderAirportPanel();
           return;
         }
@@ -2546,9 +2546,9 @@ window.AirportUI = (() => {
 
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت 🛬', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${fee.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+      window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت ', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${fee.toLocaleString()} ج.م) و +${xp} XP`, 'business');
     }
-    showAirportToast(`🛬 تم تحصيل رسوم الترانزيت المتراكمة (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
+    showAirportToast(` تم تحصيل رسوم الترانزيت المتراكمة (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
     renderAirportPanel();
   }
 
@@ -2559,14 +2559,14 @@ window.AirportUI = (() => {
 
     const curTier = Number(ap.manager?.tier || 0);
     if (curTier >= 1 && tier === 1) {
-      showAirportToast('⚠️ لديك مدير مطار معين بالفعل! يمكنك الترقية لمستويات أعلى عبر باقات VIP المتجر.', 'info');
+      showAirportToast(' لديك مدير مطار معين بالفعل! يمكنك الترقية لمستويات أعلى عبر باقات VIP المتجر.', 'info');
       return;
     }
 
     const HIRE_COST = 100000000; // 100M Cash
     const curCash = Number(liveState.cash || 0);
     if (curCash < HIRE_COST) {
-      showAirportToast(`🚫 رصيدك الكاش غير كافٍ! تكلفة توظيف مساعد مدير المطار هي ${HIRE_COST.toLocaleString()} ج.م`, 'error');
+      showAirportToast(` رصيدك الكاش غير كافٍ! تكلفة توظيف مساعد مدير المطار هي ${HIRE_COST.toLocaleString()} ج.م`, 'error');
       return;
     }
 
@@ -2590,9 +2590,9 @@ window.AirportUI = (() => {
           }
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار 👨‍✈️📋', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
+            window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار ', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
           }
-          showAirportToast(res.message || '👨‍✈️ تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح!', 'success');
+          showAirportToast(res.message || ' تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح!', 'success');
           renderAirportPanel();
           return;
         } else {
@@ -2621,7 +2621,7 @@ window.AirportUI = (() => {
     liveState.cash = curCash - HIRE_COST;
     ap.manager = {
       tier: 1,
-      name: 'كابتن ليام - مساعد مدير العمليات 📋',
+      name: 'كابتن ليام - مساعد مدير العمليات ',
       title: 'مساعد مدير العمليات الجوية',
       profitBonusPct: 5,
       costDiscountPct: 0,
@@ -2634,9 +2634,9 @@ window.AirportUI = (() => {
     }
     persistGameState();
     if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار 👨‍✈️📋', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
+      window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار ', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
     }
-    showAirportToast('👨‍✈️ تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح على كافة الرحلات!', 'success');
+    showAirportToast(' تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح على كافة الرحلات!', 'success');
     renderAirportPanel();
   }
 
@@ -2644,7 +2644,7 @@ window.AirportUI = (() => {
     const liveState = getLiveGameState();
     const ap = liveState.airport;
     if (!ap || !ap.unlocked || !ap.manager || Number(ap.manager.tier) < 3) {
-      showAirportToast('🚫 خاصية الطيار الآلي الذكي تتطلب تعيين المدير التنفيذي العام (Tier 3)', 'error');
+      showAirportToast(' خاصية الطيار الآلي الذكي تتطلب تعيين المدير التنفيذي العام (Tier 3)', 'error');
       return;
     }
 
@@ -2662,7 +2662,7 @@ window.AirportUI = (() => {
             window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
           }
           persistGameState();
-          showAirportToast(res.message || (targetStatus ? '🚀 تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸️ تم إيقاف الطيار الآلي مؤقتاً.'), 'info');
+          showAirportToast(res.message || (targetStatus ? ' تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸ تم إيقاف الطيار الآلي مؤقتاً.'), 'info');
           renderAirportPanel();
           return;
         }
@@ -2676,7 +2676,7 @@ window.AirportUI = (() => {
       window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
     }
     persistGameState();
-    showAirportToast(targetStatus ? '🚀 تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸️ تم إيقاف الطيار الآلي مؤقتاً.', 'info');
+    showAirportToast(targetStatus ? ' تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸ تم إيقاف الطيار الآلي مؤقتاً.', 'info');
     renderAirportPanel();
   }
 
