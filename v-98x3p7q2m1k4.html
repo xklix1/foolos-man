@@ -971,7 +971,7 @@
             </div>
 
             <!-- Messages stream -->
-            <div id="modChatMessagesStream" class="flex-1 overflow-y-auto space-y-2 p-2 custom-scrollbar bg-slate-950/50 rounded-lg border border-slate-800/60 mb-3">
+            <div id="modChatMessagesStream" class="flex-1 overflow-y-auto space-y-2 p-2 custom-scrollbar bg-slate-950/50 rounded-lg border border-slate-800/60 mb-3" style="overscroll-behavior: contain; -webkit-overflow-scrolling: touch;">
               <!-- Messages injected dynamically -->
             </div>
 
@@ -4311,10 +4311,11 @@
           if (!inspectingPlayer) inspectingPlayer = { username: targetU };
           const modChatTarget = document.getElementById('modChatTargetUsername');
           if (modChatTarget) modChatTarget.textContent = targetU;
+          _lastModChatSignature = '';
           loadModeratorChatMessages(true);
           modChatPollInterval = setInterval(() => {
-            loadModeratorChatMessages();
-          }, 2500);
+            loadModeratorChatMessages(false);
+          }, 3500);
         }
       }
     }
@@ -5001,6 +5002,9 @@
       openChatWithPlayer(username);
     }
 
+    let _lastModChatSignature = '';
+    let _lastModChatUser = '';
+
     async function loadModeratorChatMessages(manual = false) {
       const targetUser = (inspectingPlayer && inspectingPlayer.username) || document.getElementById('inspectUsername')?.textContent || '';
       if (!targetUser || targetUser === '---') return;
@@ -5010,7 +5014,12 @@
       const modChatTarget = document.getElementById('modChatTargetUsername');
       if (modChatTarget) modChatTarget.textContent = targetUser;
 
-      if (manual) {
+      if (targetUser.toLowerCase() !== _lastModChatUser.toLowerCase()) {
+        _lastModChatSignature = '';
+        _lastModChatUser = targetUser;
+      }
+
+      if (manual && !_lastModChatSignature) {
         stream.innerHTML = `<div class="text-center py-6 text-slate-500 text-xs"><i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> جاري تحديث المحادثة مع ${targetUser}...</div>`;
       }
 
@@ -5021,6 +5030,14 @@
         if (!res.ok) return;
         const data = await res.json();
         const messages = data.messages || [];
+
+        // Compute signature to prevent unnecessary DOM re-renders and jitter
+        const newSignature = messages.map(m => (m.id || m.created_at) + '_' + (m.status || '')).join('|');
+        if (!manual && newSignature === _lastModChatSignature && stream.children.length > 0) {
+          // Content hasn't changed at all: keep DOM and scroll position completely untouched
+          return;
+        }
+        _lastModChatSignature = newSignature;
 
         if (!messages.length) {
           stream.innerHTML = `
@@ -5033,7 +5050,7 @@
           return;
         }
 
-        const atBottom = stream.scrollHeight - stream.scrollTop <= stream.clientHeight + 60;
+        const isNearBottom = stream.scrollHeight - stream.scrollTop <= stream.clientHeight + 80;
 
         stream.innerHTML = messages.map(m => {
           const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
@@ -5068,7 +5085,7 @@
           `;
         }).join('');
 
-        if (manual || atBottom) {
+        if (manual || isNearBottom) {
           stream.scrollTop = stream.scrollHeight;
         }
       } catch (err) {
