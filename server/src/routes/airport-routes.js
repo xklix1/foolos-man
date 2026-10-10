@@ -744,6 +744,103 @@ async function airportRoutes(fastify, options) {
       netWorth: s.netWorth
     };
   });
+
+  // 11. POST /api/airport/hire-manager (Hire Tier 1 Airport Manager for 100M Cash)
+  fastify.post('/api/airport/hire-manager', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const s = session.state;
+
+    if (!s.airport || !s.airport.unlocked) {
+      return reply.code(400).send({ error: 'المطار غير مفعل لديك.' });
+    }
+
+    const currentTier = Number(s.airport.manager?.tier || 0);
+    if (currentTier >= 1) {
+      return reply.code(400).send({ error: 'لديك مدير مطار معين بالفعل! يمكنك الترقية لمستويات أعلى عبر باقات VIP المتجر.' });
+    }
+
+    const HIRE_COST = 100000000; // 100,000,000 EGP (100 Million)
+    const currentCash = Number(s.cash || 0);
+    if (currentCash < HIRE_COST) {
+      return reply.code(400).send({
+        error: `رصيدك الكاش غير كافٍ! تكلفة توظيف مساعد مدير المطار (Tier 1) هي ${HIRE_COST.toLocaleString()} ج.م.`
+      });
+    }
+
+    // Deduct cash and assign manager
+    s.cash = currentCash - HIRE_COST;
+    s.airport.manager = {
+      tier: 1,
+      name: 'كابتن ليام - مساعد مدير العمليات 📋',
+      title: 'مساعد مدير العمليات الجوية',
+      profitBonusPct: 5,
+      costDiscountPct: 0,
+      autoPilot: false,
+      hiredAt: Date.now()
+    };
+
+    s.netWorth = calculateNetWorth(s);
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
+
+    // Log in activity
+    if (!Array.isArray(s.activityLog)) s.activityLog = [];
+    s.activityLog.unshift({
+      action: 'توظيف مساعد مدير المطار 👨‍✈️📋',
+      details: 'تم تعيين كابتن ليام كمساعد لمدير العمليات الجوية (Tier 1) بنجاح (+5% أرباح على كافة الرحلات).',
+      category: 'airport',
+      timestamp: Date.now(),
+      amount: -HIRE_COST,
+      cash: s.cash,
+      bank: s.bank
+    });
+    if (s.activityLog.length > 3500) s.activityLog.length = 3500;
+
+    await dbService.savePlayerState(session.username, s);
+
+    return {
+      success: true,
+      message: '👨‍✈️ تهانينا! تم تعيين مساعد مدير المطار (كابتن ليام) بنجاح! تم تفعيل بونص +5% أرباح على كافة الرحلات الجوية.',
+      airport: s.airport,
+      cash: s.cash,
+      netWorth: s.netWorth
+    };
+  });
+
+  // 12. POST /api/airport/toggle-autopilot (Toggle Smart Auto-Pilot for Tier 3 Manager)
+  fastify.post('/api/airport/toggle-autopilot', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const s = session.state;
+
+    if (!s.airport || !s.airport.unlocked) {
+      return reply.code(400).send({ error: 'المطار غير مفعل لديك.' });
+    }
+
+    const tier = Number(s.airport.manager?.tier || 0);
+    if (tier < 3) {
+      return reply.code(403).send({
+        error: 'خاصية التشغيل التلقائي الذكي (Smart Auto-Pilot) تتطلب المدير التنفيذي العام للمطار (Tier 3).'
+      });
+    }
+
+    const { enabled } = request.body || {};
+    const newStatus = typeof enabled === 'boolean' ? enabled : !(s.airport.manager.autoPilot !== false);
+    s.airport.manager.autoPilot = newStatus;
+
+    s.lastActiveTimestamp = Date.now();
+    s.lastSeen = Date.now();
+
+    await dbService.savePlayerState(session.username, s);
+
+    return {
+      success: true,
+      message: newStatus ? '🚀 تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸️ تم إيقاف الطيار الآلي مؤقتاً.',
+      autoPilot: newStatus,
+      airport: s.airport
+    };
+  });
 }
 
 module.exports = airportRoutes;

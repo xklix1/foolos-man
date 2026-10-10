@@ -276,28 +276,82 @@ function getAirportBonuses(airportState) {
   return { ticketBonus, timeReduction, fuelDiscount, maxPlaneTier, passivePerMin };
 }
 
+const AIRPORT_MANAGERS = {
+  1: {
+    tier: 1,
+    name: 'كابتن ليام - مساعد مدير العمليات 📋',
+    title: 'مساعد مدير العمليات الجوية',
+    cost: 100000000, // 100 Million cash
+    currency: 'cash',
+    profitBonusPct: 5,
+    costDiscountPct: 0,
+    autoPilot: false,
+    avatar: 'assets/airport_manager_tier1.jpg',
+    desc: 'مساعد عمليات طيران محترف، يرفع أرباح كافة الرحلات الجوية بنسبة +5% فورياً.'
+  },
+  2: {
+    tier: 2,
+    name: 'كابتن ألفا - مدير عمليات الطيران 🎖️',
+    title: 'مدير عمليات الطيران الدولي',
+    packageId: 'pkg_airport_manager_tier2',
+    profitBonusPct: 10,
+    costDiscountPct: 5,
+    autoPilot: false,
+    avatar: 'assets/airport_manager_tier2.jpg',
+    desc: 'مدير طيران دولي مخضرم، يرفع أرباح الرحلات بنسبة +10% ويخفض تكاليف التشغيل بنسبة -5%.'
+  },
+  3: {
+    tier: 3,
+    name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران 👑',
+    title: 'المدير التنفيذي العام لشبكة الطيران العالمية',
+    packageId: 'pkg_airport_manager_tier3',
+    profitBonusPct: 15,
+    costDiscountPct: 10,
+    autoPilot: true,
+    maxOfflineHours: 72,
+    avatar: 'assets/airport_manager_tier3.jpg',
+    desc: 'تشغيل المطار أوتوماتيكياً بالكامل (Smart Auto-Pilot) أونلاين وأوفلاين حتى 72 ساعة، مع بونص +15% أرباح و -10% تكاليف.'
+  }
+};
+
 /**
  * Calculates itemized flight economics (Revenue, Fuel, Crew, Landing Fee, Net Profit)
  */
 function calculateFlightEconomics(model, dest, airportState) {
   const bonuses = getAirportBonuses(airportState);
+  const manager = airportState && airportState.manager;
+  const managerTier = manager && manager.tier ? Number(manager.tier) : 0;
+
+  let managerProfitMult = 1.0;
+  let managerCostDiscount = 0;
+  if (managerTier === 1) {
+    managerProfitMult = 1.05;
+  } else if (managerTier === 2) {
+    managerProfitMult = 1.10;
+    managerCostDiscount = 0.05;
+  } else if (managerTier >= 3) {
+    managerProfitMult = 1.15;
+    managerCostDiscount = 0.10;
+  }
+
   const distMult = dest.distanceMultiplier || 1.0;
 
-  // 1. Gross Revenue (scaled by destination & terminal level)
-  const grossRevenue = Math.floor(model.baseRevenue * distMult * bonuses.ticketBonus);
+  // 1. Gross Revenue (scaled by destination, terminal level, and manager bonus)
+  const grossRevenue = Math.floor(model.baseRevenue * distMult * bonuses.ticketBonus * managerProfitMult);
 
-  // 2. Operating Costs (Fuel with hangar discount, Crew, Landing Fee)
+  // 2. Operating Costs (Fuel with hangar discount + manager discount, Crew, Landing Fee)
+  const effectiveCostDiscount = Math.min(0.50, bonuses.fuelDiscount + managerCostDiscount);
   const rawFuel = model.fuelCost * distMult;
-  const discountedFuel = Math.floor(rawFuel * (1 - bonuses.fuelDiscount));
-  const crewCost = Math.floor(model.crewCost * distMult);
-  const landingFee = Math.floor(model.landingFee * distMult);
+  const discountedFuel = Math.floor(rawFuel * (1 - effectiveCostDiscount));
+  const crewCost = Math.floor(model.crewCost * distMult * (1 - managerCostDiscount));
+  const landingFee = Math.floor(model.landingFee * distMult * (1 - managerCostDiscount));
 
   const totalOperatingCost = discountedFuel + crewCost + landingFee;
   const netProfit = Math.max(0, grossRevenue - totalOperatingCost);
 
   // 3. Flight Duration & XP
   const durationSec = Math.max(60, Math.floor(model.baseFlightTimeSec * distMult * (1 - bonuses.timeReduction)));
-  const xpReward = Math.floor(model.baseXp * distMult);
+  const xpReward = Math.floor(model.baseXp * distMult * (managerTier >= 2 ? 1.1 : 1.0));
   const speedupGold = Math.max(1, Math.ceil(durationSec / 600)); // 1 Gold per 10 minutes (600s)
 
   return {
@@ -310,7 +364,10 @@ function calculateFlightEconomics(model, dest, airportState) {
     netProfit,
     durationSec,
     xpReward,
-    speedupGold
+    speedupGold,
+    managerTier,
+    managerProfitBonusPct: Math.round((managerProfitMult - 1) * 100),
+    managerCostDiscountPct: Math.round(managerCostDiscount * 100)
   };
 }
 
@@ -370,6 +427,7 @@ module.exports = {
   AIRCRAFT_MODELS,
   FLIGHT_DESTINATIONS,
   CONTROL_TOWER_CONFIG,
+  AIRPORT_MANAGERS,
   createInitialAirportState,
   getAirportBonuses,
   calculateFlightEconomics,

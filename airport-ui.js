@@ -59,6 +59,55 @@ window.AirportUI = (() => {
     }
   };
 
+  const AIRPORT_MANAGERS_META = {
+    1: {
+      tier: 1,
+      name: 'كابتن ليام - مساعد مدير العمليات 📋',
+      title: 'مساعد مدير العمليات الجوية',
+      hireCost: 100000000,
+      profitBonusPct: 5,
+      costDiscountPct: 0,
+      xpBonusPct: 0,
+      autoPilot: false,
+      avatar: 'assets/airport_manager_tier1.jpg',
+      badge: 'مساعد عمليات',
+      color: 'from-blue-600 to-sky-600',
+      borderColor: 'border-sky-500/40',
+      desc: 'مساعد عمليات طيران محترف، يشرف على جداول الإقلاع ويرفع أرباح كافة الرحلات الجوية بنسبة +5% فورياً.'
+    },
+    2: {
+      tier: 2,
+      name: 'كابتن ألفا - مدير عمليات الطيران 🎖️',
+      title: 'مدير عمليات الطيران الدولي',
+      packageId: 'pkg_airport_manager_tier2',
+      profitBonusPct: 10,
+      costDiscountPct: 5,
+      xpBonusPct: 10,
+      autoPilot: false,
+      avatar: 'assets/airport_manager_tier2.jpg',
+      badge: 'مدير دولي VIP',
+      color: 'from-amber-600 to-yellow-500',
+      borderColor: 'border-amber-500/40',
+      desc: 'مدير طيران دولي مخضرم، يرفع أرباح الرحلات بنسبة +10% ويخفض تكاليف التشغيل بنسبة -5% مع بونص +10% XP.'
+    },
+    3: {
+      tier: 3,
+      name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران 👑',
+      title: 'المدير التنفيذي العام لشبكة الطيران العالمية',
+      packageId: 'pkg_airport_manager_tier3',
+      profitBonusPct: 15,
+      costDiscountPct: 10,
+      xpBonusPct: 15,
+      autoPilot: true,
+      maxOfflineHours: 72,
+      avatar: 'assets/airport_manager_tier3.jpg',
+      badge: 'إمبراطور الطيران VIP',
+      color: 'from-purple-600 to-pink-600',
+      borderColor: 'border-purple-500/40',
+      desc: 'تشغيل المطار أوتوماتيكياً بالكامل (Smart Auto-Pilot) وتسيير وتحصيل الرحلات أونلاين وأوفلاين حتى 72 ساعة، مع بونص +15% أرباح و -10% تكاليف.'
+    }
+  };
+
   const AIRCRAFT_META = {
     cessna_sky: {
       id: 'cessna_sky',
@@ -526,6 +575,11 @@ window.AirportUI = (() => {
           <i class="fa-solid fa-tower-broadcast"></i>
           <span>برج المراقبة والترانزيت 📡</span>
         </button>
+        <button data-subtab="managers" class="airport-nav-subtab px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${_activeSubtab === 'managers' ? 'bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/20' : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800'}">
+          <i class="fa-solid fa-user-tie"></i>
+          <span>مدراء المطار 👨‍✈️</span>
+          ${airport.manager?.tier ? `<span class="px-1.5 py-0.5 rounded bg-amber-400 text-slate-950 font-black text-[9px]">T${airport.manager.tier}</span>` : ''}
+        </button>
       </div>
 
       <!-- 3. Dynamic Subtab Content -->
@@ -546,6 +600,8 @@ window.AirportUI = (() => {
       return renderFacilitiesSubtab(airport, state);
     } else if (_activeSubtab === 'transit') {
       return renderTransitSubtab(airport, state);
+    } else if (_activeSubtab === 'managers') {
+      return renderManagersSubtab(airport, state);
     }
     return '';
   }
@@ -602,24 +658,41 @@ window.AirportUI = (() => {
     const tLvl = f.terminals || 1;
     const hLvl = f.hangar || 1;
     const rLvl = f.runway || 1;
+    const manager = airport?.manager || {};
+    const mTier = Number(manager.tier || 0);
 
-    const ticketBonus = FACILITY_META.terminals.levels[tLvl]?.ticketBonus || 1.0;
+    let managerProfitMult = 1.0;
+    let managerCostDiscount = 0;
+    if (mTier === 1) {
+      managerProfitMult = 1.05;
+    } else if (mTier === 2) {
+      managerProfitMult = 1.10;
+      managerCostDiscount = 0.05;
+    } else if (mTier >= 3) {
+      managerProfitMult = 1.15;
+      managerCostDiscount = 0.10;
+    }
+
+    const baseTicketBonus = FACILITY_META.terminals.levels[tLvl]?.ticketBonus || 1.0;
+    const ticketBonus = baseTicketBonus * managerProfitMult;
     const timeReduction = FACILITY_META.hangar.levels[hLvl]?.timeReduction || 0;
-    const fuelDiscount = FACILITY_META.hangar.levels[hLvl]?.fuelDiscount || 0;
+    const baseFuelDiscount = FACILITY_META.hangar.levels[hLvl]?.fuelDiscount || 0;
+    const fuelDiscount = Math.min(0.50, baseFuelDiscount + managerCostDiscount);
     const maxPlaneTier = FACILITY_META.runway.levels[rLvl]?.maxPlaneTier || 1;
 
-    return { ticketBonus, timeReduction, fuelDiscount, maxPlaneTier };
+    return { ticketBonus, timeReduction, fuelDiscount, maxPlaneTier, managerCostDiscount, managerProfitMult, managerTier: mTier };
   }
 
   function getEconomicsForDisplay(model, dest, airport) {
     const bonuses = getFacilityBonusesClient(airport);
     const distMult = dest.mult || 1.0;
+    const managerCostDiscount = bonuses.managerCostDiscount || 0;
 
     const grossRevenue = Math.floor(model.baseRevenue * distMult * bonuses.ticketBonus);
     const rawFuel = model.fuelCost * distMult;
     const fuelCost = Math.floor(rawFuel * (1 - bonuses.fuelDiscount));
-    const crewCost = Math.floor(model.crewCost * distMult);
-    const landingFee = Math.floor(model.landingFee * distMult);
+    const crewCost = Math.floor(model.crewCost * distMult * (1 - managerCostDiscount));
+    const landingFee = Math.floor(model.landingFee * distMult * (1 - managerCostDiscount));
 
     const totalOperatingCost = fuelCost + crewCost + landingFee;
     const netProfit = Math.max(0, grossRevenue - totalOperatingCost);
@@ -627,7 +700,20 @@ window.AirportUI = (() => {
     const durationSec = Math.max(60, Math.floor(baseDuration * distMult * (1 - bonuses.timeReduction)));
     const speedupGold = Math.max(1, Math.ceil(durationSec / 600)); // 1 Gold per 10 minutes (600s)
 
-    return { grossRevenue, fuelCost, fuelDiscountPct: Math.round(bonuses.fuelDiscount * 100), crewCost, landingFee, totalOperatingCost, netProfit, durationSec, speedupGold };
+    return {
+      grossRevenue,
+      fuelCost,
+      fuelDiscountPct: Math.round(bonuses.fuelDiscount * 100),
+      crewCost,
+      landingFee,
+      totalOperatingCost,
+      netProfit,
+      durationSec,
+      speedupGold,
+      managerTier: bonuses.managerTier,
+      managerProfitBonusPct: Math.round((bonuses.managerProfitMult - 1) * 100),
+      managerCostDiscountPct: Math.round(managerCostDiscount * 100)
+    };
   }
 
   function renderPlaneCard(plane, airport, state) {
@@ -1180,6 +1266,182 @@ window.AirportUI = (() => {
     `;
   }
 
+  /**
+   * Subtab 5: Airport Operations Management & Aviation Executives
+   */
+  function renderManagersSubtab(airport, state) {
+    const curManager = airport.manager || {};
+    const curTier = Number(curManager.tier || 0);
+    const isAutopilot = curTier >= 3 && curManager.autoPilot !== false;
+
+    return `
+      <div class="space-y-6">
+        <!-- Subtab Hero Banner -->
+        <div class="glass-panel p-6 sm:p-7 rounded-3xl border border-sky-500/30 text-right relative overflow-hidden shadow-2xl"
+          style="background: radial-gradient(ellipse at top right, rgba(56, 189, 248, 0.15), rgba(15, 23, 42, 0.98)) !important;">
+          <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
+            <div class="space-y-2 max-w-xl">
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+                <span class="text-xs font-black text-amber-400">إدارة العمليات الجوية والملاحة الدولية</span>
+              </div>
+              <h3 class="text-lg sm:text-2xl font-black text-white flex items-center gap-2">
+                <i class="fa-solid fa-user-tie text-sky-400"></i>
+                <span>فريق مدراء المطار التنفيذي 👨‍✈️👑</span>
+              </h3>
+              <p class="text-xs text-slate-300 leading-relaxed">
+                عين نخبة مدراء الطيران لزيادة أرباح الرحلات بنسبة تصل إلى <strong class="text-emerald-400">+15%</strong> وخفض تكاليف التشغيل بنسبة <strong class="text-sky-400">-10%</strong>، بالإضافة لتشغيل المطار تلقائياً بالكامل عبر <strong class="text-purple-400 font-bold">الطيار الآلي الذكي (Smart Auto-Pilot)</strong> حتى 72 ساعة أوفلاين.
+              </p>
+            </div>
+
+            <!-- Current Status Widget -->
+            <div class="p-4 rounded-2xl bg-slate-900/90 border border-slate-700/80 text-right min-w-[220px] shrink-0 shadow-lg">
+              <div class="text-[10px] text-slate-400 font-bold">المدير الحالي للمطار:</div>
+              <div class="text-sm font-black text-white flex items-center gap-1.5 mt-0.5">
+                ${curTier > 0 
+                  ? `<span class="text-amber-400">${curManager.name || 'مدير معين'}</span>` 
+                  : '<span class="text-slate-500">لا يوجد مدير معين حالياً</span>'}
+              </div>
+              <div class="text-[11px] text-emerald-400 font-bold mt-1">
+                ${curTier > 0 
+                  ? `بونص أرباح: +${curManager.profitBonusPct || (curTier === 1 ? 5 : curTier === 2 ? 10 : 15)}% • تكاليف: -${curManager.costDiscountPct || (curTier === 2 ? 5 : curTier >= 3 ? 10 : 0)}%` 
+                  : 'يمكنك توظيف كابتن ليام بالكاش الآن'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Manager Cards Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+          ${[1, 2, 3].map(t => {
+            const meta = AIRPORT_MANAGERS_META[t];
+            const isCurrent = curTier === t;
+            const isHigherActive = curTier > t;
+
+            return `
+              <div class="glass-panel rounded-3xl border ${isCurrent ? 'border-amber-500/80 shadow-2xl shadow-amber-500/20 bg-slate-900/95' : 'border-slate-800 bg-slate-950/80'} p-5 flex flex-col justify-between space-y-4 relative overflow-hidden transition-all duration-300 hover:border-slate-700">
+                ${isCurrent ? `
+                  <div class="absolute top-3 left-3 z-10 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black text-[10px] shadow-lg flex items-center gap-1">
+                    <i class="fa-solid fa-circle-check"></i>
+                    <span>معين حالياً</span>
+                  </div>
+                ` : ''}
+
+                <!-- Avatar & Header -->
+                <div class="space-y-3.5">
+                  <div class="w-full h-48 rounded-2xl overflow-hidden relative border border-slate-700/60 bg-slate-900">
+                    <img src="${meta.avatar}" alt="${meta.name}" class="w-full h-full object-cover object-top transition duration-500 hover:scale-105"
+                      onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\\'http://www.w3.org/2000/svg\\' width=\\'100\\' height=\\'100\\' viewBox=\\'0 0 100 100\\'><rect fill=\\'%231e293b\\' width=\\'100\\' height=\\'100\\'/><text fill=\\'%2394a3b8\\' font-size=\\'30\\' font-family=\\'sans-serif\\' x=\\'50%\\' y=\\'50%\\' dominant-baseline=\\'central\\' text-anchor=\\'middle\\'>👨‍✈️</text></svg>';">
+                    <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+                    <div class="absolute bottom-2.5 right-3 left-3 flex justify-between items-end">
+                      <span class="px-2 py-0.5 rounded-lg bg-slate-900/90 border border-slate-700 text-slate-200 text-[10px] font-black">
+                        ${meta.badge}
+                      </span>
+                      <span class="px-2 py-0.5 rounded-lg bg-sky-500/20 text-sky-400 border border-sky-500/30 text-[10px] font-black">
+                        Tier ${meta.tier}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 class="text-sm font-black text-white text-right">${meta.name}</h4>
+                    <p class="text-[11px] text-slate-400 text-right mt-0.5">${meta.title}</p>
+                  </div>
+
+                  <!-- Features List -->
+                  <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-2 text-right text-xs">
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400">بونص أرباح الرحلات:</span>
+                      <strong class="text-emerald-400 font-bold numbers-font">+${meta.profitBonusPct}%</strong>
+                    </div>
+                    <div class="flex items-center justify-between">
+                      <span class="text-slate-400">تخفيض تكاليف التشغيل:</span>
+                      <strong class="text-sky-400 font-bold numbers-font">${meta.costDiscountPct > 0 ? `-${meta.costDiscountPct}%` : 'قياسي'}</strong>
+                    </div>
+                    ${meta.xpBonusPct > 0 ? `
+                      <div class="flex items-center justify-between">
+                        <span class="text-slate-400">بونص خبرة الملاحة (XP):</span>
+                        <strong class="text-amber-400 font-bold numbers-font">+${meta.xpBonusPct}%</strong>
+                      </div>
+                    ` : ''}
+                    ${meta.autoPilot ? `
+                      <div class="flex items-center justify-between pt-1 border-t border-slate-800">
+                        <span class="text-purple-400 font-bold">الطيار الآلي الذكي:</span>
+                        <strong class="text-purple-300 font-black flex items-center gap-1">
+                          <i class="fa-solid fa-bolt"></i> 72 ساعة أوفلاين
+                        </strong>
+                      </div>
+                    ` : ''}
+                  </div>
+
+                  <p class="text-[11px] text-slate-300 leading-relaxed text-right">
+                    ${meta.desc}
+                  </p>
+                </div>
+
+                <!-- Action Section -->
+                <div class="pt-2 border-t border-slate-800/80">
+                  ${t === 1 ? `
+                    ${curTier >= 1 ? `
+                      <div class="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center text-xs font-bold text-slate-400 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-check text-emerald-400"></i>
+                        <span>${isCurrent ? 'معين كمساعد لمدير العمليات' : 'تمت الترقية لمستوى أعلى'}</span>
+                      </div>
+                    ` : `
+                      <button onclick="window.AirportUI.hireManager(1)" id="btn-hire-airport-manager-1"
+                        class="w-full py-3 bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-400 hover:to-blue-500 text-white font-black text-xs rounded-xl shadow-lg shadow-sky-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-plus"></i>
+                        <span>توظيف بالكاش (${meta.hireCost.toLocaleString()} ج.م)</span>
+                      </button>
+                    `}
+                  ` : t === 2 ? `
+                    ${curTier === 2 ? `
+                      <div class="w-full py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-center text-xs font-black text-amber-300 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-award text-amber-400"></i>
+                        <span>مدير العمليات الدولية معين ✅</span>
+                      </div>
+                    ` : curTier > 2 ? `
+                      <div class="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center text-xs font-bold text-slate-400 flex items-center justify-center gap-1.5">
+                        <i class="fa-solid fa-check text-emerald-400"></i>
+                        <span>تمت الترقية لمستوى أعلى</span>
+                      </div>
+                    ` : `
+                      <button onclick="if(window.UI && typeof window.UI.switchTab === 'function') window.UI.switchTab('store');"
+                        class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-crown"></i>
+                        <span>ترقية كابتن ألفا (باقة VIP بالمتجر)</span>
+                      </button>
+                    `}
+                  ` : `
+                    ${curTier === 3 ? `
+                      <div class="space-y-2">
+                        <div class="w-full py-2 rounded-xl bg-purple-500/20 border border-purple-500/40 text-center text-xs font-black text-purple-300 flex items-center justify-center gap-1.5">
+                          <i class="fa-solid fa-crown text-amber-400"></i>
+                          <span>الرئيس التنفيذي للمطار معين 👑</span>
+                        </div>
+                        <button onclick="window.AirportUI.toggleAutopilot()" id="btn-toggle-airport-autopilot"
+                          class="w-full py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer ${isAutopilot ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'}">
+                          <i class="fa-solid ${isAutopilot ? 'fa-toggle-on text-base' : 'fa-toggle-off text-base text-slate-500'}"></i>
+                          <span>${isAutopilot ? 'الطيار الآلي الذكي: مفعل 🚀' : 'الطيار الآلي الذكي: معطل ⏸️'}</span>
+                        </button>
+                      </div>
+                    ` : `
+                      <button onclick="if(window.UI && typeof window.UI.switchTab === 'function') window.UI.switchTab('store');"
+                        class="w-full py-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-xs rounded-xl shadow-lg shadow-purple-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-gem"></i>
+                        <span>تعيين إمبراطور الطيران (VIP ألكسندر)</span>
+                      </button>
+                    `}
+                  `}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    `;
+  }
+
   function calculateDutyFreeClient(airport) {
     if (!airport || !airport.unlocked || !airport.facilities?.duty_free) return 0;
     const lvl = airport.facilities.duty_free;
@@ -1199,11 +1461,52 @@ window.AirportUI = (() => {
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   }
 
+  let _lastAutopilotCheck = 0;
+  function runAutopilotCycle(ap, liveState, now) {
+    if (!ap || !ap.manager || Number(ap.manager.tier) < 3 || ap.manager.autoPilot === false) return;
+    if (now - _lastAutopilotCheck < 3000) return; // check every 3s
+    _lastAutopilotCheck = now;
+
+    if (!Array.isArray(ap.fleet) || ap.fleet.length === 0) return;
+
+    // 1. Auto-Claim landed flights
+    ap.fleet.forEach(plane => {
+      if (plane.status === 'in_flight' && !_claimingPlanes.has(plane.id)) {
+        const f = plane.currentFlight || plane.activeFlight;
+        if (f && Number(f.landingTime || 0) <= now) {
+          claimFlight(plane.id);
+        }
+      }
+    });
+
+    // 2. Auto-Launch idle planes (up to max 5 in flight)
+    const inFlightCount = ap.fleet.filter(p => p.status === 'in_flight').length;
+    if (inFlightCount >= 5) return;
+
+    const idlePlanes = ap.fleet.filter(p => p.status === 'idle' || !p.status);
+    for (const plane of idlePlanes) {
+      const curInFlight = ap.fleet.filter(p => p.status === 'in_flight').length;
+      if (curInFlight >= 5) break;
+
+      const model = AIRCRAFT_META[plane.modelId] || AIRCRAFT_META.cessna_sky;
+      const validDests = DESTINATIONS_META.filter(d => model.tier >= d.tier);
+      if (validDests.length > 0) {
+        const bestDest = validDests.reduce((prev, curr) => (curr.mult > prev.mult ? curr : prev), validDests[0]);
+        launchFlight(plane.id, bestDest.id);
+      }
+    }
+  }
+
   function updateFlightTimers() {
     const timerEls = document.querySelectorAll('[id^="timer-"]');
     const now = getTrustedNow();
     const liveState = getLiveGameState();
     const ap = liveState.airport;
+
+    // Trigger Smart Auto-Pilot for Tier 3 Managers
+    if (ap) {
+      runAutopilotCycle(ap, liveState, now);
+    }
 
     timerEls.forEach(el => {
       const landingTime = Number(el.getAttribute('data-landing') || 0);
@@ -1483,14 +1786,16 @@ window.AirportUI = (() => {
   }
 
   // Action methods with authoritative server-first pattern and resilient client fallback
-  async function launchFlight(planeId) {
+  async function launchFlight(planeId, targetDestId = null) {
     const liveState = getLiveGameState();
     const ap = liveState.airport;
     if (!ap || !Array.isArray(ap.fleet)) return;
 
     const inFlightCount = ap.fleet.filter(p => p.status === 'in_flight').length;
     if (inFlightCount >= 5) {
-      showAirportToast('🚫 الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات.', 'error');
+      if (!targetDestId) {
+        showAirportToast('🚫 الحد الأقصى للطيران المتزامن هو 5 طائرات في الجو في نفس الوقت! انتظر هبوط إحدى الطائرات.', 'error');
+      }
       return;
     }
 
@@ -1498,7 +1803,7 @@ window.AirportUI = (() => {
     if (!plane || plane.status === 'in_flight') return;
 
     const select = document.getElementById(`select-dest-${planeId}`);
-    const destId = select ? select.value : 'cairo_riyadh';
+    const destId = targetDestId || (select ? select.value : 'cairo_riyadh');
     const dest = DESTINATIONS_META.find(d => d.id === destId) || DESTINATIONS_META[0];
     const model = AIRCRAFT_META[plane.modelId];
     if (!model) return;
@@ -2247,6 +2552,134 @@ window.AirportUI = (() => {
     renderAirportPanel();
   }
 
+  async function hireManager(tier = 1) {
+    const liveState = getLiveGameState();
+    const ap = liveState.airport;
+    if (!ap || !ap.unlocked) return;
+
+    const curTier = Number(ap.manager?.tier || 0);
+    if (curTier >= 1 && tier === 1) {
+      showAirportToast('⚠️ لديك مدير مطار معين بالفعل! يمكنك الترقية لمستويات أعلى عبر باقات VIP المتجر.', 'info');
+      return;
+    }
+
+    const HIRE_COST = 100000000; // 100M Cash
+    const curCash = Number(liveState.cash || 0);
+    if (curCash < HIRE_COST) {
+      showAirportToast(`🚫 رصيدك الكاش غير كافٍ! تكلفة توظيف مساعد مدير المطار هي ${HIRE_COST.toLocaleString()} ج.م`, 'error');
+      return;
+    }
+
+    const btnHire = document.getElementById('btn-hire-airport-manager-1');
+    if (btnHire) {
+      btnHire.disabled = true;
+      btnHire.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التوظيف والاعتماد...';
+    }
+
+    // 1. Authoritative Server Hire
+    if (window.ServerBridge && typeof window.ServerBridge.hireAirportManager === 'function') {
+      try {
+        const res = await window.ServerBridge.hireAirportManager(tier);
+        if (res && res.success) {
+          if (res.airport) liveState.airport = res.airport;
+          if (res.cash !== undefined) liveState.cash = res.cash;
+          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+            window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار 👨‍✈️📋', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
+          }
+          showAirportToast(res.message || '👨‍✈️ تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح!', 'success');
+          renderAirportPanel();
+          return;
+        } else {
+          showAirportToast(res?.error || 'تعذر توظيف مدير المطار', 'error');
+          if (btnHire) {
+            btnHire.disabled = false;
+            btnHire.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span>توظيف بالكاش (${HIRE_COST.toLocaleString()} ج.م)</span>`;
+          }
+          return;
+        }
+      } catch (err) {
+        const errMsg = err?.message || '';
+        if (err.status === 400 || errMsg.includes('رصيدك') || errMsg.includes('بالفعل')) {
+          showAirportToast(errMsg || 'تعذر توظيف مدير المطار', 'error');
+          if (btnHire) {
+            btnHire.disabled = false;
+            btnHire.innerHTML = `<i class="fa-solid fa-user-plus"></i> <span>توظيف بالكاش (${HIRE_COST.toLocaleString()} ج.م)</span>`;
+          }
+          return;
+        }
+        console.warn('[AirportUI] hireAirportManager server bridge failed, using offline fallback:', err);
+      }
+    }
+
+    // 2. Offline Fallback
+    liveState.cash = curCash - HIRE_COST;
+    ap.manager = {
+      tier: 1,
+      name: 'كابتن ليام - مساعد مدير العمليات 📋',
+      title: 'مساعد مدير العمليات الجوية',
+      profitBonusPct: 5,
+      costDiscountPct: 0,
+      autoPilot: false,
+      hiredAt: Date.now()
+    };
+
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
+    persistGameState();
+    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+      window.GameEngine.recordPlayerActivity('توظيف مساعد مدير المطار 👨‍✈️📋', `تعيين كابتن ليام كمساعد لمدير العمليات الجوية (+5% أرباح على كافة الرحلات)`, 'business');
+    }
+    showAirportToast('👨‍✈️ تهانينا! تم تعيين كابتن ليام بنجاح وبونص +5% أرباح على كافة الرحلات!', 'success');
+    renderAirportPanel();
+  }
+
+  async function toggleAutopilot(enabled = null) {
+    const liveState = getLiveGameState();
+    const ap = liveState.airport;
+    if (!ap || !ap.unlocked || !ap.manager || Number(ap.manager.tier) < 3) {
+      showAirportToast('🚫 خاصية الطيار الآلي الذكي تتطلب تعيين المدير التنفيذي العام (Tier 3)', 'error');
+      return;
+    }
+
+    const currentStatus = ap.manager.autoPilot !== false;
+    const targetStatus = typeof enabled === 'boolean' ? enabled : !currentStatus;
+
+    if (window.ServerBridge && typeof window.ServerBridge.toggleAirportAutopilot === 'function') {
+      try {
+        const res = await window.ServerBridge.toggleAirportAutopilot(targetStatus);
+        if (res && res.success) {
+          if (res.airport) liveState.airport = res.airport;
+          else ap.manager.autoPilot = targetStatus;
+
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+          }
+          persistGameState();
+          showAirportToast(res.message || (targetStatus ? '🚀 تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸️ تم إيقاف الطيار الآلي مؤقتاً.'), 'info');
+          renderAirportPanel();
+          return;
+        }
+      } catch (err) {
+        console.warn('[AirportUI] toggleAirportAutopilot server bridge failed, using offline fallback:', err);
+      }
+    }
+
+    ap.manager.autoPilot = targetStatus;
+    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    }
+    persistGameState();
+    showAirportToast(targetStatus ? '🚀 تم تفعيل الطيار الآلي الذكي للمطار بنجاح!' : '⏸️ تم إيقاف الطيار الآلي مؤقتاً.', 'info');
+    renderAirportPanel();
+  }
+
   function setSubtab(tab) {
     _activeSubtab = tab;
     renderAirportPanel();
@@ -2263,9 +2696,12 @@ window.AirportUI = (() => {
     sellPlane,
     upgradeFacility,
     acceptTransit,
+    hireManager,
+    toggleAutopilot,
     updateEconomicsPreview,
     AIRCRAFT_META,
     FACILITY_META,
+    AIRPORT_MANAGERS_META,
     DESTINATIONS_META
   };
 })();

@@ -15,6 +15,7 @@
 const { BUSINESSES, ASSETS, CAR_TEMPLATES } = require('./definitions');
 const { calculateSingleBusinessProfit } = require('./business-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('./net-worth-engine');
+const { AIRCRAFT_MODELS, FLIGHT_DESTINATIONS, calculateFlightEconomics } = require('./airport-engine');
 
 const MAX_OFFLINE_SECONDS = 12 * 3600; // 43,200 seconds
 
@@ -242,13 +243,27 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     playerState.investments = remainingInvestments;
   }
 
-  // 9. Airport & Aviation Hub (المطار والأسطول الجوي): Resolve completed flights and accumulate duty-free
+  // 9. Airport & Aviation Hub (المطار والأسطول الجوي): Resolve completed flights, Auto-Pilot simulation, and accumulate duty-free
+  let airportAutoReport = null;
   if (playerState.airport && playerState.airport.unlocked) {
     const ap = playerState.airport;
-    // A. Resolve arriving flights
+    const isTier3Manager = ap.manager && Number(ap.manager.tier) >= 3 && ap.manager.autoPilot !== false;
+
+    // Real elapsed time for Airport Tier 3 Auto-Pilot can be up to 72 hours (259,200 seconds)
+    const airportOfflineSeconds = isTier3Manager ? Math.min(72 * 3600, rawElapsed) : totalElapsedSeconds;
+
+    let autoFlightsCount = 0;
+    let autoTotalProfit = 0;
+    let autoTotalXP = 0;
+
     if (Array.isArray(ap.fleet)) {
       ap.fleet.forEach(plane => {
-        if (plane && plane.status === 'in_flight' && plane.activeFlight) {
+        if (!plane) return;
+
+        let planeRemainingSeconds = airportOfflineSeconds;
+
+        // A. If plane was in-flight when session closed, resolve it first
+        if (plane.status === 'in_flight' && plane.activeFlight) {
           const arrTime = Number(plane.activeFlight.arrivalTime || 0);
           if (arrTime > 0 && serverNow >= arrTime) {
             plane.status = 'idle';
@@ -263,13 +278,79 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
               plane.totalProfitEarned = (Number(plane.totalProfitEarned) || 0) + profit;
               playerState.xp = (Number(playerState.xp) || 0) + xp;
             }
+            const flightElapsedSec = Math.max(0, Math.floor((arrTime - lastActive) / 1000));
+            planeRemainingSeconds = Math.max(0, airportOfflineSeconds - flightElapsedSec);
             plane.activeFlight = null;
+          } else {
+            // Still in flight
+            planeRemainingSeconds = 0;
+          }
+        }
+
+        // B. Smart Auto-Pilot for Tier 3 Manager: continuously dispatch plane to highest profitable destination
+        if (isTier3Manager && plane.status === 'idle' && planeRemainingSeconds > 60) {
+          const model = AIRCRAFT_MODELS[plane.modelId] || AIRCRAFT_MODELS.cessna_sky;
+          const runwayLvl = Math.max(1, Math.min(4, Number(ap.facilities?.runway || 1)));
+
+          // Find highest destination this plane and runway can fly to
+          const validDests = Object.values(FLIGHT_DESTINATIONS).filter(d => (d.requiredTier || 1) <= model.tier && (d.requiredTier || 1) <= runwayLvl);
+          const bestDest = validDests.sort((a, b) => (b.distanceMultiplier || 1) - (a.distanceMultiplier || 1))[0] || FLIGHT_DESTINATIONS.cairo_dubai;
+
+          const econ = calculateFlightEconomics(model, bestDest, ap);
+          const flightDuration = Math.max(60, Number(econ.durationSec || 5400));
+          const cycles = Math.floor(planeRemainingSeconds / flightDuration);
+
+          if (cycles > 0) {
+            const batchProfit = econ.netProfit * cycles;
+            const batchXP = econ.xpReward * cycles;
+
+            playerState.bank = (Number(playerState.bank) || 0) + batchProfit;
+            playerState.xp = (Number(playerState.xp) || 0) + batchXP;
+
+            if (!ap.stats) ap.stats = {};
+            ap.stats.totalFlights = (Number(ap.stats.totalFlights) || 0) + cycles;
+            ap.stats.totalNetProfit = (Number(ap.stats.totalNetProfit) || 0) + batchProfit;
+            plane.flightsCompleted = (Number(plane.flightsCompleted) || 0) + cycles;
+            plane.totalProfitEarned = (Number(plane.totalProfitEarned) || 0) + batchProfit;
+
+            autoFlightsCount += cycles;
+            autoTotalProfit += batchProfit;
+            autoTotalXP += batchXP;
+
+            const remainderSec = planeRemainingSeconds % flightDuration;
+            if (remainderSec > 0 && remainderSec < flightDuration) {
+              plane.status = 'in_flight';
+              plane.activeFlight = {
+                flightId: 'flight_auto_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
+                destinationId: bestDest.id,
+                destinationName: bestDest.name,
+                distanceMultiplier: bestDest.distanceMultiplier,
+                departureTime: serverNow - (remainderSec * 1000),
+                arrivalTime: serverNow + ((flightDuration - remainderSec) * 1000),
+                durationSec: flightDuration,
+                economics: econ,
+                netProfit: econ.netProfit,
+                xpReward: econ.xpReward,
+                isAutoPilot: true
+              };
+            }
           }
         }
       });
     }
 
-    // B. Duty Free Passive Income accumulation
+    if (autoFlightsCount > 0) {
+      airportAutoReport = {
+        active: true,
+        managerName: ap.manager?.name || 'الرئيس التنفيذي ألكسندر',
+        flightsCount: autoFlightsCount,
+        totalProfit: autoTotalProfit,
+        totalXP: autoTotalXP,
+        durationHours: Number((airportOfflineSeconds / 3600).toFixed(1))
+      };
+    }
+
+    // C. Duty Free Passive Income accumulation
     const dutyFreeLvl = Number(ap.facilities?.duty_free || 0);
     if (dutyFreeLvl > 0) {
       const passivePerMin = dutyFreeLvl === 1 ? 100 : dutyFreeLvl === 2 ? 300 : dutyFreeLvl === 3 ? 750 : 1500;
@@ -303,13 +384,15 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     suppliesHours: Number((totalSuppliesConsumedSec / 3600).toFixed(1)),
     wasManagerActive: isManagerActiveAtExit,
     managerExpiredDuringAbsence: managerExpiry > 0 && serverNow > managerExpiry,
+    airportAutoReport,
     
     // Detailed items breakdown
     earnings: {
       businesses: { title: 'أرباح المشاريع والشركات', amount: offlineBizEarnings, items: bizBreakdown },
       assets: { title: 'إيجارات العقارات والأصول', amount: totalAssetEarnings, items: assetBreakdown },
       cars: { title: 'إيجارات أسطول السيارات', amount: totalCarGross, items: carBreakdown },
-      bank: { title: 'فوائد الودائع البنكية', amount: bankInterestEarned }
+      bank: { title: 'فوائد الودائع البنكية', amount: bankInterestEarned },
+      airport: airportAutoReport ? { title: 'أرباح الطيار الآلي لمدير المطار ✈️', amount: airportAutoReport.totalProfit } : undefined
     },
     deductions: {
       payroll: { title: 'أجور ورواتب العمال والموظفين', amount: totalBizPayroll },

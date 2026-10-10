@@ -592,6 +592,28 @@ var ServerBridge = (() => {
     });
   }
 
+  async function hireAirportManager(tier = 1) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    return await _post('/api/airport/hire-manager', {
+      username: user,
+      token,
+      tier
+    });
+  }
+
+  async function toggleAirportAutopilot(enabled) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    return await _post('/api/airport/toggle-autopilot', {
+      username: user,
+      token,
+      enabled
+    });
+  }
+
   return {
     getApiBase,
     formatAvatarUrl,
@@ -607,6 +629,8 @@ var ServerBridge = (() => {
     claimAirportFlight,
     claimDutyFree,
     acceptAirportTransit,
+    hireAirportManager,
+    toggleAirportAutopilot,
     registerAccount,
     startSession,
     dispatchClick,
