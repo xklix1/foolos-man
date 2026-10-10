@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Aggressive Cache Purge Guard
-    window._CLIENT_VERSION = 'v9.5.6';
+    window._CLIENT_VERSION = 'v9.5.8';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.5.6';
+      const CURRENT_APP_BUILD = 'v9.5.8';
       try {
         const res = await fetch('/version.json?_t=' + Date.now(), { cache: 'no-store' });
         if (res.ok) {
@@ -7606,7 +7606,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.5.7"></script>
+  <script src="core.bundle.js?v=v9.5.8"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -7649,7 +7649,10 @@
         const vcheck = await AppDB.checkVersion();
         if (!vcheck.upToDate) {
           const overlay = document.getElementById('force-update-overlay');
-          if (overlay) {
+          const bustKey = 'rasalmal_force_update_attempts';
+          const attempts = Number(sessionStorage.getItem(bustKey) || 0);
+
+          if (overlay && attempts < 2) {
             const clientVerEl = document.getElementById('fu-client-ver');
             const remoteVerEl = document.getElementById('fu-remote-ver');
             if (clientVerEl) clientVerEl.textContent = vcheck.clientVersion;
@@ -7658,6 +7661,7 @@
             overlay.classList.add('flex');
 
             const doPurgeAndReload = async () => {
+              sessionStorage.setItem(bustKey, String(attempts + 1));
               try {
                 if ('caches' in window) {
                   const keys = await caches.keys();
@@ -7683,7 +7687,11 @@
             // Auto trigger after 1.5 seconds if user didn't tap
             setTimeout(doPurgeAndReload, 1500);
             return;
+          } else {
+            sessionStorage.removeItem(bustKey);
           }
+        } else {
+          sessionStorage.removeItem('rasalmal_force_update_attempts');
         }
       } catch (e) {
         console.warn('[Boot] Version check skipped:', e.message);

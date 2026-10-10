@@ -1,4 +1,4 @@
-/* Ras ALmal Tycoon — Core Authoritative Engine Bundle (v9.5.6) */
+/* Ras ALmal Tycoon — Core Authoritative Engine Bundle (v9.5.8) */
 /**
  * Ras ALmal Tycoon (رأس المال)
  * Database Adapter — Powered by Supabase (PostgreSQL)

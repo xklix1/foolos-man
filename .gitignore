@@ -9,6 +9,7 @@ www/
 capacitor.config.json
 *.backup.js
 server/data/
+server/backups/
 scratch/
 *.pdf
 *recovery*
