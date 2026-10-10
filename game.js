@@ -1265,10 +1265,10 @@ const GameEngine = (() => {
     avatarUrl: '',
     characterAvatar: 'avatar_male_arab',
     executiveGear: {
-      ledger: { level: 1, stars: 1 },
-      laptop: { level: 1, stars: 1 },
-      pen: { level: 1, stars: 1 },
-      terminal: { level: 1, stars: 1 }
+      ledger: { unlocked: false, level: 1, stars: 1 },
+      laptop: { unlocked: false, level: 1, stars: 1 },
+      pen: { unlocked: false, level: 1, stars: 1 },
+      terminal: { unlocked: false, level: 1, stars: 1 }
     }
   };
 
@@ -3299,20 +3299,24 @@ const GameEngine = (() => {
         characterAvatar: dbState.characterAvatar || (dbState.state && dbState.state.characterAvatar) || 'avatar_male_arab',
         executiveGear: {
           ledger: {
-            level: Math.max(1, Number(dbState.executiveGear?.ledger?.level || dbState.state?.executiveGear?.ledger?.level || 1)),
-            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.ledger?.level || dbState.state?.executiveGear?.ledger?.level || 1)) / 2))
+            unlocked: Boolean(dbState.executiveGear?.ledger?.unlocked || dbState.state?.executiveGear?.ledger?.unlocked || (Number(dbState.executiveGear?.ledger?.level || dbState.state?.executiveGear?.ledger?.level || 0) > 1)),
+            level: Math.max(1, Math.min(15, Number(dbState.executiveGear?.ledger?.level || dbState.state?.executiveGear?.ledger?.level || 1))),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.ledger?.level || dbState.state?.executiveGear?.ledger?.level || 1)) / 3))
           },
           laptop: {
-            level: Math.max(1, Number(dbState.executiveGear?.laptop?.level || dbState.state?.executiveGear?.laptop?.level || 1)),
-            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.laptop?.level || dbState.state?.executiveGear?.laptop?.level || 1)) / 2))
+            unlocked: Boolean(dbState.executiveGear?.laptop?.unlocked || dbState.state?.executiveGear?.laptop?.unlocked || (Number(dbState.executiveGear?.laptop?.level || dbState.state?.executiveGear?.laptop?.level || 0) > 1)),
+            level: Math.max(1, Math.min(15, Number(dbState.executiveGear?.laptop?.level || dbState.state?.executiveGear?.laptop?.level || 1))),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.laptop?.level || dbState.state?.executiveGear?.laptop?.level || 1)) / 3))
           },
           pen: {
-            level: Math.max(1, Number(dbState.executiveGear?.pen?.level || dbState.state?.executiveGear?.pen?.level || 1)),
-            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.pen?.level || dbState.state?.executiveGear?.pen?.level || 1)) / 2))
+            unlocked: Boolean(dbState.executiveGear?.pen?.unlocked || dbState.state?.executiveGear?.pen?.unlocked || (Number(dbState.executiveGear?.pen?.level || dbState.state?.executiveGear?.pen?.level || 0) > 1)),
+            level: Math.max(1, Math.min(15, Number(dbState.executiveGear?.pen?.level || dbState.state?.executiveGear?.pen?.level || 1))),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.pen?.level || dbState.state?.executiveGear?.pen?.level || 1)) / 3))
           },
           terminal: {
-            level: Math.max(1, Number(dbState.executiveGear?.terminal?.level || dbState.state?.executiveGear?.terminal?.level || 1)),
-            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.terminal?.level || dbState.state?.executiveGear?.terminal?.level || 1)) / 2))
+            unlocked: Boolean(dbState.executiveGear?.terminal?.unlocked || dbState.state?.executiveGear?.terminal?.unlocked || (Number(dbState.executiveGear?.terminal?.level || dbState.state?.executiveGear?.terminal?.level || 0) > 1)),
+            level: Math.max(1, Math.min(15, Number(dbState.executiveGear?.terminal?.level || dbState.state?.executiveGear?.terminal?.level || 1))),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.terminal?.level || dbState.state?.executiveGear?.terminal?.level || 1)) / 3))
           }
         },
         _loadedFromCloud: true
@@ -8262,8 +8266,25 @@ const GameEngine = (() => {
   }
 
   // ─────────────────────────────────────────────
-  // EXECUTIVE GEAR & CHARACTER AVATARS SYSTEM
+  // EXECUTIVE GEAR & CHARACTER AVATARS SYSTEM (V4)
   // ─────────────────────────────────────────────
+  const GEAR_TIERS = {
+    common: { id: 'common', name: 'عادي', minLevel: 1, maxLevel: 3, borderClass: 'tier-border-common', glowClass: 'tier-glow-common', badgeClass: 'bg-slate-800 text-slate-300 border-slate-700' },
+    superior: { id: 'superior', name: 'مميز', minLevel: 4, maxLevel: 6, borderClass: 'tier-border-superior', glowClass: 'tier-glow-superior', badgeClass: 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40' },
+    epic: { id: 'epic', name: 'نادر', minLevel: 7, maxLevel: 9, borderClass: 'tier-border-epic', glowClass: 'tier-glow-epic', badgeClass: 'bg-purple-950/80 text-purple-300 border-purple-500/40' },
+    legendary: { id: 'legendary', name: 'أسطوري', minLevel: 10, maxLevel: 12, borderClass: 'tier-border-legendary', glowClass: 'tier-glow-legendary', badgeClass: 'bg-amber-950/80 text-amber-300 border-amber-500/50' },
+    sovereign: { id: 'sovereign', name: 'سيادي', minLevel: 13, maxLevel: 15, borderClass: 'tier-border-sovereign', glowClass: 'tier-glow-sovereign', badgeClass: 'bg-cyan-950/90 text-cyan-300 border-cyan-400' }
+  };
+
+  function getGearTierInfo(level) {
+    const lvl = Math.max(1, Math.min(15, Number(level) || 1));
+    if (lvl >= 13) return GEAR_TIERS.sovereign;
+    if (lvl >= 10) return GEAR_TIERS.legendary;
+    if (lvl >= 7) return GEAR_TIERS.epic;
+    if (lvl >= 4) return GEAR_TIERS.superior;
+    return GEAR_TIERS.common;
+  }
+
   const EXECUTIVE_GEAR = {
     ledger: {
       id: 'ledger',
@@ -8271,10 +8292,12 @@ const GameEngine = (() => {
       type: 'accounting',
       icon: 'assets/gear_ledger.jpg',
       description: 'تابلت محاسبي متقدم يقلل من معدل استهلاك بضائع المشاريع ويزيد كفاءة التشغيل وخفض الهدر بنسبة مئوية.',
-      baseUpgradeCostGold: 75,
-      maxLevel: 10,
+      unlockNetWorth: 500000,
+      unlockGoldCost: 25,
+      baseUpgradeCostGold: 20,
+      maxLevel: 15,
       getBonus: (level) => {
-        const eff = Math.min(40, (Number(level) || 1) * 4);
+        const eff = Math.min(30, (Number(level) || 1) * 2);
         return { value: eff, text: `+${eff}% كفاءة استهلاك البضائع وخفض الهدر` };
       }
     },
@@ -8284,10 +8307,12 @@ const GameEngine = (() => {
       type: 'trading',
       icon: 'assets/gear_laptop.jpg',
       description: 'منصة تداول مالية حية تمنح أرباحاً إضافية في صفقات الأسهم واستثمارات البورصة العالمية.',
-      baseUpgradeCostGold: 100,
-      maxLevel: 10,
+      unlockNetWorth: 5000000,
+      unlockGoldCost: 50,
+      baseUpgradeCostGold: 30,
+      maxLevel: 15,
       getBonus: (level) => {
-        const bonus = Math.min(50, (Number(level) || 1) * 5);
+        const bonus = Math.min(45, (Number(level) || 1) * 3);
         return { value: bonus, text: `+${bonus}% أرباح إضافية في صفقات البورصة` };
       }
     },
@@ -8297,10 +8322,12 @@ const GameEngine = (() => {
       type: 'contracts',
       icon: 'assets/gear_pen.jpg',
       description: 'قلم توقيع فاخر مرصع بالذهب يخفض ضرائب الدخل ويزيد خصومات عقود التوريد.',
-      baseUpgradeCostGold: 60,
-      maxLevel: 10,
+      unlockNetWorth: 25000000,
+      unlockGoldCost: 100,
+      baseUpgradeCostGold: 45,
+      maxLevel: 15,
       getBonus: (level) => {
-        const relief = Math.min(30, (Number(level) || 1) * 3);
+        const relief = Math.min(30, (Number(level) || 1) * 2);
         return { value: relief, text: `+${relief}% تخفيض ضريبي وخصم عقود التوريد` };
       }
     },
@@ -8309,11 +8336,13 @@ const GameEngine = (() => {
       name: 'محطة الماليات والتحويلات',
       type: 'finance',
       icon: 'assets/gear_terminal.jpg',
-      description: 'محطة سيادية متنقلة تزيد من عوائد الفائدة البنكية وتسرع عمليات التدفق النقدي.',
-      baseUpgradeCostGold: 120,
-      maxLevel: 10,
+      description: 'محطة سيادية متنقلة تزيد من عوائد الفائدة البنكية وتسرع تدفقات الأوفلاين.',
+      unlockNetWorth: 100000000,
+      unlockGoldCost: 200,
+      baseUpgradeCostGold: 60,
+      maxLevel: 15,
       getBonus: (level) => {
-        const boost = Math.min(50, (Number(level) || 1) * 5);
+        const boost = Math.min(45, (Number(level) || 1) * 3);
         return { value: boost, text: `+${boost}% زيادة عوائد الفائدة البنكية` };
       }
     }
@@ -8332,6 +8361,10 @@ const GameEngine = (() => {
     return EXECUTIVE_GEAR;
   }
 
+  function getGearTiersConfig() {
+    return GEAR_TIERS;
+  }
+
   function getCharacterAvatars() {
     return CHARACTER_AVATARS;
   }
@@ -8340,10 +8373,69 @@ const GameEngine = (() => {
     const targetState = customState || state;
     const gear = targetState.executiveGear || {};
     return {
-      ledger: EXECUTIVE_GEAR.ledger.getBonus(gear.ledger?.level || 1),
-      laptop: EXECUTIVE_GEAR.laptop.getBonus(gear.laptop?.level || 1),
-      pen: EXECUTIVE_GEAR.pen.getBonus(gear.pen?.level || 1),
-      terminal: EXECUTIVE_GEAR.terminal.getBonus(gear.terminal?.level || 1)
+      ledger: (gear.ledger && gear.ledger.unlocked) ? EXECUTIVE_GEAR.ledger.getBonus(gear.ledger.level || 1) : { value: 0, text: 'مغلق' },
+      laptop: (gear.laptop && gear.laptop.unlocked) ? EXECUTIVE_GEAR.laptop.getBonus(gear.laptop.level || 1) : { value: 0, text: 'مغلق' },
+      pen: (gear.pen && gear.pen.unlocked) ? EXECUTIVE_GEAR.pen.getBonus(gear.pen.level || 1) : { value: 0, text: 'مغلق' },
+      terminal: (gear.terminal && gear.terminal.unlocked) ? EXECUTIVE_GEAR.terminal.getBonus(gear.terminal.level || 1) : { value: 0, text: 'مغلق' }
+    };
+  }
+
+  function getExecutiveGearSetBonus(customState = null) {
+    const s = customState || state;
+    const gear = s.executiveGear || {};
+    const gears = ['ledger', 'laptop', 'pen', 'terminal'];
+    const allUnlocked = gears.every(g => gear[g] && gear[g].unlocked && (Number(gear[g].level) || 0) >= 1);
+    if (!allUnlocked) {
+      return { active: false, tier: null, bonusPct: 0, text: 'يتطلب فتح وتفعيل جميع الأدوات الأربعة' };
+    }
+    const minLvl = Math.min(...gears.map(g => Number(gear[g].level) || 1));
+    if (minLvl >= 15) {
+      return { active: true, tier: 'sovereign', bonusPct: 25, title: 'إمبراطور العتاد السيادي', text: '+25% مضاعف دخل شامل لجميع أرباح اللعبة' };
+    }
+    if (minLvl >= 10) {
+      return { active: true, tier: 'legendary', bonusPct: 10, title: 'طقم العتاد الأسطوري', text: '+10% مضاعف دخل شامل لجميع أرباح اللعبة' };
+    }
+    return { active: false, tier: null, bonusPct: 0, minLevel: minLvl, text: `المستوى الأدنى لعتادك: ${minLvl} / 10 (يتطلب وصول جميع الأدوات للمستوى 10 لفتح البونص الأسطوري)` };
+  }
+
+  function unlockExecutiveGear(gearId) {
+    if (!activeUsername) throw new Error('لا توجد جلسة لاعب نشطة.');
+    const def = EXECUTIVE_GEAR[gearId];
+    if (!def) throw new Error('أداة غير صالحة.');
+
+    if (!state.executiveGear) state.executiveGear = {};
+    const current = state.executiveGear[gearId] || {};
+    if (current.unlocked) throw new Error('هذه الأداة مفتوحة ومفعلة بالفعل.');
+
+    const currentNw = Number(state.netWorth || 0);
+    if (currentNw < def.unlockNetWorth) {
+      throw new Error(`لم تصل لشرط الثروة المطلوب. تحتاج إلى ${def.unlockNetWorth.toLocaleString()} جنيه (ثروتك الحالية: ${currentNw.toLocaleString()} جنيه).`);
+    }
+
+    const currentGold = Number(state.gold || 0);
+    if (currentGold < def.unlockGoldCost) {
+      throw new Error(`رصيدك من الذهب غير كافٍ. تحتاج إلى ${def.unlockGoldCost} سبيكة ذهب للفتح (رصيدك الحالي: ${currentGold}).`);
+    }
+
+    state.gold = currentGold - def.unlockGoldCost;
+    state.executiveGear[gearId] = {
+      unlocked: true,
+      level: 1,
+      stars: 1
+    };
+
+    if (typeof AppDB !== 'undefined' && AppDB.savePlayerState) {
+      AppDB.savePlayerState(activeUsername, state, true);
+    }
+
+    return {
+      success: true,
+      gearId,
+      spentGold: def.unlockGoldCost,
+      remainingGold: state.gold,
+      level: 1,
+      stars: 1,
+      tier: getGearTierInfo(1)
     };
   }
 
@@ -8352,32 +8444,29 @@ const GameEngine = (() => {
     const def = EXECUTIVE_GEAR[gearId];
     if (!def) throw new Error('أداة غير صالحة.');
 
-    if (!state.executiveGear) {
-      state.executiveGear = {
-        ledger: { level: 1, stars: 1 },
-        laptop: { level: 1, stars: 1 },
-        pen: { level: 1, stars: 1 },
-        terminal: { level: 1, stars: 1 }
-      };
+    if (!state.executiveGear) state.executiveGear = {};
+    const currentGear = state.executiveGear[gearId] || {};
+    if (!currentGear.unlocked) {
+      throw new Error('يجب فتح وتفعيل الأداة أولاً قبل ترقيتها.');
     }
 
-    const currentGear = state.executiveGear[gearId] || { level: 1, stars: 1 };
     const curLvl = Number(currentGear.level) || 1;
     if (curLvl >= def.maxLevel) {
-      throw new Error(`الأداة وصلت إلى الحد الأقصى من الترقية (المستوى ${def.maxLevel}).`);
+      throw new Error(`وصلت الأداة إلى الحد الأقصى من الترقية السيادية (المستوى ${def.maxLevel}).`);
     }
 
-    const costGold = Math.round(def.baseUpgradeCostGold * curLvl);
+    const costGold = Math.round(def.baseUpgradeCostGold * Math.pow(1.15, curLvl - 1));
     const playerGold = Math.max(0, Number(state.gold || 0));
     if (playerGold < costGold) {
-      throw new Error(`رصيدك من الذهب غير كافٍ. تحتاج إلى ${costGold} سبيكة ذهب (رصيدك الحالي: ${playerGold}).`);
+      throw new Error(`رصيدك من الذهب غير كافٍ. تحتاج إلى ${costGold.toLocaleString()} سبيكة ذهب (رصيدك الحالي: ${playerGold.toLocaleString()}).`);
     }
 
     state.gold = playerGold - costGold;
     const nextLvl = curLvl + 1;
-    const nextStars = Math.min(5, Math.ceil(nextLvl / 2));
+    const nextStars = Math.min(5, Math.ceil(nextLvl / 3));
 
     state.executiveGear[gearId] = {
+      unlocked: true,
       level: nextLvl,
       stars: nextStars
     };
@@ -8391,6 +8480,7 @@ const GameEngine = (() => {
       gearId,
       newLevel: nextLvl,
       newStars: nextStars,
+      tier: getGearTierInfo(nextLvl),
       spentGold: costGold,
       remainingGold: state.gold,
       bonus: def.getBonus(nextLvl)
@@ -8601,8 +8691,12 @@ const GameEngine = (() => {
 
     // Executive Gear & Character Avatar Exports
     getExecutiveGearConfig,
+    getGearTiersConfig,
+    getGearTierInfo,
     getCharacterAvatars,
     getExecutiveGearBonuses,
+    getExecutiveGearSetBonus,
+    unlockExecutiveGear,
     upgradeExecutiveGear,
     setCharacterAvatar,
 

@@ -16909,29 +16909,49 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
       // 5. 4 Executive Gear Slots
       const gearData = pState.executiveGear || (pState.state && pState.state.executiveGear) || (isMe && GameEngine.state && GameEngine.state.executiveGear) || {
-        ledger: { level: 1, stars: 1 },
-        laptop: { level: 1, stars: 1 },
-        pen: { level: 1, stars: 1 },
-        terminal: { level: 1, stars: 1 }
+        ledger: { unlocked: false, level: 1, stars: 1 },
+        laptop: { unlocked: false, level: 1, stars: 1 },
+        pen: { unlocked: false, level: 1, stars: 1 },
+        terminal: { unlocked: false, level: 1, stars: 1 }
       };
 
       const gearConfig = (typeof GameEngine !== 'undefined' && GameEngine.getExecutiveGearConfig) ? GameEngine.getExecutiveGearConfig() : {};
 
       ['ledger', 'laptop', 'pen', 'terminal'].forEach(gKey => {
-        const item = gearData[gKey] || { level: 1, stars: 1 };
+        const item = gearData[gKey] || { unlocked: false, level: 1, stars: 1 };
         const lvlEl = document.getElementById(`gear-lvl-${gKey}`);
         const starsEl = document.getElementById(`gear-stars-${gKey}`);
         const imgEl = document.getElementById(`gear-img-${gKey}`);
+        const slotEl = document.getElementById(`slot-gear-${gKey}`);
 
-        if (lvlEl) lvlEl.textContent = `L.${item.level || 1}`;
         if (imgEl && gearConfig[gKey]) imgEl.src = gearConfig[gKey].icon;
 
-        if (starsEl) {
-          const count = Math.max(1, Math.min(5, Number(item.stars) || 1));
-          starsEl.innerHTML = Array(count).fill('<i class="fa-solid fa-star"></i>').join('');
+        if (item.unlocked) {
+          const tierInfo = (typeof GameEngine !== 'undefined' && GameEngine.getGearTierInfo) ? GameEngine.getGearTierInfo(item.level || 1) : { borderClass: 'tier-border-common', name: 'عادي' };
+          if (slotEl) {
+            slotEl.className = `cyber-gear-slot p-2 rounded-2xl text-center group ${tierInfo.borderClass}`;
+          }
+          if (lvlEl) {
+            lvlEl.className = 'absolute top-0.5 right-0.5 px-1 py-0.2 bg-cyan-500 text-slate-950 font-black text-[9px] rounded-md shadow';
+            lvlEl.textContent = `L.${item.level || 1}`;
+          }
+          if (starsEl) {
+            const count = Math.max(1, Math.min(5, Number(item.stars) || Math.ceil((item.level || 1) / 3)));
+            starsEl.innerHTML = Array(count).fill('<i class="fa-solid fa-star"></i>').join('');
+          }
+        } else {
+          if (slotEl) {
+            slotEl.className = 'cyber-gear-slot p-2 rounded-2xl text-center group gear-slot-locked';
+          }
+          if (lvlEl) {
+            lvlEl.className = 'absolute top-0.5 right-0.5 px-1 py-0.2 bg-slate-800 text-slate-400 font-bold text-[8px] rounded-md shadow';
+            lvlEl.innerHTML = '<i class="fa-solid fa-lock"></i>';
+          }
+          if (starsEl) {
+            starsEl.innerHTML = '<span class="text-[8px] text-slate-500 font-bold">مغلق</span>';
+          }
         }
 
-        const slotEl = document.getElementById(`slot-gear-${gKey}`);
         if (slotEl) {
           slotEl.onclick = () => openExecutiveGearModal(gKey, isMe ? null : pState);
         }
@@ -16948,6 +16968,17 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       if (badgesListEl) {
         badgesListEl.innerHTML = '';
         let badgeCount = 0;
+
+        // Executive Gear Set Bonus Badge
+        const setBonus = (typeof GameEngine !== 'undefined' && GameEngine.getExecutiveGearSetBonus) ? GameEngine.getExecutiveGearSetBonus(pState) : null;
+        if (setBonus && setBonus.active) {
+          badgeCount++;
+          const setBadgeEl = document.createElement('div');
+          setBadgeEl.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-950 via-yellow-950 to-slate-950 border border-yellow-400 text-yellow-300 text-[11px] font-black shadow-lg shadow-yellow-500/20 animate-pulse';
+          setBadgeEl.innerHTML = `<i class="fa-solid fa-crown text-yellow-400 text-xs"></i><span>${escapeHtml(setBonus.title)} (${setBonus.text})</span>`;
+          badgesListEl.appendChild(setBadgeEl);
+        }
+
         let sMatch = seasonBadge ? String(seasonBadge).trim().match(/^S?(\d+)?[-_ ]?T(?:OP)?[-_ ]?(\d+)$/i) : null;
         let sNum = (sMatch && sMatch[1]) ? sMatch[1] : '1';
         let rNum = (sMatch && sMatch[2]) ? parseInt(sMatch[2], 10) : (seasonBadge ? 1 : 0);
@@ -17172,9 +17203,11 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       const isOther = Boolean(customPlayerState && customPlayerState.username && customPlayerState.username !== GameEngine.state.username);
       const targetState = isOther ? customPlayerState : (GameEngine.state || {});
       const gearData = targetState.executiveGear || {};
-      const currentGear = gearData[gearId] || { level: 1, stars: 1 };
+      const currentGear = gearData[gearId] || { unlocked: false, level: 1, stars: 1 };
+      const isUnlocked = Boolean(currentGear.unlocked);
       const curLvl = Number(currentGear.level) || 1;
-      const curStars = Math.max(1, Math.min(5, Number(currentGear.stars) || Math.ceil(curLvl / 2)));
+      const curStars = Math.max(1, Math.min(5, Number(currentGear.stars) || Math.ceil(curLvl / 3)));
+      const tierInfo = (typeof GameEngine !== 'undefined' && GameEngine.getGearTierInfo) ? GameEngine.getGearTierInfo(curLvl) : { name: 'عادي', badgeClass: 'bg-slate-800 text-slate-300' };
 
       const modalTitle = document.getElementById('gear-modal-title');
       const modalIcon = document.getElementById('gear-modal-icon');
@@ -17188,15 +17221,31 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       if (modalTitle) modalTitle.textContent = config.name;
       if (modalIcon) modalIcon.src = config.icon;
       if (modalName) modalName.textContent = config.name;
-      if (modalLvl) modalLvl.textContent = `المستوى ${curLvl}`;
-      if (modalStars) {
-        modalStars.innerHTML = Array(curStars).fill('<i class="fa-solid fa-star"></i>').join('');
-      }
       if (modalDesc) modalDesc.textContent = config.description;
 
-      const bonusInfo = config.getBonus(curLvl);
-      if (modalBonus) {
-        modalBonus.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${escapeHtml(bonusInfo.text)}</span>`;
+      if (isUnlocked) {
+        if (modalLvl) {
+          modalLvl.textContent = `${tierInfo.name} • مستوى ${curLvl}`;
+          modalLvl.className = `px-2 py-0.5 ${tierInfo.badgeClass} font-black text-[10px] rounded-lg shrink-0`;
+        }
+        if (modalStars) {
+          modalStars.innerHTML = Array(curStars).fill('<i class="fa-solid fa-star"></i>').join('');
+        }
+        const bonusInfo = config.getBonus(curLvl);
+        if (modalBonus) {
+          modalBonus.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${escapeHtml(bonusInfo.text)}</span>`;
+        }
+      } else {
+        if (modalLvl) {
+          modalLvl.textContent = 'مغلق (مقفل)';
+          modalLvl.className = 'px-2 py-0.5 bg-rose-500/20 text-rose-300 font-black text-[10px] rounded-lg border border-rose-500/30 shrink-0';
+        }
+        if (modalStars) {
+          modalStars.innerHTML = '<span class="text-slate-500 text-xs font-bold">يتطلب التفعيل لفتح الرتب</span>';
+        }
+        if (modalBonus) {
+          modalBonus.innerHTML = '<i class="fa-solid fa-lock text-slate-400"></i> <span class="text-slate-400">البونص غير مفعّل بعد. افتح الخانة لتفعيل الميزة.</span>';
+        }
       }
 
       if (upgradeSection) {
@@ -17204,32 +17253,70 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           upgradeSection.innerHTML = `
             <div class="text-center py-2 text-slate-400 text-xs">
               <i class="fa-solid fa-lock text-slate-500 mb-1 block text-base"></i>
-              <span>هذه الأداة خاصة بملف اللاعب (${escapeHtml(customPlayerState.username)})</span>
+              <span>${isUnlocked ? `هذه الأداة مفعلة لدى اللاعب بالمستوى (${curLvl})` : 'هذه الأداة مقفولة لدى اللاعب'}</span>
             </div>
           `;
           upgradeSection.classList.remove('hidden');
+        } else if (!isUnlocked) {
+          // Locked: check unlock criteria
+          const curNw = Number(GameEngine.state.netWorth || 0);
+          if (curNw < config.unlockNetWorth) {
+            upgradeSection.innerHTML = `
+              <div class="p-3 bg-rose-950/30 rounded-2xl border border-rose-500/30 space-y-1.5 text-center">
+                <i class="fa-solid fa-lock text-rose-400 text-lg mb-1 block"></i>
+                <p class="text-rose-300 font-bold text-xs">شرط الثروة لم يكتمل بعد</p>
+                <p class="text-slate-300 text-[10px] leading-relaxed">يتطلب فتح هذه الأداة صافي ثروة لا يقل عن <b class="text-yellow-400">${config.unlockNetWorth.toLocaleString()} جنيه</b> (ثروتك الحالية: ${curNw.toLocaleString()} جنيه).</p>
+              </div>
+            `;
+          } else {
+            upgradeSection.innerHTML = `
+              <div class="space-y-2">
+                <div class="flex items-center justify-between text-[11px]">
+                  <span class="text-slate-300">رسوم تفعيل الخانة:</span>
+                  <span class="text-yellow-400 font-black flex items-center gap-1 numbers-font">
+                    <i class="fa-solid fa-coins"></i> ${config.unlockGoldCost} سبيكة ذهب
+                  </span>
+                </div>
+                <button id="btn-unlock-executive-gear" type="button"
+                  class="w-full py-2.5 bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-500 hover:from-cyan-400 hover:to-blue-400 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-cyan-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                  <i class="fa-solid fa-key"></i>
+                  <span>تفعيل وفتح الأداة بالذهب (${config.unlockGoldCost} ذهب)</span>
+                </button>
+              </div>
+            `;
+            const unlockBtn = document.getElementById('btn-unlock-executive-gear');
+            if (unlockBtn) {
+              unlockBtn.onclick = () => unlockActiveExecutiveGear(gearId);
+            }
+          }
+          upgradeSection.classList.remove('hidden');
         } else if (curLvl >= config.maxLevel) {
           upgradeSection.innerHTML = `
-            <div class="text-center py-2 text-amber-400 font-bold text-xs bg-amber-950/40 rounded-xl border border-amber-500/30">
+            <div class="text-center py-2 text-cyan-300 font-bold text-xs bg-cyan-950/60 rounded-xl border border-cyan-400 shadow-[0_0_15px_rgba(6,182,212,0.3)]">
               <i class="fa-solid fa-crown text-yellow-400 mr-1"></i>
-              <span>تم الوصول إلى الحد الأقصى من الترقية (المستوى ${config.maxLevel})</span>
+              <span>تم الوصول إلى الحد الأقصى السيادي (المستوى ${config.maxLevel})</span>
             </div>
           `;
           upgradeSection.classList.remove('hidden');
         } else {
-          const costGold = Math.round(config.baseUpgradeCostGold * curLvl);
+          const costGold = Math.round(config.baseUpgradeCostGold * Math.pow(1.15, curLvl - 1));
+          const nextTier = (typeof GameEngine !== 'undefined' && GameEngine.getGearTierInfo) ? GameEngine.getGearTierInfo(curLvl + 1) : null;
+          const isRankUp = nextTier && nextTier.name !== tierInfo.name;
+
           upgradeSection.innerHTML = `
-            <div class="flex items-center justify-between text-[11px] mb-2">
-              <span class="text-slate-300">تكلفة الترقية للمستوى ${curLvl + 1}:</span>
-              <span class="text-yellow-400 font-black flex items-center gap-1 numbers-font">
-                <i class="fa-solid fa-coins"></i> ${costGold.toLocaleString()} سبيكة ذهب
-              </span>
+            <div class="space-y-2">
+              <div class="flex items-center justify-between text-[11px]">
+                <span class="text-slate-300">تكلفة الترقية للمستوى ${curLvl + 1} ${isRankUp ? `<span class="text-yellow-400 font-bold">(${nextTier.name})</span>` : ''}:</span>
+                <span class="text-yellow-400 font-black flex items-center gap-1 numbers-font">
+                  <i class="fa-solid fa-coins"></i> ${costGold.toLocaleString()} سبيكة ذهب
+                </span>
+              </div>
+              <button id="btn-upgrade-executive-gear" type="button"
+                class="w-full py-2.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-yellow-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-solid fa-arrow-up"></i>
+                <span>ترقية الأداة الآن (${costGold.toLocaleString()} ذهب)</span>
+              </button>
             </div>
-            <button id="btn-upgrade-executive-gear" type="button"
-              class="w-full py-2.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-yellow-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
-              <i class="fa-solid fa-arrow-up"></i>
-              <span>ترقية الأداة الآن بالذهب (${costGold} ذهب)</span>
-            </button>
           `;
           upgradeSection.classList.remove('hidden');
 
@@ -17243,6 +17330,22 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       document.getElementById('executive-gear-modal')?.classList.remove('hidden');
     } catch (err) {
       showToast('خطأ الأداة', err.message, 'error');
+    }
+  }
+
+  function unlockActiveExecutiveGear(gearId) {
+    try {
+      if (typeof GameEngine === 'undefined' || !GameEngine.unlockExecutiveGear) {
+        throw new Error('محرك اللعبة غير متاح.');
+      }
+      const res = GameEngine.unlockExecutiveGear(gearId);
+      if (res && res.success) {
+        showToast('تم تفعيل الأداة بنجاح!', `تم فتح وتفعيل الأداة التنفيذية بنجاح! الرصيد المتبقي: ${res.remainingGold.toLocaleString()} سبيكة ذهب.`, 'success');
+        openExecutiveGearModal(gearId, null);
+        if (typeof renderAll === 'function') renderAll();
+      }
+    } catch (err) {
+      showToast('تعذر التفعيل', err.message, 'error');
     }
   }
 
@@ -17260,7 +17363,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           starsEl.innerHTML = Array(res.newStars).fill('<i class="fa-solid fa-star"></i>').join('');
         }
 
-        showToast('تمت الترقية بنجاح!', `تمت ترقية الأداة إلى المستوى ${res.newLevel} بنجاح! الرصيد المتبقي: ${res.remainingGold.toLocaleString()} سبيكة ذهب.`, 'success');
+        showToast('تمت الترقية بنجاح!', `تمت ترقية الأداة إلى المستوى ${res.newLevel} (${res.tier.name}) بنجاح! الرصيد المتبقي: ${res.remainingGold.toLocaleString()} سبيكة ذهب.`, 'success');
         openExecutiveGearModal(gearId, null);
         if (typeof renderAll === 'function') renderAll();
       }
@@ -17278,12 +17381,14 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
   window.UI.openCharacterSelectorModal = openCharacterSelectorModal;
   window.UI.selectCharacterAvatar = selectCharacterAvatar;
   window.UI.openExecutiveGearModal = openExecutiveGearModal;
+  window.UI.unlockActiveExecutiveGear = unlockActiveExecutiveGear;
   window.UI.upgradeActiveExecutiveGear = upgradeActiveExecutiveGear;
   window.UI.openAvatarModal = openAvatarModal;
 
   window.openCharacterSelectorModal = openCharacterSelectorModal;
   window.selectCharacterAvatar = selectCharacterAvatar;
   window.openExecutiveGearModal = openExecutiveGearModal;
+  window.unlockActiveExecutiveGear = unlockActiveExecutiveGear;
   window.upgradeActiveExecutiveGear = upgradeActiveExecutiveGear;
   window.openAvatarModal = openAvatarModal;
   window.openPlayerProfileCard = openPlayerProfileCard;
