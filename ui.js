@@ -8367,13 +8367,13 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       unsubMarketResume();
     });
 
-    // 3. Supabase REST Real-Time User Doc & Security Watchdog (Live Real-Time Sync)
+    // 3. Supabase REST Real-Time User Doc & Security Watchdog (Lightweight Fast Check)
     let _lastLiveAdminActionTs = null;
     const checkLiveUserStatus = async () => {
       if (typeof AppDB !== 'undefined' && typeof AppDB.isNetworkActive === 'function' && !AppDB.isNetworkActive()) return;
       if (typeof document !== 'undefined' && document.hidden) return;
       try {
-        const fresh = await AppDB.getPlayerState(username);
+        const fresh = (AppDB.getPlayerSecurityStatus) ? await AppDB.getPlayerSecurityStatus(username) : await AppDB.getPlayerState(username);
         if (!fresh) return;
 
         // Ban check
@@ -8387,13 +8387,11 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         // Suspicion & Freeze lock check
         const isSusp = Boolean(
           fresh.underSuspicion || 
-          (fresh.state && fresh.state.underSuspicion) || 
-          (fresh.freezeUntil && fresh.freezeUntil > Date.now()) || 
-          (fresh.state && fresh.state.freezeUntil && fresh.state.freezeUntil > Date.now())
+          (fresh.freezeUntil && fresh.freezeUntil > Date.now())
         );
         if (GameEngine.state) GameEngine.state.underSuspicion = isSusp;
         if (typeof enforceSuspicionStatus === 'function') {
-          const reasonText = (fresh.state && fresh.state.freezeReason) || fresh.freezeReason || '';
+          const reasonText = fresh.freezeReason || '';
           enforceSuspicionStatus(isSusp, reasonText);
         }
 
@@ -8410,7 +8408,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     };
 
     checkLiveUserStatus();
-    const liveUserPollTimer = setInterval(checkLiveUserStatus, 12000);
+    const liveUserPollTimer = setInterval(checkLiveUserStatus, 25000);
     window._triggerPlayerDocCheck = checkLiveUserStatus;
     activeListeners.push(() => {
       clearInterval(liveUserPollTimer);

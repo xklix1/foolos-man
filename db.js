@@ -2187,6 +2187,27 @@ var AppDB = (() => {
     }
   }
 
+  async function getPlayerSecurityStatus(username) {
+    if (!username) return null;
+    const u = username.trim();
+    try {
+      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=is_banned,jail_timer,admin_modified_timestamp,state`);
+      if (!rows || rows.length === 0) return null;
+      const row = rows[0];
+      const rawState = (typeof row.state === 'object' && row.state) ? row.state : {};
+      return {
+        isBanned: row.is_banned === true,
+        jailTimer: Number(row.jail_timer || 0),
+        freezeUntil: Number(rawState.freezeUntil || 0),
+        freezeReason: rawState.freezeReason || '',
+        underSuspicion: Boolean(rawState.underSuspicion),
+        adminModifiedTimestamp: Number(row.admin_modified_timestamp || rawState.adminModifiedTimestamp || 0)
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
   function flushStateToCloudOnExit(username, state) {
     if (!username || !state) return;
     if (window._isAccountResetActive || window._blockExitFlush) {
@@ -6925,6 +6946,7 @@ var AppDB = (() => {
     recoverAccountWithSecurityCode,
     generateSecurityCodes,
     getPlayerState,
+    getPlayerSecurityStatus,
     savePlayerState,
     syncProgressToCloud,
     flushStateToCloudOnExit,

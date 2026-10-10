@@ -1,7 +1,7 @@
 {
-  "version": "v9.9.5",
-  "build": 1791629800000,
-  "timestamp": 1791629800000,
-  "notes": "Fix chat glow title bug and force clean reload",
-  "releaseNotes": "إصلاح مظهر الشات وإلغاء توهجات الرتب التلقائية مع تفريغ الكاش للأحدث"
+  "version": "v9.9.6",
+  "build": 1791632000000,
+  "timestamp": 1791632000000,
+  "notes": "High performance server in-memory optimizations and farm limit fix",
+  "releaseNotes": "تحسين فائق لأداء وسرعة السيرفر وتأمين ليمت المزرعة اليومي من التصفير"
 }

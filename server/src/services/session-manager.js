@@ -74,6 +74,7 @@ class SessionManager {
         state: state,
         dirty: Boolean(offlineReport && offlineReport.applied),
         lastActivity: Date.now(),
+        lastDbCheck: Date.now(),
         lastClickAt: 0,
         clickBurstCounter: 0
       };
@@ -85,37 +86,28 @@ class SessionManager {
         session.state.activeSessionId = clientSessionId;
         session.dirty = true;
       }
-      // Re-verify against database in case admin reset or modified player state externally
-      try {
-        const dbRow = await dbService.getPlayerByUsername(username);
-        if (dbRow) {
-          const rawState = (typeof dbRow.state === 'object' && dbRow.state) ? dbRow.state : {};
-          const isDbReset = Boolean(dbRow.is_reset === true || dbRow.isReset === true || rawState.isReset === true);
-          const dbAdminTs = Number(dbRow.admin_modified_timestamp || rawState.adminModifiedTimestamp || 0);
-          const sessionAdminTs = Number(session.state.adminModifiedTimestamp || 0);
-          const dbBank = Number(dbRow.bank !== undefined && dbRow.bank !== null ? dbRow.bank : (rawState.bank || 0));
-          const sessionBank = Number(session.state.bank || 0);
-          const dbCash = Number(dbRow.cash !== undefined && dbRow.cash !== null ? dbRow.cash : (rawState.cash || 0));
-          const sessionCash = Number(session.state.cash || 0);
-          const dbNetWorth = Number(dbRow.net_worth !== undefined && dbRow.net_worth !== null ? dbRow.net_worth : (rawState.netWorth || 0));
-          const sessionNetWorth = Number(session.state.netWorth || 0);
-          const dbLastSeen = Number(dbRow.last_seen || rawState.lastSeen || 0);
-          const sessionLastSeen = Number(session.state.lastSeen || session.state.lastActiveTimestamp || 0);
+      
+      // Highly-optimized: Only re-verify against database on explicit login/reconnect or after 60s idle
+      const now = Date.now();
+      const needsDbCheck = triggerOfflineCatchup || (now - (session.lastDbCheck || 0) > 60000 && !session.dirty);
+      if (needsDbCheck) {
+        session.lastDbCheck = now;
+        try {
+          const dbRow = await dbService.getPlayerByUsername(username);
+          if (dbRow) {
+            const rawState = (typeof dbRow.state === 'object' && dbRow.state) ? dbRow.state : {};
+            const isDbReset = Boolean(dbRow.is_reset === true || dbRow.isReset === true || rawState.isReset === true);
+            const dbAdminTs = Number(dbRow.admin_modified_timestamp || rawState.adminModifiedTimestamp || 0);
+            const sessionAdminTs = Number(session.state.adminModifiedTimestamp || 0);
 
-          if (
-            isDbReset || 
-            dbAdminTs > sessionAdminTs || 
-            Math.abs(dbBank - sessionBank) > 1 ||
-            Math.abs(dbCash - sessionCash) > 1 ||
-            Math.abs(dbNetWorth - sessionNetWorth) > 1 ||
-            dbLastSeen > sessionLastSeen + 5000
-          ) {
-            session.state = sanitizePlayerState(dbRow);
-            if (dbRow.pin) session.pin = dbRow.pin;
-            session.dirty = false;
+            if (isDbReset || dbAdminTs > sessionAdminTs) {
+              session.state = sanitizePlayerState(dbRow);
+              if (dbRow.pin) session.pin = dbRow.pin;
+              session.dirty = false;
+            }
           }
-        }
-      } catch (_) {}
+        } catch (_) {}
+      }
 
       session.lastActivity = Date.now();
       // Execute authoritative offline calculation if requested, even if session was cached in RAM!
@@ -292,10 +284,19 @@ class SessionManager {
 
     // Agro Farm Tycoon (Officially open to all players)
     if (clientState.farm && typeof clientState.farm === 'object') {
-      const prevFarmLiq = s.farm && s.farm.dailyLiquidation ? { ...s.farm.dailyLiquidation } : null;
+      const sFarmLiq = (s.farm && s.farm.dailyLiquidation && typeof s.farm.dailyLiquidation === 'object') ? s.farm.dailyLiquidation : null;
+      const cFarmLiq = (clientState.farm.dailyLiquidation && typeof clientState.farm.dailyLiquidation === 'object') ? clientState.farm.dailyLiquidation : null;
+      
       s.farm = clientState.farm;
-      if (prevFarmLiq) {
-        s.farm.dailyLiquidation = prevFarmLiq;
+      if (sFarmLiq && cFarmLiq && sFarmLiq.date === cFarmLiq.date) {
+        s.farm.dailyLiquidation = {
+          date: sFarmLiq.date,
+          totalLiquidated: Math.max(Number(sFarmLiq.totalLiquidated || 0), Number(cFarmLiq.totalLiquidated || 0))
+        };
+      } else if (cFarmLiq) {
+        s.farm.dailyLiquidation = { ...cFarmLiq };
+      } else if (sFarmLiq) {
+        s.farm.dailyLiquidation = { ...sFarmLiq };
       }
       const landLvl = Math.max(1, Number(s.farm.landLevel || 1));
       const expectedPlots = landLvl === 1 ? 4 : (landLvl === 2 ? 8 : (landLvl === 3 ? 12 : (landLvl >= 4 ? 16 : 4)));

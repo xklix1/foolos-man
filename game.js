@@ -3594,6 +3594,17 @@ const GameEngine = (() => {
                 state.dailyBlackMarket.count = Math.min(15, Math.max(Number(state.dailyBlackMarket.count || 0), Number(localS.dailyBlackMarket.count || 0)));
               }
             }
+            if (localS && localS.farm && localS.farm.dailyLiquidation && localS.farm.dailyLiquidation.date === todayStr) {
+              if (!state.farm) state.farm = {};
+              if (!state.farm.dailyLiquidation || state.farm.dailyLiquidation.date !== todayStr) {
+                state.farm.dailyLiquidation = { ...localS.farm.dailyLiquidation };
+              } else {
+                state.farm.dailyLiquidation.totalLiquidated = Math.min(20000000, Math.max(
+                  Number(state.farm.dailyLiquidation.totalLiquidated || 0),
+                  Number(localS.farm.dailyLiquidation.totalLiquidated || 0)
+                ));
+              }
+            }
           }
           // Safeguard: Prevent reload, re-login, or cloud race from resetting today's daily quests
           const candidateQuests = (state.dailyQuests && state.dailyQuests.date === todayStr && Array.isArray(state.dailyQuests.quests))
