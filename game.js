@@ -2701,12 +2701,11 @@ const GameEngine = (() => {
       }
     }
 
-    // 2. Bank compound interest accrual (Authoritative server mode delegates bank accrual to server delta-time)
+    // 2. Bank compound interest accrual (Hourly rate distributed per tick)
     ensureDailyEconomyReset(state);
-    const isServerOnline = typeof ServerBridge !== 'undefined' && typeof ServerBridge.isServerOnline === 'function' && ServerBridge.isServerOnline();
     const interestGained = calculateBankInterestPerTick(state);
     if (interestGained > 0) {
-      if (!isServerOnline) state.bank += interestGained;
+      state.bank += interestGained;
       state.dailyBankInterest = (state.dailyBankInterest || 0) + interestGained;
       updates.bankInterestGained = interestGained;
     }
@@ -2715,7 +2714,7 @@ const GameEngine = (() => {
     if (state.hiredJob && state.lastPuzzleSolved && (getTrustedNow() - state.lastPuzzleSolved < 86400000)) {
       const hiredSalary = (state.hiredJob.salary || 0) / 3600;
       if (hiredSalary > 0) {
-        if (!isServerOnline) state.bank += hiredSalary;
+        state.bank += hiredSalary;
         updates.businessProfitGained += hiredSalary;
       }
     }
@@ -2735,7 +2734,7 @@ const GameEngine = (() => {
 
       const tickProfit = (breakdown.ownerProfit || 0) / 3600;
       if (tickProfit > 0) {
-        if (!isServerOnline) state.bank += tickProfit;
+        state.bank += tickProfit;
         updates.businessProfitGained += tickProfit;
       }
 
@@ -2754,7 +2753,7 @@ const GameEngine = (() => {
     // V2: Joint Corporation Passive Profit Ticks (Hourly profit distributed per tick)
     const corpProfitGained = calculateCorpTickProfit(state) / 3600;
     if (corpProfitGained > 0) {
-      if (!isServerOnline) state.bank += corpProfitGained;
+      state.bank += corpProfitGained;
       updates.businessProfitGained += corpProfitGained;
     }
 
@@ -2768,7 +2767,7 @@ const GameEngine = (() => {
       if (ownedCount > 0) {
         const asset = ASSETS[key];
         const rent = (ownedCount * Math.floor(asset.rent * 0.1)) / 3600; // Rent distributed per tick
-        if (!isServerOnline) state.bank += rent;
+        state.bank += rent;
         updates.rentGained += rent;
       }
     });
@@ -2780,7 +2779,7 @@ const GameEngine = (() => {
         if (car && carRef.rentStatus ==='rented') {
           const netProfit = (car.rentalIncomePerTick - car.maintenanceCostPerTick) / 3600;
           if (netProfit > 0) {
-            if (!isServerOnline) state.bank += netProfit;
+            state.bank += netProfit;
             updates.rentGained += netProfit;
           }
         }
