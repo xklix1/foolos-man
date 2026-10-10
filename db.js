@@ -6297,6 +6297,7 @@ var AppDB = (() => {
   let _isChatPolling = false;
   async function _pollChatTick() {
     if (!isNetworkActive()) return; // 100% pause when idle or tab hidden
+    if (typeof document !== 'undefined' && document.hidden) return;
     if (_chatCallbacks.size === 0) return;
     if (_isChatPolling) return; // Prevent concurrent overlapping requests
 

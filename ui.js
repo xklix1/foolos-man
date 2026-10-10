@@ -8285,7 +8285,7 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
     };
 
     checkLiveUserStatus();
-    const liveUserPollTimer = setInterval(checkLiveUserStatus, 4000);
+    const liveUserPollTimer = setInterval(checkLiveUserStatus, 12000);
     window._triggerPlayerDocCheck = checkLiveUserStatus;
     activeListeners.push(() => {
       clearInterval(liveUserPollTimer);

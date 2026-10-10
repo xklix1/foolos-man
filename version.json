@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.6",
-  "build": 1791330000000,
-  "timestamp": 1791330000000,
-  "notes": "Rebalance Airport Control Tower & Duty Free profits, add comprehensive Airport inspector to admin panel",
-  "releaseNotes": "موازنة اقتصادية دقيقة لأرباح برج المراقبة ورسوم الترانزيت والسوق الحرة بالمطار لمنع التضخم، وإضافة فاحص المطار الشامل للوحة الإدارة"
+  "version": "v9.5.7",
+  "build": 1791330100000,
+  "timestamp": 1791330100000,
+  "notes": "Optimize network consumption, CPU performance, Stale-While-Revalidate caching, safe bundle minification, and consolidated polling",
+  "releaseNotes": "تحسين شامل وسريع لاستهلاك باقة الإنترنت وسلاسة الأداء، تسريع فتح اللعبة، تقليل حرارة المعالج، وإلغاء الاستعلامات المتكررة"
 }

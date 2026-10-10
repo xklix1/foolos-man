@@ -71,13 +71,12 @@
         }
       }, true);
 
-      // DevTools Freeze Loop: pauses debugger if DevTools is opened
-      function _trap() {
-        try {
-          (function() {}.constructor('debugger')());
-        } catch (_) {}
-      }
-      setInterval(_trap, 350);
+      // DevTools Safeguard: Anti-Tamper event interceptor (lightweight, zero CPU overhead)
+      window.addEventListener('keydown', function(e) {
+        if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C'))) {
+          try { (function() {}.constructor('debugger')()); } catch (_) {}
+        }
+      }, true);
     })();
   </script>
   <!-- Google Fonts (Cairo & Outfit) -->
@@ -7607,7 +7606,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.5.5"></script>
+  <script src="core.bundle.js?v=v9.5.7"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -8433,9 +8432,11 @@
       let isOverlayActive = false;
 
       async function checkForceReloadDirectly() {
+      async function checkSystemStatusDirectly() {
         if (typeof document !== 'undefined' && document.hidden) return;
         try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.force_reload', {
+          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=in.(maintenance,standby_mode,force_reload)&select=id,data', {
+            cache: 'no-store',
             headers: {
               'apikey': _getAnonKey(),
               'Authorization': 'Bearer ' + _getAnonKey(),
@@ -8445,20 +8446,20 @@
           });
           if (!res.ok) return;
           const rows = await res.json();
-          if (!rows || rows.length === 0 || !rows[0].data || !rows[0].data.timestamp) return;
+          if (!Array.isArray(rows)) return;
 
-          const data = rows[0].data;
-          const reloadTs = Number(data.timestamp);
-          const storedAck = Number(localStorage.getItem('rasalmal_acknowledged_reload') || 0);
+          const configMap = {};
+          rows.forEach(r => { if (r && r.id) configMap[r.id] = r.data || {}; });
 
-          if (storedAck === 0) {
-            localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
-            return;
-          }
-
-          if (reloadTs > storedAck && !isOverlayActive) {
-            isOverlayActive = true;
-            const purgeAndReload = async () => {
+          // 1. Force Reload Check
+          const forceData = configMap['force_reload'];
+          if (forceData && forceData.timestamp) {
+            const reloadTs = Number(forceData.timestamp);
+            const storedAck = Number(localStorage.getItem('rasalmal_acknowledged_reload') || 0);
+            if (storedAck === 0) {
+              localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
+            } else if (reloadTs > storedAck && !isOverlayActive) {
+              isOverlayActive = true;
               localStorage.setItem('rasalmal_acknowledged_reload', String(reloadTs));
               try {
                 if ('caches' in window) {
@@ -8475,10 +8476,114 @@
               } catch (e) {
                 window.location.reload(true);
               }
-            };
+              return;
+            }
+          }
 
-            // Execute purge and reload immediately to guarantee all connected players update
-            purgeAndReload();
+          // 2. Maintenance Mode Check
+          const maintData = configMap['maintenance'];
+          const isMaint = Boolean(maintData && (maintData.active || maintData.enabled));
+          const maintOverlay = document.getElementById('maintenance-overlay');
+          if (isMaint && !isStagingEnv()) {
+            try {
+              sessionStorage.removeItem('rasalmal_tester_pass');
+              localStorage.removeItem('rasalmal_tester_pass');
+            } catch (e) {}
+            const tb = document.getElementById('tester-mode-badge');
+            if (tb) tb.remove();
+
+            if (!maintOverlay) {
+              const overlay = document.createElement('div');
+              overlay.id = 'maintenance-overlay';
+              overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none';
+              overlay.style.pointerEvents = 'auto';
+              overlay.innerHTML = `
+                <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border-2 border-amber-500/70 rounded-3xl p-6 sm:p-7 text-center shadow-2xl shadow-amber-500/20">
+                  <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-500/20 to-yellow-500/30 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 text-3xl shadow-inner">
+                    <i class="fa-solid fa-rocket animate-bounce" style="animation-duration: 2.5s;"></i>
+                  </div>
+                  <div class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/30 mb-2">
+                    SEASON 2 • الموسم الثاني
+                  </div>
+                  <h3 class="text-xl sm:text-2xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
+                    <span>الخوادم رهن التجهيز للموسم الجديد</span>
+                  </h3>
+                  <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4 font-medium">
+                    ${maintData.message || 'يجري العمل حالياً على تجهيز البنية التحتية والموازنة الاقتصادية لضمان انطلاقة خالية من الأخطاء وتجربة عادلة وممتعة للجميع.'}
+                  </p>
+                  <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+                    class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline">
+                    <i class="fa-brands fa-facebook text-lg"></i>
+                    <span>تواصل معنا ومتابعة آخر الأخبار عبر فيسبوك</span>
+                  </a>
+                  <button id="btn-maintenance-recheck" class="w-full mt-2.5 py-3 px-6 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-rotate-right text-sm text-amber-400"></i>
+                    <span>إعادة فحص حالة الخوادم الآن (Reload)</span>
+                  </button>
+                </div>
+              `;
+              document.body.appendChild(overlay);
+              const recheckBtn = document.getElementById('btn-maintenance-recheck');
+              if (recheckBtn) {
+                recheckBtn.onclick = () => window.location.reload();
+              }
+            } else {
+              maintOverlay.classList.remove('hidden');
+              maintOverlay.style.display = 'flex';
+            }
+          } else if (maintOverlay) {
+            maintOverlay.classList.add('hidden');
+            maintOverlay.style.display = 'none';
+          }
+
+          // 3. Standby Mode Check
+          const standbyData = configMap['standby_mode'];
+          const isStandby = Boolean(standbyData && (standbyData.active || standbyData.enabled));
+          const standbyOverlay = document.getElementById('standby-overlay');
+          if (isStandby && !isStagingEnv() && !isMaint) {
+            const fbLink = standbyData.facebook_url || 'https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr';
+            if (!standbyOverlay) {
+              const overlay = document.createElement('div');
+              overlay.id = 'standby-overlay';
+              overlay.className = 'fixed inset-0 z-[9999997] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none';
+              overlay.style.pointerEvents = 'auto';
+              overlay.innerHTML = `
+                <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-purple-950/40 to-slate-950 border-2 border-purple-500/70 rounded-3xl p-6 sm:p-7 text-center shadow-2xl shadow-purple-500/25">
+                  <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-purple-500/20 to-indigo-500/30 border-2 border-purple-500/50 flex items-center justify-center text-purple-400 text-3xl shadow-inner">
+                    <i class="fa-solid fa-hourglass-half animate-pulse"></i>
+                  </div>
+                  <div class="inline-block px-3.5 py-1 bg-purple-500/20 text-purple-300 text-xs font-black rounded-full border border-purple-500/40 mb-2">
+                    ⏳ وضع الاستعداد • STANDBY MODE
+                  </div>
+                  <h3 class="text-xl sm:text-2xl font-black text-white mb-2 flex items-center justify-center gap-2">
+                    <span>الخوادم في وضع الاستعداد</span>
+                  </h3>
+                  <p id="standby-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5 font-medium">
+                    ${standbyData.message || 'يجري حالياً التحضير النهائي ووضع الاستعداد قبل فتح الخوادم رسمياً لجميع اللاعبين.'}
+                  </p>
+                  <a id="btn-standby-fb-link" href="${fbLink}" target="_blank" rel="noopener noreferrer"
+                    class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline mb-3">
+                    <i class="fa-brands fa-facebook text-lg"></i>
+                    <span>متابعة آخر الأخبار على صفحة الفيسبوك</span>
+                  </a>
+                  <button id="btn-standby-reload" class="w-full py-3 px-6 bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-rotate-right text-sm text-purple-400"></i>
+                    <span>إعادة التحميل والتحديث الآن</span>
+                  </button>
+                </div>
+              `;
+              document.body.appendChild(overlay);
+              const reloadBtn = document.getElementById('btn-standby-reload');
+              if (reloadBtn) {
+                reloadBtn.onclick = () => window.location.reload();
+              }
+            } else {
+              standbyOverlay.classList.remove('hidden');
+              standbyOverlay.style.display = 'flex';
+            }
+          } else if (standbyOverlay) {
+            standbyOverlay.classList.add('hidden');
+            standbyOverlay.style.display = 'none';
           }
         } catch (err) {}
       }
@@ -8491,245 +8596,6 @@
           if (window.location && window.location.search && window.location.search.includes('staging=1')) return true;
         } catch (e) {}
         return false;
-      }
-
-      async function checkMaintenanceDirectly() {
-        if (isStagingEnv()) {
-          const overlay = document.getElementById('maintenance-overlay');
-          if (overlay) {
-            overlay.classList.add('hidden');
-            overlay.style.display = 'none';
-            try { overlay.remove(); } catch (e) {}
-          }
-          return;
-        }
-        if (typeof document !== 'undefined' && document.hidden) return;
-        try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
-            cache: 'no-store',
-            headers: {
-              'apikey': _getAnonKey(),
-              'Authorization': 'Bearer ' + _getAnonKey(),
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
-            }
-          });
-          if (!res.ok) return;
-          const rows = await res.json();
-          if (!rows || rows.length === 0 || !rows[0].data) return;
-          const data = rows[0].data;
-          const isMaint = Boolean(data.active || data.enabled);
-
-          if (isMaint) {
-            if (isStagingEnv()) return;
-
-            // Clear any old tester artifacts
-            try {
-              sessionStorage.removeItem('rasalmal_tester_pass');
-              localStorage.removeItem('rasalmal_tester_pass');
-            } catch (e) {}
-            const tb = document.getElementById('tester-mode-badge');
-            if (tb) tb.remove();
-
-            let overlay = document.getElementById('maintenance-overlay');
-            if (!overlay) {
-              overlay = document.createElement('div');
-              overlay.id = 'maintenance-overlay';
-              overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none';
-              overlay.style.pointerEvents = 'auto';
-              overlay.innerHTML = `
-                <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border-2 border-amber-500/70 rounded-3xl p-6 sm:p-7 text-center shadow-2xl shadow-amber-500/20">
-                  <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-500/20 to-yellow-500/30 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 text-3xl shadow-inner">
-                    <i class="fa-solid fa-rocket animate-bounce" style="animation-duration: 2.5s;"></i>
-                  </div>
-                  
-                  <div class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/30 mb-2">
-                    SEASON 2 • الموسم الثاني
-                  </div>
-
-                  <h3 class="text-xl sm:text-2xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
-                    <span>الخوادم رهن التجهيز للموسم الجديد</span>
-                  </h3>
-                  
-                  <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4 font-medium">
-                    ${data.message || 'يجري العمل حالياً على تجهيز البنية التحتية والموازنة الاقتصادية لضمان انطلاقة خالية من الأخطاء وتجربة عادلة وممتعة للجميع.'}
-                  </p>
-
-                  <!-- Rechargers Special Notice -->
-                  <div class="my-4 p-3.5 sm:p-4 rounded-2xl bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-amber-500/15 border-2 border-amber-500/50 text-amber-200 text-xs text-right leading-relaxed shadow-lg">
-                    <div class="font-black text-amber-300 text-xs sm:text-sm mb-1.5 flex items-center gap-1.5">
-                      <i class="fa-solid fa-gem text-amber-400"></i>
-                      <span>تنويه هام لجميع الداعمين والشاحنين 💎:</span>
-                    </div>
-                    <p class="text-[11.5px] text-amber-100/90 leading-relaxed">
-                      يرجى من جميع اللاعبين الذين قاموا بالشحن سابقاً، <strong class="text-white font-black underline">التواصل معنا عبر رسائل صفحة فيسبوك</strong> لتسجيل وتأكيد إعادة إرسال كامل باقاتهم وشحناتهم لحساباتهم فور انطلاق الموسم الجديد.
-                    </p>
-                  </div>
-
-                  <!-- Facebook Button -->
-                  <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
-                    class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline">
-                    <i class="fa-brands fa-facebook text-lg"></i>
-                    <span>تواصل معنا ومتابعة آخر الأخبار عبر فيسبوك</span>
-                  </a>
-
-                  <!-- Reload Button -->
-                  <button id="btn-maintenance-recheck" class="w-full mt-2.5 py-3 px-6 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-rotate-right text-sm text-amber-400"></i>
-                    <span>إعادة فحص حالة الخوادم الآن (Reload)</span>
-                  </button>
-                </div>
-              `;
-              document.body.appendChild(overlay);
-
-              const recheckBtn = document.getElementById('btn-maintenance-recheck');
-              if (recheckBtn) {
-                recheckBtn.onclick = async () => {
-                  recheckBtn.disabled = true;
-                  recheckBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري فحص الاتصال...</span>';
-                  try {
-                    const r = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.maintenance', {
-                      cache: 'no-store',
-                      headers: {
-                        'apikey': _getAnonKey(),
-                        'Authorization': 'Bearer ' + _getAnonKey(),
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                      }
-                    });
-                    const rRows = await r.json();
-                    if (rRows && rRows[0] && rRows[0].data && (rRows[0].data.active || rRows[0].data.enabled)) {
-                      recheckBtn.disabled = false;
-                      recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-sm text-amber-400"></i> <span>الخوادم ما زالت قيد التجهيز.. إعادة الفحص</span>';
-                    } else {
-                      overlay.classList.add('hidden');
-                      window.location.reload();
-                    }
-                  } catch (e) {
-                    recheckBtn.disabled = false;
-                    recheckBtn.innerHTML = '<i class="fa-solid fa-rotate-right text-sm text-amber-400"></i> <span>إعادة فحص حالة الخوادم</span>';
-                  }
-                };
-              }
-            } else {
-              overlay.classList.remove('hidden');
-              overlay.style.display = 'flex';
-              const reasonEl = document.getElementById('maintenance-overlay-reason');
-              if (reasonEl && data.message) {
-                reasonEl.textContent = data.message;
-              }
-            }
-          } else {
-            const overlay = document.getElementById('maintenance-overlay');
-            if (overlay) {
-              overlay.classList.add('hidden');
-              overlay.style.display = 'none';
-              try { overlay.remove(); } catch (e) {}
-            }
-          }
-        } catch (err) {}
-      }
-
-      async function checkStandbyDirectly() {
-        if (isStagingEnv()) {
-          const overlay = document.getElementById('standby-overlay');
-          if (overlay) {
-            overlay.classList.add('hidden');
-            overlay.style.display = 'none';
-            try { overlay.remove(); } catch (e) {}
-          }
-          return;
-        }
-        if (typeof document !== 'undefined' && document.hidden) return;
-        try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=eq.standby_mode', {
-            cache: 'no-store',
-            headers: {
-              'apikey': _getAnonKey(),
-              'Authorization': 'Bearer ' + _getAnonKey(),
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
-            }
-          });
-          if (!res.ok) return;
-          const rows = await res.json();
-          if (!rows || rows.length === 0 || !rows[0].data) return;
-          const data = rows[0].data;
-          const isStandby = Boolean(data.active || data.enabled);
-
-          if (isStandby) {
-            let overlay = document.getElementById('standby-overlay');
-            const fbLink = data.facebook_url || 'https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr';
-            if (!overlay) {
-              overlay = document.createElement('div');
-              overlay.id = 'standby-overlay';
-              overlay.className = 'fixed inset-0 z-[9999997] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none';
-              overlay.style.pointerEvents = 'auto';
-              overlay.innerHTML = `
-                <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-purple-950/40 to-slate-950 border-2 border-purple-500/70 rounded-3xl p-6 sm:p-7 text-center shadow-2xl shadow-purple-500/25">
-                  <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-purple-500/20 to-indigo-500/30 border-2 border-purple-500/50 flex items-center justify-center text-purple-400 text-3xl shadow-inner">
-                    <i class="fa-solid fa-hourglass-half animate-pulse"></i>
-                  </div>
-                  
-                  <div class="inline-block px-3.5 py-1 bg-purple-500/20 text-purple-300 text-xs font-black rounded-full border border-purple-500/40 mb-2">
-                    ⏳ وضع الاستعداد • STANDBY MODE
-                  </div>
-
-                  <h3 class="text-xl sm:text-2xl font-black text-white mb-2 flex items-center justify-center gap-2">
-                    <span>الخوادم في وضع الاستعداد</span>
-                  </h3>
-                  
-                  <p id="standby-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-5 font-medium">
-                    ${data.message || 'يجري حالياً التحضير النهائي ووضع الاستعداد قبل فتح الخوادم رسمياً لجميع اللاعبين.'}
-                  </p>
-
-                  <!-- Facebook Button -->
-                  <a id="btn-standby-fb-link" href="${fbLink}" target="_blank" rel="noopener noreferrer"
-                    class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline mb-3">
-                    <i class="fa-brands fa-facebook text-lg"></i>
-                    <span>متابعة آخر الأخبار على صفحة الفيسبوك</span>
-                  </a>
-
-                  <!-- Reload Button -->
-                  <button id="btn-standby-reload" class="w-full py-3 px-6 bg-slate-800/90 hover:bg-slate-700/90 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-rotate-right text-sm text-purple-400"></i>
-                    <span>إعادة التحميل والتحديث الآن</span>
-                  </button>
-                </div>
-              `;
-              document.body.appendChild(overlay);
-
-              const reloadBtn = document.getElementById('btn-standby-reload');
-              if (reloadBtn) {
-                reloadBtn.onclick = async () => {
-                  reloadBtn.disabled = true;
-                  reloadBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري التحديث...</span>';
-                  if ('caches' in window) {
-                    try {
-                      const keys = await caches.keys();
-                      await Promise.all(keys.map(k => caches.delete(k)));
-                    } catch (e) {}
-                  }
-                  window.location.reload();
-                };
-              }
-            } else {
-              overlay.classList.remove('hidden');
-              overlay.style.display = 'flex';
-              const reasonEl = document.getElementById('standby-overlay-reason');
-              if (reasonEl && data.message) reasonEl.textContent = data.message;
-              const fbBtn = document.getElementById('btn-standby-fb-link');
-              if (fbBtn && fbLink) fbBtn.href = fbLink;
-            }
-          } else {
-            const overlay = document.getElementById('standby-overlay');
-            if (overlay) {
-              overlay.classList.add('hidden');
-              overlay.style.display = 'none';
-              try { overlay.remove(); } catch (e) {}
-            }
-          }
-        } catch (err) {}
       }
 
       async function checkSuspicionDirectly() {
@@ -9232,69 +9098,33 @@
         }
       };
 
-      // Poll unread messages from moderators every 5 seconds
-      setInterval(checkPlayerModeratorChatUnread, 5000);
-      setTimeout(checkPlayerModeratorChatUnread, 2000);
-
-      checkForceReloadDirectly();
+      // Initial checks
+      checkSystemStatusDirectly();
       checkSuspicionDirectly();
-      setInterval(checkSuspicionDirectly, 3000);
-      if (!isStagingEnv()) {
-        checkMaintenanceDirectly();
-        checkStandbyDirectly();
-        // Check status every 3s for instant block
-        setInterval(checkMaintenanceDirectly, 3000);
-        setInterval(checkStandbyDirectly, 3000);
-      } else {
-        const overlay = document.getElementById('maintenance-overlay');
-        if (overlay) {
-          overlay.classList.add('hidden');
-          overlay.style.display = 'none';
-          try { overlay.remove(); } catch (e) {}
-        }
-        const standbyOverlay = document.getElementById('standby-overlay');
-        if (standbyOverlay) {
-          standbyOverlay.classList.add('hidden');
-          standbyOverlay.style.display = 'none';
-          try { standbyOverlay.remove(); } catch (e) {}
-        }
-      }
-      // Check force reload every 3 seconds for instant admin trigger
-      setInterval(checkForceReloadDirectly, 3000);
+      setTimeout(checkPlayerModeratorChatUnread, 3000);
+
+      // Unified periodic status polling (15s interval, strictly paused when tab is hidden to save battery & data)
+      setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
+        checkSystemStatusDirectly();
+        checkSuspicionDirectly();
+        checkPlayerModeratorChatUnread();
+      }, 15000);
 
       if (typeof document !== 'undefined') {
         document.addEventListener('visibilitychange', function() {
           if (!document.hidden) {
-            checkForceReloadDirectly();
+            checkSystemStatusDirectly();
             checkSuspicionDirectly();
-            if (!isStagingEnv()) {
-              checkMaintenanceDirectly();
-              checkStandbyDirectly();
-            } else {
-              const overlay = document.getElementById('maintenance-overlay');
-              if (overlay) {
-                overlay.classList.add('hidden');
-                overlay.style.display = 'none';
-                try { overlay.remove(); } catch (e) {}
-              }
-              const standbyOverlay = document.getElementById('standby-overlay');
-              if (standbyOverlay) {
-                standbyOverlay.classList.add('hidden');
-                standbyOverlay.style.display = 'none';
-                try { standbyOverlay.remove(); } catch (e) {}
-              }
-            }
+            checkPlayerModeratorChatUnread();
           }
         });
       }
       if (typeof window !== 'undefined') {
         window.addEventListener('focus', function() {
-          checkForceReloadDirectly();
+          checkSystemStatusDirectly();
           checkSuspicionDirectly();
-          if (!isStagingEnv()) {
-            checkMaintenanceDirectly();
-            checkStandbyDirectly();
-          }
+          checkPlayerModeratorChatUnread();
         });
       }
     })();

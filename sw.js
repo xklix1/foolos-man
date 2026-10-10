@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v9.5.6';
+const CACHE_NAME = 'rasalmal-v9.5.7';
 
 // Essential static shell assets to pre-cache on install (NEVER precache HTML or version.json)
 const PRECACHE_ASSETS = [
@@ -107,35 +107,27 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // RULE 2: STRICT NETWORK-FIRST (For static assets like CSS, JS bundles, images)
+  // RULE 2: SMART STALE-WHILE-REVALIDATE (For static assets like CSS, JS bundles, images, fonts)
   event.respondWith(
-    fetch(req)
-      .then((networkResponse) => {
-        // Only cache successful basic GET responses that are NOT HTML
-        if (networkResponse && networkResponse.status === 200 && networkResponse.type === 'basic') {
-          const contentType = networkResponse.headers.get('content-type') || '';
-          if (!contentType.includes('text/html')) {
-            const responseClone = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => {
-              cache.put(req, responseClone);
-            });
+    caches.match(req).then((cachedResponse) => {
+      const fetchPromise = fetch(req)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
+            const contentType = networkResponse.headers.get('content-type') || '';
+            if (!contentType.includes('text/html')) {
+              const responseClone = networkResponse.clone();
+              caches.open(CACHE_NAME).then((cache) => {
+                cache.put(req, responseClone);
+              });
+            }
           }
-        }
-        return networkResponse;
-      })
-      .catch(() => {
-        // Fallback to cache ONLY when offline or network drops
-        return caches.match(req).then((cachedResponse) => {
-          if (cachedResponse) {
-            return cachedResponse;
-          }
-          return new Response('Network unavailable and resource not cached.', {
-            status: 503,
-            statusText: 'Service Unavailable',
-            headers: { 'Content-Type': 'text/plain' }
-          });
-        });
-      })
+          return networkResponse;
+        })
+        .catch(() => cachedResponse);
+
+      // Return cached response immediately for blazing fast 0-latency load and low data usage
+      return cachedResponse || fetchPromise;
+    })
   );
 });
 
