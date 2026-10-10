@@ -5232,23 +5232,27 @@ const UIController = (() => {
     if (depositBtn) {
       depositBtn.addEventListener('click', async () => {
         const input = document.getElementById('bank-amount-input');
-        const val = parseInt(input.value);
+        const inputVal = parseFloat(input.value);
+        const currentCash = Number(GameEngine.state.cash || 0);
+        const isAll = (input.dataset.all === 'deposit') || (!isNaN(inputVal) && inputVal >= Math.floor(currentCash));
+        const val = isAll ? currentCash : parseInt(input.value);
         try {
           if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للإيداع.");
-          if (GameEngine.state.cash < val) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
+          if (!isAll && currentCash < val) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
 
           depositBtn.disabled = true;
           if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
             throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
           }
-          const res = await window.ServerBridge.bankAction('deposit', val);
+          const res = await window.ServerBridge.bankAction('deposit', isAll ? 'all' : val, isAll);
           if (res && res.success) {
             if (res.cash !== undefined) GameEngine.state.cash = res.cash;
             if (res.bank !== undefined) GameEngine.state.bank = res.bank;
             if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+            delete input.dataset.all;
             input.value = '';
-            showToast('إيداع بنكي', `تم إيداع ${val.toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
+            showToast('إيداع بنكي', `تم إيداع ${Number(res.amount || val).toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
             renderAll();
             return;
           } else if (res && res.error) {
@@ -5266,23 +5270,27 @@ const UIController = (() => {
     if (withdrawBtn) {
       withdrawBtn.addEventListener('click', async () => {
         const input = document.getElementById('bank-amount-input');
-        const val = parseInt(input.value);
+        const inputVal = parseFloat(input.value);
+        const currentBank = Number(GameEngine.state.bank || 0);
+        const isAll = (input.dataset.all === 'withdraw') || (!isNaN(inputVal) && inputVal >= Math.floor(currentBank));
+        const val = isAll ? currentBank : parseInt(input.value);
         try {
           if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للسحب.");
-          if (GameEngine.state.bank < val) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
+          if (!isAll && currentBank < val) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
 
           withdrawBtn.disabled = true;
           if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
             throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
           }
-          const res = await window.ServerBridge.bankAction('withdraw', val);
+          const res = await window.ServerBridge.bankAction('withdraw', isAll ? 'all' : val, isAll);
           if (res && res.success) {
             if (res.cash !== undefined) GameEngine.state.cash = res.cash;
             if (res.bank !== undefined) GameEngine.state.bank = res.bank;
             if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+            delete input.dataset.all;
             input.value = '';
-            showToast('سحب بنكي', `تم سحب ${val.toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
+            showToast('سحب بنكي', `تم سحب ${Number(res.amount || val).toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
             renderAll();
             return;
           } else if (res && res.error) {
@@ -5330,16 +5338,30 @@ const UIController = (() => {
 
     // Preset Percentage shortcuts
     const bankPresets = document.querySelectorAll('.bank-preset');
+    const bankInputEl = document.getElementById('bank-amount-input');
+    if (bankInputEl && !bankInputEl._clearAllBound) {
+      bankInputEl._clearAllBound = true;
+      bankInputEl.addEventListener('input', () => {
+        delete bankInputEl.dataset.all;
+      });
+    }
     bankPresets.forEach(btn => {
       btn.addEventListener('click', () => {
         const action = btn.getAttribute('data-action');
         const pct = parseFloat(btn.getAttribute('data-pct'));
         const input = document.getElementById('bank-amount-input');
+        if (!input) return;
 
-        if (action ==='deposit') {
-          input.value = Math.floor(GameEngine.state.cash * pct);
+        if (pct >= 1.0) {
+          input.dataset.all = action;
+          input.value = Math.floor(action === 'deposit' ? (GameEngine.state.cash || 0) : (GameEngine.state.bank || 0));
         } else {
-          input.value = Math.floor(GameEngine.state.bank * pct);
+          delete input.dataset.all;
+          if (action === 'deposit') {
+            input.value = Math.floor((GameEngine.state.cash || 0) * pct);
+          } else {
+            input.value = Math.floor((GameEngine.state.bank || 0) * pct);
+          }
         }
       });
     });

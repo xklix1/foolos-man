@@ -283,12 +283,13 @@ var ServerBridge = (() => {
   /**
    * Bank deposit or withdrawal
    */
-  async function bankAction(type, amount) {
+  async function bankAction(type, amount, isAll = false) {
     if (!_isServerOnline || !_activeUsername) return null;
     return await _post('/api/action/bank', {
       username: _activeUsername,
       type,
-      amount
+      amount,
+      isAll: isAll || amount === 'all'
     });
   }
 

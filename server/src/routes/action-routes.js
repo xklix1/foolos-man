@@ -276,22 +276,51 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const session = await resolveSession(request, reply);
     if (!session) return;
 
-    const { type, amount } = request.body || {};
-    const val = Math.floor(Math.max(1, Number(amount) || 0));
+    const { type, amount, isAll } = request.body || {};
     const s = session.state;
+    const isAllRequested = isAll === true || amount === 'all';
+    let val = 0;
 
     if (type === 'deposit') {
-      if (s.cash < val) {
-        return reply.code(400).send({ error: 'Insufficient cash to deposit' });
+      const currentCash = Math.max(0, Number(s.cash) || 0);
+      if (currentCash <= 0) {
+        return reply.code(400).send({ error: 'لا يوجد رصيد نقدي (كاش) لإتمام الإيداع' });
       }
-      s.cash -= val;
-      s.bank = (Number(s.bank) || 0) + val;
+      const isSweepAll = isAllRequested || 
+                         (Number(amount) >= currentCash) || 
+                         (Math.floor(currentCash) > 0 && Number(amount) >= Math.floor(currentCash) && (currentCash - Number(amount)) < 1);
+      if (isSweepAll) {
+        val = currentCash;
+        s.cash = 0;
+      } else {
+        val = Math.floor(Math.max(1, Number(amount) || 0));
+        if (currentCash < val) {
+          return reply.code(400).send({ error: 'Insufficient cash to deposit' });
+        }
+        s.cash = Math.max(0, currentCash - val);
+        if (s.cash < 0.001) s.cash = 0;
+      }
+      s.bank = Math.round(((Number(s.bank) || 0) + val) * 100) / 100;
     } else if (type === 'withdraw') {
-      if ((Number(s.bank) || 0) < val) {
-        return reply.code(400).send({ error: 'Insufficient bank balance to withdraw' });
+      const currentBank = Math.max(0, Number(s.bank) || 0);
+      if (currentBank <= 0) {
+        return reply.code(400).send({ error: 'لا يوجد رصيد في الحساب البنكي لإتمام السحب' });
       }
-      s.bank -= val;
-      s.cash += val;
+      const isSweepAll = isAllRequested || 
+                         (Number(amount) >= currentBank) || 
+                         (Math.floor(currentBank) > 0 && Number(amount) >= Math.floor(currentBank) && (currentBank - Number(amount)) < 1);
+      if (isSweepAll) {
+        val = currentBank;
+        s.bank = 0;
+      } else {
+        val = Math.floor(Math.max(1, Number(amount) || 0));
+        if (currentBank < val) {
+          return reply.code(400).send({ error: 'Insufficient bank balance to withdraw' });
+        }
+        s.bank = Math.max(0, currentBank - val);
+        if (s.bank < 0.001) s.bank = 0;
+      }
+      s.cash = Math.round(((Number(s.cash) || 0) + val) * 100) / 100;
     } else {
       return reply.code(400).send({ error: "Invalid operation type, must be 'deposit' or 'withdraw'" });
     }

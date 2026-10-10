@@ -4327,54 +4327,71 @@ const GameEngine = (() => {
   }
 
   // Deposit Cash to Bank
-  function depositToBank(amount) {
-    if (amount <= 0) throw new Error("مبلغ الإيداع يجب أن يكون أكبر من صفر.");
-    if (state.cash < amount) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
+  function depositToBank(amount, isAll = false) {
+    const isAllAction = isAll === true || amount === 'all' || (Number(amount) >= (state.cash || 0));
+    const currentCash = Math.max(0, Number(state.cash) || 0);
+    const depositAmt = isAllAction ? currentCash : Math.floor(Math.max(1, Number(amount) || 0));
 
-    state.cash -= amount;
+    if (depositAmt <= 0) throw new Error("مبلغ الإيداع يجب أن يكون أكبر من صفر.");
+    if (!isAllAction && currentCash < depositAmt) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
+
+    if (isAllAction) {
+      state.cash = 0;
+    } else {
+      state.cash = Math.max(0, currentCash - depositAmt);
+    }
 
     // Automatic debt recovery if loan is defaulted
     if (state.activeLoan && state.activeLoan.isDefaulted) {
-      if (amount >= state.activeLoan.totalDue) {
-        const excess = amount - state.activeLoan.totalDue;
+      if (depositAmt >= state.activeLoan.totalDue) {
+        const excess = depositAmt - state.activeLoan.totalDue;
         const paid = state.activeLoan.totalDue;
         state.activeLoan = null;
-        state.bank += excess;
+        state.bank = (Number(state.bank) || 0) + excess;
         recordPlayerActivity('سداد كامل لقرض متعثر ',`تم استقطاع كامل الدين (${paid.toLocaleString()} ج.م) من الإيداع وفك تجميد الحساب البنكي بنجاح!`,'banking');
       } else {
-        state.activeLoan.totalDue -= amount;
-        recordPlayerActivity('سداد جزئي لقرض متعثر ',`تم توجيه مبلغ ${amount.toLocaleString()} ج.م من الإيداع لسداد جزء من القرض المتعثر. المتبقي: ${state.activeLoan.totalDue.toLocaleString()} ج.م`,'banking');
+        state.activeLoan.totalDue -= depositAmt;
+        recordPlayerActivity('سداد جزئي لقرض متعثر ',`تم توجيه مبلغ ${depositAmt.toLocaleString()} ج.م من الإيداع لسداد جزء من القرض المتعثر. المتبقي: ${state.activeLoan.totalDue.toLocaleString()} ج.م`,'banking');
       }
     } else {
-      state.bank += amount;
-      recordPlayerActivity('إيداع بنكي ',`إيداع نقدي بقيمة ${amount.toLocaleString()} ج.م في الحساب المصرفي`,'banking');
+      state.bank = (Number(state.bank) || 0) + depositAmt;
+      recordPlayerActivity('إيداع بنكي ',`إيداع نقدي بقيمة ${depositAmt.toLocaleString()} ج.م في الحساب المصرفي`,'banking');
     }
 
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('bank_deposit', 1);
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.bankAction('deposit', amount).catch(e => console.warn('[Bank] Server deposit sync warning:', e.message));
+      ServerBridge.bankAction('deposit', isAllAction ? 'all' : depositAmt, isAllAction).catch(e => console.warn('[Bank] Server deposit sync warning:', e.message));
     }
 
     forceSaveState(true);
   }
 
   // Withdraw Cash from Bank
-  function withdrawFromBank(amount) {
-    if (amount <= 0) throw new Error("مبلغ السحب يجب أن يكون أكبر من صفر.");
+  function withdrawFromBank(amount, isAll = false) {
+    const isAllAction = isAll === true || amount === 'all' || (Number(amount) >= (state.bank || 0));
+    const currentBank = Math.max(0, Number(state.bank) || 0);
+    const withdrawAmt = isAllAction ? currentBank : Math.floor(Math.max(1, Number(amount) || 0));
+
+    if (withdrawAmt <= 0) throw new Error("مبلغ السحب يجب أن يكون أكبر من صفر.");
     if (state.activeLoan && state.activeLoan.isDefaulted) {
       throw new Error(`حسابك البنكي مجمد بموجب أمر قضائي مصرفي لتعثرك في سداد القرض المستحق (${state.activeLoan.totalDue.toLocaleString()} EGP). يرجى سداد القرض أولاً لفك تجميد حسابك!`);
     }
-    if (state.bank < amount) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
+    if (!isAllAction && currentBank < withdrawAmt) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
 
-    state.bank -= amount;
-    state.cash += amount;
-    recordPlayerActivity('سحب بنكي',`سحب نقدي بقيمة ${amount.toLocaleString()} ج.م من الحساب المصرفي`,'banking');
+    if (isAllAction) {
+      state.bank = 0;
+    } else {
+      state.bank = Math.max(0, currentBank - withdrawAmt);
+    }
+
+    state.cash = (Number(state.cash) || 0) + withdrawAmt;
+    recordPlayerActivity('سحب بنكي',`سحب نقدي بقيمة ${withdrawAmt.toLocaleString()} ج.م من الحساب المصرفي`,'banking');
     state.netWorth = calculateNetWorth();
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.bankAction('withdraw', amount).catch(e => console.warn('[Bank] Server withdraw sync warning:', e.message));
+      ServerBridge.bankAction('withdraw', isAllAction ? 'all' : withdrawAmt, isAllAction).catch(e => console.warn('[Bank] Server withdraw sync warning:', e.message));
     }
 
     forceSaveState(true);
