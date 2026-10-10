@@ -947,14 +947,19 @@
             <div class="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
               <div class="flex items-center gap-2">
                 <div class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></div>
-                <span class="text-xs font-bold text-white">جلسة استجواب / محادثة مع: <span id="modChatTargetUsername" class="text-emerald-400">--</span></span>
+                <span class="text-xs font-bold text-white">جلسة استجواب / محادثة مع: <span id="modChatTargetUsername" class="text-emerald-400 font-mono">--</span></span>
               </div>
               <div class="flex items-center gap-2">
+                <!-- Quick Shared Task Button -->
+                <button type="button" onclick="createTaskForCurrentChatPlayer()" class="px-2.5 py-1 rounded-lg bg-indigo-600/40 hover:bg-indigo-600 text-[11px] text-indigo-200 hover:text-white font-bold border border-indigo-500/50 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="إضافة مهمة تحقيق مشتركة مسندة لهذا اللاعب في لوحة المهام">
+                  <i class="fa-solid fa-list-check text-indigo-400"></i>
+                  <span>+ مهمة تحقيق</span>
+                </button>
                 <button type="button" onclick="sendOfficialGlobalReplyToInspectedPlayer()" class="px-2.5 py-1 rounded-lg bg-blue-600/30 hover:bg-blue-600 text-[11px] text-blue-200 hover:text-white font-bold border border-blue-500/40 transition flex items-center gap-1.5" title="نشر رد رسمي لهذا اللاعب في الشات العام لجميع اللاعبين">
                   <i class="fa-solid fa-earth-americas text-blue-400"></i>
                   <span>رد رسمي في الشات العام</span>
                 </button>
-                <button onclick="loadModeratorChatMessages(true)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition">
+                <button onclick="loadModeratorChatMessages(true)" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 transition cursor-pointer">
                   <i class="fa-solid fa-rotate text-cyan-400"></i> تحديث
                 </button>
               </div>
@@ -965,15 +970,19 @@
               <!-- Messages injected dynamically -->
             </div>
 
-            <!-- Canned Quick Responses -->
-            <div class="flex flex-wrap gap-1.5 mb-2">
-              <button type="button" onclick="applyModChatTemplate('يرجى توضيح مصدر هذه المبالغ أو التحويلات غير المعتادة للتحقق من نزاهة الحساب.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 transition">
+            <!-- Canned Quick Responses & Actions -->
+            <div class="flex flex-wrap items-center gap-1.5 mb-2">
+              <button type="button" onclick="createTaskForCurrentChatPlayer()" class="px-2.5 py-1 rounded-md bg-indigo-950/70 hover:bg-indigo-900 border border-indigo-600/60 text-[10px] text-indigo-300 font-bold transition flex items-center gap-1 cursor-pointer">
+                <i class="fa-solid fa-plus-circle text-indigo-400 text-[10px]"></i>
+                <span>إضافة مهمة على هذا اللاعب</span>
+              </button>
+              <button type="button" onclick="applyModChatTemplate('يرجى توضيح مصدر هذه المبالغ أو التحويلات غير المعتادة للتحقق من نزاهة الحساب.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 transition cursor-pointer">
                 طلب توضيح المصدر
               </button>
-              <button type="button" onclick="applyModChatTemplate('تم فحص وتدقيق نشاط حسابك والتأكد من سلامة الإجراءات. شكراً لتعاونك.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-emerald-400 transition">
+              <button type="button" onclick="applyModChatTemplate('تم فحص وتدقيق نشاط حسابك والتأكد من سلامة الإجراءات. شكراً لتعاونك.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-emerald-400 transition cursor-pointer">
                 تأكيد النزاهة
               </button>
-              <button type="button" onclick="applyModChatTemplate('يرجى الالتزام بقواعد اللعبة وتجنب أي استخدام لبرامج غير مصرح بها أو حسابات وهمية.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 transition">
+              <button type="button" onclick="applyModChatTemplate('يرجى الالتزام بقواعد اللعبة وتجنب أي استخدام لبرامج غير مصرح بها أو حسابات وهمية.')" class="px-2 py-1 rounded-md bg-slate-800 hover:bg-slate-700 text-[10px] text-amber-300 transition cursor-pointer">
                 تحذير
               </button>
             </div>
@@ -5156,6 +5165,10 @@
 
             <div class="flex items-center gap-2 text-right shrink-0">
               <div class="text-[10px] text-slate-500 hidden md:block">${fmtDate(th.lastTimestamp)}</div>
+              <button type="button" onclick="event.stopPropagation(); createTaskForCurrentChatPlayer('${th.username}')" class="px-2.5 py-1.5 sm:py-2 rounded-xl bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/50 text-xs font-bold flex items-center gap-1 transition shrink-0 cursor-pointer shadow-sm" title="إسناد مهمة تحقيق جديدة على هذا اللاعب">
+                <i class="fa-solid fa-list-check text-indigo-400"></i>
+                <span class="hidden sm:inline">+ مهمة</span>
+              </button>
               <button type="button" onclick="event.stopPropagation(); openChatWithPlayer('${th.username}')" class="px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition shrink-0 cursor-pointer">
                 <i class="fa-solid fa-comments"></i>
                 <span>فتح المحادثة</span>
@@ -5593,6 +5606,35 @@
       loadStaffTasks();
       if (_staffTasksPollTimer) clearInterval(_staffTasksPollTimer);
       _staffTasksPollTimer = setInterval(() => loadStaffTasks(true), 10000);
+    }
+
+    function createTaskForCurrentChatPlayer(playerName) {
+      let targetUser = playerName;
+      if (!targetUser) {
+        targetUser = (inspectingPlayer && inspectingPlayer.username) || 
+                     document.getElementById('modChatTargetUsername')?.textContent?.trim() || 
+                     document.getElementById('inspectUsername')?.textContent?.trim() || '';
+      }
+      if (targetUser === '--' || targetUser === '---') targetUser = '';
+
+      openStaffTasksModal();
+
+      const targetInput = document.getElementById('newTaskTargetPlayerInput') || document.getElementById('staffTaskTargetPlayer');
+      const textInput = document.getElementById('newTaskTextInput') || document.getElementById('staffTaskInputText');
+      const prioritySelect = document.getElementById('newTaskPrioritySelect') || document.getElementById('staffTaskPriority');
+
+      if (targetInput && targetUser) {
+        targetInput.value = targetUser;
+      }
+      if (prioritySelect) {
+        prioritySelect.value = 'urgent';
+      }
+      if (textInput) {
+        textInput.placeholder = targetUser ? `اكتب تفاصيل الإجراء أو التحري المطلوب بخصوص @${targetUser}...` : 'اكتب تفاصيل المهمة...';
+        setTimeout(() => {
+          textInput.focus();
+        }, 150);
+      }
     }
 
     function closeStaffTasksModal() {
