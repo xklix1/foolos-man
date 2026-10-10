@@ -3771,6 +3771,36 @@ var AppDB = (() => {
       items: { vip_casino_pass: 2, swiss_safe: 1 },
       description:'إطار شات ناري مشتعل بتدرج أزرق كهربائي ملكي + شارة SVIP المشتعلة + حزمة الملصقات + 5 مليون كاش وخزائن سويسرية.',
       hidden: true
+    },
+    {
+      id: 'pkg_airport_manager_tier2',
+      name: 'باقة كابتن ألفا - مدير عمليات الطيران الدولي VIP',
+      price: 750,
+      category: 'vip',
+      cash: 50000000,
+      bank: 25000000,
+      gold: 50,
+      xp: 25000,
+      airportManagerTier: 2,
+      customBadge: 'CAPTAIN',
+      badgeTitle: 'كابتن طيران دولي VIP',
+      description: 'تعيين كابتن ألفا مديراً لعمليات الطيران بالمطار (+10% أرباح على كافة الرحلات، -5% تخفيض تكاليف، +10% خبرة XP) مع 50 مليون كاش و 50 ذهبة.',
+      hidden: false
+    },
+    {
+      id: 'pkg_airport_manager_tier3',
+      name: 'باقة الرئيس التنفيذي ألكسندر - إمبراطور الطيران العالمي VIP',
+      price: 1500,
+      category: 'vip',
+      cash: 150000000,
+      bank: 50000000,
+      gold: 150,
+      xp: 50000,
+      airportManagerTier: 3,
+      customBadge: 'EMPEROR',
+      badgeTitle: 'إمبراطور الطيران VIP',
+      description: 'تعيين الرئيس التنفيذي ألكسندر كإمبراطور للمطار (+15% أرباح، -10% تكاليف، طيار آلي ذكي Smart Auto-Pilot وتشغيل أوفلاين حتى 72 ساعة) مع 150 مليون كاش و 150 ذهبة.',
+      hidden: false
     }
   ];
 

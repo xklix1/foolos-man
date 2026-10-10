@@ -23306,7 +23306,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
   let _cachedTopupPackagesList = [];
   let _activeTopupCategoryFilter = 'all';
 
-  async function openTopupModal() {
+  async function openTopupModal(targetPkgId = null) {
     playMenuSound('modal_open');
     bindTopupModalEvents();
 
@@ -23353,6 +23353,14 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
       // Render packages
       renderTopupPackagesList(_cachedTopupPackagesList);
+
+      // If specific target package was requested (e.g. Captain Alpha or Aviation Emperor), open its order confirmation directly!
+      if (targetPkgId) {
+        const foundPkg = _cachedTopupPackagesList.find(p => p.id === targetPkgId);
+        if (foundPkg) {
+          selectPackageForTopup(foundPkg);
+        }
+      }
     } catch (err) {
       if (container) {
         container.innerHTML = `<div class="col-span-full p-4 text-center text-rose-400 bg-rose-950/40 rounded-2xl border border-rose-500/30">تعذر جلب باقات الشحن: ${err.message}</div>`;

@@ -1398,7 +1398,7 @@ window.AirportUI = (() => {
                     ${curTier === 2 ? `
                       <div class="w-full py-2.5 rounded-xl bg-amber-500/20 border border-amber-500/40 text-center text-xs font-black text-amber-300 flex items-center justify-center gap-1.5">
                         <i class="fa-solid fa-award text-amber-400"></i>
-                        <span>مدير العمليات الدولية معين </span>
+                        <span>مدير العمليات الدولية معين</span>
                       </div>
                     ` : curTier > 2 ? `
                       <div class="w-full py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-center text-xs font-bold text-slate-400 flex items-center justify-center gap-1.5">
@@ -1406,10 +1406,10 @@ window.AirportUI = (() => {
                         <span>تمت الترقية لمستوى أعلى</span>
                       </div>
                     ` : `
-                      <button onclick="if(window.UI && typeof window.UI.switchTab === 'function') window.UI.switchTab('store');"
+                      <button onclick="if(window.UI && typeof window.UI.openTopupModal === 'function') { window.UI.openTopupModal('pkg_airport_manager_tier2'); } else if(window.UI) { window.UI.switchTab('store'); }"
                         class="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
                         <i class="fa-solid fa-crown"></i>
-                        <span>ترقية كابتن ألفا (باقة VIP بالمتجر)</span>
+                        <span>ترقية كابتن ألفا (باقة VIP - 750 جنيه)</span>
                       </button>
                     `}
                   ` : `
@@ -1417,19 +1417,19 @@ window.AirportUI = (() => {
                       <div class="space-y-2">
                         <div class="w-full py-2 rounded-xl bg-purple-500/20 border border-purple-500/40 text-center text-xs font-black text-purple-300 flex items-center justify-center gap-1.5">
                           <i class="fa-solid fa-crown text-amber-400"></i>
-                          <span>الرئيس التنفيذي للمطار معين </span>
+                          <span>الرئيس التنفيذي للمطار معين</span>
                         </div>
                         <button onclick="window.AirportUI.toggleAutopilot()" id="btn-toggle-airport-autopilot"
                           class="w-full py-2.5 rounded-xl font-black text-xs transition flex items-center justify-center gap-2 cursor-pointer ${isAutopilot ? 'bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 shadow-lg shadow-emerald-500/20' : 'bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700'}">
                           <i class="fa-solid ${isAutopilot ? 'fa-toggle-on text-base' : 'fa-toggle-off text-base text-slate-500'}"></i>
-                          <span>${isAutopilot ? 'الطيار الآلي الذكي: مفعل ' : 'الطيار الآلي الذكي: معطل ⏸'}</span>
+                          <span>${isAutopilot ? 'الطيار الآلي الذكي: مفعل' : 'الطيار الآلي الذكي: معطل ⏸'}</span>
                         </button>
                       </div>
                     ` : `
-                      <button onclick="if(window.UI && typeof window.UI.switchTab === 'function') window.UI.switchTab('store');"
+                      <button onclick="if(window.UI && typeof window.UI.openTopupModal === 'function') { window.UI.openTopupModal('pkg_airport_manager_tier3'); } else if(window.UI) { window.UI.switchTab('store'); }"
                         class="w-full py-3 bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-xs rounded-xl shadow-lg shadow-purple-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
                         <i class="fa-solid fa-gem"></i>
-                        <span>تعيين إمبراطور الطيران (VIP ألكسندر)</span>
+                        <span>تعيين إمبراطور الطيران (باقة VIP - 1500 جنيه)</span>
                       </button>
                     `}
                   `}
