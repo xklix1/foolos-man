@@ -3260,32 +3260,32 @@ const UIController = (() => {
   function formatCustomBadgeHtml(badge, iconExtraClass = '') {
     if (!badge) return '';
     const str = String(badge).trim();
-    if (str.toUpperCase() === 'SVIP' || str.toUpperCase() === ' SVIP' || str.toUpperCase() === ' SVIP' || str === 'عضو SVIP' || str === 'عضو VIP') {
-      return `<span class="badge-svip-blue-flame inline-flex items-center gap-1 select-none" title="عضوية فائقة التميز SVIP ">
+    if (str.toUpperCase() === 'SVIP' || str === 'عضو SVIP' || str === 'عضو VIP') {
+      return `<span class="badge-svip-blue-flame inline-flex items-center gap-1 select-none" title="عضوية فائقة التميز SVIP">
         <i class="fa-solid fa-bolt-lightning text-cyan-300 text-[8px] animate-pulse"></i>
         <span>SVIP</span>
       </span>`;
     }
-    if (str === '' || str.includes('لهيب') || str.includes('لهب')) {
-      return `<span class="badge-crimson-flame inline-flex items-center gap-1 select-none" title="وسام لهيب العرش ">
+    if (str.includes('لهيب العرش') || (str.includes('لهيب') && !str.includes('العرش'))) {
+      return `<span class="badge-crimson-flame inline-flex items-center gap-1 select-none" title="وسام لهيب العرش">
         <i class="fa-solid fa-fire text-amber-300 text-[8px] animate-pulse"></i>
         <span>لهيب العرش</span>
       </span>`;
     }
-    if (str === '' || str.includes('') || str.includes('ملك') || str.includes('إمبراطور')) {
-      return `<span class="badge-royal-crown inline-flex items-center gap-1 select-none" title="وسام الملك الأسطوري ">
+    if (str.includes('الملك الأسطوري') || str === 'ملك أسطوري') {
+      return `<span class="badge-royal-crown inline-flex items-center gap-1 select-none" title="وسام الملك الأسطوري">
         <i class="fa-solid fa-crown text-slate-950 text-[8px]"></i>
         <span>الملك الأسطوري</span>
       </span>`;
     }
-    if (str === '' || str.includes('') || str.includes('حوت الشات')) {
-      return `<span class="badge-chat-whale inline-flex items-center gap-1 select-none" title="وسام حوت الشات ">
+    if (str.includes('حوت الشات')) {
+      return `<span class="badge-chat-whale inline-flex items-center gap-1 select-none" title="وسام حوت الشات">
         <i class="fa-solid fa-star text-white text-[8px]"></i>
         <span>حوت الشات</span>
       </span>`;
     }
-    if (str.includes('') || str.includes('موثق')) {
-      return `<span class="badge-verified-glow inline-flex items-center gap-1 select-none" title="حساب موثق رسمي ">
+    if (str === 'موثق' || str.includes('حساب موثق رسمي') || str.includes('موثق')) {
+      return `<span class="badge-verified-glow inline-flex items-center gap-1 select-none" title="حساب موثق رسمي">
         ${getVerifiedBadgeIconHtml(iconExtraClass || 'w-3 h-3')}
         <span>موثق</span>
       </span>`;
@@ -15297,9 +15297,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       // 2.1 Direct Admin Popup / Urgent Alert Card
       if (mail.type === 'admin_popup' || mail.type === 'urgent_alert') {
         const title = (mail.payload && mail.payload.title) || mail.title || 'تنبيه إداري مباشر ';
-        const message = (mail.payload && (mail.payload.message || mail.payload.text)) || mail.message || '';
-        const style = (mail.payload && mail.payload.style) || 'warning';
-        const isReward = style === 'reward' || title.includes('') || title.includes('إيداع') || title.includes('استعادة') || title.includes('رصيد');
+        const isReward = style === 'reward' || title.includes('مكافأة') || title.includes('إيداع') || title.includes('استعادة') || title.includes('رصيد');
         
         const borderClass = isReward 
           ? (isUnread ? 'bg-slate-900/80 border-emerald-500/50 shadow-lg shadow-emerald-500/5' : 'bg-slate-900/30 border-slate-800')
@@ -16855,14 +16853,14 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       const seasonBadge = pState.seasonBadge || (pState.state && pState.state.seasonBadge) || '';
 
       const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
-      const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || activePkg === 'pkg_vip_verified' || activePkg === 'pkg_vip_royal_ultimate' || (customBadge && customBadge.includes('')));
+      const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || activePkg === 'pkg_vip_verified' || activePkg === 'pkg_vip_royal_ultimate' || (customBadge && customBadge.includes('موثق')));
 
       // 1. Top Username & Title Badge
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
         const fbIconHtml = hasFbVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
         const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
-        const customBadgeHtml = (customBadge && !customBadge.includes('')) ? ` <span class="inline-flex items-center text-sm ml-1 select-none" title="${escapeHtml(badgeTitle || 'وسام خاص')}">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span>` : '';
+        const customBadgeHtml = customBadge ? ` <span class="inline-flex items-center text-sm ml-1 select-none" title="${escapeHtml(badgeTitle || 'وسام خاص')}">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span>` : '';
         const nameCardHtml = seasonBadge ? getSeasonBadgeHtml(seasonBadge, 'text-xs py-1 px-3', pState.username || '---') : escapeHtml(pState.username || '---');
         uCardEl.innerHTML = nameCardHtml + customBadgeHtml + verifiedIconHtml + fbIconHtml;
       }

@@ -1067,7 +1067,7 @@ var AppDB = (() => {
         throw new Error(' تم إيقاف التحويل أمنياً: يتلقى حساب المستلم تدفقات متكررة من عدة حسابات حديثة. تم حظر المعاملة وإحالتها للفحص الأمني.');
       }
     } catch (e) {
-      if (e.message && e.message.includes('')) throw e;
+      if (e.message && e.message.includes('تم إيقاف التحويل أمنياً')) throw e;
     }
 
     return true;
@@ -2689,7 +2689,7 @@ var AppDB = (() => {
         throw new Error(' لا يمكن إرسال طلب تحويل لحساب مرتبط بنفس الجهاز.');
       }
     } catch (reqSecErr) {
-      if (reqSecErr.message && reqSecErr.message.includes('')) throw reqSecErr;
+      if (reqSecErr.message && reqSecErr.message.includes('لا يمكن إرسال')) throw reqSecErr;
     }
 
     let createdReq = null;
