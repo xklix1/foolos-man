@@ -2223,3 +2223,51 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
 .cyber-gear-slot.gear-slot-locked img {
   filter: grayscale(1) brightness(0.5);
 }
+
+/* ══════════════════════════════════════════════════════════════
+   MOBILE CYBER HUD & FINANCIAL OVERHAUL
+   ══════════════════════════════════════════════════════════════ */
+.mobile-top-bar {
+  background: linear-gradient(180deg, rgba(8, 14, 28, 0.96) 0%, rgba(4, 7, 16, 0.98) 100%) !important;
+  backdrop-filter: blur(24px) saturate(180%) !important;
+  border: 1px solid rgba(56, 189, 248, 0.22) !important;
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.8), 0 0 20px rgba(6, 182, 212, 0.08) !important;
+}
+
+.mobile-hub-card {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.75) 0%, rgba(2, 6, 23, 0.9) 100%);
+  border: 1px solid rgba(148, 163, 184, 0.15);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05), 0 4px 12px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.mobile-hub-card:active {
+  transform: scale(0.97);
+}
+
+.mobile-hub-card.card-cash {
+  border-color: rgba(234, 179, 8, 0.25);
+  background: linear-gradient(135deg, rgba(234, 179, 8, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.mobile-hub-card.card-bank {
+  border-color: rgba(16, 185, 129, 0.25);
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.mobile-hub-card.card-networth {
+  border-color: rgba(6, 182, 212, 0.25);
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.mobile-hub-card.card-gold {
+  border-color: rgba(245, 158, 11, 0.3);
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(15, 23, 42, 0.85) 100%);
+}
+
+.mobile-tools-popup {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.98) 0%, rgba(2, 6, 23, 0.99) 100%) !important;
+  backdrop-filter: blur(28px) !important;
+  border: 1px solid rgba(56, 189, 248, 0.35) !important;
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.9), 0 0 30px rgba(6, 182, 212, 0.2) !important;
+}

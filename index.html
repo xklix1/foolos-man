@@ -2425,101 +2425,157 @@
 
       <!-- MOBILE TOP STICKY BAR (Visible on mobile screens <1024px) -->
       <div
-        class="lg:hidden mobile-top-bar glass-panel p-3 mb-4 rounded-xl border border-slate-800 flex flex-col gap-2 sticky top-2 z-30 shadow-xl"
-        style="background: rgba(8,12,28,0.92) !important; backdrop-filter: blur(24px) !important;">
-        <div class="flex items-center justify-between gap-3">
-          <!-- Profile & Identity Section -->
-          <div class="flex items-center gap-2.5 min-w-0">
+        class="lg:hidden mobile-top-bar p-3 mb-4 rounded-2xl flex flex-col gap-2.5 sticky top-2 z-30 shadow-2xl relative">
+        
+        <!-- Row 1: Player Identity + Compact Actions (Menu, Profile, Notifications, Quick Tools) -->
+        <div class="flex items-center justify-between gap-2">
+          <!-- Profile & Identity Section (Clickable to open profile) -->
+          <div class="flex items-center gap-2 min-w-0 flex-1">
             <!-- Mobile Menu Drawer Toggle Button -->
             <button id="btn-mobile-nav-toggle" type="button" title="قائمة الأقسام والتنقل"
-              class="w-9 h-9 rounded-xl bg-yellow-500/15 hover:bg-yellow-500/25 active:bg-yellow-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
-              <i class="fa-solid fa-bars text-sm"></i>
+              class="w-8 h-8 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
+              <i class="fa-solid fa-bars text-xs"></i>
             </button>
-            <div class="flex flex-col min-w-0 justify-center">
+            <div class="flex flex-col min-w-0 justify-center cursor-pointer group" onclick="window.UI?.openPlayerProfile?.()" title="اضغط لعرض ملفك الشخصي التنفيذي">
               <div class="flex items-center gap-1.5 min-w-0">
-                <span id="stat-username-mobile" class="text-xs font-black text-white truncate max-w-[170px] sm:max-w-[220px] cursor-pointer hover:underline" title="اضغط لعرض ملفك الشخصي">تحميل...</span>
+                <span id="stat-username-mobile" class="text-xs font-black text-white truncate max-w-[130px] sm:max-w-[180px] group-hover:text-cyan-300 transition">تحميل...</span>
                 <span id="stat-fb-badge-mobile" class="hidden fb-vip-badge shrink-0" title="عضو رسمي موثق في مجتمع فيسبوك">f</span>
               </div>
-              <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400/90 truncate max-w-[180px] sm:max-w-[240px] leading-tight mt-0.5">...</span>
+              <span id="stat-title-mobile" class="text-[9px] font-bold text-yellow-400/90 truncate max-w-[140px] sm:max-w-[200px] leading-tight">...</span>
             </div>
           </div>
 
-          <!-- Quick Top Utility Actions (Clean, minimal, spacious) -->
-          <div class="flex items-center gap-2 shrink-0">
-            <!-- Telegram Official Channel Mobile Icon -->
-            <a id="btn-telegram-mobile" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer" title="قناة التليجرام الرسمية (أكواد وهدايا)"
-              class="w-8 h-8 rounded-xl bg-sky-500/15 hover:bg-sky-500/25 active:bg-sky-500/35 text-sky-400 border border-sky-400/40 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm relative group">
-              <i class="fa-brands fa-telegram text-sm group-hover:scale-110 transition-transform"></i>
-              <span class="absolute -top-1 -right-1 w-2 h-2 bg-sky-400 rounded-full animate-ping opacity-75"></span>
-            </a>
-            <!-- Contact Moderators Mobile Button -->
-            <button id="btn-open-mod-chat-mobile-bar" onclick="openPlayerInvestigationChat()" title="تواصل مباشر مع المراقبين والإدارة " type="button"
-              class="w-8 h-8 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:bg-emerald-500/35 text-emerald-400 border border-emerald-500/40 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
-              <i class="fa-solid fa-user-shield text-xs"></i>
-              <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping opacity-75"></span>
-              <span class="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full"></span>
-            </button>
-            <!-- Player Tools / Inventory Mobile -->
-            <button id="btn-open-inventory-mobile" onclick="window.UI.openPlayerInventoryModal()" title="حقيبة الأدوات والمقتنيات" type="button"
-              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-sky-400 border border-sky-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
-              <i class="fa-solid fa-briefcase text-xs"></i>
-              <span id="mobile-inventory-count-badge" class="hidden absolute -top-1 -right-1 min-w-[15px] h-3.5 px-0.5 rounded-full bg-sky-600 text-white font-black text-[8px] flex items-center justify-center border border-slate-950 shadow">0</span>
-            </button>
-            <!-- Cloud Save -->
-            <button id="btn-save-progress-cloud-mobile" title="حفظ التقدم في السحابة" type="button"
-              class="w-8 h-8 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 active:bg-yellow-500/30 text-yellow-400 border border-yellow-500/30 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm">
-              <i class="fa-solid fa-cloud-arrow-up text-xs"></i>
-            </button>
+          <!-- Quick Top Utility Actions (Clean, uncluttered, no overlapping!) -->
+          <div class="flex items-center gap-1.5 shrink-0 relative">
+            
             <!-- Notifications Center Mobile -->
             <button id="btn-open-notifications-mobile" onclick="window.UI.openNotificationsModal()" title="صندوق الإشعارات والرسائل" type="button"
-              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-amber-400 border border-amber-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              class="w-8 h-8 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-400 border border-amber-500/30 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
               <i class="fa-solid fa-bell text-xs"></i>
               <span id="mailbox-unread-badge-mobile" class="hidden absolute -top-1 -right-1 min-w-[16px] h-4 px-1 rounded-full bg-rose-600 text-white font-black text-[9px] flex items-center justify-center border border-slate-950 shadow animate-pulse">0</span>
             </button>
-            <!-- Settings -->
-            <button id="btn-ingame-settings-mobile" onclick="window.UI?.openSettingsModal?.()" title="إعدادات الصوت والإشعارات" type="button"
-              class="w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700/80 flex items-center justify-center transition active:scale-95 shrink-0 cursor-pointer shadow-sm">
-              <i class="fa-solid fa-sliders text-xs"></i>
+
+            <!-- Quick Tools Dropdown Toggle Button (Hub) -->
+            <button id="btn-mobile-tools-toggle" onclick="const p = document.getElementById('mobile-tools-popup-menu'); p.classList.toggle('hidden');" title="مركز الأدوات والخدمات السريعة" type="button"
+              class="w-8 h-8 rounded-xl bg-gradient-to-r from-cyan-500/20 to-blue-500/20 hover:from-cyan-500/30 hover:to-blue-500/30 text-cyan-300 border border-cyan-500/40 flex items-center justify-center transition active:scale-95 shrink-0 relative cursor-pointer shadow-sm">
+              <i class="fa-solid fa-bolt-lightning text-xs animate-pulse"></i>
             </button>
+
+            <!-- Floating Quick Tools Dropdown Menu -->
+            <div id="mobile-tools-popup-menu" class="hidden absolute top-10 left-0 z-50 mobile-tools-popup rounded-2xl p-2 min-w-[180px] shadow-2xl border border-cyan-500/30 space-y-1 animate-fade-in text-right">
+              
+              <!-- Player Inventory -->
+              <button id="btn-open-inventory-mobile" onclick="document.getElementById('mobile-tools-popup-menu').classList.add('hidden'); window.UI.openPlayerInventoryModal();" type="button"
+                class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-800/70 text-sky-300 text-xs font-bold transition cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-briefcase text-xs text-sky-400 w-4 text-center"></i>
+                  <span>حقيبة المقتنيات</span>
+                </div>
+                <span id="mobile-inventory-count-badge" class="hidden min-w-[15px] h-3.5 px-1 rounded-full bg-sky-600 text-white font-black text-[8px] flex items-center justify-center">0</span>
+              </button>
+
+              <!-- Moderator Chat Support -->
+              <button id="btn-open-mod-chat-mobile-bar" onclick="document.getElementById('mobile-tools-popup-menu').classList.add('hidden'); openPlayerInvestigationChat();" type="button"
+                class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-800/70 text-emerald-300 text-xs font-bold transition cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <i class="fa-solid fa-user-shield text-xs text-emerald-400 w-4 text-center"></i>
+                  <span>محادثة الإدارة</span>
+                </div>
+                <span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span>
+              </button>
+
+              <!-- Cloud Save -->
+              <button id="btn-save-progress-cloud-mobile" onclick="document.getElementById('mobile-tools-popup-menu').classList.add('hidden');" type="button"
+                class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-800/70 text-yellow-300 text-xs font-bold transition cursor-pointer">
+                <i class="fa-solid fa-cloud-arrow-up text-xs text-yellow-400 w-4 text-center"></i>
+                <span>حفظ سحابي</span>
+              </button>
+
+              <!-- General Settings -->
+              <button id="btn-ingame-settings-mobile" onclick="document.getElementById('mobile-tools-popup-menu').classList.add('hidden'); window.UI?.openSettingsModal?.();" type="button"
+                class="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl hover:bg-slate-800/70 text-purple-300 text-xs font-bold transition cursor-pointer">
+                <i class="fa-solid fa-gear text-xs text-purple-400 w-4 text-center"></i>
+                <span>الإعدادات العامة</span>
+              </button>
+
+              <!-- Telegram Link -->
+              <a id="btn-telegram-mobile" href="https://t.me/raasalmal" target="_blank" rel="noopener noreferrer" onclick="document.getElementById('mobile-tools-popup-menu').classList.add('hidden');"
+                class="w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl hover:bg-slate-800/70 text-sky-400 text-xs font-bold transition cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <i class="fa-brands fa-telegram text-xs w-4 text-center"></i>
+                  <span>قناة التليجرام</span>
+                </div>
+                <span class="text-[8px] px-1 rounded bg-sky-500/20 text-sky-300">أكواد</span>
+              </a>
+
+            </div>
           </div>
-        </div>
-        <!-- 3 Financial Pills + Live Cashflow -->
-        <div class="grid grid-cols-3 gap-1.5 text-center">
-          <div class="p-1.5 bg-slate-950/70 rounded-lg border border-slate-800/80 flex flex-col">
-            <span class="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">الكاش <i
-                class="fa-solid fa-money-bill-wave text-yellow-400 text-[10px]"></i></span>
-            <span class="numbers-font text-xs font-bold text-yellow-500 truncate"><span
-                id="stat-cash-mobile">0</span></span>
-          </div>
-          <div class="p-1.5 bg-slate-950/70 rounded-lg border border-slate-800/80 flex flex-col">
-            <span class="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">البنك <i
-                class="fa-solid fa-building-columns text-emerald-400 text-[10px]"></i></span>
-            <span class="numbers-font text-xs font-bold text-emerald-400 truncate"><span
-                id="stat-bank-mobile">0</span></span>
-          </div>
-          <div id="btn-networth-breakdown-mobile" class="p-1.5 bg-slate-950/70 rounded-lg border border-slate-800/80 flex flex-col cursor-pointer active:scale-95 transition hover:border-yellow-500/40" title="اضغط لعرض تفصيل محفظة الثروة">
-            <span class="text-[9px] text-slate-400 font-bold flex items-center justify-center gap-1">الثروة <i
-                class="fa-solid fa-gem text-cyan-400 text-[10px]"></i></span>
-            <span class="numbers-font text-xs font-bold text-yellow-400 truncate"><span
-                id="stat-networth-mobile">0</span></span>
-          </div>
-        </div>
-        <div id="btn-cashflow-breakdown-mobile"
-          class="px-2.5 py-1.5 bg-emerald-950/40 hover:bg-emerald-950/70 active:scale-95 rounded-lg border border-emerald-500/20 flex justify-between items-center text-[10px] cursor-pointer transition" title="اضغط لعرض كشف الحساب وتفاصيل التدفق بالساعة">
-          <span class="text-slate-300 font-bold flex items-center gap-1.5"><i
-              class="fa-solid fa-arrow-trend-up text-emerald-400"></i> التدفق بالساعة: <span class="text-[9px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 rounded font-bold"><i class="fa-solid fa-file-invoice-dollar mr-1"></i> كشف الحساب</span></span>
-          <span class="numbers-font font-black text-emerald-400 flex items-center gap-1"><span
-              class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span><span
-              id="stat-cashflow-mobile">+0</span> جنيه/س</span>
         </div>
 
-        <div id="stat-gold-container-mobile"
-          class="flex px-2.5 py-1.5 bg-amber-950/40 rounded-lg border border-amber-500/30 justify-between items-center text-[10px]">
-          <span class="text-amber-400 font-bold flex items-center gap-1.5"><i
-              class="fa-solid fa-coins text-amber-400"></i> رصيد الذهب</span>
-          <span class="numbers-font font-black text-amber-400 flex items-center gap-1"><span
-              id="stat-gold-mobile">0</span> </span>
+        <!-- Row 2: Unified Cyber Financial Hub (2x2 Grid) -->
+        <div class="grid grid-cols-2 gap-1.5 text-right">
+          <!-- 1. Liquid Cash -->
+          <div class="mobile-hub-card card-cash p-2 rounded-xl flex items-center justify-between gap-1.5">
+            <div class="min-w-0">
+              <span class="text-[9px] text-yellow-400/90 font-bold block leading-none mb-1">الكاش المتاح</span>
+              <span class="numbers-font text-xs font-black text-yellow-400 truncate block"><span id="stat-cash-mobile">0</span></span>
+            </div>
+            <div class="w-6 h-6 rounded-lg bg-yellow-500/15 flex items-center justify-center text-yellow-400 text-xs shrink-0">
+              <i class="fa-solid fa-money-bill-wave"></i>
+            </div>
+          </div>
+
+          <!-- 2. Bank Balance -->
+          <div class="mobile-hub-card card-bank p-2 rounded-xl flex items-center justify-between gap-1.5">
+            <div class="min-w-0">
+              <span class="text-[9px] text-emerald-400/90 font-bold block leading-none mb-1">رصيد البنك</span>
+              <span class="numbers-font text-xs font-black text-emerald-400 truncate block"><span id="stat-bank-mobile">0</span></span>
+            </div>
+            <div class="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-400 text-xs shrink-0">
+              <i class="fa-solid fa-building-columns"></i>
+            </div>
+          </div>
+
+          <!-- 3. Net Worth Total -->
+          <div id="btn-networth-breakdown-mobile" class="mobile-hub-card card-networth p-2 rounded-xl flex items-center justify-between gap-1.5 cursor-pointer active:scale-95" title="اضغط لعرض تفصيل محفظة الثروة">
+            <div class="min-w-0">
+              <span class="text-[9px] text-cyan-400/90 font-bold block leading-none mb-1">صافي الثروة</span>
+              <span class="numbers-font text-xs font-black text-cyan-300 truncate block"><span id="stat-networth-mobile">0</span></span>
+            </div>
+            <div class="w-6 h-6 rounded-lg bg-cyan-500/15 flex items-center justify-center text-cyan-400 text-xs shrink-0">
+              <i class="fa-solid fa-gem"></i>
+            </div>
+          </div>
+
+          <!-- 4. Gold Ingots -->
+          <div id="stat-gold-container-mobile" class="mobile-hub-card card-gold p-2 rounded-xl flex items-center justify-between gap-1.5">
+            <div class="min-w-0">
+              <span class="text-[9px] text-amber-400/90 font-bold block leading-none mb-1">سبائك الذهب</span>
+              <span class="numbers-font text-xs font-black text-amber-300 truncate block"><span id="stat-gold-mobile">0</span></span>
+            </div>
+            <div class="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-400 text-xs shrink-0">
+              <i class="fa-solid fa-coins"></i>
+            </div>
+          </div>
         </div>
+
+        <!-- Row 3: Integrated Live Cashflow Bar -->
+        <div id="btn-cashflow-breakdown-mobile"
+          class="px-2.5 py-1.5 bg-emerald-950/30 hover:bg-emerald-950/60 active:scale-95 rounded-xl border border-emerald-500/25 flex justify-between items-center text-[10px] cursor-pointer transition" title="اضغط لعرض كشف الحساب وتفاصيل التدفق اللحظي بالساعة">
+          <div class="flex items-center gap-1.5 text-slate-300 font-bold">
+            <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-xs"></i>
+            <span>التدفق بالساعة:</span>
+            <span class="text-[9px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md font-bold flex items-center gap-1">
+              <i class="fa-solid fa-file-invoice-dollar text-[9px]"></i> كشف الحساب
+            </span>
+          </div>
+          <div class="numbers-font font-black text-emerald-400 flex items-center gap-1">
+            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="stat-cashflow-mobile">+0</span>
+            <span class="text-[9px] font-normal text-slate-400">جنيه/س</span>
+          </div>
+        </div>
+
       </div>
 
       <!-- ==================== TABS CONTAINER ==================== -->
@@ -7830,7 +7886,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.8.0"></script>
+  <script src="core.bundle.js?v=v9.9.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
