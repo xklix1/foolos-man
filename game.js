@@ -4226,7 +4226,8 @@ const GameEngine = (() => {
   function setBusinessPrice(key, price) {
     const bizState = state.businesses[key];
     if (!bizState || bizState.level === 0) throw new Error("المشروع مغلق حالياً.");
-    if (price <= 0) throw new Error("سعر البيع يجب أن يكون أعلى من صفر جنيه.");
+    const numPrice = Math.floor(Number(price) || 0);
+    if (isNaN(numPrice) || numPrice <= 0) throw new Error("سعر البيع يجب أن يكون أعلى من صفر جنيه.");
 
     // Price capping: Max 3x effective optimum price to keep numbers sensible
     const levelMultiplier = 1 + (Math.max(1, (bizState.level || 1)) - 1) * 0.05;
@@ -4234,10 +4235,13 @@ const GameEngine = (() => {
     const franchiseOptMultiplier = isFranchise ? 1.10 : 1.0;
     const effectiveOpt = Math.round(BUSINESSES[key].optimumPrice * levelMultiplier * franchiseOptMultiplier);
     const maxPrice = effectiveOpt * 3;
-    if (price > maxPrice) throw new Error(`الحد الأقصى المسموح به للسعر هو ${maxPrice.toLocaleString()} جنيه.`);
+    const minPrice = 1;
 
-    bizState.price = price;
+    const cleanPrice = Math.max(minPrice, Math.min(maxPrice, numPrice));
+
+    bizState.price = cleanPrice;
     forceSaveState(true);
+    return cleanPrice;
   }
 
   // Launch Marketing Campaign (+40% demand boost for 1200 ticks = 1 hour)

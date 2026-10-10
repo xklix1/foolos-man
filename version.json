@@ -1,7 +1,7 @@
 {
-  "version": "v9.5.7",
-  "build": 1791330400000,
-  "timestamp": 1791330400000,
-  "notes": "Fix farm max plots dynamic reconciliation based on land level (16 plots for level 4), exempt admin grants and cash-bank transfers from clamps",
-  "releaseNotes": "إصلاح فوري وتلقائي لمطابقة أحواض المزرعة الـ 16 كاملة عند التوسيع لأعلى مستوى، واستثناء التحويلات البنكية ومنح الإدارة من قفزات الثروة"
+  "version": "v9.5.8",
+  "build": 1791330600000,
+  "timestamp": 1791330600000,
+  "notes": "Upgrade business product price controls to direct manual numeric input with step buttons, optimum reset, slider sync, and anti-inspect protection",
+  "releaseNotes": "تطوير نظام تسعير منتجات المشاريع: إمكانية كتابة السعر يدوياً بدقة مع أزرار الزيادة والنقصان والضبط التلقائي على السعر المثالي مع حماية تامة ضد التلاعب"
 }

@@ -3959,19 +3959,64 @@ const UIController = (() => {
             <div class="flex justify-between"><span>${window.currentLang ==='en' ?'Actual Net Return:' :'العائد الصافي الفعلي:'}</span><span id="biz-profit-${key}" class="numbers-font text-emerald-400 font-bold">+${profitPerTick.toLocaleString()} EGP / ${window.currentLang ==='en' ?'cycle' :'دورة'} ${(bizState.isFranchise && biz.allowFranchise !== false) ?`<span class="text-amber-400 text-[10px] font-black">(${window.currentLang ==='en' ?'+10% Brand' :'+10% براند'})</span>` :''}</span></div>
           </div>
 
-          <div class="mb-3">
-            <div class="flex justify-between text-xs text-slate-400 mb-1">
-              <span>${window.currentLang ==='en' ?'Adjust Product Price:' :'تعديل سعر المنتج:'}</span>
-              <span class="numbers-font font-bold text-yellow-500"><span id="price-val-${key}">${price}</span> EGP (${window.currentLang ==='en' ?'Optimum' :'المثالي'}: ${opt} EGP)</span>
+          <!-- Product Price Controls (Manual Input + Quick Buttons + Slider with Anti-Inspect Protection) -->
+          <div class="mb-3 p-2.5 bg-slate-950/70 rounded-xl border border-slate-800 space-y-2">
+            <div class="flex items-center justify-between text-xs text-slate-400">
+              <span class="font-bold text-slate-300 flex items-center gap-1.5">
+                <i class="fa-solid fa-tag text-yellow-500 text-xs"></i>
+                <span>${window.currentLang === 'en' ? 'Product Sale Price:' : 'سعر بيع المنتج:'}</span>
+              </span>
+              <button type="button" id="btn-opt-price-${key}" class="px-2 py-0.5 rounded-md bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 text-[10px] font-bold transition flex items-center gap-1 cursor-pointer select-none" title="${window.currentLang === 'en' ? 'Reset to Optimum Price' : 'ضبط تلقائي على السعر المثالي لتحقيق أعلى مبيعات'}">
+                <i class="fa-solid fa-wand-magic-sparkles text-[9px]"></i>
+                <span>${window.currentLang === 'en' ? `Optimum: ${opt} EGP` : `المثالي: ${opt} EGP`}</span>
+              </button>
             </div>
-            <input 
-              type="range" 
-              min="${Math.max(1, Math.floor(actualCostOfGoods))}" 
-              max="${Math.floor(opt * 3)}" 
-              value="${price}" 
-              id="slider-${key}"
-              class="w-full accent-yellow-500"
-            />
+
+            <!-- Modern Numeric Input with Increment/Decrement Buttons -->
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btn-price-minus-${key}" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 flex items-center justify-center text-xs font-bold transition cursor-pointer shrink-0 select-none active:scale-95" title="-10 EGP">
+                <i class="fa-solid fa-minus"></i>
+              </button>
+              
+              <div class="relative flex-1">
+                <input 
+                  type="number"
+                  inputmode="numeric"
+                  id="input-price-${key}"
+                  value="${price}"
+                  min="1"
+                  max="${Math.floor(opt * 3)}"
+                  step="1"
+                  autocomplete="off"
+                  autocorrect="off"
+                  spellcheck="false"
+                  oncontextmenu="return false;"
+                  ondrop="return false;"
+                  placeholder="${price}"
+                  class="w-full bg-slate-900 border border-yellow-500/40 focus:border-yellow-400 text-white font-mono font-black text-center text-sm py-1.5 px-6 rounded-lg focus:outline-none focus:ring-1 focus:ring-yellow-500/50 transition [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none select-none"
+                />
+                <span class="absolute left-2.5 top-2 text-[10px] text-slate-400 font-bold pointer-events-none">EGP</span>
+              </div>
+
+              <button type="button" id="btn-price-plus-${key}" class="w-8 h-8 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 flex items-center justify-center text-xs font-bold transition cursor-pointer shrink-0 select-none active:scale-95" title="+10 EGP">
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            </div>
+
+            <!-- Sync Range Slider (for fast visual slide) -->
+            <div class="flex items-center gap-2 pt-0.5">
+              <span class="text-[10px] font-mono text-slate-500">1</span>
+              <input 
+                type="range" 
+                min="1" 
+                max="${Math.floor(opt * 3)}" 
+                value="${price}" 
+                id="slider-${key}"
+                oncontextmenu="return false;"
+                class="flex-1 accent-yellow-500 cursor-pointer h-1.5 bg-slate-800 rounded-lg select-none"
+              />
+              <span class="text-[10px] font-mono text-slate-500">${Math.floor(opt * 3)}</span>
+            </div>
           </div>
 
           <!-- Operating Supplies Status & Shipment Trigger -->
@@ -4032,15 +4077,75 @@ const UIController = (() => {
               ${window.currentLang ==='en' ?'Lay off one employee' :'تسريح عامل واحد'}
             </button>` :''}`;
 
-        // Bind Price Slider Changes
+        // Bind Price Controller (Manual Input, Buttons & Slider)
         const slider = card.querySelector(`#slider-${key}`);
-        slider.addEventListener('input', (e) => {
-          const val = parseInt(e.target.value);
-          const pv = card.querySelector(`#price-val-${key}`);
-          if (pv) pv.textContent = val;
-          GameEngine.setBusinessPrice(key, val);
+        const inputPrice = card.querySelector(`#input-price-${key}`);
+        const btnMinus = card.querySelector(`#btn-price-minus-${key}`);
+        const btnPlus = card.querySelector(`#btn-price-plus-${key}`);
+        const btnOpt = card.querySelector(`#btn-opt-price-${key}`);
+
+        const minP = 1;
+        const maxP = Math.floor(opt * 3);
+
+        const applyPriceChange = (newVal, updateInput = true) => {
+          let cleanVal = Math.floor(Number(newVal) || opt);
+          if (cleanVal < minP) cleanVal = minP;
+          if (cleanVal > maxP) cleanVal = maxP;
+
+          if (slider) slider.value = cleanVal;
+          if (updateInput && inputPrice && document.activeElement !== inputPrice) {
+            inputPrice.value = cleanVal;
+          }
+          GameEngine.setBusinessPrice(key, cleanVal);
           updateBusinessesInDOM();
-        });
+        };
+
+        if (slider) {
+          slider.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (inputPrice) inputPrice.value = val;
+            applyPriceChange(val, false);
+          });
+        }
+
+        if (inputPrice) {
+          inputPrice.addEventListener('input', (e) => {
+            const val = parseInt(e.target.value);
+            if (!isNaN(val) && val > 0) {
+              applyPriceChange(val, false);
+            }
+          });
+          inputPrice.addEventListener('change', (e) => {
+            const val = parseInt(e.target.value);
+            applyPriceChange(isNaN(val) || val <= 0 ? opt : val, true);
+          });
+          inputPrice.addEventListener('blur', (e) => {
+            const val = parseInt(e.target.value);
+            applyPriceChange(isNaN(val) || val <= 0 ? opt : val, true);
+          });
+        }
+
+        if (btnMinus) {
+          btnMinus.addEventListener('click', () => {
+            const cur = parseInt(inputPrice?.value || slider?.value || price);
+            const step = cur >= 1000 ? 50 : (cur >= 100 ? 10 : (cur >= 20 ? 5 : 1));
+            applyPriceChange(cur - step, true);
+          });
+        }
+
+        if (btnPlus) {
+          btnPlus.addEventListener('click', () => {
+            const cur = parseInt(inputPrice?.value || slider?.value || price);
+            const step = cur >= 1000 ? 50 : (cur >= 100 ? 10 : (cur >= 20 ? 5 : 1));
+            applyPriceChange(cur + step, true);
+          });
+        }
+
+        if (btnOpt) {
+          btnOpt.addEventListener('click', () => {
+            applyPriceChange(opt, true);
+          });
+        }
 
         // Marketing Campaign Listener
         card.querySelector(`#btn-marketing-${key}`).addEventListener('click', () => {
@@ -4282,6 +4387,18 @@ const UIController = (() => {
           mktgTextEl.textContent = `إطلاق حملة إعلانية ساعة كاملة (+40% مبيعات) — ${campaignCost.toLocaleString()} EGP  [متبقي ${capLeft}/5 اليوم]`;
           if (mktgBtnEl) mktgBtnEl.removeAttribute('disabled');
         }
+      }
+
+      // Live sync price input and slider if not actively focused
+      const sliderEl = document.getElementById(`slider-${key}`);
+      const inputPriceEl = document.getElementById(`input-price-${key}`);
+      const curPrice = bizState.price || biz.optimumPrice;
+
+      if (sliderEl && document.activeElement !== sliderEl) {
+        sliderEl.value = curPrice;
+      }
+      if (inputPriceEl && document.activeElement !== inputPriceEl) {
+        inputPriceEl.value = curPrice;
       }
     });
   }
