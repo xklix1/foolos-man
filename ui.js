@@ -3428,11 +3428,17 @@ const UIController = (() => {
       cmEl.textContent = formatCompactNumber(s.cash);
       cmEl.title = formatFullCurrency(s.cash);
     }
+    const miniCashEl = document.getElementById('stat-mini-cash');
+    if (miniCashEl) miniCashEl.textContent = formatCompactNumber(s.cash);
+
     const bmEl = document.getElementById('stat-bank-mobile');
     if (bmEl) {
       bmEl.textContent = formatCompactNumber(s.bank);
       bmEl.title = formatFullCurrency(s.bank);
     }
+    const miniBankEl = document.getElementById('stat-mini-bank');
+    if (miniBankEl) miniBankEl.textContent = formatCompactNumber(s.bank);
+
     const nmEl = document.getElementById('stat-networth-mobile');
     if (nmEl) {
       nmEl.textContent = formatCompactNumber(s.netWorth);
@@ -25674,3 +25680,49 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
       });
     }
   });
+
+  // ── Adaptive Collapsible Mobile HUD on Scroll ───────────────
+  function initMobileAdaptiveHeaderScroll() {
+    const mobileTopBar = document.querySelector('.mobile-top-bar');
+    const scrollContainer = document.querySelector('.mobile-content') || window;
+    if (!mobileTopBar) return;
+
+    let ticking = false;
+
+    const onScroll = () => {
+      const currentScrollY = (scrollContainer === window)
+        ? (window.pageYOffset || document.documentElement.scrollTop || 0)
+        : (scrollContainer.scrollTop || window.pageYOffset || document.documentElement.scrollTop || 0);
+
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          // Collapse when scrolled down more than 55px
+          if (currentScrollY > 55) {
+            if (!mobileTopBar.classList.contains('is-collapsed')) {
+              mobileTopBar.classList.add('is-collapsed');
+            }
+          } else {
+            // Expand when near the top
+            if (mobileTopBar.classList.contains('is-collapsed')) {
+              mobileTopBar.classList.remove('is-collapsed');
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('scroll', onScroll, { passive: true });
+    const contentMain = document.querySelector('.mobile-content');
+    if (contentMain) {
+      contentMain.addEventListener('scroll', onScroll, { passive: true });
+    }
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initMobileAdaptiveHeaderScroll);
+  } else {
+    initMobileAdaptiveHeaderScroll();
+  }

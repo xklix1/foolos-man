@@ -2427,7 +2427,7 @@
       <div
         class="lg:hidden mobile-top-bar p-3 mb-4 rounded-2xl flex flex-col gap-2.5 sticky top-2 z-30 shadow-2xl relative">
         
-        <!-- Row 1: Player Identity + Compact Actions (Menu, Profile, Notifications, Quick Tools) -->
+        <!-- Row 1: Player Identity + Compact Actions + Collapsed Mini Chips -->
         <div class="flex items-center justify-between gap-2">
           <!-- Profile & Identity Section (Clickable to open profile) -->
           <div class="flex items-center gap-2.5 min-w-0 flex-1">
@@ -2436,12 +2436,24 @@
               class="w-9 h-9 rounded-xl bg-gradient-to-r from-yellow-500/20 to-amber-500/20 hover:from-yellow-500/30 hover:to-amber-500/30 border border-yellow-500/40 text-yellow-400 flex items-center justify-center transition active:scale-95 shrink-0 shadow-sm cursor-pointer">
               <i class="fa-solid fa-bars text-sm"></i>
             </button>
-            <div class="flex flex-col min-w-0 justify-center cursor-pointer group" onclick="window.UI?.openPlayerProfile?.()" title="اضغط لعرض ملفك الشخصي التنفيذي">
+            <div class="flex flex-col min-w-0 justify-center cursor-pointer group flex-1" onclick="window.UI?.openPlayerProfile?.()" title="اضغط لعرض ملفك الشخصي التنفيذي">
               <div class="flex items-center gap-1.5 min-w-0">
                 <span id="stat-username-mobile" class="text-xs font-black text-white group-hover:text-cyan-300 transition flex items-center gap-1.5 flex-nowrap">تحميل...</span>
                 <span id="stat-fb-badge-mobile" class="hidden fb-vip-badge shrink-0" title="عضو رسمي موثق في مجتمع فيسبوك">f</span>
               </div>
               <span id="stat-title-mobile" class="text-[10px] font-bold text-yellow-400/90 leading-tight mt-0.5">...</span>
+            </div>
+          </div>
+
+          <!-- Collapsed Mini Balance Chips (Smoothly slides in when scrolled down) -->
+          <div id="mobile-collapsed-chips" class="items-center gap-1.5 min-w-0">
+            <div class="px-2 py-0.5 rounded-lg bg-yellow-500/10 border border-yellow-500/30 flex items-center gap-1 text-[11px] font-black text-yellow-400 numbers-font shrink-0" title="الكاش المتاح">
+              <i class="fa-solid fa-money-bill-wave text-[10px]"></i>
+              <span id="stat-mini-cash">0</span>
+            </div>
+            <div class="px-2 py-0.5 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center gap-1 text-[11px] font-black text-emerald-400 numbers-font shrink-0" title="رصيد البنك">
+              <i class="fa-solid fa-building-columns text-[10px]"></i>
+              <span id="stat-mini-bank">0</span>
             </div>
           </div>
 
@@ -2512,67 +2524,70 @@
           </div>
         </div>
 
-        <!-- Row 2: Unified Cyber Financial Hub (2x2 Grid) -->
-        <div class="grid grid-cols-2 gap-1.5 text-right">
-          <!-- 1. Liquid Cash -->
-          <div class="mobile-hub-card card-cash p-2 rounded-xl flex items-center justify-between gap-1.5">
-            <div class="min-w-0">
-              <span class="text-[9px] text-yellow-400/90 font-bold block leading-none mb-1">الكاش المتاح</span>
-              <span class="numbers-font text-xs font-black text-yellow-400 truncate block"><span id="stat-cash-mobile">0</span></span>
+        <!-- Collapsible Container (Collapses smoothly on scroll down) -->
+        <div id="mobile-hub-collapsible" class="flex flex-col gap-2.5">
+          <!-- Row 2: Unified Cyber Financial Hub (2x2 Grid) -->
+          <div class="grid grid-cols-2 gap-1.5 text-right">
+            <!-- 1. Liquid Cash -->
+            <div class="mobile-hub-card card-cash p-2 rounded-xl flex items-center justify-between gap-1.5">
+              <div class="min-w-0">
+                <span class="text-[9px] text-yellow-400/90 font-bold block leading-none mb-1">الكاش المتاح</span>
+                <span class="numbers-font text-xs font-black text-yellow-400 truncate block"><span id="stat-cash-mobile">0</span></span>
+              </div>
+              <div class="w-6 h-6 rounded-lg bg-yellow-500/15 flex items-center justify-center text-yellow-400 text-xs shrink-0">
+                <i class="fa-solid fa-money-bill-wave"></i>
+              </div>
             </div>
-            <div class="w-6 h-6 rounded-lg bg-yellow-500/15 flex items-center justify-center text-yellow-400 text-xs shrink-0">
-              <i class="fa-solid fa-money-bill-wave"></i>
+
+            <!-- 2. Bank Balance -->
+            <div class="mobile-hub-card card-bank p-2 rounded-xl flex items-center justify-between gap-1.5">
+              <div class="min-w-0">
+                <span class="text-[9px] text-emerald-400/90 font-bold block leading-none mb-1">رصيد البنك</span>
+                <span class="numbers-font text-xs font-black text-emerald-400 truncate block"><span id="stat-bank-mobile">0</span></span>
+              </div>
+              <div class="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-400 text-xs shrink-0">
+                <i class="fa-solid fa-building-columns"></i>
+              </div>
+            </div>
+
+            <!-- 3. Net Worth Total -->
+            <div id="btn-networth-breakdown-mobile" class="mobile-hub-card card-networth p-2 rounded-xl flex items-center justify-between gap-1.5 cursor-pointer active:scale-95" title="اضغط لعرض تفصيل محفظة الثروة">
+              <div class="min-w-0">
+                <span class="text-[9px] text-cyan-400/90 font-bold block leading-none mb-1">صافي الثروة</span>
+                <span class="numbers-font text-xs font-black text-cyan-300 truncate block"><span id="stat-networth-mobile">0</span></span>
+              </div>
+              <div class="w-6 h-6 rounded-lg bg-cyan-500/15 flex items-center justify-center text-cyan-400 text-xs shrink-0">
+                <i class="fa-solid fa-gem"></i>
+              </div>
+            </div>
+
+            <!-- 4. Gold Ingots -->
+            <div id="stat-gold-container-mobile" class="mobile-hub-card card-gold p-2 rounded-xl flex items-center justify-between gap-1.5">
+              <div class="min-w-0">
+                <span class="text-[9px] text-amber-400/90 font-bold block leading-none mb-1">سبائك الذهب</span>
+                <span class="numbers-font text-xs font-black text-amber-300 truncate block"><span id="stat-gold-mobile">0</span></span>
+              </div>
+              <div class="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-400 text-xs shrink-0">
+                <i class="fa-solid fa-coins"></i>
+              </div>
             </div>
           </div>
 
-          <!-- 2. Bank Balance -->
-          <div class="mobile-hub-card card-bank p-2 rounded-xl flex items-center justify-between gap-1.5">
-            <div class="min-w-0">
-              <span class="text-[9px] text-emerald-400/90 font-bold block leading-none mb-1">رصيد البنك</span>
-              <span class="numbers-font text-xs font-black text-emerald-400 truncate block"><span id="stat-bank-mobile">0</span></span>
+          <!-- Row 3: Integrated Live Cashflow Bar -->
+          <div id="btn-cashflow-breakdown-mobile"
+            class="px-2.5 py-1.5 bg-emerald-950/30 hover:bg-emerald-950/60 active:scale-95 rounded-xl border border-emerald-500/25 flex justify-between items-center text-[10px] cursor-pointer transition" title="اضغط لعرض كشف الحساب وتفاصيل التدفق اللحظي بالساعة">
+            <div class="flex items-center gap-1.5 text-slate-300 font-bold">
+              <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-xs"></i>
+              <span>التدفق بالساعة:</span>
+              <span class="text-[9px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md font-bold flex items-center gap-1">
+                <i class="fa-solid fa-file-invoice-dollar text-[9px]"></i> كشف الحساب
+              </span>
             </div>
-            <div class="w-6 h-6 rounded-lg bg-emerald-500/15 flex items-center justify-center text-emerald-400 text-xs shrink-0">
-              <i class="fa-solid fa-building-columns"></i>
+            <div class="numbers-font font-black text-emerald-400 flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
+              <span id="stat-cashflow-mobile">+0</span>
+              <span class="text-[9px] font-normal text-slate-400">جنيه/س</span>
             </div>
-          </div>
-
-          <!-- 3. Net Worth Total -->
-          <div id="btn-networth-breakdown-mobile" class="mobile-hub-card card-networth p-2 rounded-xl flex items-center justify-between gap-1.5 cursor-pointer active:scale-95" title="اضغط لعرض تفصيل محفظة الثروة">
-            <div class="min-w-0">
-              <span class="text-[9px] text-cyan-400/90 font-bold block leading-none mb-1">صافي الثروة</span>
-              <span class="numbers-font text-xs font-black text-cyan-300 truncate block"><span id="stat-networth-mobile">0</span></span>
-            </div>
-            <div class="w-6 h-6 rounded-lg bg-cyan-500/15 flex items-center justify-center text-cyan-400 text-xs shrink-0">
-              <i class="fa-solid fa-gem"></i>
-            </div>
-          </div>
-
-          <!-- 4. Gold Ingots -->
-          <div id="stat-gold-container-mobile" class="mobile-hub-card card-gold p-2 rounded-xl flex items-center justify-between gap-1.5">
-            <div class="min-w-0">
-              <span class="text-[9px] text-amber-400/90 font-bold block leading-none mb-1">سبائك الذهب</span>
-              <span class="numbers-font text-xs font-black text-amber-300 truncate block"><span id="stat-gold-mobile">0</span></span>
-            </div>
-            <div class="w-6 h-6 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-400 text-xs shrink-0">
-              <i class="fa-solid fa-coins"></i>
-            </div>
-          </div>
-        </div>
-
-        <!-- Row 3: Integrated Live Cashflow Bar -->
-        <div id="btn-cashflow-breakdown-mobile"
-          class="px-2.5 py-1.5 bg-emerald-950/30 hover:bg-emerald-950/60 active:scale-95 rounded-xl border border-emerald-500/25 flex justify-between items-center text-[10px] cursor-pointer transition" title="اضغط لعرض كشف الحساب وتفاصيل التدفق اللحظي بالساعة">
-          <div class="flex items-center gap-1.5 text-slate-300 font-bold">
-            <i class="fa-solid fa-arrow-trend-up text-emerald-400 text-xs"></i>
-            <span>التدفق بالساعة:</span>
-            <span class="text-[9px] px-1.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md font-bold flex items-center gap-1">
-              <i class="fa-solid fa-file-invoice-dollar text-[9px]"></i> كشف الحساب
-            </span>
-          </div>
-          <div class="numbers-font font-black text-emerald-400 flex items-center gap-1">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>
-            <span id="stat-cashflow-mobile">+0</span>
-            <span class="text-[9px] font-normal text-slate-400">جنيه/س</span>
           </div>
         </div>
 
@@ -7886,7 +7901,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.9.1"></script>
+  <script src="core.bundle.js?v=v9.9.2"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
