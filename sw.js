@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v9.9.7';
+const CACHE_NAME = 'rasalmal-v10.0.0';
 
 // Essential static shell assets to pre-cache on install (NEVER precache HTML or version.json)
 const PRECACHE_ASSETS = [
@@ -107,7 +107,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // RULE 2: SMART STALE-WHILE-REVALIDATE (For static assets like CSS, JS bundles, images, fonts)
+  // RULE 2: NETWORK-FIRST FOR JAVASCRIPT CODE FILES
+  // Ensures all game scripts (db.js, game.js, ui.js, core.bundle.js) are always fresh on reload
+  if (url.pathname.endsWith('.js') || url.pathname.includes('.js?')) {
+    event.respondWith(
+      fetch(req, { cache: 'no-cache' })
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200 && (networkResponse.type === 'basic' || networkResponse.type === 'cors')) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => {
+              cache.put(req, responseClone);
+            });
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(req);
+        })
+    );
+    return;
+  }
+
+  // RULE 3: SMART STALE-WHILE-REVALIDATE (For purely static non-JS assets like CSS, images, icons, fonts)
   event.respondWith(
     caches.match(req).then((cachedResponse) => {
       const fetchPromise = fetch(req)

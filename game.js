@@ -4352,6 +4352,11 @@ const GameEngine = (() => {
 
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('bank_deposit', 1);
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.bankAction('deposit', amount).catch(e => console.warn('[Bank] Server deposit sync warning:', e.message));
+    }
+
     forceSaveState(true);
   }
 
@@ -4367,6 +4372,11 @@ const GameEngine = (() => {
     state.cash += amount;
     recordPlayerActivity('سحب بنكي',`سحب نقدي بقيمة ${amount.toLocaleString()} ج.م من الحساب المصرفي`,'banking');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.bankAction('withdraw', amount).catch(e => console.warn('[Bank] Server withdraw sync warning:', e.message));
+    }
+
     forceSaveState(true);
   }
 
@@ -4384,6 +4394,11 @@ const GameEngine = (() => {
     recordPlayerActivity('شراء عقار/أصل',`شراء"${asset.name}" بقيمة ${asset.cost.toLocaleString()} ج.م (+${asset.rent.toLocaleString()} ج.م/دورة)`,'investment');
 
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyProperty(key).catch(e => console.warn('[PropertyEngine] Server buy sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return asset;
   }
@@ -4404,6 +4419,11 @@ const GameEngine = (() => {
     recordPlayerActivity('تصفية عقار/أصل',`بيع"${asset.name}" بسعر تصفية ${sellValue.toLocaleString()} ج.م`,'investment');
 
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellProperty(key).catch(e => console.warn('[PropertyEngine] Server sell sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return sellValue;
   }
@@ -4466,6 +4486,11 @@ const GameEngine = (() => {
     trackDailyQuestProgress('stock_trade', 1);
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyStock(sym, shares).catch(e => console.warn('[StockEngine] Server buy sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return { shares, price: currentPrice, grossCost, fee, totalCost };
   }
@@ -4576,6 +4601,11 @@ const GameEngine = (() => {
     state._legitimateTransactionBypass = true;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellStock(sym, shares).catch(e => console.warn('[StockEngine] Server sell sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       shares,
@@ -5490,6 +5520,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء سيارة ',`شراء سيارة ${car.name} بقيمة ${car.cost.toLocaleString()} ج.م.`,'assets');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyCar(carId).catch(e => console.warn('[CarEngine] Server buy sync warning:', e.message));
+    }
+
     forceSaveState(true);
   }
 
@@ -5509,6 +5544,11 @@ const GameEngine = (() => {
       recordPlayerActivity('تفعيل سيارة ',`تم تفعيل ${CAR_TEMPLATES[carId].name} كسيارة شخصية نشطة.`,'assets');
     }
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.setActiveCar(carId).catch(e => console.warn('[CarEngine] Server assign sync warning:', e.message));
+    }
+
     forceSaveState(true);
   }
 
@@ -5530,6 +5570,11 @@ const GameEngine = (() => {
       recordPlayerActivity('إلغاء تأجير سيارة',`إيقاف تأجير سيارة ${CAR_TEMPLATES[carId].name} وإرجاعها للمرأب.`,'assets');
     }
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.rentCar(carId, rentStatus, idx).catch(e => console.warn('[CarEngine] Server rent sync warning:', e.message));
+    }
+
     forceSaveState(true);
   }
 
@@ -5558,7 +5603,23 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع سيارة',`بيع سيارة ${car.name} واسترداد ${sellPrice.toLocaleString()} EGP.`,'assets');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellCar(carId, idx).catch(e => console.warn('[CarEngine] Server sell sync warning:', e.message));
+    }
+
     forceSaveState(true);
+  }
+
+  function claimIncome() {
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      return ServerBridge.claimIncome();
+    }
+    const claimed = state.incomeVault || 0;
+    state.incomeVault = 0;
+    state.cash = (state.cash || 0) + claimed;
+    forceSaveState(true);
+    return Promise.resolve({ success: true, claimed, cash: state.cash });
   }
 
   // --- Smuggling Actions (New V2 Balanced) ---
@@ -6926,6 +6987,11 @@ const GameEngine = (() => {
     f.unlocked = true;
     recordPlayerActivity('استصلاح مزرعة استثمارية ', `شراء وتملك المزرعة الاستثمارية الأولى (4 أحواض) بتكلفة ${cost.toLocaleString()} EGP!`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.unlockFarm().catch(e => console.warn('[FarmEngine] Server unlock sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return f;
   }
@@ -6969,6 +7035,11 @@ const GameEngine = (() => {
     };
 
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.plantFarmCrop(plotIndex, cropId).catch(e => console.warn('[FarmEngine] Server plant sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       plotIndex,
@@ -7035,6 +7106,11 @@ const GameEngine = (() => {
     }
 
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.plantAllFarmPlots(cropId).catch(e => console.warn('[FarmEngine] Server plant-all sync warning:', e.message));
+    }
+
     forceSaveState(true);
 
     return {
@@ -7081,6 +7157,11 @@ const GameEngine = (() => {
 
     f.plots[plotIndex] = null;
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.harvestFarmCrop(plotIndex).catch(e => console.warn('[FarmEngine] Server harvest sync warning:', e.message));
+    }
+
     forceSaveState(true);
 
     return {
@@ -7142,6 +7223,11 @@ const GameEngine = (() => {
 
     state.netWorth = calculateNetWorth();
     recordPlayerActivity('حصاد محاصيل المزرعة ', `حصاد ${totalHarvestedCount} أحواض بإجمالي ${totalYield.toLocaleString()} وحدة محاصيل منوعة`, 'business');
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.harvestAllFarmPlots().catch(e => console.warn('[FarmEngine] Server harvest-all sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       totalHarvestedPlots: totalHarvestedCount,
@@ -7180,6 +7266,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('توسيع واستصلاح مزرعة ', `توسيع رقعة المزرعة إلى (${f.maxPlots} أحواض) بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.upgradeFarmLand().catch(e => console.warn('[FarmEngine] Server land upgrade sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       landLevel: f.landLevel,
@@ -7214,6 +7305,11 @@ const GameEngine = (() => {
     f.irrigationLevel = nextLvl;
     recordPlayerActivity('ترقية شبكة الري ', `تركيب وتطوير "${irDef.name}" لتسريع نمو المحاصيل بنسبة ${(irDef.speedBonus * 100).toFixed(0)}%! بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.upgradeFarmIrrigation().catch(e => console.warn('[FarmEngine] Server irrigation upgrade sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       waterLevel: f.waterLevel,
@@ -7248,6 +7344,11 @@ const GameEngine = (() => {
     f.fertilizerLevel = nextLvl;
     recordPlayerActivity('ترقية مخصبات المزرعة ', `اعتماد "${fertDef.name}" لمضاعفة المحصول بنسبة +${(fertDef.yieldBonus * 100).toFixed(0)}%! بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.upgradeFarmFertilizer().catch(e => console.warn('[FarmEngine] Server fertilizer upgrade sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       fertilizerLevel: f.fertilizerLevel,
@@ -7281,6 +7382,11 @@ const GameEngine = (() => {
     f.workers++;
     recordPlayerActivity('توظيف عامل مزرعة ', `توظيف عامل للمزرعة لمراقبة وحصاد المحاصيل تلقائياً بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.hireFarmWorker().catch(e => console.warn('[FarmEngine] Server worker hire sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       workers: f.workers
@@ -7312,6 +7418,11 @@ const GameEngine = (() => {
     f.siloLevel = nextLvl;
     recordPlayerActivity('ترقية صوامع المزرعة ', `توسعة صوامع التخزين إلى "${siloDef.name}" بسعة ${siloDef.capacity.toLocaleString()} وحدة بتكلفة ${cost.toLocaleString()} EGP`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.upgradeFarmSilo().catch(e => console.warn('[FarmEngine] Server silo upgrade sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       siloLevel: f.siloLevel,
@@ -7360,6 +7471,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسييل اضطراري لتفريغ الصومعة ', `تسييل ${sellQty.toLocaleString()} وحدة من "${crop.name}" بسعر التكلفة فقط (+${totalPrice.toLocaleString()} EGP) لتفريغ الصومعة. الأرباح محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellFarmCrop(cropId, sellQty).catch(e => console.warn('[FarmEngine] Server sell sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       crop,
@@ -7418,6 +7534,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تفريغ اضطراري للصوامع ', `تسييل شامل لـ ${itemsSold.toLocaleString()} وحدة محاصيل بسعر التكلفة الرأسمالية فقط (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellAllFarmCrops().catch(e => console.warn('[FarmEngine] Server sell-all sync warning:', e.message));
+    }
+
     forceSaveState(true);
     return {
       grandTotal,
@@ -8611,6 +8732,7 @@ const GameEngine = (() => {
     saveState: forceSaveState,
     getState: () => state,
     applyOfflineCatchup,
+    claimIncome,
 
     // Referral System Exports
     generateReferralCode,

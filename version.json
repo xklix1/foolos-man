@@ -1,7 +1,7 @@
 {
-  "version": "v9.9.7",
-  "build": 1791635000000,
-  "timestamp": 1791635000000,
-  "notes": "Mandatory loop-safe cache purge: bank sync, airport manager fix, and cloud save overhaul",
-  "releaseNotes": "تحديث إجباري آمن: تنظيف الكاش وإصلاحات البنك ومساعد المطار وحفظ السحابة الفوري"
+  "version": "v10.0.0",
+  "build": 1791668400000,
+  "timestamp": 1791668400000,
+  "notes": "Major Architecture Milestone v10.0.0: Pure Thin-Client Engine, Server-Authoritative Wealth & Markets, Loop-Safe Cache Purge",
+  "releaseNotes": "تحديث رئيسي v10.0.0: تحويل اللعبة إلى واجهة عرض سحابية مؤمنة بالكامل 100%، البورصة العالمية الموحدة، وتفريغ آمن للكاش بدون أي تكرار"
 }

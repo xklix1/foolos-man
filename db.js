@@ -2165,21 +2165,9 @@ var AppDB = (() => {
           }
         }
 
-        // 5. Late-save recovery:
-        // Only reconcile wealth from local state if this is an immediate page reload / tab switch (< 45s)
-        // AND local state timestamp is genuinely newer than or equal to the server timestamp.
-        const isImmediateReload = (_nowAtLoad - localTs <= 45000);
-        if (!isAccountReset && !isStaleLocalDueToAdmin && isLocalRecentOrNewer && isImmediateReload && localTs >= serverTs) {
-          const localTotal = (Number(local.cash) || 0) + (Number(local.bank) || 0) + (Number(local.dirtyCash) || 0);
-          const serverTotal = (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0);
-          if (localTotal !== serverTotal || localTs > serverTs) {
-            stateObj.cash = Number(local.cash || 0);
-            stateObj.bank = Number(local.bank || 0);
-            stateObj.dirtyCash = Number(local.dirtyCash || 0);
-            shouldSyncCloud = true;
-          }
-        }
-
+        // 5. Server-Authoritative Wealth Guarantee:
+        // Cloud database balances (row.cash, row.bank, row.net_worth) are strictly authoritative.
+        // Stale browser localStorage is NEVER allowed to overwrite server balances.
         if (shouldSyncCloud) {
           if (typeof window !== 'undefined' && window.GameEngine && typeof window.GameEngine.calculateNetWorth === 'function') {
             stateObj.netWorth = window.GameEngine.calculateNetWorth(stateObj);
@@ -2189,7 +2177,6 @@ var AppDB = (() => {
               (Number(stateObj.cash) || 0) + (Number(stateObj.bank) || 0) + (Number(stateObj.dirtyCash) || 0)
             );
           }
-          _pushStateToCloud(row.username, stateObj).catch(() => {});
         }
       }
 
@@ -2207,8 +2194,13 @@ var AppDB = (() => {
       }
       return stateObj;
     } catch (err) {
-      console.warn('[DB] getPlayerState fallback to local:', err.message);
-      return getDecryptedLocalState(`rasalmal_state_${u}`);
+      console.warn('[DB] getPlayerState network error:', err.message);
+      const cached = getDecryptedLocalState(`rasalmal_state_${u}`);
+      if (cached) {
+        cached._isOfflineReadOnly = true; // Read-only offline snapshot — blocks cloud overwrite
+        return cached;
+      }
+      return null;
     }
   }
 
@@ -2273,43 +2265,6 @@ var AppDB = (() => {
           keepalive: true
         }).catch(() => {});
       }
-    } catch (e) {}
-
-    // 3. Directly sync exit state to Supabase via keepalive fetch
-    try {
-      const payload = {
-        username: u,
-        cash: Number(state.cash || 0),
-        bank: Number(state.bank || 0),
-        dirty_cash: Number(state.dirtyCash || 0),
-        net_worth: Number(state.netWorth || 0),
-        xp: Number(state.xp || 0),
-        title: state.title || 'عامل مبتدئ',
-        job_id: state.jobId || 'worker',
-        jail_timer: Number(state.jailTimer || 0),
-        afk_manager_expires_at: Number(state.afkManagerExpiresAt || 0),
-        total_taxes_paid: Number(state.totalTaxesPaid || 0),
-        gold: Number(state.gold || 0),
-      avatar_url: state.avatarUrl || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_avatar_' + u)) || '',
-        state: state,
-        last_seen: exitNow
-      };
-      if (state.pin) payload.pin = state.pin;
-      _sanitizePayloadBeforeCloudPush(payload, state);
-
-      const adminTs = Number(state.adminModifiedTimestamp || 0);
-      const tsFilter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
-      fetch(`${SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${tsFilter}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': SUPABASE_ANON_KEY,
-          'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-          'Prefer': 'return=minimal'
-        },
-        body: JSON.stringify(payload),
-        keepalive: true
-      }).catch(() => {});
     } catch (e) {}
   }
 
@@ -2434,6 +2389,10 @@ var AppDB = (() => {
 
   async function _pushStateToCloud(u, state) {
     if (!u || !state) return;
+    if (state._isOfflineReadOnly) {
+      console.warn(`[Sync] Cloud push aborted for ${u}: state is an offline read-only snapshot.`);
+      return;
+    }
     if (_isSessionInvalidated) {
       console.warn(`[Sync] Cloud push aborted for ${u}: session has been invalidated by another device/tab.`);
       return;
@@ -2465,9 +2424,17 @@ var AppDB = (() => {
     if (state.pin) payload.pin = state.pin;
     _sanitizePayloadBeforeCloudPush(payload, state);
 
-    // Background ServerBridge notification (non-blocking, never skips Supabase direct save)
+    // 1. Authoritative ServerBridge routing (Strictly Server-Side persistence)
     if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.syncState === 'function') {
-      window.ServerBridge.syncState(state, true, u).catch(() => {});
+      try {
+        const sRes = await window.ServerBridge.syncState(state, true, u);
+        if (sRes && (sRes.success || sRes.saved !== false)) {
+          _lastCloudSyncTimestamp = Date.now();
+          return sRes;
+        }
+      } catch (bridgeErr) {
+        console.warn('[Sync] ServerBridge syncState note, attempting resilient direct fallback:', bridgeErr.message);
+      }
     }
 
     try {

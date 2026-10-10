@@ -281,6 +281,17 @@ async function sessionRoutes(fastify, options) {
         success: true,
         saved,
         adminModifiedTimestamp: activeSession ? Number(activeSession.state.adminModifiedTimestamp || 0) : 0,
+        authoritativeState: activeSession ? {
+          cash: activeSession.state.cash,
+          bank: activeSession.state.bank,
+          dirtyCash: activeSession.state.dirtyCash || 0,
+          netWorth: activeSession.state.netWorth,
+          title: activeSession.state.title,
+          assets: activeSession.state.assets,
+          ownedCars: activeSession.state.ownedCars,
+          stocks: activeSession.state.stocks,
+          incomeVault: activeSession.state.incomeVault || 0
+        } : null,
         serverTime: Date.now()
       };
     } catch (err) {

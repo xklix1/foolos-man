@@ -12,10 +12,10 @@
     if (window.location.hostname.endsWith('vercel.app')) {
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
-    // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard
-    window._CLIENT_VERSION = 'v9.9.7';
+    // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.0 Milestone)
+    window._CLIENT_VERSION = 'v10.0.0';
     (async function() {
-      const CURRENT_APP_BUILD = 'v9.9.7';
+      const CURRENT_APP_BUILD = 'v10.0.0';
       try {
         // Clean any stale _bust parameter from URL bar to prevent perpetual dirty URLs
         if (window.location.search.includes('_bust=')) {
@@ -29,57 +29,31 @@
         if (res.ok) {
           const s = await res.json();
           if (s && s.version && s.version !== CURRENT_APP_BUILD) {
-            console.warn('[CacheBuster] Stale build detected: ' + CURRENT_APP_BUILD + ' -> Target: ' + s.version);
-            
-            // STRICT ANTI-LOOP PROTECTION:
-            // 1. Time cooldown: Max 1 reload per 45s across all tabs & sessions
-            // 2. Strict attempt limit: Max 1 reload per version
-            // 3. Fallback to localStorage + sessionStorage so private browsing/webviews are safe
-            let lastBust = 0;
-            let attempts = 0;
-            const bustKey = 'rasalmal_bust_' + s.version;
-            try {
-              lastBust = Math.max(
-                Number(localStorage.getItem('rasalmal_last_bust_ts') || 0),
-                Number(sessionStorage.getItem('rasalmal_last_bust_ts') || 0)
-              );
-              attempts = Math.max(
-                Number(localStorage.getItem(bustKey) || 0),
-                Number(sessionStorage.getItem(bustKey) || 0)
-              );
-            } catch (_) {}
+            console.log('[VersionSync] New app build available: ' + CURRENT_APP_BUILD + ' -> ' + s.version);
+            const sessionReloadKey = 'rasalmal_reloaded_' + s.version;
+            const alreadyReloaded = sessionStorage.getItem(sessionReloadKey);
 
-            const now = Date.now();
-            if (now - lastBust < 45000 || attempts >= 1) {
-              console.warn('[CacheBuster] Loop shield triggered: Cooldown active or already reloaded for ' + s.version + '. Halting auto-reload.');
-              return;
+            if (!alreadyReloaded) {
+              sessionStorage.setItem(sessionReloadKey, 'true');
+              // Clear caches cleanly
+              if ('caches' in window) {
+                try {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map(k => caches.delete(k)));
+                } catch (_) {}
+              }
+              // Update service workers
+              if ('serviceWorker' in navigator) {
+                try {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  regs.forEach(r => r.update());
+                } catch (_) {}
+              }
+              // Single safe reload to boot newest code
+              setTimeout(() => {
+                window.location.reload();
+              }, 250);
             }
-
-            try {
-              localStorage.setItem('rasalmal_last_bust_ts', String(now));
-              localStorage.setItem(bustKey, '1');
-              sessionStorage.setItem('rasalmal_last_bust_ts', String(now));
-              sessionStorage.setItem(bustKey, '1');
-            } catch (_) {}
-            
-            // Wipe CacheStorage API
-            if ('caches' in window) {
-              try {
-                const keys = await caches.keys();
-                await Promise.all(keys.map(k => caches.delete(k)));
-              } catch (_) {}
-            }
-            // Unregister obsolete Service Workers
-            if ('serviceWorker' in navigator) {
-              try {
-                const regs = await navigator.serviceWorker.getRegistrations();
-                await Promise.all(regs.map(r => r.unregister()));
-              } catch (_) {}
-            }
-            // Force hard reload bypassing browser disk cache
-            const target = window.location.origin + window.location.pathname + '?_bust=' + now;
-            window.location.replace(target);
-            return;
           }
         }
       } catch (e) {}
@@ -183,7 +157,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v9.9.7">
+  <link rel="stylesheet" href="app.css?v=v10.0.0">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -7942,7 +7916,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v9.9.7"></script>
+  <script src="core.bundle.js?v=v10.0.0"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

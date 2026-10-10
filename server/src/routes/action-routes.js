@@ -13,6 +13,10 @@ const { BUSINESSES } = require('../engine/definitions');
 const { getBusinessUpgradeCost } = require('../engine/business-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
 const eventService = require('../services/event-service');
+const farmEngine = require('../engine/farm-engine');
+const incomeVaultEngine = require('../engine/income-vault-engine');
+const propertyCarEngine = require('../engine/property-car-engine');
+const stockEngine = require('../engine/stock-exchange-engine');
 
 const AVATARS_DIR = path.resolve(__dirname, '../../../uploads/avatars');
 
@@ -56,6 +60,13 @@ async function actionRoutes(fastify, options) {
     } else if (effectiveToken) {
       session.sessionToken = effectiveToken;
       if (session.state) session.state.sessionToken = effectiveToken;
+    }
+
+    // Process passive income vault (auto-claims if AFK Manager is active)
+    if (session.state) {
+      try {
+        incomeVaultEngine.processIncomeVault(session.state, Date.now(), false);
+      } catch (_) {}
     }
 
     return session;
@@ -1330,6 +1341,327 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       });
     } finally {
       session._telegramClaimLock = false;
+    }
+  });
+
+  // ── Authoritative Farm System Routes ──
+  function finalizeFarmAction(session) {
+    const s = session.state;
+    s.netWorth = calculateNetWorth(s);
+    s.title = getAppropriateTitle(s.netWorth, s.xp || 0);
+    sessionManager.markDirty(session.username);
+  }
+
+  fastify.post('/api/action/farm/unlock', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن! لا يمكنك استصلاح مزرعة الآن.' });
+    try {
+      const result = farmEngine.unlockFarm(session.state);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/upgrade-land', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    try {
+      const result = farmEngine.upgradeFarmLand(session.state);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/upgrade-irrigation', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    try {
+      const result = farmEngine.upgradeFarmIrrigation(session.state);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/upgrade-fertilizer', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    try {
+      const result = farmEngine.upgradeFarmFertilizer(session.state);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/upgrade-silo', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    try {
+      const result = farmEngine.upgradeFarmSilo(session.state);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/hire-worker', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    try {
+      const result = farmEngine.hireFarmWorker(session.state);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/plant', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن! لا يمكنك الزراعة الآن.' });
+    const { plotIndex, cropId } = request.body || {};
+    try {
+      const result = farmEngine.plantFarmCrop(session.state, parseInt(plotIndex, 10), cropId, Date.now());
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/plant-all', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن! لا يمكنك الزراعة الآن.' });
+    const { cropId } = request.body || {};
+    try {
+      const result = farmEngine.plantAllFarmPlots(session.state, cropId, Date.now());
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/harvest', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { plotIndex } = request.body || {};
+    try {
+      const result = farmEngine.harvestFarmCrop(session.state, parseInt(plotIndex, 10), Date.now());
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/harvest-all', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    try {
+      const result = farmEngine.harvestAllFarmPlots(session.state, Date.now());
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/sell', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { cropId, qty } = request.body || {};
+    try {
+      const result = farmEngine.sellFarmCrop(session.state, cropId, qty ? parseInt(qty, 10) : undefined, Date.now());
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/sell-all', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    try {
+      const result = farmEngine.sellAllFarmCrops(session.state, Date.now());
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // ── Authoritative Income Vault & Real Estate / Vehicles (Phase 1) ──
+
+  fastify.post('/api/action/claim-income', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    try {
+      const res = incomeVaultEngine.processIncomeVault(session.state, Date.now(), true);
+      sessionManager.markDirty(session.username);
+      return reply.send({
+        success: true,
+        claimed: res.claimed,
+        vault: res.vault,
+        cash: session.state.cash,
+        netWorth: session.state.netWorth,
+        isManagerActive: res.isManagerActive
+      });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/property/buy', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن! لا يمكنك شراء عقارات.' });
+    const { assetId } = request.body || {};
+    try {
+      const res = propertyCarEngine.buyProperty(session.state, assetId);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, result: res, assets: session.state.assets, cash: session.state.cash, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/property/sell', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    const { assetId } = request.body || {};
+    try {
+      const res = propertyCarEngine.sellProperty(session.state, assetId);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, result: res, assets: session.state.assets, cash: session.state.cash, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/car/buy', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    const { carId } = request.body || {};
+    try {
+      const res = propertyCarEngine.buyCar(session.state, carId);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, result: res, ownedCars: session.state.ownedCars, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/car/sell', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    const { carId, carIndex } = request.body || {};
+    try {
+      const res = propertyCarEngine.sellCar(session.state, carId, carIndex !== undefined ? parseInt(carIndex, 10) : -1);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, result: res, ownedCars: session.state.ownedCars, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/car/assign', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { carId } = request.body || {};
+    try {
+      const res = propertyCarEngine.setActiveCar(session.state, carId || null);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, result: res, activeCar: session.state.activeCar, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/car/rent', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { carId, rentStatus, carIndex } = request.body || {};
+    try {
+      const res = propertyCarEngine.rentCar(session.state, carId, rentStatus, carIndex !== undefined ? parseInt(carIndex, 10) : -1);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, result: res, rentStatus: res.rentStatus, ownedCars: session.state.ownedCars, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // ─── PHASE 2: STOCK EXCHANGE ENDPOINTS ───
+
+  // GET /api/market/stocks (Synchronized market overview for all players)
+  fastify.get('/api/market/stocks', async (request, reply) => {
+    try {
+      const overview = stockEngine.getMarketOverview(Date.now());
+      return reply.send({ success: true, ...overview });
+    } catch (err) {
+      return reply.code(500).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/stock/buy
+  fastify.post('/api/action/stock/buy', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    const { symbol, shares } = request.body || {};
+    try {
+      const res = stockEngine.buyStock(session.state, symbol, parseInt(shares, 10), Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({
+        success: true,
+        result: res,
+        stocks: session.state.stocks,
+        cash: session.state.cash,
+        netWorth: session.state.netWorth
+      });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/stock/sell
+  fastify.post('/api/action/stock/sell', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    const { symbol, shares } = request.body || {};
+    try {
+      const res = stockEngine.sellStock(session.state, symbol, parseInt(shares, 10), Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({
+        success: true,
+        result: res,
+        stocks: session.state.stocks,
+        cash: session.state.cash,
+        netWorth: session.state.netWorth
+      });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
     }
   });
 }

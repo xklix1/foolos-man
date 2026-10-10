@@ -149,10 +149,14 @@ const ASSETS = {
 };
 
 const STOCKS = {
-  ARAMCO: { symbol: 'ARAMCO', name: 'أرامكو للنفط', basePrice: 32 },
-  ALRAJHI: { symbol: 'ALRAJHI', name: 'مصرف الراجحي', basePrice: 85 },
-  STC: { symbol: 'STC', name: 'إس تي سي اتصالات', basePrice: 40 },
-  SABIC: { symbol: 'SABIC', name: 'سابك للصناعات', basePrice: 78 }
+  COMI: { name: 'البنك التجاري الدولي', symbol: 'COMI', basePrice: 38, volatility: 0.018, reversion: 0.015, floor: 32, ceiling: 46, dividend: 0.00015, maxShares: 50000, seed: 101 },
+  EAST: { name: 'الشرقية للدخان', symbol: 'EAST', basePrice: 85, volatility: 0.020, reversion: 0.015, floor: 70, ceiling: 102, dividend: 0.00025, maxShares: 30000, seed: 202 },
+  ETEL: { name: 'المصرية للاتصالات', symbol: 'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.015, floor: 40, ceiling: 58, dividend: 0.00018, maxShares: 40000, seed: 303 },
+  FWRY: { name: 'فوري للمدفوعات الإلكترونية', symbol: 'FWRY', basePrice: 92, volatility: 0.035, reversion: 0.018, floor: 68, ceiling: 135, dividend: 0.00015, maxShares: 25000, seed: 457 },
+  CASH: { name: 'صندوق الاستثمار التقني البديل', symbol: 'CASH', basePrice: 125, volatility: 0.025, reversion: 0.022, floor: 105, ceiling: 150, dividend: 0.00035, maxShares: 20000, seed: 505 },
+  BITC: { name: 'مؤشر البيتكوين والأصول الرقمية', symbol: 'BITC', basePrice: 310, volatility: 0.040, reversion: 0.025, floor: 230, ceiling: 410, dividend: 0, maxShares: 5000, seed: 606 },
+  GOLD: { name: 'صندوق سبائك الذهب الخالص', symbol: 'GOLD', basePrice: 220, volatility: 0.012, reversion: 0.01, floor: 195, ceiling: 250, dividend: 0.0003, maxShares: 10000, seed: 707 },
+  AIX: { name: 'صندوق الذكاء الاصطناعي العالمي', symbol: 'AIX', basePrice: 380, volatility: 0.030, reversion: 0.02, floor: 300, ceiling: 470, dividend: 0.00025, maxShares: 8000, seed: 808 }
 };
 
 const TITLES = [

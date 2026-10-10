@@ -51,6 +51,28 @@ var ServerBridge = (() => {
     return null;
   }
 
+  async function _get(endpoint) {
+    const base = getApiBase();
+    const url = `${base}${endpoint}`;
+    const headers = {};
+    if (_sessionToken) {
+      headers['Authorization'] = `Bearer ${_sessionToken}`;
+    }
+    const res = await fetch(url, {
+      method: 'GET',
+      headers
+    });
+    if (!res.ok) {
+      let errMsg = `HTTP ${res.status}`;
+      try {
+        const errJson = await res.json();
+        errMsg = errJson.error || errJson.message || errMsg;
+      } catch (e) {}
+      throw new Error(errMsg);
+    }
+    return await res.json();
+  }
+
   async function _post(endpoint, body = {}) {
     const base = getApiBase();
     const url = `${base}${endpoint}`;
@@ -304,6 +326,20 @@ var ServerBridge = (() => {
           Number(GameEngine.state.adminModifiedTimestamp || 0),
           Number(res.adminModifiedTimestamp)
         );
+      }
+      if (res && res.authoritativeState && typeof GameEngine !== 'undefined') {
+        const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+        if (s) {
+          if (res.authoritativeState.cash !== undefined) s.cash = res.authoritativeState.cash;
+          if (res.authoritativeState.bank !== undefined) s.bank = res.authoritativeState.bank;
+          if (res.authoritativeState.dirtyCash !== undefined) s.dirtyCash = res.authoritativeState.dirtyCash;
+          if (res.authoritativeState.netWorth !== undefined) s.netWorth = res.authoritativeState.netWorth;
+          if (res.authoritativeState.title !== undefined) s.title = res.authoritativeState.title;
+          if (res.authoritativeState.assets !== undefined) s.assets = res.authoritativeState.assets;
+          if (res.authoritativeState.ownedCars !== undefined) s.ownedCars = res.authoritativeState.ownedCars;
+          if (res.authoritativeState.stocks !== undefined) s.stocks = res.authoritativeState.stocks;
+          if (res.authoritativeState.incomeVault !== undefined) s.incomeVault = res.authoritativeState.incomeVault;
+        }
       }
       return res;
     } catch (e) {
@@ -643,6 +679,290 @@ var ServerBridge = (() => {
     });
   }
 
+  // ── Authoritative Farm Bridge Actions ──
+  function _reconcileFarmResponse(res) {
+    if (!res || !res.success) return res;
+    if (typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.bank !== undefined) s.bank = res.bank;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.farm && typeof res.farm === 'object') {
+          s.farm = res.farm;
+        }
+      }
+      if (typeof UI !== 'undefined') {
+        if (UI.renderFarmPanel) { try { UI.renderFarmPanel(); } catch (_) {} }
+        if (UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+      }
+    }
+    return res;
+  }
+
+  async function unlockFarm() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/unlock', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function upgradeFarmLand() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/upgrade-land', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function upgradeFarmIrrigation() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/upgrade-irrigation', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function upgradeFarmFertilizer() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/upgrade-fertilizer', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function upgradeFarmSilo() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/upgrade-silo', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function hireFarmWorker() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/hire-worker', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function plantFarmCrop(plotIndex, cropId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/plant', { username: user, token, plotIndex, cropId });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function plantAllFarmPlots(cropId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/plant-all', { username: user, token, cropId });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function harvestFarmCrop(plotIndex) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/harvest', { username: user, token, plotIndex });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function harvestAllFarmPlots() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/harvest-all', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function sellFarmCrop(cropId, qty) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/sell', { username: user, token, cropId, qty });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function sellAllFarmCrops() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/sell-all', { username: user, token });
+    return _reconcileFarmResponse(res);
+  }
+
+  // ── Authoritative Income Vault & Real Estate / Vehicles (Phase 1) ──
+  async function claimIncome() {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/claim-income', { username: user, token });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        s.incomeVault = res.vault || 0;
+      }
+      if (typeof UI !== 'undefined' && UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+    }
+    return res;
+  }
+
+  async function buyProperty(assetId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/property/buy', { username: user, token, assetId });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.assets) s.assets = res.assets;
+      }
+      if (typeof UI !== 'undefined') {
+        if (UI.renderAssetsPanel) { try { UI.renderAssetsPanel(); } catch (_) {} }
+        if (UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+      }
+    }
+    return res;
+  }
+
+  async function sellProperty(assetId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/property/sell', { username: user, token, assetId });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.assets) s.assets = res.assets;
+      }
+      if (typeof UI !== 'undefined') {
+        if (UI.renderAssetsPanel) { try { UI.renderAssetsPanel(); } catch (_) {} }
+        if (UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+      }
+    }
+    return res;
+  }
+
+  async function buyCar(carId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/car/buy', { username: user, token, carId });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.bank !== undefined) s.bank = res.bank;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.ownedCars) s.ownedCars = res.ownedCars;
+      }
+      if (typeof UI !== 'undefined') {
+        if (UI.renderCarsPanel) { try { UI.renderCarsPanel(); } catch (_) {} }
+        if (UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+      }
+    }
+    return res;
+  }
+
+  async function sellCar(carId, carIndex = -1) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/car/sell', { username: user, token, carId, carIndex });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.bank !== undefined) s.bank = res.bank;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.ownedCars) s.ownedCars = res.ownedCars;
+      }
+      if (typeof UI !== 'undefined') {
+        if (UI.renderCarsPanel) { try { UI.renderCarsPanel(); } catch (_) {} }
+        if (UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+      }
+    }
+    return res;
+  }
+
+  async function setActiveCar(carId) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/car/assign', { username: user, token, carId });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        s.activeCar = res.activeCar;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+      }
+      if (typeof UI !== 'undefined' && UI.renderCarsPanel) { try { UI.renderCarsPanel(); } catch (_) {} }
+    }
+    return res;
+  }
+
+  async function rentCar(carId, rentStatus, carIndex = -1) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/car/rent', { username: user, token, carId, rentStatus, carIndex });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.ownedCars) s.ownedCars = res.ownedCars;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+      }
+      if (typeof UI !== 'undefined' && UI.renderCarsPanel) { try { UI.renderCarsPanel(); } catch (_) {} }
+    }
+    return res;
+  }
+
+  async function fetchMarketStocks() {
+    return await _get('/api/market/stocks');
+  }
+
+  async function buyStock(symbol, shares) {
+    const user = _activeUsername;
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/stock/buy', { username: user, token, symbol, shares });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.stocks) s.stocks = res.stocks;
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+      }
+    }
+    return res;
+  }
+
+  async function sellStock(symbol, shares) {
+    const user = _activeUsername;
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/stock/sell', { username: user, token, symbol, shares });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.stocks) s.stocks = res.stocks;
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+      }
+    }
+    return res;
+  }
+
   return {
     getApiBase,
     formatAvatarUrl,
@@ -662,6 +982,28 @@ var ServerBridge = (() => {
     toggleAirportAutopilot,
     unlockGear,
     upgradeGear,
+    unlockFarm,
+    upgradeFarmLand,
+    upgradeFarmIrrigation,
+    upgradeFarmFertilizer,
+    upgradeFarmSilo,
+    hireFarmWorker,
+    plantFarmCrop,
+    plantAllFarmPlots,
+    harvestFarmCrop,
+    harvestAllFarmPlots,
+    sellFarmCrop,
+    sellAllFarmCrops,
+    claimIncome,
+    buyProperty,
+    sellProperty,
+    buyCar,
+    sellCar,
+    setActiveCar,
+    rentCar,
+    fetchMarketStocks,
+    buyStock,
+    sellStock,
     registerAccount,
     startSession,
     dispatchClick,

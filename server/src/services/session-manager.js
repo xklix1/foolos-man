@@ -13,7 +13,7 @@ const config = require('../config/env');
 const dbService = require('./db-service');
 const { sanitizePlayerState } = require('../engine/state-sanitizer');
 const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-engine');
-const { calculateNetWorth } = require('../engine/net-worth-engine');
+const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
 const { AIRCRAFT_MODELS } = require('../engine/airport-engine');
 
 class SessionManager {
@@ -194,7 +194,7 @@ class SessionManager {
   /**
    * Synchronizes full player state from client, updating memory and persisting if requested
    */
-  async updateSessionState(username, clientState, immediate = false) {
+  async updateSessionState(username, clientState, immediate = false, isServerAdminContext = false) {
     if (!username || !clientState || typeof clientState !== 'object') return false;
 
     // Security & Anti-Duplication Guard: Block any sync attempt if clientState claims to be a different user
@@ -219,9 +219,10 @@ class SessionManager {
     const sessionAdminTs = Number(s.adminModifiedTimestamp || 0);
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
     const isClientStale = sessionAdminTs > 0 && clientAdminTs < sessionAdminTs;
-    const isAdminGrant = (clientAdminTs > 0 && clientAdminTs >= sessionAdminTs) || 
-                         (clientAdminTs > Number(session._lastProcessedAdminTs || 0)) ||
-                         clientState._adminGrantBypass === true;
+    // CRITICAL SECURITY ENFORCEMENT:
+    // Client sync payloads CANNOT grant themselves admin authority via timestamps or spoofed flags.
+    // isAdminGrant is ONLY valid when explicitly invoked from an authenticated server admin context.
+    const isAdminGrant = isServerAdminContext === true;
 
     // Beta Features (Gold currency - strictly gated to literal developer account 'Khaled' / 'خالد' only)
     const isLiteralKhaled = typeof username === 'string' &&
@@ -238,21 +239,19 @@ class SessionManager {
     const newLiquidTotal = incomingCash + incomingBank;
     const liquidJump = newLiquidTotal - prevLiquidTotal;
 
-    // Only clamp if there is an unexplainable massive jump in TOTAL new wealth (> 50M growth in single tick without admin grant)
-    // ADMIN EXEMPTION: All funds/grants sent from Admin Panel or with admin timestamps are 100% EXEMPT from clamps!
-    if (!isLiteralKhaled && !isAdminGrant && liquidJump > 50000000 && !isClientStale) {
-      const allowedGrowth = 25000000;
-      const excess = liquidJump - allowedGrowth;
-      if (incomingCash >= excess) {
-        incomingCash -= excess;
-      } else {
-        const rem = excess - incomingCash;
-        incomingCash = 0;
-        incomingBank = Math.max(0, incomingBank - rem);
-      }
-    }
-
+    // PHASE 3 PURE THIN-CLIENT LOCKDOWN:
+    // Core wealth balances (cash, bank, dirtyCash, assets, ownedCars, stocks, gold, incomeVault)
+    // are strictly Server-Authoritative.
+    // Untrusted client syncState calls cannot directly inject or overwrite these values.
+    // Only verified Admin grants (isAdminGrant) or server action endpoints can alter balances.
     if (isAdminGrant) {
+      s.cash = incomingCash;
+      s.bank = incomingBank;
+      if (clientState.dirtyCash !== undefined) s.dirtyCash = Number(clientState.dirtyCash) || 0;
+      if (clientState.assets && typeof clientState.assets === 'object') s.assets = clientState.assets;
+      if (clientState.ownedCars && typeof clientState.ownedCars === 'object') s.ownedCars = clientState.ownedCars;
+      if (clientState.stocks && typeof clientState.stocks === 'object') s.stocks = clientState.stocks;
+      if (clientState.gold !== undefined && clientState.gold !== null) s.gold = Math.max(0, Number(clientState.gold));
       const highestTs = Math.max(sessionAdminTs, clientAdminTs, Date.now());
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
@@ -260,21 +259,6 @@ class SessionManager {
       s.adminModifiedTimestamp = clientAdminTs;
       session._lastProcessedAdminTs = clientAdminTs;
     }
-
-    // Authoritative balance reconciliation (Zero-duplication guarantee):
-    // Internal transfers (cash <-> bank) and spending (e.g. buying airport manager) must NEVER duplicate balances.
-    if (clientState.cash !== undefined || clientState.bank !== undefined) {
-      if (isClientStale && newLiquidTotal > prevLiquidTotal && !isAdminGrant) {
-        // Client gained sudden untracked wealth while having a stale timestamp: clamp growth
-        s.cash = incomingCash;
-        s.bank = incomingBank;
-      } else {
-        // Normal legitimate sync, internal transfer, or purchase
-        s.cash = incomingCash;
-        s.bank = incomingBank;
-      }
-    }
-    if (clientState.dirtyCash !== undefined) s.dirtyCash = Number(clientState.dirtyCash) || 0;
     if (clientState.xp !== undefined) {
       s.xp = (isClientStale && !isAdminGrant) ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
     }
@@ -287,12 +271,7 @@ class SessionManager {
     delete s.pin;
     delete s.password;
 
-        // Synchronize Gold currency authoritatively
-    if (clientState.gold !== undefined && clientState.gold !== null) {
-      s.gold = Math.max(0, Number(clientState.gold));
-    } else {
-      s.gold = Math.max(0, Number(s.gold || 0));
-    }
+
 
     // Agro Farm Tycoon (Officially open to all players)
     if (clientState.farm && typeof clientState.farm === 'object') {
@@ -457,17 +436,8 @@ class SessionManager {
         });
       }
     }
-    if (clientState.ownedCars && typeof clientState.ownedCars === 'object' && !isClientStale) {
-      s.ownedCars = clientState.ownedCars;
-    }
     if (clientState.activeCar !== undefined && !isClientStale) {
       s.activeCar = clientState.activeCar;
-    }
-    if (clientState.assets && typeof clientState.assets === 'object') {
-      s.assets = clientState.assets;
-    }
-    if (clientState.stocks && typeof clientState.stocks === 'object') {
-      s.stocks = clientState.stocks;
     }
     if (clientState.crypto && typeof clientState.crypto === 'object') {
       s.crypto = clientState.crypto;
@@ -774,7 +744,8 @@ class SessionManager {
       });
     }
 
-    s.netWorth = isClientStale ? Math.max(Number(s.netWorth || 0), Number(clientState.netWorth) || calculateNetWorth(s)) : (Number(clientState.netWorth) || calculateNetWorth(s));
+    s.netWorth = calculateNetWorth(s);
+    s.title = getAppropriateTitle(s.netWorth, s.xp || 0);
     s.lastActiveTimestamp = Number(clientState.lastActiveTimestamp || Date.now());
     s.lastSeen = Date.now();
     session.lastActivity = Date.now();
