@@ -1,0 +1,602 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>دليل المعدات والعتاد الشامل — لعبة رأس المال (Ras ALmal Tycoon)</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&display=swap');
+
+    @page {
+      size: A4;
+      margin: 12mm 15mm 15mm 15mm;
+      @bottom-right {
+        content: counter(page);
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+    }
+
+    body {
+      font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #0b0f19;
+      color: #e2e8f0;
+      font-size: 11pt;
+      line-height: 1.6;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+      border: 2px solid #eab308;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .header h1 {
+      margin: 0 0 6px 0;
+      color: #fbbf24;
+      font-size: 22pt;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+    }
+
+    .header p {
+      margin: 0;
+      color: #94a3b8;
+      font-size: 11pt;
+      font-weight: 600;
+    }
+
+    .header .meta-badge {
+      display: inline-block;
+      margin-top: 10px;
+      background: rgba(234, 179, 8, 0.15);
+      border: 1px solid #eab308;
+      color: #fef08a;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 9pt;
+      font-weight: 700;
+    }
+
+    /* Section Headings */
+    .section-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #334155;
+      padding-bottom: 6px;
+      margin-top: 24px;
+      margin-bottom: 14px;
+      page-break-after: avoid;
+    }
+
+    .section-title h2 {
+      margin: 0;
+      font-size: 14pt;
+      font-weight: 800;
+      color: #38bdf8;
+    }
+
+    .section-title .badge {
+      background: #1e293b;
+      color: #94a3b8;
+      font-size: 8.5pt;
+      padding: 3px 10px;
+      border-radius: 6px;
+      border: 1px solid #475569;
+    }
+
+    /* Cards Grid */
+    .cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .card {
+      background: #131d31;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 12px 14px;
+      page-break-inside: avoid;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    .card.gold-border {
+      border: 1px solid rgba(234, 179, 8, 0.4);
+      background: linear-gradient(180deg, #162035 0%, #111827 100%);
+    }
+
+    .card.purple-border {
+      border: 1px solid rgba(168, 85, 247, 0.4);
+    }
+
+    .card.red-border {
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .card-title {
+      font-size: 11pt;
+      font-weight: 800;
+      color: #f8fafc;
+      margin: 0;
+    }
+
+    .tag {
+      font-size: 8pt;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 4px;
+    }
+
+    .tag-gold { background: #854d0e; color: #fef08a; }
+    .tag-blue { background: #0369a1; color: #bae6fd; }
+    .tag-purple { background: #6b21a8; color: #e9d5ff; }
+    .tag-red { background: #991b1b; color: #fecaca; }
+    .tag-emerald { background: #065f46; color: #a7f3d0; }
+
+    .card-desc {
+      font-size: 9.5pt;
+      color: #94a3b8;
+      margin: 0 0 10px 0;
+      line-height: 1.5;
+    }
+
+    .card-specs {
+      background: #0a0f1d;
+      border-radius: 6px;
+      padding: 8px 10px;
+      font-size: 8.5pt;
+    }
+
+    .spec-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 2px 0;
+      border-bottom: 1px dashed #1e293b;
+    }
+
+    .spec-row:last-child {
+      border-bottom: none;
+    }
+
+    .spec-label {
+      color: #64748b;
+    }
+
+    .spec-value {
+      font-weight: 700;
+      color: #f1f5f9;
+    }
+
+    .spec-value.highlight-gold { color: #facc15; }
+    .spec-value.highlight-emerald { color: #34d399; }
+    .spec-value.highlight-cyan { color: #38bdf8; }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px 0;
+      font-size: 9pt;
+      background: #131d31;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #1e293b;
+      page-break-inside: avoid;
+    }
+
+    th {
+      background: #1e293b;
+      color: #cbd5e1;
+      font-weight: 800;
+      padding: 8px 10px;
+      text-align: right;
+      border-bottom: 2px solid #334155;
+    }
+
+    td {
+      padding: 7px 10px;
+      border-bottom: 1px solid #1e293b;
+      color: #94a3b8;
+    }
+
+    tr:nth-child(even) {
+      background: #0d1527;
+    }
+
+    tr:last-child td {
+      border-bottom: none;
+    }
+
+    .table-strong {
+      color: #f8fafc;
+      font-weight: 700;
+    }
+
+    /* Callout / Notice Box */
+    .notice-box {
+      background: linear-gradient(90deg, #1e1b4b 0%, #1e293b 100%);
+      border-right: 4px solid #818cf8;
+      border-radius: 6px;
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 9pt;
+      color: #c7d2fe;
+      page-break-inside: avoid;
+    }
+
+    .notice-box strong {
+      color: #ffffff;
+    }
+
+    .page-break {
+      page-break-before: always;
+    }
+
+    .footer {
+      margin-top: 25px;
+      text-align: center;
+      font-size: 8.5pt;
+      color: #64748b;
+      border-top: 1px solid #1e293b;
+      padding-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    
+    <!-- الغلاف والترويسة -->
+    <div class="header">
+      <h1>دليل المعدات والعتاد الاستراتيجي الشامل</h1>
+      <p>منظومة رأس المال (Ras ALmal Tycoon) — الإصدار المعتمد v9.9.7</p>
+      <div class="meta-badge">الملف الرسمي للمواصفات والآليات والترقيات للمستثمرين ورجال الأعمال</div>
+    </div>
+
+    <!-- مقدمة وتعريف -->
+    <div class="notice-box">
+      <strong>نبذة عن منظومة العتاد والمعدات:</strong> تنقسم الأدوات والمعدات في اللعبة إلى 4 قطاعات متكاملة:
+      (1) <strong>العتاد التنفيذي الفاخر</strong> لتعزيز الثروة الصافية والأرباح الدائمة،
+      (2) <strong>عتاد السوق السوداء</strong> لحماية العمليات السرية وتفادي المداهمات،
+      (3) <strong>أدوات متجر كبار الشخصيات VIP</strong> لتسريع وتيرة النمو ومضاعفة التدفقات،
+      (4) <strong>منشآت وتجهيزات الطيران الدولي</strong> ومساعد المطار الاستراتيجي.
+    </div>
+
+    <!-- القسم الأول: العتاد التنفيذي الفاخر -->
+    <div class="section-title">
+      <h2>1. العتاد التنفيذي الفاخر (Executive Gear)</h2>
+      <span class="badge">ملف الشخصية • 4 قطع رئيسية • 15 مستوى ترقية</span>
+    </div>
+
+    <div class="cards-grid">
+      <!-- دفتر حسابات التدقيق -->
+      <div class="card gold-border">
+        <div class="card-header">
+          <h3 class="card-title">دفتر حسابات التدقيق (Ledger)</h3>
+          <span class="tag tag-gold">محاسبي</span>
+        </div>
+        <p class="card-desc">تابلت محاسبي متقدم يقلل من معدل استهلاك بضائع المشاريع ويزيد كفاءة التشغيل وخفض الهدر بنسبة مئوية.</p>
+        <div class="card-specs">
+          <div class="spec-row"><span class="spec-label">شرط الفتح:</span><span class="spec-value highlight-cyan">500,000 ج.م ثروة</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الفتح:</span><span class="spec-value highlight-gold">25 سبيكة ذهب</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الترقية الأساسية:</span><span class="spec-value">20 سبيكة ذهب (+15% لكل مستوى)</span></div>
+          <div class="spec-row"><span class="spec-label">أقصى مستوى:</span><span class="spec-value">المستوى 15 (سيادي)</span></div>
+          <div class="spec-row"><span class="spec-label">الأثر الاستراتيجي:</span><span class="spec-value highlight-emerald">+2% إلى +30% كفاءة استهلاك البضائع</span></div>
+        </div>
+      </div>
+
+      <!-- لابتوب الصفقات والتداول -->
+      <div class="card gold-border">
+        <div class="card-header">
+          <h3 class="card-title">لابتوب الصفقات والتداول (Laptop)</h3>
+          <span class="tag tag-blue">بورصة وتداول</span>
+        </div>
+        <p class="card-desc">منصة تداول مالية حية تمنح أرباحاً إضافية في صفقات الأسهم واستثمارات البورصة العالمية بأسعار الصرف اللحظية.</p>
+        <div class="card-specs">
+          <div class="spec-row"><span class="spec-label">شرط الفتح:</span><span class="spec-value highlight-cyan">5,000,000 ج.م ثروة</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الفتح:</span><span class="spec-value highlight-gold">50 سبيكة ذهب</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الترقية الأساسية:</span><span class="spec-value">30 سبيكة ذهب (+15% لكل مستوى)</span></div>
+          <div class="spec-row"><span class="spec-label">أقصى مستوى:</span><span class="spec-value">المستوى 15 (سيادي)</span></div>
+          <div class="spec-row"><span class="spec-label">الأثر الاستراتيجي:</span><span class="spec-value highlight-emerald">+3% إلى +45% أرباح إضافية في صفقات البورصة</span></div>
+        </div>
+      </div>
+
+      <!-- قلم التوقيع التنفيذي -->
+      <div class="card gold-border">
+        <div class="card-header">
+          <h3 class="card-title">قلم التوقيع التنفيذي (Executive Pen)</h3>
+          <span class="tag tag-purple">عقود وتوريدات</span>
+        </div>
+        <p class="card-desc">قلم توقيع فاخر مرصع بالذهب يخفض ضرائب الدخل ويزيد خصومات عقود التوريد وتكاليف التأسيس.</p>
+        <div class="card-specs">
+          <div class="spec-row"><span class="spec-label">شرط الفتح:</span><span class="spec-value highlight-cyan">25,000,000 ج.م ثروة</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الفتح:</span><span class="spec-value highlight-gold">100 سبيكة ذهب</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الترقية الأساسية:</span><span class="spec-value">45 سبيكة ذهب (+15% لكل مستوى)</span></div>
+          <div class="spec-row"><span class="spec-label">أقصى مستوى:</span><span class="spec-value">المستوى 15 (سيادي)</span></div>
+          <div class="spec-row"><span class="spec-label">الأثر الاستراتيجي:</span><span class="spec-value highlight-emerald">+2% إلى +30% تخفيض ضريبي وخصم عقود</span></div>
+        </div>
+      </div>
+
+      <!-- محطة الماليات والتحويلات -->
+      <div class="card gold-border">
+        <div class="card-header">
+          <h3 class="card-title">محطة الماليات والتحويلات (Terminal)</h3>
+          <span class="tag tag-emerald">سيادي وبنكي</span>
+        </div>
+        <p class="card-desc">محطة سيادية متنقلة تزيد من عوائد الفائدة البنكية وتسرع تدفقات الأرباح أثناء تسجيل الخروج (Offline).</p>
+        <div class="card-specs">
+          <div class="spec-row"><span class="spec-label">شرط الفتح:</span><span class="spec-value highlight-cyan">100,000,000 ج.م ثروة</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الفتح:</span><span class="spec-value highlight-gold">200 سبيكة ذهب</span></div>
+          <div class="spec-row"><span class="spec-label">تكلفة الترقية الأساسية:</span><span class="spec-value">60 سبيكة ذهب (+15% لكل مستوى)</span></div>
+          <div class="spec-row"><span class="spec-label">أقصى مستوى:</span><span class="spec-value">المستوى 15 (سيادي)</span></div>
+          <div class="spec-row"><span class="spec-label">الأثر الاستراتيجي:</span><span class="spec-value highlight-emerald">+3% إلى +45% زيادة عوائد الفائدة البنكية</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- جدول فئات وتصنيف العتاد -->
+    <h3 style="color: #cbd5e1; font-size: 11pt; margin-bottom: 6px;">مستويات تصنيف العتاد التنفيذي (Gear Tiers):</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>الفئة (Tier)</th>
+          <th>المستويات</th>
+          <th>النجوم</th>
+          <th>المظهر والحدود</th>
+          <th>المضاعف والفاعلية</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="table-strong">عادي (Common)</td>
+          <td>المستوى 1 - 3</td>
+          <td>★☆☆☆☆</td>
+          <td>حدود رمادية داكنة</td>
+          <td>المعدل القياسي المبدئي</td>
+        </tr>
+        <tr>
+          <td class="table-strong">مميز (Superior)</td>
+          <td>المستوى 4 - 6</td>
+          <td>★★☆☆☆</td>
+          <td>حدود وتوهج زمردي (Emerald)</td>
+          <td>مضاعفة الأثر بنسبة 1.5x</td>
+        </tr>
+        <tr>
+          <td class="table-strong">نادر (Epic)</td>
+          <td>المستوى 7 - 9</td>
+          <td>★★★☆☆</td>
+          <td>حدود وتوهج بنفسجي (Purple)</td>
+          <td>مضاعفة الأثر بنسبة 2.0x</td>
+        </tr>
+        <tr>
+          <td class="table-strong">أسطوري (Legendary)</td>
+          <td>المستوى 10 - 12</td>
+          <td>★★★★☆</td>
+          <td>حدود وتوهج ذهبي كهرماني (Amber)</td>
+          <td>يؤهل لتفعيل بونص الطقم الأسطوري (+10%)</td>
+        </tr>
+        <tr>
+          <td class="table-strong">سيادي (Sovereign)</td>
+          <td>المستوى 13 - 15</td>
+          <td>★★★★★</td>
+          <td>حدود وتوهج سماوي نيون (Cyan)</td>
+          <td>يؤهل لتفعيل بونص إمبراطور العتاد السيادي (+25%)</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- بونص الطقم الكامل -->
+    <div class="notice-box" style="border-right-color: #facc15;">
+      <strong>بونص الطقم الكامل (Set Bonus):</strong>
+      <br>• <strong>طقم العتاد الأسطوري (+10%):</strong> يتفعل تلقائياً عند ترقية جميع الأدوات الأربعة إلى المستوى 10 فأعلى — يمنح مضاعف دخل شامل بنسبة 10% لكافة تدفقات اللعبة.
+      <br>• <strong>إمبراطور العتاد السيادي (+25%):</strong> يتفعل عند وصول جميع الأدوات الأربعة إلى المستوى الأقصى 15 — يمنح مضاعف دخل سيادي 25% لجميع شركاتك ومشاريعك.
+    </div>
+
+    <!-- فاصل الصفحة للطباعة المنظمة -->
+    <div class="page-break"></div>
+
+    <!-- القسم الثاني: عتاد ومعدات السوق السوداء -->
+    <div class="section-title">
+      <h2>2. عتاد ومعدات السوق السوداء (Black Market Gear)</h2>
+      <span class="badge">السوق السري • حماية العمليات • مكافحة المداهمات</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>اسم المعدة / العتاد</th>
+          <th>التكلفة (ج.م)</th>
+          <th>فترة الفاعلية</th>
+          <th>التأثير والوظيفة الاستراتيجية</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="table-strong">جهاز تشويش رادارات الشرطة (Radar Jammer)</td>
+          <td class="highlight-gold" style="font-weight:700;">80,000</td>
+          <td>4 دقائق (240 تكة)</td>
+          <td>يقلل احتمالية المداهمة الأمنية أثناء تنفيذ صفقات السوق السوداء بنسبة <strong>-6%</strong>.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">جواز سفر دبلوماسي مزور (Fake Passport)</td>
+          <td class="highlight-gold" style="font-weight:700;">600,000</td>
+          <td>5 دقائق (300 تكة)</td>
+          <td><strong>حماية طوارئ لمرة واحدة</strong> — يضمن لك الهروب وتفادي السجن التام عند أول مداهمة للشرطة.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">بروتوكول تشفير مالي (Zero-Trace Crypto)</td>
+          <td class="highlight-gold" style="font-weight:700;">200,000</td>
+          <td>~3.3 دقائق (200 تكة)</td>
+          <td>يخفض ضريبة غسيل وتبييض الأموال القذرة إلى <strong>15%</strong> بدلاً من 22%.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">حقيبة التشفير الدبلوماسية (Diplomatic Bag)</td>
+          <td class="highlight-gold" style="font-weight:700;">800,000</td>
+          <td>4 دقائق (240 تكة)</td>
+          <td>تحمي <strong>18% من الأموال المشبوهة</strong> من المصادرة في حال نجاح المداهمة الأمنية.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">شريحة اتصال كبار المسؤولين (VIP Wire)</td>
+          <td class="highlight-gold" style="font-weight:700;">1,000,000</td>
+          <td>5 دقائق (300 تكة)</td>
+          <td>تخفض تكلفة دفع الرشوة وإسقاط الملاحقات الأمنية الجنائية بنسبة <strong>-18%</strong>.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- القسم الثالث: أدوات ومعدات متجر كبار الشخصيات -->
+    <div class="section-title">
+      <h2>3. أدوات ومعدات متجر كبار الشخصيات (VIP Store & Perks)</h2>
+      <span class="badge">المتجر والحقيبة • معززات الطاقة ومضاعفات الدخل</span>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>اسم الأداة / المعدة</th>
+          <th>السعر</th>
+          <th>مدة الأثر</th>
+          <th>وقت التبريد</th>
+          <th>الحد اليومي</th>
+          <th>الوصف والتأثير المباشر</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="table-strong">ساعة الكرونوس (Cronos Gear)</td>
+          <td class="highlight-gold">350,000</td>
+          <td>5 دقائق</td>
+          <td>20 دقيقة</td>
+          <td>3 مرات</td>
+          <td>تخفض وقت التبريد (Cooldown) للعمليات ونوبات العمل والعمل الإضافي بنسبة <strong>15%</strong>.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">معالج الحوسبة الكمومية (Quantum Core)</td>
+          <td class="highlight-gold">500,000</td>
+          <td>4 دقائق</td>
+          <td>30 دقيقة</td>
+          <td>3 مرات</td>
+          <td>يرفع أرباح وتدفقات كافة مشاريعك وشركاتك بنسبة <strong>+12.5%</strong>.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">عضوية النادي الماسي للبنوك الدولية</td>
+          <td class="highlight-gold">1,200,000</td>
+          <td>8 دقائق</td>
+          <td>ساعتان</td>
+          <td>مرتان</td>
+          <td>ترفع فوائد الودائع البنكية <strong>+10%</strong> وتخفض ضرائب الثروة بنسبة <strong>12.5%</strong>.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">درع الإعفاء والملاذ الضريبي (Tax Shield)</td>
+          <td class="highlight-gold">600,000</td>
+          <td>6 ساعات</td>
+          <td>24 ساعة</td>
+          <td>مرة واحدة</td>
+          <td>خصم <strong>4%</strong> على ترقيات الشركات وتخفيض ضريبة الثروة بنسبة <strong>12.5%</strong>.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">ماسح البورصة والتداول الذكي</td>
+          <td class="highlight-gold">200,000</td>
+          <td>4 دقائق</td>
+          <td>20 دقيقة</td>
+          <td>3 مرات</td>
+          <td>يخفف أثر الهبوط والتصحيحات العكسية لأسهم البورصة بنسبة <strong>10%</strong>.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">القلم الذهبي للمدراء</td>
+          <td class="highlight-gold">20,000</td>
+          <td>3 دقائق</td>
+          <td>10 دقائق</td>
+          <td>4 مرات</td>
+          <td>يزيد نقاط الخبرة الوظيفية XP بنسبة <strong>+8%</strong> لتسريع الترقيات الإدارية.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">توكيل محامٍ دولي قدير</td>
+          <td class="highlight-gold">100,000</td>
+          <td>5 دقائق</td>
+          <td>15 دقيقة</td>
+          <td>3 مرات</td>
+          <td>يخفض خطورة الاعتقال في صفقات السوق المحظورة بنسبة <strong>-6%</strong>.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">مشروب الطاقة والتركيز الفائق</td>
+          <td class="highlight-gold">25,000</td>
+          <td>90 ثانية</td>
+          <td>8 دقائق</td>
+          <td>5 مرات</td>
+          <td>يرفع راتب نوبات العمل بنسبة <strong>+12.5%</strong> أثناء نشاطه.</td>
+        </tr>
+        <tr>
+          <td class="table-strong">بطاقة VIP لكازينو الحظ</td>
+          <td class="highlight-gold">80,000</td>
+          <td>~5 دقائق</td>
+          <td>15 دقيقة</td>
+          <td>3 مرات</td>
+          <td>بونص مالي <strong>+20%</strong> على أرباح الكازينو وعجلة الحظ، واسترداد تعادل البلاك جاك.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- القسم الرابع: معدات وتجهيزات الطيران الدولي ومساعد المطار -->
+    <div class="section-title">
+      <h2>4. تجهيزات ومنشآت المطار الدولي ومساعد الطيران</h2>
+      <span class="badge">المطار الرئاسي • أسطول الشحن • رحلات الترانزيت</span>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <h4 style="color:#facc15; margin:0 0 6px 0;">مدرج الطائرات الرئيسي (Runway)</h4>
+        <p class="card-desc">يحدد سعة وفئة الطائرات المسموح بهبوطها من سيسنا VIP حتى طائرات الشحن العملاقة CAT III (تكلفة التطوير حتى 95M ج.م).</p>
+      </div>
+
+      <div class="card">
+        <h4 style="color:#38bdf8; margin:0 0 6px 0;">صالات الركاب الدولية (Terminals)</h4>
+        <p class="card-desc">ترفع عوائد تذاكر الرحلات الجوية تدريجياً من +10% حتى +35% لمدينة المطار العالمية (تكلفة التطوير حتى 85M ج.م).</p>
+      </div>
+
+      <div class="card">
+        <h4 style="color:#34d399; margin:0 0 6px 0;">حوض الصيانة والوقود (Hangar)</h4>
+        <p class="card-desc">يقلل مدة وزمن الرحلات الجوية حتى -15% ويخفض أسعار وقود الطائرات النفاثة حتى -15% (تكلفة التطوير حتى 75M ج.م).</p>
+      </div>
+
+      <div class="card">
+        <h4 style="color:#f43f5e; margin:0 0 6px 0;">مساعد الطيران الآلي (Automated Flight Manager)</h4>
+        <p class="card-desc">مدير تنفيذي براتب تعاقد 100M ج.م يقوم بجدولة الرحلات وتأمين العوائد السحابية فورياً وأثناء نوم اللاعب دون أي انقطاع.</p>
+      </div>
+    </div>
+
+    <!-- تذييل المستند -->
+    <div class="footer">
+      تم إنشاء هذا الدليل آلياً من الكود المصدري الرسمي لمنظومة «رأس المال» (Ras ALmal Tycoon) • كافة الحقوق محفوظة © 2026
+    </div>
+
+  </div>
+
+</body>
+</html>

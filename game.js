@@ -4553,7 +4553,7 @@ const GameEngine = (() => {
       netReturn += scannerCompensation;
     }
 
-    state.stocks[sym].shares -= shares;
+    state.stocks[sym].shares = Math.max(0, (state.stocks[sym].shares || 0) - shares);
     if (state.stocks[sym].shares === 0) {
       state.stocks[sym].avgPrice = 0;
     }

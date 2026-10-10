@@ -8499,6 +8499,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             if (window._dbPendingCloudWriteClearedAt && (Date.now() - window._dbPendingCloudWriteClearedAt) < 800) return;
             if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
               lastAdminActionTimestamp = data.adminModifiedTimestamp;
+              if (GameEngine.state) {
+                GameEngine.state.adminModifiedTimestamp = data.adminModifiedTimestamp;
+              }
 
               // Jail update
               if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {

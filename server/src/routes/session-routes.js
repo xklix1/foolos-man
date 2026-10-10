@@ -280,6 +280,7 @@ async function sessionRoutes(fastify, options) {
       return {
         success: true,
         saved,
+        adminModifiedTimestamp: activeSession ? Number(activeSession.state.adminModifiedTimestamp || 0) : 0,
         serverTime: Date.now()
       };
     } catch (err) {

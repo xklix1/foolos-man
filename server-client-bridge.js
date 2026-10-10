@@ -294,11 +294,18 @@ var ServerBridge = (() => {
     }
 
     try {
-      return await _post('/api/session/sync-state', {
+      const res = await _post('/api/session/sync-state', {
         username: user,
         state,
         immediate
       });
+      if (res && res.adminModifiedTimestamp && typeof GameEngine !== 'undefined' && GameEngine.state) {
+        GameEngine.state.adminModifiedTimestamp = Math.max(
+          Number(GameEngine.state.adminModifiedTimestamp || 0),
+          Number(res.adminModifiedTimestamp)
+        );
+      }
+      return res;
     } catch (e) {
       // Safe sync warning log without prematurely killing active UI
       console.warn('[ServerBridge] syncState warning:', e.message);

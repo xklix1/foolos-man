@@ -2005,6 +2005,18 @@ var AppDB = (() => {
           } else if (isLocalRecentOrNewer) {
             stateObj.stocks = JSON.parse(JSON.stringify(local.stocks));
             shouldSyncCloud = true;
+          } else {
+            // Reconcile individual symbols: if local has 0 shares for a symbol while server has old shares,
+            // ensure liquidated shares are never resurrected
+            Object.keys(local.stocks).forEach(sym => {
+              const locS = local.stocks[sym];
+              const srvS = stateObj.stocks[sym];
+              if (locS && locS.shares === 0 && srvS && srvS.shares > 0) {
+                srvS.shares = 0;
+                srvS.avgPrice = 0;
+                shouldSyncCloud = true;
+              }
+            });
           }
         }
 

@@ -252,10 +252,13 @@ class SessionManager {
       }
     }
 
-    if (isAdminGrant || clientAdminTs >= sessionAdminTs) {
+    if (isAdminGrant) {
       const highestTs = Math.max(sessionAdminTs, clientAdminTs, Date.now());
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
+    } else if (clientAdminTs >= sessionAdminTs) {
+      s.adminModifiedTimestamp = clientAdminTs;
+      session._lastProcessedAdminTs = clientAdminTs;
     }
 
     // Authoritative balance reconciliation (Zero-duplication guarantee):
@@ -460,19 +463,19 @@ class SessionManager {
     if (clientState.activeCar !== undefined && !isClientStale) {
       s.activeCar = clientState.activeCar;
     }
-    if (clientState.assets && typeof clientState.assets === 'object' && !isClientStale) {
+    if (clientState.assets && typeof clientState.assets === 'object') {
       s.assets = clientState.assets;
     }
-    if (clientState.stocks && typeof clientState.stocks === 'object' && !isClientStale) {
+    if (clientState.stocks && typeof clientState.stocks === 'object') {
       s.stocks = clientState.stocks;
     }
-    if (clientState.crypto && typeof clientState.crypto === 'object' && !isClientStale) {
+    if (clientState.crypto && typeof clientState.crypto === 'object') {
       s.crypto = clientState.crypto;
     }
-    if (Array.isArray(clientState.investments) && !isClientStale) {
+    if (Array.isArray(clientState.investments)) {
       s.investments = clientState.investments;
     }
-    if (clientState.tradeCompany && typeof clientState.tradeCompany === 'object' && !isClientStale) {
+    if (clientState.tradeCompany && typeof clientState.tradeCompany === 'object') {
       s.tradeCompany = clientState.tradeCompany;
     }
     if (clientState.inventory && typeof clientState.inventory === 'object') {
