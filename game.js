@@ -7490,7 +7490,7 @@ const GameEngine = (() => {
     state.netWorth = calculateNetWorth();
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellFarmCrop(cropId, sellQty).catch(e => console.warn('[FarmEngine] Server sell sync warning:', e.message));
+      ServerBridge.sellFarmCrop(cropId, sellQty, f.inventory).catch(e => console.warn('[FarmEngine] Server sell sync warning:', e.message));
     }
 
     forceSaveState(true);
@@ -7553,7 +7553,7 @@ const GameEngine = (() => {
     state.netWorth = calculateNetWorth();
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellAllFarmCrops().catch(e => console.warn('[FarmEngine] Server sell-all sync warning:', e.message));
+      ServerBridge.sellAllFarmCrops(f.inventory).catch(e => console.warn('[FarmEngine] Server sell-all sync warning:', e.message));
     }
 
     forceSaveState(true);
@@ -7655,6 +7655,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسييل اضطراري لمنتج مصنع ', `تفريغ ${sellQty.toLocaleString()} عبوة من "${recipe.name}" بسعر التكلفة الخام (+${totalPrice.toLocaleString()} EGP). الأرباح الفاخرة محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellProcessedGood(recipeId, sellQty, f.processing && f.processing.storage).catch(e => console.warn('[FarmEngine] Server sell-processed sync warning:', e.message));
+    }
+
     forceSaveState(true);
 
     return {
@@ -7722,6 +7727,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تفريغ اضطراري للمنتجات المصنعة ', `تسييل شامل لـ ${itemsSold.toLocaleString()} عبوة مصنعة بسعر التكلفة الخام (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellAllProcessedGoods(f.processing && f.processing.storage).catch(e => console.warn('[FarmEngine] Server sell-all-processed sync warning:', e.message));
+    }
+
     forceSaveState(true);
 
     return {
@@ -7828,6 +7838,11 @@ const GameEngine = (() => {
     const names = { milk: 'حليب أبقار طازج', eggs: 'كراتين بيض مائدة', compost: 'سماد عضوي حيواني' };
     recordPlayerActivity('تسييل اضطراري لإنتاج المزرعة ', `تفريغ ${sellQty.toLocaleString()} وحدة من ${names[produceKey]} بسعر التكلفة الرمزية (+${totalPrice.toLocaleString()} EGP). أرباح الألبان الحقيقية في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellLivestockProduce(produceKey, sellQty, f.livestock).catch(e => console.warn('[FarmEngine] Server sell-livestock sync warning:', e.message));
+    }
+
     forceSaveState(true);
 
     return {
@@ -7909,6 +7924,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع كامل الإنتاج الحيواني ', `بيع كافة منتجات المزرعة الحيوانية بإجمالي +${finalTotal.toLocaleString()} EGP نقداً!`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.sellAllLivestockProduce(ls).catch(e => console.warn('[FarmEngine] Server sell-all-livestock sync warning:', e.message));
+    }
+
     forceSaveState(true);
 
     return {

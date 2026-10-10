@@ -152,7 +152,48 @@ test('Server-Authoritative Farm Engine & Anti-Cheat Tests', async () => {
     assert.ok(syncRes && syncRes.authoritativeState, 'Sync response returned authoritative state');
     assert.strictEqual(syncRes.authoritativeState.cash, initialCash + 750000, 'Authoritative cash must NEVER disappear on subsequent sync cycles!');
 
-    console.log('[Test] All Farm Server-Authoritative & Anti-Cheat tests PASSED!');
+    // 12. Farm Liquidation Test: sellProcessedGood
+    activeSess.state.farm.processing = { storage: { flour_bread: 10 } };
+    const cashBeforeFlour = activeSess.state.cash;
+    const sellProcRes = await ServerBridge.sellProcessedGood('flour_bread', 5);
+    assert.strictEqual(sellProcRes.success, true);
+    assert.ok(sellProcRes.cash > cashBeforeFlour, 'Cash must increase from flour liquidation');
+    assert.strictEqual(sellProcRes.farm.processing.storage.flour_bread, 5, 'Flour deducted on server');
+
+    // 13. Farm Liquidation Test: sellAllProcessedGoods
+    const cashBeforeAllProc = activeSess.state.cash;
+    const sellAllProcRes = await ServerBridge.sellAllProcessedGoods();
+    assert.strictEqual(sellAllProcRes.success, true);
+    assert.ok(sellAllProcRes.cash > cashBeforeAllProc, 'Cash must increase from selling all processed goods');
+    assert.strictEqual(sellAllProcRes.farm.processing.storage.flour_bread, 0, 'Flour emptied');
+
+    // 14. Farm Liquidation Test: sellLivestockProduce
+    activeSess.state.farm.livestock = { milk: 20, eggs: 20, compost: 10 };
+    const cashBeforeMilk = activeSess.state.cash;
+    const sellMilkRes = await ServerBridge.sellLivestockProduce('milk', 10);
+    assert.strictEqual(sellMilkRes.success, true);
+    assert.strictEqual(sellMilkRes.cash, cashBeforeMilk + (10 * 5), 'Milk @ 5 EGP credited authoritatively');
+    assert.strictEqual(sellMilkRes.farm.livestock.milk, 10, 'Milk deducted');
+
+    // 15. Farm Liquidation Test: sellAllLivestockProduce
+    const cashBeforeAllLS = activeSess.state.cash;
+    const sellAllLSRes = await ServerBridge.sellAllLivestockProduce();
+    assert.strictEqual(sellAllLSRes.success, true);
+    // remaining: 10 milk (50 EGP), 20 eggs (100 EGP), 10 compost (100 EGP) = 250 EGP
+    assert.strictEqual(sellAllLSRes.cash, cashBeforeAllLS + 250, 'All livestock produce credited authoritatively');
+    assert.strictEqual(sellAllLSRes.farm.livestock.milk, 0);
+    assert.strictEqual(sellAllLSRes.farm.livestock.eggs, 0);
+    assert.strictEqual(sellAllLSRes.farm.livestock.compost, 0);
+
+    // 16. State Sync Test: Verify ALL liquidation proceeds persist across subsequent sync
+    const finalServerCash = activeSess.state.cash;
+    const postSync = await ServerBridge.syncState({
+      username: testUser,
+      cash: 123 // Client trying to overwrite cash
+    });
+    assert.strictEqual(postSync.authoritativeState.cash, finalServerCash, 'Liquidation payouts MUST permanently persist across sync cycles!');
+
+    console.log('[Test] All Farm Server-Authoritative Liquidation & Anti-Cheat tests PASSED!');
   } finally {
     sessionManager.sessions.delete('farm_tycoon_tester');
     if (sessionManager.flushIntervalTimer) clearInterval(sessionManager.flushIntervalTimer);

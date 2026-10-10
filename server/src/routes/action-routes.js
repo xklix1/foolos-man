@@ -1515,9 +1515,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
   fastify.post('/api/action/farm/sell', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
-    const { cropId, qty } = request.body || {};
+    const { cropId, qty, clientInventory } = request.body || {};
     try {
-      const result = farmEngine.sellFarmCrop(session.state, cropId, qty ? parseInt(qty, 10) : undefined, Date.now());
+      const result = farmEngine.sellFarmCrop(session.state, cropId, qty ? parseInt(qty, 10) : undefined, Date.now(), clientInventory);
       finalizeFarmAction(session);
       return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
     } catch (err) {
@@ -1528,8 +1528,61 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
   fastify.post('/api/action/farm/sell-all', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
+    const { clientInventory } = request.body || {};
     try {
-      const result = farmEngine.sellAllFarmCrops(session.state, Date.now());
+      const result = farmEngine.sellAllFarmCrops(session.state, Date.now(), clientInventory);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/sell-processed', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { recipeId, qty, clientStorage } = request.body || {};
+    try {
+      const result = farmEngine.sellProcessedGood(session.state, recipeId, qty ? parseInt(qty, 10) : undefined, Date.now(), clientStorage);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/sell-livestock', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { produceKey, qty, clientProduce } = request.body || {};
+    try {
+      const result = farmEngine.sellLivestockProduce(session.state, produceKey, qty ? parseInt(qty, 10) : undefined, Date.now(), clientProduce);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/sell-all-processed', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { clientStorage } = request.body || {};
+    try {
+      const result = farmEngine.sellAllProcessedGoods(session.state, Date.now(), clientStorage);
+      finalizeFarmAction(session);
+      return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  fastify.post('/api/action/farm/sell-all-livestock', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { clientProduce } = request.body || {};
+    try {
+      const result = farmEngine.sellAllLivestockProduce(session.state, Date.now(), clientProduce);
       finalizeFarmAction(session);
       return reply.send({ success: true, result, farm: session.state.farm, cash: session.state.cash, bank: session.state.bank, netWorth: session.state.netWorth });
     } catch (err) {

@@ -781,19 +781,51 @@ var ServerBridge = (() => {
     return _reconcileFarmResponse(res);
   }
 
-  async function sellFarmCrop(cropId, qty) {
+  async function sellFarmCrop(cropId, qty, clientInventory = null) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    const res = await _post('/api/action/farm/sell', { username: user, token, cropId, qty });
+    const res = await _post('/api/action/farm/sell', { username: user, token, cropId, qty, clientInventory });
     return _reconcileFarmResponse(res);
   }
 
-  async function sellAllFarmCrops() {
+  async function sellAllFarmCrops(clientInventory = null) {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    const res = await _post('/api/action/farm/sell-all', { username: user, token });
+    const res = await _post('/api/action/farm/sell-all', { username: user, token, clientInventory });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function sellProcessedGood(recipeId, qty = null, clientStorage = null) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/sell-processed', { username: user, token, recipeId, qty, clientStorage });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function sellLivestockProduce(produceKey, qty = null, clientProduce = null) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/sell-livestock', { username: user, token, produceKey, qty, clientProduce });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function sellAllProcessedGoods(clientStorage = null) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/sell-all-processed', { username: user, token, clientStorage });
+    return _reconcileFarmResponse(res);
+  }
+
+  async function sellAllLivestockProduce(clientProduce = null) {
+    const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/farm/sell-all-livestock', { username: user, token, clientProduce });
     return _reconcileFarmResponse(res);
   }
 
@@ -1003,6 +1035,10 @@ var ServerBridge = (() => {
     harvestAllFarmPlots,
     sellFarmCrop,
     sellAllFarmCrops,
+    sellProcessedGood,
+    sellAllProcessedGoods,
+    sellLivestockProduce,
+    sellAllLivestockProduce,
     fulfillFarmContract,
     claimIncome,
     buyProperty,
