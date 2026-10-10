@@ -14635,13 +14635,13 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           glowType = '';
         } else if (isMe && GameEngine.state && GameEngine.state.chatGlow && GameEngine.state.chatGlow !== 'none') {
           glowType = GameEngine.state.chatGlow;
-        } else if (msg.customBadge === 'SVIP' || (msg.customBadge && String(msg.customBadge).toUpperCase().includes('SVIP')) || (msg.senderTitle && String(msg.senderTitle).toUpperCase().includes('SVIP'))) {
+        } else if (msg.customBadge === 'SVIP' || (msg.customBadge && String(msg.customBadge).toUpperCase().includes('SVIP'))) {
           glowType = 'blue_flame';
-        } else if (msg.senderTitle && String(msg.senderTitle).includes('لهيب')) {
+        } else if (msg.customBadge && String(msg.customBadge).includes('لهيب')) {
           glowType = 'crimson_flame';
-        } else if (msg.senderTitle && String(msg.senderTitle).includes('حوت الشات')) {
+        } else if (msg.customBadge && String(msg.customBadge).includes('حوت الشات')) {
           glowType = 'gold_neon';
-        } else if (msg.senderTitle && (String(msg.senderTitle).includes('الملك الأسطوري') || String(msg.senderTitle).includes('إمبراطور'))) {
+        } else if (msg.customBadge && String(msg.customBadge).includes('الملك الأسطوري')) {
           glowType = 'cyber_rainbow';
         } else if (isMe && GameEngine.state && GameEngine.state.chatGlow === undefined) {
           if (GameEngine.state.customBadge === 'SVIP' || (GameEngine.state.customBadge && String(GameEngine.state.customBadge).toUpperCase().includes('SVIP')) || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).toUpperCase().includes('SVIP'))) glowType = 'blue_flame';
@@ -14863,11 +14863,11 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         window._knownVipGlowPlayers.set(m.sender, m.chatGlow === 'none' ? '' : m.chatGlow);
       } else if (m.customBadge === 'SVIP' && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'blue_flame');
-      } else if (m.senderTitle && String(m.senderTitle).includes('لهيب') && m.sender) {
+      } else if (m.customBadge && String(m.customBadge).includes('لهيب') && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'crimson_flame');
-      } else if (m.senderTitle && String(m.senderTitle).includes('حوت الشات') && m.sender) {
+      } else if (m.customBadge && String(m.customBadge).includes('حوت الشات') && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'gold_neon');
-      } else if (m.senderTitle && String(m.senderTitle).includes('الملك الأسطوري') && m.sender) {
+      } else if (m.customBadge && String(m.customBadge).includes('الملك الأسطوري') && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'cyber_rainbow');
       }
     });

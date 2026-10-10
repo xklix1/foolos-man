@@ -1,7 +1,7 @@
 {
-  "version": "v9.9.4",
-  "build": 1791629000000,
-  "timestamp": 1791629000000,
-  "notes": "Fine-tuned luxurious 0.65s easing curve for mobile HUD collapse/expand transitions",
-  "releaseNotes": "ضبط سرعة أنيميشن الهيدر المنكمش لتكون هادئة وفاخرة ومريحة للعين (0.65 ثانية) مع فيد وانزلاق انسيابي"
+  "version": "v9.9.5",
+  "build": 1791629800000,
+  "timestamp": 1791629800000,
+  "notes": "Fix chat glow title bug and force clean reload",
+  "releaseNotes": "إصلاح مظهر الشات وإلغاء توهجات الرتب التلقائية مع تفريغ الكاش للأحدث"
 }
