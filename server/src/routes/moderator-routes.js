@@ -2178,22 +2178,67 @@ async function moderatorRoutes(fastify, options) {
   // INVESTIGATION & STAFF-PLAYER LIVE CHAT SYSTEM (نظام محادثات التحقيق المباشر)
   // =========================================================================
 
+  // ================= INVESTIGATION CHAT RESOLVED STATUS =================
+  async function getResolvedChatThreads() {
+    try {
+      const sKey = serviceKey();
+      const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.resolved_chat_threads&select=*`;
+      const res = await fetch(gUrl, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].data && typeof rows[0].data.threads === 'object') {
+          return rows[0].data.threads || {};
+        }
+      }
+    } catch (e) {
+      fastify.log.warn('[Resolved Threads Fetch Warning]: ' + e.message);
+    }
+    return {};
+  }
+
+  async function saveResolvedChatThreads(threadsMapObj) {
+    const sKey = serviceKey();
+    const ts = Date.now();
+    const saveRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+      method: 'POST',
+      headers: {
+        'apikey': sKey,
+        'Authorization': `Bearer ${sKey}`,
+        'Content-Type': 'application/json',
+        'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({
+        id: 'resolved_chat_threads',
+        data: { threads: threadsMapObj, lastUpdated: ts },
+        updated_at: ts
+      })
+    });
+    if (!saveRes.ok) {
+      const errTxt = await saveRes.text();
+      fastify.log.warn('[Resolved Threads Save Error]: ' + errTxt);
+    }
+  }
+
   /**
    * GET /api/mod/chat/threads
-   * Lists all players who have active investigation chats
+   * Lists all players who have active investigation chats with resolution status
    */
   fastify.get('/chat/threads', {
     preHandler: [requireModAuth]
   }, async (request, reply) => {
     try {
       const sKey = serviceKey();
-      const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&select=*&order=created_at.desc&limit=100`;
+      const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&select=*&order=created_at.desc&limit=150`;
       const res = await fetch(qUrl, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       if (!res.ok) throw new Error('Failed to fetch chat threads');
       const rows = await res.json();
       
+      const resolvedMap = await getResolvedChatThreads();
+
       const threadsMap = new Map();
       (Array.isArray(rows) ? rows : []).forEach(r => {
         const player = (r.recipient === 'MOD_STAFF_CHANNEL' || r.recipient?.startsWith('MOD-') || r.recipient?.startsWith('المحقق'))
@@ -2203,22 +2248,84 @@ async function moderatorRoutes(fastify, options) {
 
         const pKey = player.toLowerCase();
         if (!threadsMap.has(pKey)) {
+          const msgTimestamp = Number(r.created_at || (r.payload && r.payload.timestamp) || Date.now());
+          const resolvedInfo = resolvedMap[pKey];
+          // Thread is resolved ONLY IF marked as resolved AND resolvedAt >= msgTimestamp
+          // If the player sent a newer message (msgTimestamp > resolvedAt), it automatically becomes active!
+          const isResolved = !!(resolvedInfo && resolvedInfo.resolvedAt && (resolvedInfo.resolvedAt >= msgTimestamp));
+
           threadsMap.set(pKey, {
             username: player,
-            lastMessage: (r.payload && r.payload.message) || '',
+            lastMessage: (r.payload && r.payload.message) || (r.payload && r.payload.imageUrl ? '📷 صورة مرفقة' : ''),
             lastSender: r.sender,
-            timestamp: r.created_at || (r.payload && r.payload.timestamp) || Date.now(),
-            unread: r.status === 'unread' && r.recipient === 'MOD_STAFF_CHANNEL'
+            lastTimestamp: msgTimestamp,
+            unread: r.status === 'unread' && r.recipient === 'MOD_STAFF_CHANNEL',
+            isResolved: isResolved,
+            resolvedAt: resolvedInfo?.resolvedAt || null,
+            resolvedBy: resolvedInfo?.resolvedBy || null
           });
         }
       });
 
+      const allThreads = Array.from(threadsMap.values());
+      const activeCount = allThreads.filter(t => !t.isResolved).length;
+      const archivedCount = allThreads.filter(t => t.isResolved).length;
+
       return reply.send({
         success: true,
-        threads: Array.from(threadsMap.values())
+        threads: allThreads,
+        activeCount,
+        archivedCount
       });
     } catch (err) {
       fastify.log.error(err, '[Chat Threads Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * PATCH /api/mod/chat/threads/:username/toggle-resolved
+   * Toggles whether an investigation thread is marked as solved (archived) or reopened
+   */
+  fastify.patch('/chat/threads/:username/toggle-resolved', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const { username } = request.params || {};
+    const { resolved } = request.body || {};
+    if (!username) return reply.status(400).send({ error: 'Username is required' });
+
+    try {
+      const cleanU = username.trim().toLowerCase();
+      const resolvedMap = await getResolvedChatThreads();
+
+      const shouldResolve = (resolved !== undefined) ? Boolean(resolved) : !resolvedMap[cleanU];
+
+      if (shouldResolve) {
+        resolvedMap[cleanU] = {
+          resolvedAt: Date.now(),
+          resolvedBy: request.modSession?.name || 'مراقب معتمد'
+        };
+      } else {
+        delete resolvedMap[cleanU];
+      }
+
+      await saveResolvedChatThreads(resolvedMap);
+
+      await recordStaffAuditLog(
+        request.modSession?.name || 'مراقب',
+        username,
+        shouldResolve ? 'resolve_chat_thread' : 'reopen_chat_thread',
+        shouldResolve ? `تعليم محادثة اللاعب كـ (تم الحل) ونقلها للأرشيف` : `إعادة فتح محادثة اللاعب ونقلها للمحادثات النشطة`
+      );
+
+      return reply.send({
+        success: true,
+        username,
+        isResolved: shouldResolve,
+        message: shouldResolve ? 'تم تعليم المشكلة كمحلولة ونقل المحادثة للأرشيف بنجاح' : 'تمت إعادة فتح المحادثة بنجاح'
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Toggle Thread Resolved Error]');
       return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
     }
   });
@@ -2501,6 +2608,18 @@ async function moderatorRoutes(fastify, options) {
 
       if (!res.ok) throw new Error('Failed to submit message');
       const data = await res.json();
+
+      // Auto-unarchive: Clean up any resolved status for this player on new message
+      try {
+        const resolvedMap = await getResolvedChatThreads();
+        const pKey = cleanU.toLowerCase();
+        if (resolvedMap[pKey]) {
+          delete resolvedMap[pKey];
+          await saveResolvedChatThreads(resolvedMap);
+        }
+      } catch (err) {
+        fastify.log.warn('[Auto-unarchive Error]: ' + err.message);
+      }
 
       return reply.send({
         success: true,

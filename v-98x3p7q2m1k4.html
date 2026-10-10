@@ -950,6 +950,11 @@
                 <span class="text-xs font-bold text-white">جلسة استجواب / محادثة مع: <span id="modChatTargetUsername" class="text-emerald-400 font-mono">--</span></span>
               </div>
               <div class="flex items-center gap-2">
+                <!-- Mark as Resolved Button -->
+                <button type="button" onclick="resolveCurrentInspectedPlayerChat()" class="px-2.5 py-1 rounded-lg bg-emerald-600/30 hover:bg-emerald-600 text-[11px] text-emerald-200 hover:text-white font-bold border border-emerald-500/50 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="تعليم مشكلة هذا اللاعب كمحلولة ونقل المحادثة للأرشيف">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                  <span>تم الحل ✅</span>
+                </button>
                 <!-- Quick Shared Task Button -->
                 <button type="button" onclick="createTaskForCurrentChatPlayer()" class="px-2.5 py-1 rounded-lg bg-indigo-600/40 hover:bg-indigo-600 text-[11px] text-indigo-200 hover:text-white font-bold border border-indigo-500/50 transition flex items-center gap-1.5 cursor-pointer shadow-sm" title="إضافة مهمة تحقيق مشتركة مسندة لهذا اللاعب في لوحة المهام">
                   <i class="fa-solid fa-list-check text-indigo-400"></i>
@@ -1208,38 +1213,55 @@
 
   <!-- ================= ALL STAFF CHAT THREADS MODAL ================= -->
   <div id="staffChatThreadsModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 overflow-y-auto">
-    <div class="glass-panel w-full max-w-3xl my-auto rounded-2xl border border-emerald-500/40 p-6 glow-cyan modal-enter max-h-[85vh] flex flex-col">
+    <div class="glass-panel w-full max-w-3xl my-auto rounded-2xl border border-emerald-500/40 p-5 sm:p-6 glow-cyan modal-enter max-h-[88vh] flex flex-col">
       <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-3">
-        <div class="flex items-center gap-2">
-          <i class="fa-solid fa-comments text-emerald-400 text-xl"></i>
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl shrink-0">
+            <i class="fa-solid fa-comments"></i>
+          </div>
           <div>
-            <h3 class="font-black text-lg text-white">محادثات واستفسارات التحقيق المفتوحة</h3>
-            <p class="text-xs text-slate-400">قائمة اللاعبين وإمكانية فتح محادثة خاصة فورية مع أي لاعب</p>
+            <h3 class="font-black text-lg text-white">مركز محادثات واستفسارات التحقيق</h3>
+            <p class="text-xs text-slate-400">متابعة شات اللاعبين، أرشفة المشاكل المحلولة، وإعادة الفتح التلقائي عند أي رسالة جديدة</p>
           </div>
         </div>
         <div class="flex items-center gap-2">
-          <button onclick="loadStaffChatThreads()" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs">
+          <button onclick="loadStaffChatThreads()" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer" title="تحديث المحادثات">
             <i class="fa-solid fa-rotate text-cyan-400"></i>
+            <span class="hidden sm:inline">تحديث</span>
           </button>
-          <button onclick="closeStaffChatThreadsModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center">
+          <button onclick="closeStaffChatThreadsModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
       </div>
 
-      <!-- Quick Start Chat with Any Player Input -->
-      <div class="mb-3 p-3 bg-slate-900/90 rounded-xl border border-slate-800 flex flex-col sm:flex-row gap-2 items-center">
-        <div class="relative flex-1 w-full">
-          <i class="fa-solid fa-user absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
-          <input type="text" id="startNewChatUsernameInput" placeholder="أدخل اسم أي لاعب لفتح محادثة خاصة معه فوراً..." class="w-full bg-slate-950 border border-slate-700 rounded-lg pr-8 pl-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" onkeydown="if(event.key==='Enter') startNewChatWithEnteredUser()" />
-        </div>
-        <button type="button" onclick="startNewChatWithEnteredUser()" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition whitespace-nowrap cursor-pointer">
+      <!-- Navigation Tabs: Open vs Archived -->
+      <div class="flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-xl border border-slate-800 mb-3 text-xs">
+        <button type="button" onclick="setChatThreadsTab('active')" id="chatTabBtn_active" class="flex-1 py-2 px-3 rounded-lg bg-emerald-600 text-white font-black flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-950/40">
           <i class="fa-solid fa-comment-dots"></i>
-          <span>بدء محادثة خاصة</span>
+          <span>المحادثات المفتوحة (النشطة)</span>
+          <span id="threadsActiveCountBadge" class="px-2 py-0.5 rounded-full bg-white/20 text-white text-[10px] font-mono font-bold">0</span>
+        </button>
+        <button type="button" onclick="setChatThreadsTab('archived')" id="chatTabBtn_archived" class="flex-1 py-2 px-3 rounded-lg bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center gap-2 transition cursor-pointer">
+          <i class="fa-solid fa-box-archive"></i>
+          <span>الأرشيف والمحلولة</span>
+          <span id="threadsArchivedCountBadge" class="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-mono font-bold">0</span>
         </button>
       </div>
 
-      <div id="staffChatThreadsList" class="flex-1 overflow-y-auto custom-scrollbar space-y-2.5 p-1">
+      <!-- Quick Start Chat with Any Player Input -->
+      <div class="mb-3 p-2.5 bg-slate-900/60 rounded-xl border border-slate-800/80 flex flex-col sm:flex-row gap-2 items-center">
+        <div class="relative flex-1 w-full">
+          <i class="fa-solid fa-user absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 text-xs"></i>
+          <input type="text" id="startNewChatUsernameInput" placeholder="أدخل اسم أي لاعب لفتح محادثة خاصة معه فوراً..." class="w-full bg-slate-950 border border-slate-700/90 rounded-lg pr-8 pl-3 py-2 text-xs text-white placeholder-slate-500 focus:border-emerald-500 focus:outline-none" onkeydown="if(event.key==='Enter') startNewChatWithEnteredUser()" />
+        </div>
+        <button type="button" onclick="startNewChatWithEnteredUser()" class="w-full sm:w-auto px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center justify-center gap-1.5 transition whitespace-nowrap cursor-pointer shrink-0">
+          <i class="fa-solid fa-comment-medical"></i>
+          <span>بدء محادثة جديدة</span>
+        </button>
+      </div>
+
+      <div id="staffChatThreadsList" class="flex-1 overflow-y-auto custom-scrollbar space-y-2.5 p-1 min-h-[220px]">
         <!-- Threads injected dynamically -->
       </div>
     </div>
@@ -5110,7 +5132,10 @@
       }
     }
 
-    // Staff Chat Threads Modal
+    // Staff Chat Threads Modal & Resolution / Archive Logic
+    let _currentChatThreadsTab = 'active'; // 'active' | 'archived'
+    let _cachedChatThreads = [];
+
     function openStaffChatThreadsModal() {
       document.getElementById('staffChatThreadsModal').classList.remove('hidden');
       loadStaffChatThreads();
@@ -5120,10 +5145,34 @@
       document.getElementById('staffChatThreadsModal').classList.add('hidden');
     }
 
+    function setChatThreadsTab(tab) {
+      _currentChatThreadsTab = tab;
+      const activeBtn = document.getElementById('chatTabBtn_active');
+      const archivedBtn = document.getElementById('chatTabBtn_archived');
+      
+      if (tab === 'active') {
+        if (activeBtn) {
+          activeBtn.className = 'flex-1 py-2 px-3 rounded-lg bg-emerald-600 text-white font-black flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-950/40';
+        }
+        if (archivedBtn) {
+          archivedBtn.className = 'flex-1 py-2 px-3 rounded-lg bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center gap-2 transition cursor-pointer';
+        }
+      } else {
+        if (activeBtn) {
+          activeBtn.className = 'flex-1 py-2 px-3 rounded-lg bg-transparent hover:bg-slate-800 text-slate-400 hover:text-white font-bold flex items-center justify-center gap-2 transition cursor-pointer';
+        }
+        if (archivedBtn) {
+          archivedBtn.className = 'flex-1 py-2 px-3 rounded-lg bg-emerald-600 text-white font-black flex items-center justify-center gap-2 transition cursor-pointer shadow-md shadow-emerald-950/40';
+        }
+      }
+
+      renderStaffChatThreads();
+    }
+
     async function loadStaffChatThreads() {
       const container = document.getElementById('staffChatThreadsList');
       if (!container) return;
-      container.innerHTML = `<div class="text-center py-8 text-slate-500 text-xs"><i class="fa-solid fa-spinner fa-spin text-emerald-400"></i> جاري جلب محادثات اللاعبين...</div>`;
+      container.innerHTML = `<div class="text-center py-10 text-slate-500 text-xs"><i class="fa-solid fa-spinner fa-spin text-emerald-400 text-base mb-2 block"></i> جاري تحديث محادثات وحالات اللاعبين...</div>`;
 
       try {
         const res = await fetch(`${API_BASE}/chat/threads`, {
@@ -5131,54 +5180,125 @@
         });
         if (!res.ok) throw new Error('فشل جلب محادثات التحقيق');
         const data = await res.json();
-        const threads = data.threads || [];
+        _cachedChatThreads = data.threads || [];
 
-        if (!threads.length) {
+        const actBadge = document.getElementById('threadsActiveCountBadge');
+        const arcBadge = document.getElementById('threadsArchivedCountBadge');
+        if (actBadge) actBadge.textContent = data.activeCount !== undefined ? data.activeCount : _cachedChatThreads.filter(t => !t.isResolved).length;
+        if (arcBadge) arcBadge.textContent = data.archivedCount !== undefined ? data.archivedCount : _cachedChatThreads.filter(t => t.isResolved).length;
+
+        renderStaffChatThreads();
+      } catch (err) {
+        container.innerHTML = `<div class="text-center py-8 text-rose-400 text-xs"><i class="fa-solid fa-triangle-exclamation mb-1.5 block text-lg"></i> ${err.message}</div>`;
+      }
+    }
+
+    function renderStaffChatThreads() {
+      const container = document.getElementById('staffChatThreadsList');
+      if (!container) return;
+
+      const filtered = _cachedChatThreads.filter(th => _currentChatThreadsTab === 'archived' ? th.isResolved : !th.isResolved);
+
+      if (!filtered.length) {
+        if (_currentChatThreadsTab === 'archived') {
           container.innerHTML = `
-            <div class="text-center py-10 text-slate-500 text-xs">
-              <i class="fa-regular fa-comments text-2xl mb-2 text-slate-600 block"></i>
-              لا توجد أي محادثات تحقيق نشطة حالياً.<br>
-              يمكنك كتابة اسم أي لاعب في الحقل أعلاه لبدء محادثة خاصة معه مباشرة.
+            <div class="text-center py-12 text-slate-500 text-xs">
+              <i class="fa-solid fa-box-archive text-3xl mb-2.5 text-slate-600 block"></i>
+              لا توجد أي محادثات مؤرشفة أو محلولة حالياً.<br>
+              عند النقر على زر <strong class="text-emerald-400">"تم الحل ✅"</strong> في أي محادثة، ستنتقل تلقائياً إلى هنا.
             </div>
           `;
-          return;
+        } else {
+          container.innerHTML = `
+            <div class="text-center py-12 text-slate-500 text-xs">
+              <i class="fa-regular fa-comments text-3xl mb-2.5 text-slate-600 block"></i>
+              لا توجد أي محادثات تحقيق مفتوحة ونشطة حالياً.<br>
+              يمكنك كتابة اسم أي لاعب في الحقل أعلاه لبدء محادثة خاصة معه فوراً.
+            </div>
+          `;
         }
+        return;
+      }
 
-        container.innerHTML = threads.map(th => `
-          <div onclick="openChatWithPlayer('${th.username}')" class="glass-card p-3 rounded-xl border border-slate-800 hover:border-emerald-500/50 flex items-center justify-between transition gap-2 sm:gap-3 cursor-pointer hover:bg-slate-800/40 active:scale-[0.99]">
-            <div class="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
-              <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold shrink-0">
-                <i class="fa-solid fa-user-shield"></i>
+      container.innerHTML = filtered.map(th => {
+        const isArchived = Boolean(th.isResolved);
+        return `
+          <div onclick="openChatWithPlayer('${th.username}')" class="glass-card p-3 sm:p-3.5 rounded-2xl border ${isArchived ? 'border-slate-800 bg-slate-950/40 opacity-90' : 'border-slate-800 hover:border-emerald-500/50 bg-slate-900/60'} flex flex-col sm:flex-row items-stretch sm:items-center justify-between transition gap-2.5 sm:gap-3 cursor-pointer hover:bg-slate-800/40 active:scale-[0.99]">
+            <div class="flex items-center gap-3 min-w-0 flex-1">
+              <div class="w-10 h-10 rounded-xl ${isArchived ? 'bg-slate-800 border-slate-700 text-slate-400' : 'bg-gradient-to-br from-emerald-500/20 to-teal-500/20 border-emerald-500/30 text-emerald-400'} border flex items-center justify-center font-bold shrink-0">
+                <i class="fa-solid ${isArchived ? 'fa-circle-check text-emerald-400' : 'fa-user-shield'}"></i>
               </div>
               <div class="min-w-0 flex-1">
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-black text-sm text-white truncate">${th.username}</span>
-                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${th.isSuspended ? 'bg-rose-500/20 text-rose-300' : 'bg-slate-700 text-slate-300'}">
-                    ${th.isSuspended ? 'قيد التدقيق / مجمد' : 'نشط'}
-                  </span>
+                  ${isArchived 
+                    ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/50">تم الحل ومؤرشفة ✅</span>`
+                    : (th.unread 
+                        ? `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40 animate-pulse">رسالة جديدة 📩</span>`
+                        : `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300">مفتوحة</span>`)
+                  }
+                  ${th.isSuspended ? '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/20 text-rose-300">مجمد</span>' : ''}
                 </div>
-                <div class="text-[11px] text-slate-400 truncate mt-0.5">
-                  <strong class="text-slate-300">${th.lastSender || ''}:</strong> ${th.lastMessage || 'لا توجد رسائل'}
+                <div class="text-[11px] text-slate-400 truncate mt-1">
+                  <strong class="${th.unread ? 'text-emerald-400 font-black' : 'text-slate-300'}">${th.lastSender || ''}:</strong> ${th.lastMessage || 'لا توجد رسائل'}
                 </div>
+                ${isArchived && th.resolvedBy ? `<div class="text-[10px] text-slate-500 mt-0.5">حل بواسطة: ${th.resolvedBy}</div>` : ''}
               </div>
             </div>
 
-            <div class="flex items-center gap-2 text-right shrink-0">
-              <div class="text-[10px] text-slate-500 hidden md:block">${fmtDate(th.lastTimestamp)}</div>
-              <button type="button" onclick="event.stopPropagation(); createTaskForCurrentChatPlayer('${th.username}')" class="px-2.5 py-1.5 sm:py-2 rounded-xl bg-indigo-950/70 hover:bg-indigo-900 text-indigo-300 border border-indigo-700/50 text-xs font-bold flex items-center gap-1 transition shrink-0 cursor-pointer shadow-sm" title="إسناد مهمة تحقيق جديدة على هذا اللاعب">
-                <i class="fa-solid fa-list-check text-indigo-400"></i>
-                <span class="hidden sm:inline">+ مهمة</span>
-              </button>
-              <button type="button" onclick="event.stopPropagation(); openChatWithPlayer('${th.username}')" class="px-3 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition shrink-0 cursor-pointer">
+            <div class="flex items-center justify-end gap-2 text-right shrink-0 pt-1 sm:pt-0 border-t sm:border-0 border-slate-800/80">
+              <div class="text-[10px] text-slate-500 hidden md:block numbers-font">${fmtDate(th.lastTimestamp)}</div>
+              
+              ${isArchived ? `
+                <button type="button" onclick="event.stopPropagation(); toggleThreadResolved('${th.username}', false)" class="px-3 py-1.5 sm:py-2 rounded-xl bg-amber-950/70 hover:bg-amber-900 text-amber-300 border border-amber-700/50 text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer shadow-sm hover:scale-[1.02]" title="إلغاء الأرشفة وإعادة المحادثة للمفتوحة">
+                  <i class="fa-solid fa-rotate-left text-amber-400"></i>
+                  <span>إعادة فتح</span>
+                </button>
+              ` : `
+                <button type="button" onclick="event.stopPropagation(); toggleThreadResolved('${th.username}', true)" class="px-3 py-1.5 sm:py-2 rounded-xl bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-600/50 text-xs font-bold flex items-center gap-1.5 transition shrink-0 cursor-pointer shadow-sm hover:scale-[1.02]" title="تعليم المشكلة كمحلولة ونقل المحادثة للأرشيف">
+                  <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                  <span>تم الحل</span>
+                </button>
+              `}
+
+              <button type="button" onclick="event.stopPropagation(); openChatWithPlayer('${th.username}')" class="px-3.5 py-1.5 sm:py-2 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-950/40 transition shrink-0 cursor-pointer">
                 <i class="fa-solid fa-comments"></i>
                 <span>فتح المحادثة</span>
               </button>
             </div>
           </div>
-        `).join('');
+        `;
+      }).join('');
+    }
+
+    async function toggleThreadResolved(username, targetStatus) {
+      if (!username) return;
+      try {
+        const res = await fetch(`${API_BASE}/chat/threads/${encodeURIComponent(username)}/toggle-resolved`, {
+          method: 'PATCH',
+          headers: {
+            'Authorization': `Bearer ${currentModToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ resolved: targetStatus })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          await loadStaffChatThreads();
+        } else {
+          alert('❌ ' + (data.message || data.error || 'فشل تحديث حالة المحادثة'));
+        }
       } catch (err) {
-        container.innerHTML = `<div class="text-center py-6 text-rose-400 text-xs">${err.message}</div>`;
+        alert('خطأ: ' + err.message);
       }
+    }
+
+    async function resolveCurrentInspectedPlayerChat() {
+      const targetUser = (inspectingPlayer && inspectingPlayer.username) || document.getElementById('inspectUsername')?.textContent || '';
+      if (!targetUser || targetUser === '---') return;
+      if (!confirm(`هل تريد تعليم مشكلة واستفسار اللاعب (${targetUser}) كمحلولة ونقل محادثته للأرشيف؟`)) return;
+      await toggleThreadResolved(targetUser, true);
+      alert(`✅ تم تعليم مشكلة اللاعب (${targetUser}) كمحلولة ونقل المحادثة للأرشيف بنجاح.`);
     }
 
     async function openChatWithPlayer(username) {
