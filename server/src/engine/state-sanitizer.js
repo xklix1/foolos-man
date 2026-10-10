@@ -228,6 +228,12 @@ function sanitizePlayerState(dbRow) {
   // Agro Farm Tycoon (Officially open to all players)
   if (rawState.farm && typeof rawState.farm === 'object') {
     cleanState.farm = rawState.farm;
+    const landLvl = Math.max(1, Number(cleanState.farm.landLevel || 1));
+    const expectedPlots = landLvl === 1 ? 4 : (landLvl === 2 ? 8 : (landLvl === 3 ? 12 : (landLvl >= 4 ? 16 : 4)));
+    cleanState.farm.maxPlots = Math.max(Number(cleanState.farm.maxPlots) || 4, expectedPlots);
+    if (!Array.isArray(cleanState.farm.plots)) cleanState.farm.plots = [];
+    while (cleanState.farm.plots.length < cleanState.farm.maxPlots) cleanState.farm.plots.push(null);
+    if (cleanState.farm.plots.length > cleanState.farm.maxPlots) cleanState.farm.plots = cleanState.farm.plots.slice(0, cleanState.farm.maxPlots);
   }
 
   // Device & Login Telemetry History (Authoritative)

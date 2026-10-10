@@ -297,6 +297,12 @@ class SessionManager {
       if (prevFarmLiq) {
         s.farm.dailyLiquidation = prevFarmLiq;
       }
+      const landLvl = Math.max(1, Number(s.farm.landLevel || 1));
+      const expectedPlots = landLvl === 1 ? 4 : (landLvl === 2 ? 8 : (landLvl === 3 ? 12 : (landLvl >= 4 ? 16 : 4)));
+      s.farm.maxPlots = Math.max(Number(s.farm.maxPlots) || 4, expectedPlots);
+      if (!Array.isArray(s.farm.plots)) s.farm.plots = [];
+      while (s.farm.plots.length < s.farm.maxPlots) s.farm.plots.push(null);
+      if (s.farm.plots.length > s.farm.maxPlots) s.farm.plots = s.farm.plots.slice(0, s.farm.maxPlots);
     }
 
     // International Airport Hub & Fleet Synchronization

@@ -6697,7 +6697,9 @@ const GameEngine = (() => {
     }
     const f = state.farm;
     if (typeof f.landLevel !== 'number' || f.landLevel < 1) f.landLevel = 1;
-    if (typeof f.maxPlots !== 'number' || f.maxPlots < 4) f.maxPlots = 4;
+    // Auto-reconcile maxPlots dynamically with landLevel (4 for lvl 1, 8 for lvl 2, 12 for lvl 3, 16 for lvl 4+)
+    const expectedPlots = (FARM_CONFIG.landExpansions && FARM_CONFIG.landExpansions[f.landLevel] && FARM_CONFIG.landExpansions[f.landLevel].plots) || (f.landLevel === 1 ? 4 : (f.landLevel >= 4 ? 16 : f.landLevel * 4));
+    f.maxPlots = Math.max(Number(f.maxPlots) || 4, expectedPlots);
     const effectiveIrrLevel = Math.max(1, Number(f.irrigationLevel || f.waterLevel || 1));
     f.waterLevel = effectiveIrrLevel;
     f.irrigationLevel = effectiveIrrLevel;

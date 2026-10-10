@@ -1,7 +1,7 @@
 {
   "version": "v9.5.7",
-  "build": 1791330300000,
-  "timestamp": 1791330300000,
-  "notes": "Optimize network consumption, CPU performance, Stale-While-Revalidate caching, safe bundle minification, exempt Cash-Bank transfers and Admin Grants from wealth clamps",
-  "releaseNotes": "استثناء كامل للتحويلات الداخلية ومنح لوحة الإدارة من حماية القفزات المالية لمنع اختفاء المبالغ الضخمة، مع تحسين استهلاك الإنترنت وسرعة الأداء"
+  "build": 1791330400000,
+  "timestamp": 1791330400000,
+  "notes": "Fix farm max plots dynamic reconciliation based on land level (16 plots for level 4), exempt admin grants and cash-bank transfers from clamps",
+  "releaseNotes": "إصلاح فوري وتلقائي لمطابقة أحواض المزرعة الـ 16 كاملة عند التوسيع لأعلى مستوى، واستثناء التحويلات البنكية ومنح الإدارة من قفزات الثروة"
 }
