@@ -15727,6 +15727,14 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
         if (isMod) {
           if (typeof window.openPlayerInvestigationChat === 'function') {
             window.openPlayerInvestigationChat();
+          } else {
+            const chatModal = document.getElementById('modal-investigation-chat-player');
+            if (chatModal) {
+              chatModal.classList.remove('hidden');
+              chatModal.classList.add('flex');
+              chatModal.style.setProperty('display', 'flex', 'important');
+              chatModal.style.setProperty('z-index', '999999999', 'important');
+            }
           }
         } else {
           openPrivateChatWith(c.username);
@@ -15743,6 +15751,15 @@ ${isWin ? '📈 صافي الأرباح: +' : '📉 صافي الخسارة: -'}
       if (typeof window.openPlayerInvestigationChat === 'function') {
         window.openPlayerInvestigationChat();
         return;
+      } else {
+        const chatModal = document.getElementById('modal-investigation-chat-player');
+        if (chatModal) {
+          chatModal.classList.remove('hidden');
+          chatModal.classList.add('flex');
+          chatModal.style.setProperty('display', 'flex', 'important');
+          chatModal.style.setProperty('z-index', '999999999', 'important');
+          return;
+        }
       }
     }
     currentActiveDMUser = cleanName;
