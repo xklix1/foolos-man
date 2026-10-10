@@ -1982,6 +1982,71 @@ async function moderatorRoutes(fastify, options) {
           break;
         }
 
+        case 'add_bank': {
+          const addAmount = Math.max(0, Math.floor(Number(request.body.amount || request.body.addBank || 0)));
+          if (!addAmount || isNaN(addAmount) || addAmount <= 0) {
+            return reply.status(400).send({ error: 'Bad Request', message: 'يرجى إدخال مبلغ صحيح لإيداعه في بنك اللاعب (أكبر من صفر).' });
+          }
+
+          const currentBank = Number(pDoc.bank !== undefined ? pDoc.bank : (pState.bank || 0));
+          const updatedBank = currentBank + addAmount;
+          const currentCash = Number(pDoc.cash !== undefined ? pDoc.cash : (pState.cash || 0));
+          const updatedNetworth = currentCash + updatedBank;
+
+          pDoc.bank = updatedBank;
+          pState.bank = updatedBank;
+          pState.netWorth = updatedNetworth;
+          pState.adminModifiedTimestamp = ts;
+
+          actionDesc = `إيداع مبلغ $${addAmount.toLocaleString('en-US')} في بنك اللاعب (${cleanReason})`;
+
+          pState.moderatorNotes.unshift({
+            timestamp: ts,
+            action: 'add_bank',
+            amount: addAmount,
+            reason: cleanReason,
+            modName: request.modSession.name
+          });
+
+          // Record in admin grants & topups history if available
+          if (!Array.isArray(pState.adminGrants)) pState.adminGrants = [];
+          pState.adminGrants.unshift({
+            timestamp: ts,
+            cash: 0,
+            bank: addAmount,
+            gold: 0,
+            title: 'إيداع بنكي معتمد من الرقابة',
+            note: cleanReason,
+            status: 'معتمد',
+            grantedBy: request.modSession.name
+          });
+          if (pState.adminGrants.length > 30) pState.adminGrants = pState.adminGrants.slice(0, 30);
+
+          // Send notification mailbox message
+          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              sender: 'إدارة الرقابة والأمان',
+              recipient: pDoc.username,
+              type: 'system_announcement',
+              payload: {
+                title: '🏦 إيداع بنكي معتمد من الرقابة',
+                message: `تم إيداع مبلغ $${addAmount.toLocaleString('en-US')} في حسابك البنكي بنجاح بواسطة إدارة الرقابة.\nالبيان: ${cleanReason}`,
+                amount: addAmount,
+                addedBank: addAmount,
+                newBank: updatedBank,
+                timestamp: ts
+              },
+              status: 'unread',
+              created_at: ts
+            })
+          }).catch(err => {
+            console.warn('[add_bank] Failed to send mailbox notification:', err.message);
+          });
+          break;
+        }
+
         default:
           return reply.status(400).send({ error: 'Bad Request', message: `إجراء غير مدعوم: ${action}` });
       }
@@ -2002,6 +2067,9 @@ async function moderatorRoutes(fastify, options) {
         patchBody.is_banned = true;
       } else if (action === 'unban') {
         patchBody.is_banned = false;
+      } else if (action === 'add_bank') {
+        patchBody.bank = pState.bank;
+        patchBody.net_worth = pState.netWorth;
       }
 
       await fetch(patchUrl, {
@@ -2050,6 +2118,10 @@ async function moderatorRoutes(fastify, options) {
             session.state.overtimeCooldownUntil = 0;
             session.state.stockTradeCooldownUntil = 0;
             session.state.limitsResetAt = ts;
+          } else if (action === 'add_bank') {
+            session.state.bank = pState.bank;
+            session.state.netWorth = pState.netWorth;
+            session.state.adminGrants = pState.adminGrants;
           }
           session.state.adminModifiedTimestamp = (action === 'reset_limits' ? ts + 600000 : ts);
           session.dirty = false;
@@ -2057,13 +2129,14 @@ async function moderatorRoutes(fastify, options) {
       }
 
       // 4. Record to staff audit logs
-      await logStaffAudit(request.modSession, target, action, cleanReason, { durationMinutes });
+      await logStaffAudit(request.modSession, target, action, cleanReason, { durationMinutes, amount: request.body.amount || request.body.addBank });
 
       return reply.send({
         success: true,
         message: `تم تنفيذ الإجراء بنجاح: ${actionDesc}`,
         target: pDoc.username,
         action,
+        newBank: pState.bank,
         timestamp: ts
       });
     } catch (err) {

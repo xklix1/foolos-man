@@ -460,9 +460,15 @@
               <div class="text-[11px] text-slate-400 mb-1">الكاش السائل</div>
               <div id="p_cash" class="text-lg font-black numbers-font text-emerald-400">$0</div>
             </div>
-            <div class="glass-card p-3.5 rounded-xl">
-              <div class="text-[11px] text-slate-400 mb-1">رصيد البنك</div>
-              <div id="p_bank" class="text-lg font-black numbers-font text-cyan-400">$0</div>
+            <div class="glass-card p-3.5 rounded-xl flex flex-col justify-between">
+              <div>
+                <div class="text-[11px] text-slate-400 mb-1">رصيد البنك</div>
+                <div id="p_bank" class="text-lg font-black numbers-font text-cyan-400">$0</div>
+              </div>
+              <button type="button" onclick="openAddBankModal(inspectingPlayer?.username)" class="mt-2 w-full py-1.5 px-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white text-[11px] font-bold border border-emerald-500/40 transition flex items-center justify-center gap-1.5 cursor-pointer shadow-sm">
+                <i class="fa-solid fa-plus-circle text-xs"></i>
+                <span>إيداع كاش فوري بالبنك 🏦</span>
+              </button>
             </div>
             <div class="glass-card p-3.5 rounded-xl">
               <div class="text-[11px] text-slate-400 mb-1">صافي الثروة (Net Worth)</div>
@@ -769,7 +775,8 @@
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div>
                 <label class="block text-[11px] text-slate-300 mb-1">نوع الإجراء:</label>
-                <select id="actionTypeSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
+                <select id="actionTypeSelect" onchange="onActionTypeChange()" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
+                  <option value="add_bank" class="text-emerald-400 font-bold" selected>🏦 إضافة كاش في بنك اللاعب (Add Cash to Bank)</option>
                   <option value="reset_limits" class="text-cyan-400 font-bold">🔄 تصفير اللمت اليومي بالكامل (شغل + بورصة + تحويلات)</option>
                   <option value="freeze">🔒 تجميد مؤقت للحساب (Freeze)</option>
                   <option value="unfreeze">🔓 فك تجميد الحساب (Unfreeze)</option>
@@ -783,7 +790,15 @@
                 </select>
               </div>
 
-              <div>
+              <!-- Amount Input for add_bank -->
+              <div id="actionAmountContainer">
+                <label class="block text-[11px] text-slate-300 mb-1">المبلغ المراد إيداعه (EGP):</label>
+                <input type="number" id="actionAmountInput" placeholder="مثال: 1000000" oninput="updateActionAmountPreview(this.value)" class="w-full bg-slate-900 border border-emerald-500/50 rounded-lg px-3 py-2 text-xs font-mono font-bold text-emerald-400 focus:border-emerald-400" />
+                <span id="actionAmountPreviewText" class="text-[10px] text-emerald-300 mt-1 block truncate"></span>
+              </div>
+
+              <!-- Duration Select for freeze/mute -->
+              <div id="actionDurationContainer" class="hidden">
                 <label class="block text-[11px] text-slate-300 mb-1">المدة (للتجميد أو الكتم):</label>
                 <select id="actionDurationSelect" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:border-cyan-400">
                   <option value="15">15 دقيقة</option>
@@ -797,15 +812,28 @@
 
               <div class="sm:col-span-1">
                 <label class="block text-[11px] text-slate-300 mb-1">تنفيذ:</label>
-                <button onclick="executeModeratorAction()" id="execActionBtn" class="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition">
+                <button onclick="executeModeratorAction()" id="execActionBtn" class="w-full py-2 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition cursor-pointer">
                   تنفيذ الإجراء
                 </button>
               </div>
             </div>
 
+            <!-- Quick Amount Preset Chips for add_bank -->
+            <div id="actionAmountPresets" class="flex flex-wrap gap-1.5 pt-1 text-[10px]">
+              <span class="text-slate-400 py-0.5">مبالغ سريعة:</span>
+              <button type="button" onclick="setActionAmountPreset(100000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+100 ألف</button>
+              <button type="button" onclick="setActionAmountPreset(1000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+1 مليون</button>
+              <button type="button" onclick="setActionAmountPreset(5000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+5 مليون</button>
+              <button type="button" onclick="setActionAmountPreset(10000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+10 مليون</button>
+              <button type="button" onclick="setActionAmountPreset(50000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+50 مليون</button>
+              <button type="button" onclick="setActionAmountPreset(100000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+100 مليون</button>
+              <button type="button" onclick="setActionAmountPreset(500000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+500 مليون</button>
+              <button type="button" onclick="setActionAmountPreset(1000000000)" class="px-2 py-0.5 rounded bg-slate-900 hover:bg-emerald-950/60 text-emerald-300 border border-slate-700 hover:border-emerald-500/40 font-mono transition cursor-pointer">+1 مليار</button>
+            </div>
+
             <div>
-              <label class="block text-[11px] text-slate-300 mb-1"><span class="text-rose-400">*</span> سبب الإجراء (إلزامي للتدقيق والرقابة):</label>
-              <input type="text" id="actionReasonInput" placeholder="اكتب السبب بالتفصيل (مثال: اشتباه في تحويلات متتالية غير مبررة)..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-400" />
+              <label class="block text-[11px] text-slate-300 mb-1"><span class="text-rose-400">*</span> سبب الإجراء / بيان الإيداع (إلزامي للتدقيق والرقابة):</label>
+              <input type="text" id="actionReasonInput" value="إيداع معتمد من الرقابة / تعويض أو مكافأة" placeholder="اكتب السبب بالتفصيل (مثال: تعويض عن خطأ تقني أو مكافأة)..." class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-100 placeholder-slate-500 focus:border-cyan-400" />
             </div>
           </div>
 
@@ -1360,6 +1388,79 @@
       </div>
       <div class="flex items-center justify-center w-full max-h-[82vh] overflow-hidden rounded-2xl border border-slate-800 bg-black/70 shadow-2xl p-1">
         <img id="chatImageViewerImg" src="" class="max-w-full max-h-[80vh] rounded-xl object-contain" alt="معاينة الصورة" />
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= QUICK ADD BANK MODAL (إيداع كاش فوري في بنك اللاعب) ================= -->
+  <div id="quickAddBankModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-3 sm:p-5 overflow-y-auto">
+    <div class="glass-panel w-full max-w-lg my-auto rounded-2xl border border-emerald-500/40 p-5 sm:p-6 glow-cyan modal-enter flex flex-col space-y-4 shadow-2xl shadow-emerald-950/40">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-600 flex items-center justify-center text-xl text-white shadow-md shadow-emerald-600/30 shrink-0">
+            <i class="fa-solid fa-building-columns"></i>
+          </div>
+          <div>
+            <h3 class="font-black text-base sm:text-lg text-white flex items-center gap-2">
+              <span>إيداع كاش فوري في بنك اللاعب</span>
+              <span id="quickAddBankTargetBadge" class="text-xs px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">--</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">إضافة فورية لرصيد البنك تظهر مباشرة في شاشة اللاعب دون تعليق</p>
+          </div>
+        </div>
+        <button onclick="closeAddBankModal()" class="w-8 h-8 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Current Balance Box -->
+      <div class="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs">
+        <span class="text-slate-400 font-bold"><i class="fa-solid fa-wallet text-cyan-400 ml-1"></i> رصيد البنك الحالي:</span>
+        <span id="quickAddBankCurrentBal" class="font-mono font-black text-cyan-300 text-sm">$0</span>
+      </div>
+
+      <!-- Quick Amount Presets Grid -->
+      <div class="space-y-1.5">
+        <label class="block text-[11px] text-slate-300 font-bold">مبالغ سريعة بنقرة واحدة:</label>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+          <button type="button" onclick="setQuickAddBankAmount(100000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+100,000</button>
+          <button type="button" onclick="setQuickAddBankAmount(1000000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+1,000,000</button>
+          <button type="button" onclick="setQuickAddBankAmount(5000000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+5,000,000</button>
+          <button type="button" onclick="setQuickAddBankAmount(10000000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+10,000,000</button>
+          <button type="button" onclick="setQuickAddBankAmount(50000000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+50,000,000</button>
+          <button type="button" onclick="setQuickAddBankAmount(100000000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+100,000,000</button>
+          <button type="button" onclick="setQuickAddBankAmount(500000000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+500,000,000</button>
+          <button type="button" onclick="setQuickAddBankAmount(1000000000)" class="py-2 px-1 bg-slate-900 hover:bg-emerald-950/70 text-emerald-300 border border-slate-700 hover:border-emerald-500/50 rounded-xl text-xs font-mono font-bold transition cursor-pointer numbers-font">+1,000,000,000</button>
+        </div>
+      </div>
+
+      <!-- Custom Amount Input -->
+      <div class="space-y-1">
+        <label class="block text-[11px] text-slate-300 font-bold">المبلغ المراد إيداعه (EGP):</label>
+        <div class="relative">
+          <input type="number" id="quickAddBankAmountInput" placeholder="أدخل المبلغ..." oninput="updateQuickAddBankPreview(this.value)" class="w-full bg-slate-950 border border-emerald-500/60 rounded-xl p-3 text-sm font-mono font-black text-emerald-400 focus:outline-none focus:border-emerald-400 placeholder-slate-600" />
+          <span class="absolute left-3 top-3 text-xs text-slate-500 font-bold">EGP</span>
+        </div>
+        <div id="quickAddBankTextPreview" class="text-xs text-emerald-300 font-bold pt-0.5">0 جنيه مصري</div>
+      </div>
+
+      <!-- Reason Input -->
+      <div class="space-y-1">
+        <label class="block text-[11px] text-slate-300 font-bold"><span class="text-rose-400">*</span> سبب الإيداع (بيان الرقابة):</label>
+        <input type="text" id="quickAddBankReasonInput" value="إيداع بنكي معتمد من الرقابة / تعويض أو مكافأة" placeholder="اكتب بيان الإجراء..." class="w-full bg-slate-950 border border-slate-700 rounded-xl p-2.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500" />
+      </div>
+
+      <!-- Modal Actions -->
+      <div class="pt-2 border-t border-slate-800 flex gap-2">
+        <button onclick="submitQuickAddBank()" id="quickAddBankSubmitBtn" class="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-xs shadow-lg shadow-emerald-600/30 transition flex items-center justify-center gap-2 cursor-pointer">
+          <i class="fa-solid fa-plus-circle"></i>
+          <span>إيداع المبلغ في البنك فوراً</span>
+        </button>
+        <button onclick="closeAddBankModal()" class="px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition cursor-pointer">
+          إلغاء
+        </button>
       </div>
     </div>
   </div>
@@ -3932,26 +4033,149 @@
       inspectingPlayer = null;
     }
 
-    // Execute Moderator Action
-    async function executeModeratorAction() {
-      if (!inspectingPlayer) return;
-
-      const action = document.getElementById('actionTypeSelect').value;
-      const duration = document.getElementById('actionDurationSelect').value;
-      const reason = document.getElementById('actionReasonInput').value.trim();
+    // Action Type Selector Change Handler
+    function onActionTypeChange() {
+      const select = document.getElementById('actionTypeSelect');
+      if (!select) return;
+      const action = select.value;
+      const amountCont = document.getElementById('actionAmountContainer');
+      const amountPresets = document.getElementById('actionAmountPresets');
+      const durationCont = document.getElementById('actionDurationContainer');
       const btn = document.getElementById('execActionBtn');
 
+      if (action === 'add_bank') {
+        if (amountCont) amountCont.classList.remove('hidden');
+        if (amountPresets) amountPresets.classList.remove('hidden');
+        if (durationCont) durationCont.classList.add('hidden');
+        if (btn) {
+          btn.className = 'w-full py-2 px-4 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-xs shadow-md transition cursor-pointer';
+          btn.innerHTML = `<i class="fa-solid fa-plus-circle"></i> <span>إيداع في البنك</span>`;
+        }
+      } else if (action === 'freeze' || action === 'mute') {
+        if (amountCont) amountCont.classList.add('hidden');
+        if (amountPresets) amountPresets.classList.add('hidden');
+        if (durationCont) durationCont.classList.remove('hidden');
+        if (btn) {
+          btn.className = 'w-full py-2 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition cursor-pointer';
+          btn.innerHTML = `<span>تنفيذ الإجراء</span>`;
+        }
+      } else {
+        if (amountCont) amountCont.classList.add('hidden');
+        if (amountPresets) amountPresets.classList.add('hidden');
+        if (durationCont) durationCont.classList.add('hidden');
+        if (btn) {
+          btn.className = 'w-full py-2 px-4 rounded-lg bg-gradient-to-r from-amber-600 to-rose-600 hover:from-amber-500 hover:to-rose-500 text-white font-bold text-xs shadow-md transition cursor-pointer';
+          btn.innerHTML = `<span>تنفيذ الإجراء</span>`;
+        }
+      }
+    }
+
+    function setActionAmountPreset(val) {
+      const inp = document.getElementById('actionAmountInput');
+      if (inp) {
+        inp.value = val;
+        updateActionAmountPreview(val);
+      }
+    }
+
+    function updateActionAmountPreview(val) {
+      const preview = document.getElementById('actionAmountPreviewText');
+      if (!preview) return;
+      const num = Number(val) || 0;
+      if (num <= 0) {
+        preview.textContent = '';
+        return;
+      }
+      preview.textContent = `المبلغ: ${num.toLocaleString('en-US')} EGP (${fmtMoney(num)})`;
+    }
+
+    // ================= QUICK ADD BANK MODAL LOGIC =================
+    let targetAddBankUsername = '';
+
+    function openAddBankModal(username) {
+      const target = username || (inspectingPlayer && inspectingPlayer.username);
+      if (!target) {
+        alert('يرجى اختيار وفحص لاعب أولاً لإيداع الكاش في حسابه البنكي.');
+        return;
+      }
+      targetAddBankUsername = target;
+
+      const badge = document.getElementById('quickAddBankTargetBadge');
+      const curBal = document.getElementById('quickAddBankCurrentBal');
+      const amountInp = document.getElementById('quickAddBankAmountInput');
+      const textPrev = document.getElementById('quickAddBankTextPreview');
+      const reasonInp = document.getElementById('quickAddBankReasonInput');
+
+      if (badge) badge.textContent = `@${target}`;
+      if (curBal) {
+        const bankVal = (inspectingPlayer && inspectingPlayer.bank != null) ? inspectingPlayer.bank : 0;
+        curBal.textContent = `${fmtMoney(bankVal)} (${Number(bankVal).toLocaleString('en-US')} EGP)`;
+      }
+      if (amountInp) amountInp.value = '';
+      if (textPrev) textPrev.textContent = '0 جنيه مصري';
+      if (reasonInp) reasonInp.value = 'إيداع بنكي معتمد من الرقابة / تعويض أو مكافأة';
+
+      const modal = document.getElementById('quickAddBankModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAddBankModal() {
+      const modal = document.getElementById('quickAddBankModal');
+      if (modal) modal.classList.add('hidden');
+      targetAddBankUsername = '';
+    }
+
+    function setQuickAddBankAmount(val) {
+      const inp = document.getElementById('quickAddBankAmountInput');
+      if (inp) {
+        inp.value = val;
+        updateQuickAddBankPreview(val);
+      }
+    }
+
+    function updateQuickAddBankPreview(val) {
+      const prev = document.getElementById('quickAddBankTextPreview');
+      if (!prev) return;
+      const num = Number(val) || 0;
+      if (num <= 0) {
+        prev.textContent = '0 جنيه مصري';
+        return;
+      }
+      prev.textContent = `المبلغ المراد إضافته: ${num.toLocaleString('en-US')} EGP (${fmtMoney(num)})`;
+    }
+
+    async function submitQuickAddBank() {
+      const target = targetAddBankUsername || (inspectingPlayer && inspectingPlayer.username);
+      if (!target) {
+        alert('يرجى تحديد اللاعب المستهدف.');
+        return;
+      }
+
+      const amountInp = document.getElementById('quickAddBankAmountInput');
+      const amount = Math.floor(Number(amountInp ? amountInp.value : 0));
+      const reasonInp = document.getElementById('quickAddBankReasonInput');
+      const reason = reasonInp ? reasonInp.value.trim() : '';
+      const btn = document.getElementById('quickAddBankSubmitBtn');
+
+      if (!amount || isNaN(amount) || amount <= 0) {
+        alert('يرجى إدخال مبلغ صحيح لإيداعه (أكبر من صفر).');
+        if (amountInp) amountInp.focus();
+        return;
+      }
+
       if (!reason || reason.length < 3) {
-        alert('يجب كتابة سبب الإجراء بوضوح (3 أحرف على الأقل).');
+        alert('يرجى كتابة سبب أو بيان للإيداع (3 أحرف على الأقل).');
+        if (reasonInp) reasonInp.focus();
         return;
       }
 
-      if (!confirm(`هل أنت متأكد من تنفيذ إجراء [${action}] على اللاعب "${inspectingPlayer.username}"؟`)) {
-        return;
-      }
+      const confirmMsg = `🏦 تأكيد إيداع كاش في بنك اللاعب:\n\n• اسم اللاعب: ${target}\n• المبلغ المراد إيداعه: ${amount.toLocaleString('en-US')} EGP (${fmtMoney(amount)})\n• البيان: ${reason}\n\nسيتم إضافة الرصيد إلى بنك اللاعب فوراً وتحديث شاشته. متابعة؟`;
+      if (!confirm(confirmMsg)) return;
 
-      btn.disabled = true;
-      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري التنفيذ...`;
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري إيداع المبلغ وتحديث السحابة...</span>`;
+      }
 
       try {
         const res = await fetch(`${API_BASE}/action`, {
@@ -3961,9 +4185,9 @@
             'Authorization': `Bearer ${currentModToken}`
           },
           body: JSON.stringify({
-            targetUser: inspectingPlayer.username,
-            action: action,
-            durationMinutes: Number(duration),
+            targetUser: target,
+            action: 'add_bank',
+            amount: amount,
             reason: reason
           })
         });
@@ -3971,7 +4195,84 @@
         const data = await res.json();
         if (res.ok && data.success) {
           alert('✅ ' + data.message);
-          document.getElementById('actionReasonInput').value = '';
+          closeAddBankModal();
+          // Update inspected player state in UI
+          if (inspectingPlayer && inspectingPlayer.username.toLowerCase() === target.toLowerCase()) {
+            inspectPlayer(target);
+          }
+          refreshOverview();
+          executeSearch();
+        } else {
+          alert('❌ ' + (data.message || 'فشل إيداع المبلغ في بنك اللاعب'));
+        }
+      } catch (err) {
+        alert('خطأ في الاتصال: ' + err.message);
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `<i class="fa-solid fa-plus-circle"></i> <span>إيداع المبلغ في البنك فوراً</span>`;
+        }
+      }
+    }
+
+    // Execute Moderator Action
+    async function executeModeratorAction() {
+      if (!inspectingPlayer) return;
+
+      const action = document.getElementById('actionTypeSelect').value;
+      const duration = document.getElementById('actionDurationSelect')?.value || 60;
+      const amountInp = document.getElementById('actionAmountInput');
+      const amount = amountInp ? Math.floor(Number(amountInp.value || 0)) : 0;
+      const reason = document.getElementById('actionReasonInput').value.trim();
+      const btn = document.getElementById('execActionBtn');
+
+      if (action === 'add_bank') {
+        if (!amount || isNaN(amount) || amount <= 0) {
+          alert('يرجى إدخال مبلغ صحيح لإيداعه في بنك اللاعب (أكبر من صفر).');
+          if (amountInp) amountInp.focus();
+          return;
+        }
+      }
+
+      if (!reason || reason.length < 3) {
+        alert('يجب كتابة سبب الإجراء بوضوح (3 أحرف على الأقل).');
+        return;
+      }
+
+      const actionLabel = action === 'add_bank' ? `إيداع مبلغ $${amount.toLocaleString('en-US')} في البنك` : `إجراء [${action}]`;
+      if (!confirm(`هل أنت متأكد من تنفيذ ${actionLabel} على اللاعب "${inspectingPlayer.username}"؟`)) {
+        return;
+      }
+
+      btn.disabled = true;
+      btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> جاري التنفيذ...`;
+
+      try {
+        const payload = {
+          targetUser: inspectingPlayer.username,
+          action: action,
+          durationMinutes: Number(duration),
+          reason: reason
+        };
+        if (action === 'add_bank') {
+          payload.amount = amount;
+        }
+
+        const res = await fetch(`${API_BASE}/action`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (res.ok && data.success) {
+          alert('✅ ' + data.message);
+          if (amountInp) amountInp.value = '';
+          const preview = document.getElementById('actionAmountPreviewText');
+          if (preview) preview.textContent = '';
           // Re-inspect to refresh view
           inspectPlayer(inspectingPlayer.username);
           refreshOverview();
@@ -3983,7 +4284,7 @@
         alert('خطأ في الاتصال: ' + err.message);
       } finally {
         btn.disabled = false;
-        btn.innerHTML = `تنفيذ الإجراء`;
+        onActionTypeChange();
       }
     }
 
