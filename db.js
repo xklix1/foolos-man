@@ -1733,8 +1733,7 @@ var AppDB = (() => {
         })();
 
         const srvResetAt = Number(stateObj.limitsResetAt || (row.state && row.state.limitsResetAt) || 0);
-        const locResetAck = Number(local?.lastLimitsResetAck || 0);
-        const isAuthoritativeLimitsReset = (srvResetAt > 0 && srvResetAt > locResetAck) || isStaleLocalDueToAdmin;
+        const isAuthoritativeLimitsReset = (srvResetAt > 0 && srvResetAt > locResetAck);
 
         if (isAuthoritativeLimitsReset) {
           // Server has reset limits: wipe stale local limits and adopt server's reset state
@@ -1902,6 +1901,19 @@ var AppDB = (() => {
               stateObj.farm.maxPlots = locPlots;
               stateObj.farm.landLevel = Math.max(Number(local.farm.landLevel || 1), Number(stateObj.farm.landLevel || 1));
               shouldSyncCloud = true;
+            }
+            if (local.farm.dailyLiquidation && local.farm.dailyLiquidation.date === todayStr) {
+              if (!stateObj.farm.dailyLiquidation || stateObj.farm.dailyLiquidation.date !== todayStr) {
+                stateObj.farm.dailyLiquidation = { ...local.farm.dailyLiquidation };
+                shouldSyncCloud = true;
+              } else {
+                const locLiq = Number(local.farm.dailyLiquidation.totalLiquidated || 0);
+                const srvLiq = Number(stateObj.farm.dailyLiquidation.totalLiquidated || 0);
+                if (locLiq > srvLiq) {
+                  stateObj.farm.dailyLiquidation.totalLiquidated = Math.min(20000000, locLiq);
+                  shouldSyncCloud = true;
+                }
+              }
             }
           }
         } else if (isFarmReset && local && local.farm) {

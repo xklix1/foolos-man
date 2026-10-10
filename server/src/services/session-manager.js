@@ -505,12 +505,10 @@ class SessionManager {
       return d.toISOString().split('T')[0];
     })();
 
-    // Check if server has an active authoritative reset for daily limits
+    // Check if server has an active authoritative reset for daily limits (exclusive to explicit limits reset)
     const sLimitsResetAt = Number(s.limitsResetAt || 0);
     const cLimitsResetAck = Number(clientState.lastLimitsResetAck || 0);
-    const sAdminTs = Number(s.adminModifiedTimestamp || 0);
-    const cAdminTs = Number(clientState.adminModifiedTimestamp || 0);
-    const isAuthoritativeLimitsReset = (sLimitsResetAt > 0 && sLimitsResetAt > cLimitsResetAck) || (sAdminTs > 0 && sAdminTs > cAdminTs);
+    const isAuthoritativeLimitsReset = (sLimitsResetAt > 0 && sLimitsResetAt > cLimitsResetAck);
 
     if (clientState.dailyLoans && typeof clientState.dailyLoans === 'object') {
       s.dailyLoans = {
