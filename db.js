@@ -6210,25 +6210,29 @@ var AppDB = (() => {
 
     // Auto-detect player VIP glow from Cloud/State or customBadge if not provided in extraMeta
     if (!msgObj.chatGlow && sender && sender !== 'الإدارة') {
-      if (extraMeta && (extraMeta.customBadge === '' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('لهيب')))) {
+      if (extraMeta && (extraMeta.customBadge === 'SVIP' || (extraMeta.badgeTitle && String(extraMeta.badgeTitle).includes('SVIP')))) {
+        msgObj.chatGlow = 'blue_flame';
+      } else if (extraMeta && (extraMeta.badgeTitle && String(extraMeta.badgeTitle).includes('لهيب'))) {
         msgObj.chatGlow = 'crimson_flame';
-      } else if (extraMeta && (extraMeta.customBadge === '' || (extraMeta.badgeTitle && extraMeta.badgeTitle.includes('حوت الشات')))) {
+      } else if (extraMeta && (extraMeta.badgeTitle && String(extraMeta.badgeTitle).includes('حوت الشات'))) {
         msgObj.chatGlow = 'gold_neon';
-      } else if (extraMeta && (extraMeta.customBadge === '' || (extraMeta.customBadge && extraMeta.customBadge.includes('')))) {
+      } else if (extraMeta && (extraMeta.badgeTitle && (String(extraMeta.badgeTitle).includes('الملك الأسطوري') || String(extraMeta.badgeTitle).includes('إمبراطور')))) {
         msgObj.chatGlow = 'cyber_rainbow';
       } else {
         try {
           const pRows = await _api(`players?username=eq.${encodeURIComponent(sender)}&select=state`);
           if (pRows && pRows.length > 0 && pRows[0].state) {
             const st = pRows[0].state;
-            if (st.chatGlow) {
+            if (st.chatGlow && st.chatGlow !== 'none') {
               msgObj.chatGlow = st.chatGlow;
-            } else if (st.activePackage === 'pkg_vip_crimson_flame' || st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
+            } else if (st.activePackage === 'pkg_vip_crimson_flame' || (st.badgeTitle && String(st.badgeTitle).includes('لهيب'))) {
               msgObj.chatGlow = 'crimson_flame';
-            } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow' || st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
+            } else if (st.hasChatGlow || st.activePackage === 'pkg_vip_chat_glow' || (st.badgeTitle && String(st.badgeTitle).includes('حوت الشات'))) {
               msgObj.chatGlow = 'gold_neon';
-            } else if (st.activePackage === 'pkg_vip_royal_ultimate' || st.customBadge === '' || (st.customBadge && st.customBadge.includes(''))) {
+            } else if (st.activePackage === 'pkg_vip_royal_ultimate' || (st.badgeTitle && (String(st.badgeTitle).includes('الملك الأسطوري') || String(st.badgeTitle).includes('إمبراطور')))) {
               msgObj.chatGlow = 'cyber_rainbow';
+            } else if (st.activePackage === 'pkg_vip_svip_blue_flame' || st.customBadge === 'SVIP') {
+              msgObj.chatGlow = 'blue_flame';
             }
             if (st.avatarUrl && !msgObj.avatarUrl) msgObj.avatarUrl = st.avatarUrl;
             if (st.isVerified || st.vipVerified) msgObj.isVerified = true;

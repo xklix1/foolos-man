@@ -13279,13 +13279,13 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     if (st.customBadge === 'SVIP' || (st.customBadge && String(st.customBadge).toUpperCase().includes('SVIP')) || (st.badgeTitle && String(st.badgeTitle).toUpperCase().includes('SVIP'))) {
       unlocked.add('blue_flame');
     }
-    if (st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('حوت الشات'))) {
+    if (st.badgeTitle && String(st.badgeTitle).includes('حوت الشات')) {
       unlocked.add('gold_neon');
     }
-    if (st.customBadge === '' || (st.badgeTitle && st.badgeTitle.includes('لهيب'))) {
+    if (st.badgeTitle && String(st.badgeTitle).includes('لهيب')) {
       unlocked.add('crimson_flame');
     }
-    if (st.customBadge === '' || (st.badgeTitle && (st.badgeTitle.includes('الملك الأسطوري') || st.badgeTitle.includes('إمبراطور')))) {
+    if (st.badgeTitle && (String(st.badgeTitle).includes('الملك الأسطوري') || String(st.badgeTitle).includes('إمبراطور'))) {
       unlocked.add('cyber_rainbow');
     }
 
@@ -13855,12 +13855,14 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           if (chatGlow === 'none') {
             chatGlow = '';
           } else if (!chatGlow && GameEngine.state) {
-            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('لهيب'))) {
+            if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).includes('لهيب'))) {
               chatGlow = 'crimson_flame';
-            } else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '' || (GameEngine.state.badgeTitle && GameEngine.state.badgeTitle.includes('حوت الشات'))) {
+            } else if (GameEngine.state.activePackage === 'pkg_vip_chat_glow' || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).includes('حوت الشات'))) {
               chatGlow = 'gold_neon';
-            } else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '' || (GameEngine.state.customBadge && GameEngine.state.customBadge.includes(''))) {
+            } else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).includes('الملك الأسطوري'))) {
               chatGlow = 'cyber_rainbow';
+            } else if (GameEngine.state.activePackage === 'pkg_vip_svip_blue_flame' || (GameEngine.state.customBadge === 'SVIP')) {
+              chatGlow = 'blue_flame';
             }
           }
           const isVerified = Boolean(GameEngine.state && (GameEngine.state.isVerified || GameEngine.state.vipVerified || (GameEngine.state.badges && GameEngine.state.badges.includes('vip_verified'))));
@@ -14635,17 +14637,17 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           glowType = GameEngine.state.chatGlow;
         } else if (msg.customBadge === 'SVIP' || (msg.customBadge && String(msg.customBadge).toUpperCase().includes('SVIP')) || (msg.senderTitle && String(msg.senderTitle).toUpperCase().includes('SVIP'))) {
           glowType = 'blue_flame';
-        } else if (msg.customBadge === '' || (msg.senderTitle && String(msg.senderTitle).includes('لهيب'))) {
+        } else if (msg.senderTitle && String(msg.senderTitle).includes('لهيب')) {
           glowType = 'crimson_flame';
-        } else if (msg.customBadge === '' || (msg.senderTitle && String(msg.senderTitle).includes('حوت الشات'))) {
+        } else if (msg.senderTitle && String(msg.senderTitle).includes('حوت الشات')) {
           glowType = 'gold_neon';
-        } else if (msg.customBadge === '' || (msg.customBadge && String(msg.customBadge).includes(''))) {
+        } else if (msg.senderTitle && (String(msg.senderTitle).includes('الملك الأسطوري') || String(msg.senderTitle).includes('إمبراطور'))) {
           glowType = 'cyber_rainbow';
         } else if (isMe && GameEngine.state && GameEngine.state.chatGlow === undefined) {
           if (GameEngine.state.customBadge === 'SVIP' || (GameEngine.state.customBadge && String(GameEngine.state.customBadge).toUpperCase().includes('SVIP')) || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).toUpperCase().includes('SVIP'))) glowType = 'blue_flame';
-          else if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || GameEngine.state.customBadge === '') glowType = 'crimson_flame';
-          else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || GameEngine.state.customBadge === '') glowType = 'gold_neon';
-          else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || GameEngine.state.customBadge === '') glowType = 'cyber_rainbow';
+          else if (GameEngine.state.activePackage === 'pkg_vip_crimson_flame' || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).includes('لهيب'))) glowType = 'crimson_flame';
+          else if (GameEngine.state.hasChatGlow || GameEngine.state.activePackage === 'pkg_vip_chat_glow' || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).includes('حوت الشات'))) glowType = 'gold_neon';
+          else if (GameEngine.state.activePackage === 'pkg_vip_royal_ultimate' || (GameEngine.state.badgeTitle && String(GameEngine.state.badgeTitle).includes('الملك الأسطوري'))) glowType = 'cyber_rainbow';
         }
       }
 
@@ -14859,11 +14861,13 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       if (m.type === 'money_drop') return;
       if (m.chatGlow && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, m.chatGlow === 'none' ? '' : m.chatGlow);
-      } else if (m.customBadge === '' && m.sender) {
+      } else if (m.customBadge === 'SVIP' && m.sender) {
+        window._knownVipGlowPlayers.set(m.sender, 'blue_flame');
+      } else if (m.senderTitle && String(m.senderTitle).includes('لهيب') && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'crimson_flame');
-      } else if (m.customBadge === '' && m.sender) {
+      } else if (m.senderTitle && String(m.senderTitle).includes('حوت الشات') && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'gold_neon');
-      } else if ((m.customBadge === '' || (m.customBadge && m.customBadge.includes(''))) && m.sender) {
+      } else if (m.senderTitle && String(m.senderTitle).includes('الملك الأسطوري') && m.sender) {
         window._knownVipGlowPlayers.set(m.sender, 'cyber_rainbow');
       }
     });
@@ -14872,11 +14876,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     const lbCache = window.cachedLeaderboard || (typeof cachedLeaderboard !== 'undefined' ? cachedLeaderboard : null);
     if (Array.isArray(lbCache)) {
       lbCache.forEach(p => {
-        if (p.chatGlow || p.hasChatGlow || p.activePackage === 'pkg_vip_crimson_flame' || p.activePackage === 'pkg_vip_chat_glow' || p.customBadge === '' || p.customBadge === '') {
-          const g = p.chatGlow || (p.activePackage === 'pkg_vip_crimson_flame' || p.customBadge === '' ? 'crimson_flame' : (p.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : 'gold_neon'));
+        if (p.chatGlow || p.hasChatGlow || p.activePackage === 'pkg_vip_crimson_flame' || p.activePackage === 'pkg_vip_chat_glow' || p.activePackage === 'pkg_vip_royal_ultimate' || p.activePackage === 'pkg_vip_svip_blue_flame') {
+          const g = p.chatGlow || (p.activePackage === 'pkg_vip_crimson_flame' ? 'crimson_flame' : (p.activePackage === 'pkg_vip_royal_ultimate' ? 'cyber_rainbow' : (p.activePackage === 'pkg_vip_svip_blue_flame' ? 'blue_flame' : 'gold_neon')));
           window._knownVipGlowPlayers.set(p.username, g === 'none' ? '' : g);
-        } else if (p.customBadge === '' || (p.customBadge && p.customBadge.includes(''))) {
-          window._knownVipGlowPlayers.set(p.username, 'cyber_rainbow');
         }
       });
     }
