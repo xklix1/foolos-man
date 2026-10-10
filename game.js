@@ -1262,7 +1262,14 @@ const GameEngine = (() => {
     chatGlow: '',
     unlockedChatGlows: [],
     gold: 0,
-    avatarUrl: ''
+    avatarUrl: '',
+    characterAvatar: 'avatar_male_arab',
+    executiveGear: {
+      ledger: { level: 1, stars: 1 },
+      laptop: { level: 1, stars: 1 },
+      pen: { level: 1, stars: 1 },
+      terminal: { level: 1, stars: 1 }
+    }
   };
 
   // ─────────────────────────────────────────────────────────
@@ -3289,6 +3296,25 @@ const GameEngine = (() => {
         customBadge: dbState.customBadge || (dbState.state && dbState.state.customBadge) || '',
         badgeTitle: dbState.badgeTitle || (dbState.state && dbState.state.badgeTitle) || '',
         gold: Math.max(0, Number(dbState.gold !== undefined && dbState.gold !== null ? dbState.gold : ((dbState.state && dbState.state.gold !== undefined && dbState.state.gold !== null) ? dbState.state.gold : 0))),
+        characterAvatar: dbState.characterAvatar || (dbState.state && dbState.state.characterAvatar) || 'avatar_male_arab',
+        executiveGear: {
+          ledger: {
+            level: Math.max(1, Number(dbState.executiveGear?.ledger?.level || dbState.state?.executiveGear?.ledger?.level || 1)),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.ledger?.level || dbState.state?.executiveGear?.ledger?.level || 1)) / 2))
+          },
+          laptop: {
+            level: Math.max(1, Number(dbState.executiveGear?.laptop?.level || dbState.state?.executiveGear?.laptop?.level || 1)),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.laptop?.level || dbState.state?.executiveGear?.laptop?.level || 1)) / 2))
+          },
+          pen: {
+            level: Math.max(1, Number(dbState.executiveGear?.pen?.level || dbState.state?.executiveGear?.pen?.level || 1)),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.pen?.level || dbState.state?.executiveGear?.pen?.level || 1)) / 2))
+          },
+          terminal: {
+            level: Math.max(1, Number(dbState.executiveGear?.terminal?.level || dbState.state?.executiveGear?.terminal?.level || 1)),
+            stars: Math.min(5, Math.ceil(Math.max(1, Number(dbState.executiveGear?.terminal?.level || dbState.state?.executiveGear?.terminal?.level || 1)) / 2))
+          }
+        },
         _loadedFromCloud: true
       });
 
@@ -8235,6 +8261,154 @@ const GameEngine = (() => {
     return AppDB.savePlayerState(activeUsername, state, immediate);
   }
 
+  // ─────────────────────────────────────────────
+  // EXECUTIVE GEAR & CHARACTER AVATARS SYSTEM
+  // ─────────────────────────────────────────────
+  const EXECUTIVE_GEAR = {
+    ledger: {
+      id: 'ledger',
+      name: 'دفتر حسابات التدقيق',
+      type: 'accounting',
+      icon: 'assets/gear_ledger.jpg',
+      description: 'تابلت محاسبي متقدم يقلل من معدل استهلاك بضائع المشاريع ويزيد كفاءة التشغيل وخفض الهدر بنسبة مئوية.',
+      baseUpgradeCostGold: 75,
+      maxLevel: 10,
+      getBonus: (level) => {
+        const eff = Math.min(40, (Number(level) || 1) * 4);
+        return { value: eff, text: `+${eff}% كفاءة استهلاك البضائع وخفض الهدر` };
+      }
+    },
+    laptop: {
+      id: 'laptop',
+      name: 'لابتوب الصفقات والتداول',
+      type: 'trading',
+      icon: 'assets/gear_laptop.jpg',
+      description: 'منصة تداول مالية حية تمنح أرباحاً إضافية في صفقات الأسهم واستثمارات البورصة العالمية.',
+      baseUpgradeCostGold: 100,
+      maxLevel: 10,
+      getBonus: (level) => {
+        const bonus = Math.min(50, (Number(level) || 1) * 5);
+        return { value: bonus, text: `+${bonus}% أرباح إضافية في صفقات البورصة` };
+      }
+    },
+    pen: {
+      id: 'pen',
+      name: 'قلم التوقيع التنفيذي',
+      type: 'contracts',
+      icon: 'assets/gear_pen.jpg',
+      description: 'قلم توقيع فاخر مرصع بالذهب يخفض ضرائب الدخل ويزيد خصومات عقود التوريد.',
+      baseUpgradeCostGold: 60,
+      maxLevel: 10,
+      getBonus: (level) => {
+        const relief = Math.min(30, (Number(level) || 1) * 3);
+        return { value: relief, text: `+${relief}% تخفيض ضريبي وخصم عقود التوريد` };
+      }
+    },
+    terminal: {
+      id: 'terminal',
+      name: 'محطة الماليات والتحويلات',
+      type: 'finance',
+      icon: 'assets/gear_terminal.jpg',
+      description: 'محطة سيادية متنقلة تزيد من عوائد الفائدة البنكية وتسرع عمليات التدفق النقدي.',
+      baseUpgradeCostGold: 120,
+      maxLevel: 10,
+      getBonus: (level) => {
+        const boost = Math.min(50, (Number(level) || 1) * 5);
+        return { value: boost, text: `+${boost}% زيادة عوائد الفائدة البنكية` };
+      }
+    }
+  };
+
+  const CHARACTER_AVATARS = [
+    { id: 'avatar_male_arab', name: 'رجل أعمال عربي', gender: 'male', origin: 'arab', image: 'assets/avatar_male_arab.jpg', badge: 'رائد أعمال' },
+    { id: 'avatar_male_egyptian', name: 'رجل أعمال مصري', gender: 'male', origin: 'egyptian', image: 'assets/avatar_male_egyptian.jpg', badge: 'مستثمر طموح' },
+    { id: 'avatar_male_european', name: 'رجل أعمال أوروبي', gender: 'male', origin: 'european', image: 'assets/avatar_male_european.jpg', badge: 'شريك تنفيذي' },
+    { id: 'avatar_female_arab', name: 'سيدة أعمال عربية', gender: 'female', origin: 'arab', image: 'assets/avatar_female_arab.jpg', badge: 'رائدة استثمار' },
+    { id: 'avatar_female_egyptian', name: 'سيدة أعمال مصرية', gender: 'female', origin: 'egyptian', image: 'assets/avatar_female_egyptian.jpg', badge: 'مديرة تنفيذية' },
+    { id: 'avatar_female_european', name: 'سيدة أعمال أوروبية', gender: 'female', origin: 'european', image: 'assets/avatar_female_european.jpg', badge: 'سيدة صفقات' }
+  ];
+
+  function getExecutiveGearConfig() {
+    return EXECUTIVE_GEAR;
+  }
+
+  function getCharacterAvatars() {
+    return CHARACTER_AVATARS;
+  }
+
+  function getExecutiveGearBonuses(customState = null) {
+    const targetState = customState || state;
+    const gear = targetState.executiveGear || {};
+    return {
+      ledger: EXECUTIVE_GEAR.ledger.getBonus(gear.ledger?.level || 1),
+      laptop: EXECUTIVE_GEAR.laptop.getBonus(gear.laptop?.level || 1),
+      pen: EXECUTIVE_GEAR.pen.getBonus(gear.pen?.level || 1),
+      terminal: EXECUTIVE_GEAR.terminal.getBonus(gear.terminal?.level || 1)
+    };
+  }
+
+  function upgradeExecutiveGear(gearId) {
+    if (!activeUsername) throw new Error('لا توجد جلسة لاعب نشطة.');
+    const def = EXECUTIVE_GEAR[gearId];
+    if (!def) throw new Error('أداة غير صالحة.');
+
+    if (!state.executiveGear) {
+      state.executiveGear = {
+        ledger: { level: 1, stars: 1 },
+        laptop: { level: 1, stars: 1 },
+        pen: { level: 1, stars: 1 },
+        terminal: { level: 1, stars: 1 }
+      };
+    }
+
+    const currentGear = state.executiveGear[gearId] || { level: 1, stars: 1 };
+    const curLvl = Number(currentGear.level) || 1;
+    if (curLvl >= def.maxLevel) {
+      throw new Error(`الأداة وصلت إلى الحد الأقصى من الترقية (المستوى ${def.maxLevel}).`);
+    }
+
+    const costGold = Math.round(def.baseUpgradeCostGold * curLvl);
+    const playerGold = Math.max(0, Number(state.gold || 0));
+    if (playerGold < costGold) {
+      throw new Error(`رصيدك من الذهب غير كافٍ. تحتاج إلى ${costGold} سبيكة ذهب (رصيدك الحالي: ${playerGold}).`);
+    }
+
+    state.gold = playerGold - costGold;
+    const nextLvl = curLvl + 1;
+    const nextStars = Math.min(5, Math.ceil(nextLvl / 2));
+
+    state.executiveGear[gearId] = {
+      level: nextLvl,
+      stars: nextStars
+    };
+
+    if (typeof AppDB !== 'undefined' && AppDB.savePlayerState) {
+      AppDB.savePlayerState(activeUsername, state, true);
+    }
+
+    return {
+      success: true,
+      gearId,
+      newLevel: nextLvl,
+      newStars: nextStars,
+      spentGold: costGold,
+      remainingGold: state.gold,
+      bonus: def.getBonus(nextLvl)
+    };
+  }
+
+  function setCharacterAvatar(avatarId) {
+    if (!activeUsername) throw new Error('لا توجد جلسة لاعب نشطة.');
+    const found = CHARACTER_AVATARS.find(a => a.id === avatarId);
+    if (!found) throw new Error('شخصية غير صالحة.');
+
+    state.characterAvatar = avatarId;
+    if (typeof AppDB !== 'undefined' && AppDB.savePlayerState) {
+      AppDB.savePlayerState(activeUsername, state, true);
+    }
+    return { success: true, characterAvatar: avatarId, character: found };
+  }
+
   return {
     get state() { return state; },
     set state(val) { 
@@ -8424,6 +8598,13 @@ const GameEngine = (() => {
     fulfillFarmContract,
     refreshFarmContracts,
     getFarmDailyLiquidationInfo,
+
+    // Executive Gear & Character Avatar Exports
+    getExecutiveGearConfig,
+    getCharacterAvatars,
+    getExecutiveGearBonuses,
+    upgradeExecutiveGear,
+    setCharacterAvatar,
 
     // State Reader and Accessors
     // getState returns the live state reference (used internally by UI)

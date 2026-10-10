@@ -16847,365 +16847,238 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       const hasFbVerified = Boolean(pState.facebookVerified === true || (pState.state && pState.state.facebookVerified) || (pState.badges && pState.badges.includes('facebook')));
       const isVipVerified = Boolean(pState.isVerified || pState.vipVerified || (pState.state && (pState.state.isVerified || pState.state.vipVerified)) || (pState.badges && pState.badges.includes('verified')) || activePkg === 'pkg_vip_verified' || activePkg === 'pkg_vip_royal_ultimate' || (customBadge && customBadge.includes('')));
 
+      // 1. Top Username & Title Badge
       const uCardEl = document.getElementById('profile-card-username');
       if (uCardEl) {
         const fbIconHtml = hasFbVerified ? ' <span class="fb-vip-badge" title="عضو موثق في مجتمع فيسبوك">f</span>' : '';
         const verifiedIconHtml = isVipVerified ? ` ${getVerifiedBadgeIconHtml('text-base')}` : '';
         const customBadgeHtml = (customBadge && !customBadge.includes('')) ? ` <span class="inline-flex items-center text-sm ml-1 select-none" title="${escapeHtml(badgeTitle || 'وسام خاص')}">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span>` : '';
         const nameCardHtml = seasonBadge ? getSeasonBadgeHtml(seasonBadge, 'text-xs py-1 px-3', pState.username || '---') : escapeHtml(pState.username || '---');
-        // SECURITY: escapeHtml prevents Stored XSS via crafted usernames in profile card
         uCardEl.innerHTML = nameCardHtml + customBadgeHtml + verifiedIconHtml + fbIconHtml;
       }
-      document.getElementById('profile-card-title').textContent = pState.title || 'عامل مبتدئ';
-      const pwEl = document.getElementById('profile-card-networth');
-      if (pwEl) {
-        const nw = pState.netWorth || 0;
-        if (nw >= 1000000) {
-          pwEl.innerHTML = `<span class="break-all">${nw.toLocaleString()} EGP</span> <span class="text-xs text-yellow-400 font-bold ml-1 bg-yellow-500/10 px-2 py-0.5 rounded-lg border border-yellow-500/20 inline-block numbers-font">(${formatCompactNumber(nw)})</span>`;
-        } else {
-          pwEl.textContent = `${nw.toLocaleString()} EGP`;
-        }
-      }
-      document.getElementById('profile-card-reputation').textContent = `${(pState.underworldRep || 0).toLocaleString()} `;
-      document.getElementById('profile-card-createdat').textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString() : 'غير معروف';
 
+      const titleBadge = document.getElementById('profile-card-title-badge');
+      if (titleBadge) {
+        titleBadge.textContent = pState.title || 'عامل مبتدئ';
+      }
+
+      // 2. Net Worth Formatting
+      const pwEl = document.getElementById('profile-card-networth');
+      const pwShortEl = document.getElementById('profile-card-networth-short');
+      const nw = pState.netWorth || 0;
+      if (pwEl) {
+        pwEl.textContent = `${nw.toLocaleString()} جنيه`;
+      }
+      if (pwShortEl) {
+        pwShortEl.textContent = `(${formatCompactNumber(nw)})`;
+      }
+
+      // 3. Job and Join Date
       const jobConfig = GameEngine.JOBS && GameEngine.JOBS[pState.jobId];
       const jobName = jobConfig ? jobConfig.name : (pState.jobId || 'عامل باليومية');
-      document.getElementById('profile-card-job').textContent = jobName;
+      const jobEl = document.getElementById('profile-card-job');
+      if (jobEl) jobEl.textContent = `${jobName} (${(pState.underworldRep || 0).toLocaleString()})`;
 
-      // Check Live Leaderboard Rank for Top Badge
+      const createEl = document.getElementById('profile-card-createdat');
+      if (createEl) {
+        createEl.textContent = pState.createdAt ? new Date(pState.createdAt).toLocaleDateString('en-GB') : '2026/01/01';
+      }
+
+      const isMe = isSelfView || (pState.username === GameEngine.state.username);
+
+      // 4. Hero Character Avatar
+      const activeCharId = pState.characterAvatar || (pState.state && pState.state.characterAvatar) || (isMe && GameEngine.state && GameEngine.state.characterAvatar) || 'avatar_male_arab';
+      const charList = (typeof GameEngine !== 'undefined' && GameEngine.getCharacterAvatars) ? GameEngine.getCharacterAvatars() : [];
+      const charConfig = charList.find(c => c.id === activeCharId) || { image: 'assets/avatar_male_arab.jpg', name: 'رجل أعمال' };
+
+      const heroImg = document.getElementById('profile-hero-character-img');
+      if (heroImg) {
+        heroImg.src = charConfig.image || 'assets/avatar_male_arab.jpg';
+        heroImg.alt = charConfig.name || 'شخصية اللاعب';
+      }
+
+      const btnSwitchChar = document.getElementById('btn-switch-hero-character');
+      if (btnSwitchChar) {
+        if (isMe) {
+          btnSwitchChar.classList.remove('hidden');
+          btnSwitchChar.onclick = () => openCharacterSelectorModal();
+        } else {
+          btnSwitchChar.classList.add('hidden');
+        }
+      }
+
+      // 5. 4 Executive Gear Slots
+      const gearData = pState.executiveGear || (pState.state && pState.state.executiveGear) || (isMe && GameEngine.state && GameEngine.state.executiveGear) || {
+        ledger: { level: 1, stars: 1 },
+        laptop: { level: 1, stars: 1 },
+        pen: { level: 1, stars: 1 },
+        terminal: { level: 1, stars: 1 }
+      };
+
+      const gearConfig = (typeof GameEngine !== 'undefined' && GameEngine.getExecutiveGearConfig) ? GameEngine.getExecutiveGearConfig() : {};
+
+      ['ledger', 'laptop', 'pen', 'terminal'].forEach(gKey => {
+        const item = gearData[gKey] || { level: 1, stars: 1 };
+        const lvlEl = document.getElementById(`gear-lvl-${gKey}`);
+        const starsEl = document.getElementById(`gear-stars-${gKey}`);
+        const imgEl = document.getElementById(`gear-img-${gKey}`);
+
+        if (lvlEl) lvlEl.textContent = `L.${item.level || 1}`;
+        if (imgEl && gearConfig[gKey]) imgEl.src = gearConfig[gKey].icon;
+
+        if (starsEl) {
+          const count = Math.max(1, Math.min(5, Number(item.stars) || 1));
+          starsEl.innerHTML = Array(count).fill('<i class="fa-solid fa-star"></i>').join('');
+        }
+
+        const slotEl = document.getElementById(`slot-gear-${gKey}`);
+        if (slotEl) {
+          slotEl.onclick = () => openExecutiveGearModal(gKey, isMe ? null : pState);
+        }
+      });
+
+      // 6. Leaderboard & Honors
       let liveRank = null;
       if (window.lastLeaderboardCache && Array.isArray(window.lastLeaderboardCache)) {
         const idx = window.lastLeaderboardCache.findIndex(p => p && p.username && p.username.toLowerCase() === cleanTarget.toLowerCase());
         if (idx !== -1) liveRank = idx + 1;
       }
 
-      // Populate Season Honors & Top Badges
       const badgesListEl = document.getElementById('profile-card-badges-list');
       if (badgesListEl) {
         badgesListEl.innerHTML = '';
-
         let badgeCount = 0;
         let sMatch = seasonBadge ? String(seasonBadge).trim().match(/^S?(\d+)?[-_ ]?T(?:OP)?[-_ ]?(\d+)$/i) : null;
         let sNum = (sMatch && sMatch[1]) ? sMatch[1] : '1';
         let rNum = (sMatch && sMatch[2]) ? parseInt(sMatch[2], 10) : (seasonBadge ? 1 : 0);
 
-        // 1. Season Top Rank Badge (S1TX / Top Honors)
         if (seasonBadge) {
           badgeCount++;
           const sbBadge = document.createElement('div');
-
-          let cardBg = 'bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-950/60';
-          let cardIcon = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i>';
-          let cardText = `وسام نخبة توب 10 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
-
-          if (rNum === 1) {
-            cardBg = 'bg-gradient-to-r from-amber-950/90 via-yellow-950/80 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 shadow-md shadow-amber-950/60';
-            cardIcon = '<i class="fa-solid fa-crown text-yellow-300 text-sm animate-pulse"></i>';
-            cardText = `وسام بطل الموسم ${sNum} (المركز الأول TOP 1 - بطل اللعبة)`;
-          } else if (rNum === 2) {
-            cardBg = 'bg-gradient-to-r from-slate-900/90 via-slate-800 to-slate-900/90 border-2 border-slate-300 text-slate-200 shadow-md shadow-slate-900/60';
-            cardIcon = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i>';
-            cardText = `وسام وصيف الموسم ${sNum} (المركز الثاني TOP 2)`;
-          } else if (rNum === 3) {
-            cardBg = 'bg-gradient-to-r from-orange-950/90 via-amber-950/80 to-orange-950/90 border-2 border-orange-500 text-amber-300 shadow-md shadow-orange-950/60';
-            cardIcon = '<i class="fa-solid fa-award text-amber-300 text-sm"></i>';
-            cardText = `وسام برونزية الموسم ${sNum} (المركز الثالث TOP 3)`;
-          } else if (rNum >= 4 && rNum <= 10) {
-            cardBg = 'bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 shadow-md shadow-cyan-950/60';
-            cardIcon = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i>';
-            cardText = `وسام نخبة توب 10 (الموسم ${sNum} المركز #${rNum} - ${seasonBadge})`;
-          } else if (rNum >= 11 && rNum <= 25) {
-            cardBg = 'bg-gradient-to-r from-purple-950/90 via-indigo-950/80 to-purple-950/90 border-2 border-purple-400 text-purple-300 shadow-md shadow-purple-950/60';
-            cardIcon = '<i class="fa-solid fa-certificate text-purple-300 text-sm"></i>';
-            cardText = `وسام نخبة توب 25 (الموسم ${sNum} المركز #${rNum} - مستثمر مخضرم)`;
-          } else {
-            cardBg = 'bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 border-2 border-blue-400 text-blue-300 shadow-md';
-            cardIcon = '<i class="fa-solid fa-star text-blue-300 text-sm"></i>';
-            cardText = `وسام نخبة التوب (الموسم ${sNum} المركز #${rNum})`;
-          }
-
-          sbBadge.className = `flex items-center gap-2 px-3 py-1.5 rounded-xl border-2 ${cardBg} text-xs font-black shadow-md`;
-          sbBadge.innerHTML = `${cardIcon}<span>${cardText}</span>`;
+          sbBadge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-cyan-950/80 border border-cyan-400 text-cyan-300 text-[11px] font-bold shadow';
+          sbBadge.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-xs"></i><span>وسام توب الموسم ${sNum} (#${rNum})</span>`;
           badgesListEl.appendChild(sbBadge);
         }
 
-        // 2. Live Top Ranking Honor (إذا كان متصدر حالي في قائمة الأثرياء)
-        if (liveRank && liveRank <= 10 && !seasonBadge) {
-          badgeCount++;
-          const liveBadge = document.createElement('div');
-          if (liveRank === 1) {
-            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-950/80 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-yellow-500/20';
-            liveBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm animate-pulse"></i><span>متصدر قائمة الأثرياء الحالي (المركز الأول عالمياً #1)</span>';
-          } else if (liveRank === 2) {
-            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-2 border-slate-300 text-slate-100 text-xs font-black shadow-md shadow-slate-300/20';
-            liveBadge.innerHTML = '<i class="fa-solid fa-medal text-slate-200 text-sm"></i><span>وصيف قائمة الأثرياء الحالي (المركز الثاني عالمياً #2)</span>';
-          } else if (liveRank === 3) {
-            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-950/90 via-amber-950/80 to-orange-950/90 border-2 border-orange-500 text-amber-200 text-xs font-black shadow-md shadow-orange-500/20';
-            liveBadge.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>برونزية قائمة الأثرياء الحالي (المركز الثالث عالمياً #3)</span>';
-          } else {
-            liveBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-cyan-950/90 via-blue-950/80 to-cyan-950/90 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-500/20';
-            liveBadge.innerHTML = `<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>من نخبة التوب 10 الحاليين (المركز #${liveRank} في قائمة الأثرياء)</span>`;
-          }
-          badgesListEl.appendChild(liveBadge);
-        }
-
-        // 3. Custom VIP / Top Badges ( الملك الأسطوري / SVIP / لهيب / حوت الشات)
-        if (customBadge) {
-          const isRoyalKing = customBadge.includes('') || (badgeTitle && (badgeTitle.includes('الملك') || badgeTitle.includes('إمبراطور'))) || activePkg === 'pkg_vip_royal_ultimate';
-          const isSvip = String(customBadge).toUpperCase().includes('SVIP');
-          const isFlame = customBadge.includes('') || (badgeTitle && badgeTitle.includes('لهيب')) || activePkg === 'pkg_vip_crimson_flame';
-          const isChatWhale = customBadge.includes('') || (badgeTitle && badgeTitle.includes('حوت')) || activePkg === 'pkg_vip_chat_glow';
-
-          if (isRoyalKing) {
-            badgeCount++;
-            const cbBadge = document.createElement('div');
-            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-900/60 to-purple-950/90 border-2 border-amber-400 text-yellow-300 text-xs font-black shadow-lg shadow-amber-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام الملك الأسطوري وإمبراطور اللعبة (عضوية ملكية Ultimate)</span>';
-            badgesListEl.appendChild(cbBadge);
-          } else if (isSvip) {
-            badgeCount++;
-            const cbBadge = document.createElement('div');
-            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-sky-950/90 via-blue-900/60 to-indigo-950/90 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-lg shadow-cyan-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-bolt-lightning text-cyan-300 text-sm animate-pulse"></i><span>وسام النخبة الفائقة SVIP (نخبة كبار المستثمرين)</span>';
-            badgesListEl.appendChild(cbBadge);
-          } else if (isFlame) {
-            badgeCount++;
-            const cbBadge = document.createElement('div');
-            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-rose-950/90 via-red-900/60 to-orange-950/90 border-2 border-rose-400 text-rose-300 text-xs font-black shadow-lg shadow-rose-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-fire text-rose-400 text-sm animate-pulse"></i><span>وسام اللهيب الحارق والتأثير الناري (نخبة VIP)</span>';
-            badgesListEl.appendChild(cbBadge);
-          } else if (isChatWhale) {
-            badgeCount++;
-            const cbBadge = document.createElement('div');
-            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-950/90 via-yellow-900/60 to-amber-950/90 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-lg shadow-yellow-500/30';
-            cbBadge.innerHTML = '<i class="fa-solid fa-star text-yellow-300 text-sm"></i><span>وسام حوت الشات والوهج الذهبي (حوت السوق)</span>';
-            badgesListEl.appendChild(cbBadge);
-          } else if (customBadge !== '') {
-            badgeCount++;
-            const cbBadge = document.createElement('div');
-            cbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/90 border-2 border-yellow-500/60 text-yellow-300 text-xs font-black shadow-md';
-            cbBadge.innerHTML = `<span class="text-sm">${formatCustomBadgeHtml(customBadge, 'text-sm')}</span><span>وسام التميز الخاص: ${escapeHtml(badgeTitle || customBadge)}</span>`;
-            badgesListEl.appendChild(cbBadge);
-          }
-        }
-
-        // 4. VIP Verification Badge
         if (isVipVerified) {
           badgeCount++;
           const vBadge = document.createElement('div');
-          vBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-sky-950/80 border-2 border-sky-400 text-sky-300 text-xs font-black shadow-md shadow-sky-950/60';
-          vBadge.innerHTML = `${getVerifiedBadgeIconHtml('text-base')}<span>حساب موثق رسمياً VIP في رأس المال</span>`;
+          vBadge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-sky-950/80 border border-sky-400 text-sky-300 text-[11px] font-bold shadow';
+          vBadge.innerHTML = `<i class="fa-solid fa-circle-check text-sky-400 text-xs"></i><span>عضو موثق VIP</span>`;
           badgesListEl.appendChild(vBadge);
         }
 
-        // 5. Facebook Follower Badge
         if (hasFbVerified) {
           badgeCount++;
           const fbBadge = document.createElement('div');
-          fbBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-blue-950/80 border-2 border-blue-500 text-blue-300 text-xs font-black shadow-md shadow-blue-950/60';
-          fbBadge.innerHTML = '<span class="fb-vip-badge">f</span><span>متابع رسمي لصفحة اللعبة على فيسبوك</span>';
+          fbBadge.className = 'flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-blue-950/80 border border-blue-500 text-blue-300 text-[11px] font-bold shadow';
+          fbBadge.innerHTML = `<span class="fb-vip-badge text-xs">f</span><span>متابع فيسبوك رسمي</span>`;
           badgesListEl.appendChild(fbBadge);
         }
 
-        // 6. Legacy S1 Honors
-        const titleStr = pState.title || '';
-        const hasDiamond = pState.s1Badge === 'diamond' || titleStr.includes('مستثمر ألماسي') || titleStr.includes('ألماسي');
-        const hasGold = pState.s1Badge === 'gold' || titleStr.includes('مستثمر ذهبي') || titleStr.includes('ذهبي');
-        const hasBronze = pState.s1Badge === 'bronze' || titleStr.includes('مستثمر برونزي') || titleStr.includes('برونزي');
-        const hasVeteran = pState.s1Veteran || pState.s1Badge === 'veteran' || titleStr.includes('مستثمر مخضرم') || titleStr.includes('مخضرم');
-
-        if (hasDiamond && !seasonBadge) {
-          badgeCount++;
-          const dBadge = document.createElement('div');
-          dBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-cyan-950/80 border-2 border-cyan-400 text-cyan-300 text-xs font-black shadow-md shadow-cyan-950/60';
-          dBadge.innerHTML = '<i class="fa-solid fa-gem text-cyan-300 text-sm"></i><span>وسام مستثمر ألماسي (بطل S1 #1)</span>';
-          badgesListEl.appendChild(dBadge);
-        }
-
-        if (hasGold && !seasonBadge) {
-          badgeCount++;
-          const gBadge = document.createElement('div');
-          gBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-amber-950/80 border-2 border-yellow-400 text-yellow-300 text-xs font-black shadow-md shadow-amber-950/60';
-          gBadge.innerHTML = '<i class="fa-solid fa-crown text-yellow-300 text-sm"></i><span>وسام مستثمر ذهبي (وصيف S1 #2)</span>';
-          badgesListEl.appendChild(gBadge);
-        }
-
-        if (hasBronze && !seasonBadge) {
-          badgeCount++;
-          const bBadge = document.createElement('div');
-          bBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-950/80 border-2 border-orange-500 text-amber-300 text-xs font-black shadow-md shadow-orange-950/60';
-          bBadge.innerHTML = '<i class="fa-solid fa-award text-amber-300 text-sm"></i><span>وسام مستثمر برونزي (برونزية S1 #3)</span>';
-          badgesListEl.appendChild(bBadge);
-        }
-
-        if (hasVeteran && (!seasonBadge || rNum > 25)) {
-          badgeCount++;
-          const vBadge = document.createElement('div');
-          vBadge.className = 'flex items-center gap-2 px-3 py-1.5 rounded-xl bg-purple-950/80 border-2 border-purple-400 text-purple-300 text-xs font-black shadow-md shadow-purple-950/60';
-          vBadge.innerHTML = '<i class="fa-solid fa-certificate text-purple-300 text-sm"></i><span>وسام مستثمر مخضرم S1 (نخبة التوب 25)</span>';
-          badgesListEl.appendChild(vBadge);
-        }
-
         if (badgeCount === 0) {
-          badgesListEl.innerHTML = '<div class="text-[11px] text-slate-500 py-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-[10px]"></i><span>لم يحصل هذا الحساب على أوسمة مواسم حتى الآن. تنافس للوصول إلى التوب!</span></div>';
-        }
-
-        // Dynamic Avatar styling according to honors
-        const rawAvatar = pState.avatarUrl || (pState.state && pState.state.avatarUrl) || (isSelfView && GameEngine.state && GameEngine.state.avatarUrl) || '';
-        const avatarUrl = (typeof ServerBridge !== 'undefined' && ServerBridge.formatAvatarUrl) ? ServerBridge.formatAvatarUrl(rawAvatar) : rawAvatar;
-
-        const avatarBox = document.getElementById('profile-card-avatar-box');
-        const avatarIcon = document.getElementById('profile-card-avatar-icon');
-        const btnEditAvatar = document.getElementById('btn-profile-card-edit-avatar');
-
-        if (btnEditAvatar) {
-          if (isSelfView) {
-            btnEditAvatar.classList.remove('hidden');
-            btnEditAvatar.onclick = (e) => { e.stopPropagation(); window.UI.openAvatarModal(); };
-          } else {
-            btnEditAvatar.classList.add('hidden');
-          }
-        }
-
-        if (avatarBox) {
-          if (avatarUrl) {
-            avatarBox.className = 'w-14 h-14 rounded-2xl border-2 border-yellow-400 overflow-hidden shrink-0 shadow-lg shadow-yellow-500/20';
-            avatarBox.innerHTML = `<img src="${avatarUrl}" class="w-full h-full object-cover" alt="${escapeHtml(cleanTarget)}" onerror="this.remove(); document.getElementById('profile-card-avatar-icon')?.classList.remove('hidden');" /><i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl hidden text-yellow-400"></i>`;
-          } else if (avatarIcon) {
-            avatarBox.innerHTML = '<i id="profile-card-avatar-icon" class="fa-solid fa-user text-2xl"></i>';
-            const newAvatarIcon = document.getElementById('profile-card-avatar-icon');
-            if (rNum === 1 || hasGold || (customBadge && customBadge.includes('')) || liveRank === 1) {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-yellow-300 via-amber-400 to-yellow-600 border-2 border-yellow-200 flex items-center justify-center text-slate-950 shadow-xl shadow-yellow-500/50 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-crown text-2xl animate-pulse';
-            } else if (rNum === 2 || liveRank === 2) {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-slate-200 via-slate-100 to-slate-400 border-2 border-slate-100 flex items-center justify-center text-slate-950 shadow-xl shadow-slate-300/50 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-medal text-2xl';
-            } else if (rNum === 3 || hasBronze || liveRank === 3) {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 via-orange-600 to-amber-800 border-2 border-amber-400 flex items-center justify-center text-amber-100 shadow-xl shadow-orange-900/50 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-award text-2xl';
-            } else if ((rNum >= 4 && rNum <= 10) || hasDiamond || (liveRank && liveRank <= 10)) {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-600 border-2 border-cyan-200 flex items-center justify-center text-slate-950 shadow-xl shadow-cyan-500/50 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-gem text-2xl';
-            } else if ((rNum >= 11 && rNum <= 25) || hasVeteran || (liveRank && liveRank <= 25)) {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-800 border-2 border-purple-400 flex items-center justify-center text-purple-100 shadow-xl shadow-purple-900/50 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-certificate text-2xl';
-            } else if (customBadge && String(customBadge).toUpperCase().includes('SVIP')) {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-sky-400 via-blue-600 to-indigo-700 border-2 border-cyan-300 flex items-center justify-center text-white shadow-xl shadow-cyan-500/50 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-bolt-lightning text-2xl animate-pulse text-yellow-300';
-            } else if (customBadge && (customBadge.includes('') || (badgeTitle && badgeTitle.includes('لهيب')))) {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 via-orange-500 to-amber-600 border-2 border-rose-300 flex items-center justify-center text-white shadow-xl shadow-rose-500/50 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-fire text-2xl animate-pulse text-yellow-300';
-            } else {
-              avatarBox.className = 'w-14 h-14 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 shrink-0';
-              if (newAvatarIcon) newAvatarIcon.className = 'fa-solid fa-user text-2xl';
-            }
-          }
+          badgesListEl.innerHTML = '<div class="text-[11px] text-slate-400 py-1 flex items-center gap-1.5"><i class="fa-solid fa-circle-info text-[10px] text-cyan-400"></i><span>لم يحصل هذا الحساب على أوسمة شرف حتى الآن. تنافس للوصول إلى التوب!</span></div>';
         }
       }
 
+      // 7. Assets Summary
       const summaryContainer = document.getElementById('profile-card-assets-summary');
-      summaryContainer.innerHTML ='';
+      if (summaryContainer) {
+        summaryContainer.innerHTML = '';
+        let bizList = [];
+        if (pState.businesses) {
+          Object.keys(pState.businesses).forEach(k => {
+            const biz = pState.businesses[k];
+            if (biz && biz.level > 0) {
+              const config = GameEngine.BUSINESSES && GameEngine.BUSINESSES[k];
+              const bizName = config ? config.name : k;
+              bizList.push(`${bizName} (مستوى ${biz.level})`);
+            }
+          });
+        }
 
-      let bizList = [];
-      if (pState.businesses) {
-        Object.keys(pState.businesses).forEach(k => {
-          const biz = pState.businesses[k];
-          if (biz && biz.level > 0) {
-            const config = GameEngine.BUSINESSES && GameEngine.BUSINESSES[k];
-            const bizName = config ? config.name : k;
-            bizList.push(`${bizName} (مستوى ${biz.level})`);
-          }
-        });
+        let assetList = [];
+        if (pState.assets) {
+          Object.keys(pState.assets).forEach(k => {
+            const qty = pState.assets[k] || 0;
+            if (qty > 0) {
+              const config = GameEngine.ASSETS && GameEngine.ASSETS[k];
+              const assetName = config ? config.name : k;
+              assetList.push(`${assetName} (عدد: ${qty})`);
+            }
+          });
+        }
+
+        const p1 = document.createElement('div');
+        p1.className = 'mb-1';
+        p1.innerHTML = `<span class="text-cyan-400 font-bold">• المشاريع التجارية:</span> <span class="text-white font-medium">${bizList.length > 0 ? bizList.join('، ') : 'لا توجد مشاريع نشطة'}</span>`;
+        summaryContainer.appendChild(p1);
+
+        const p2 = document.createElement('div');
+        p2.innerHTML = `<span class="text-yellow-400 font-bold">• العقارات والأصول:</span> <span class="text-white font-medium">${assetList.length > 0 ? assetList.join('، ') : 'لا توجد عقارات مملوكة'}</span>`;
+        summaryContainer.appendChild(p2);
       }
 
-      let assetList = [];
-      if (pState.assets) {
-        Object.keys(pState.assets).forEach(k => {
-          const qty = pState.assets[k] || 0;
-          if (qty > 0) {
-            const config = GameEngine.ASSETS && GameEngine.ASSETS[k];
-            const assetName = config ? config.name : k;
-            assetList.push(`${assetName} (عدد: ${qty})`);
-          }
-        });
-      }
-
-      const p1 = document.createElement('div');
-      p1.className ='mb-2';
-      p1.innerHTML =`<span class="text-slate-400"> المشاريع التجارية:</span><div class="pl-2 mt-1 text-white font-bold">${bizList.length > 0 ? bizList.map(b =>`• ${b}`).join('<br>') :'لا توجد مشاريع نشطة'}</div>`;
-      summaryContainer.appendChild(p1);
-
-      const p2 = document.createElement('div');
-      p2.innerHTML =`<span class="text-slate-400"> العقارات والأصول:</span><div class="pl-2 mt-1 text-white font-bold">${assetList.length > 0 ? assetList.map(a =>`• ${a}`).join('<br>') :'لا توجد عقارات مملوكة'}</div>`;
-      summaryContainer.appendChild(p2);
-
-      const isMe = isSelfView || (pState.username === GameEngine.state.username);
-
-      const btnTransferMoney = document.getElementById('btn-profile-transfer-money');
-      const btnPrivateChat = document.getElementById('btn-profile-private-chat');
-      const btnMutePlayer = document.getElementById('btn-profile-mute-player');
-      const btnProfileBlock = document.getElementById('btn-profile-block-player');
+      // 8. Self vs Other Player Actions
+      const selfActions = document.getElementById('profile-self-actions');
+      const otherActions = document.getElementById('profile-other-actions');
 
       if (isMe) {
-        if (btnTransferMoney) {
-          btnTransferMoney.classList.remove('hidden');
-          btnTransferMoney.className = 'w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95 cursor-pointer';
-          btnTransferMoney.innerHTML = '<i class="fa-solid fa-camera text-sm"></i> <span>تغيير / إدارة صورتك الشخصية </span>';
-          btnTransferMoney.onclick = () => window.UI.openAvatarModal();
-        }
-        if (btnPrivateChat) btnPrivateChat.classList.add('hidden');
-        if (btnMutePlayer) btnMutePlayer.classList.add('hidden');
-        if (btnProfileBlock) btnProfileBlock.classList.add('hidden');
+        if (selfActions) selfActions.classList.remove('hidden');
+        if (otherActions) otherActions.classList.add('hidden');
       } else {
+        if (selfActions) selfActions.classList.add('hidden');
+        if (otherActions) otherActions.classList.remove('hidden');
+
+        const btnTransferMoney = document.getElementById('btn-profile-transfer-money');
         if (btnTransferMoney) {
-          btnTransferMoney.classList.remove('hidden');
-          btnTransferMoney.className = 'w-full py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer';
-          btnTransferMoney.innerHTML = '<i class="fa-solid fa-money-bill-transfer text-sm"></i> <span>تحويل أموال لهذا اللاعب</span>';
-          btnTransferMoney.onclick = null;
-          btnTransferMoney.dataset.username = username;
-          btnTransferMoney.dataset.title = pState.title || 'مستثمر طموح';
+          btnTransferMoney.onclick = () => {
+            document.getElementById('player-profile-modal')?.classList.add('hidden');
+            if (typeof openWireTransferModal === 'function') {
+              openWireTransferModal(cleanTarget);
+            }
+          };
         }
+
+        const btnPrivateChat = document.getElementById('btn-profile-private-chat');
         if (btnPrivateChat) {
-          btnPrivateChat.classList.remove('hidden');
-          btnPrivateChat.dataset.username = username;
+          btnPrivateChat.onclick = () => {
+            document.getElementById('player-profile-modal')?.classList.add('hidden');
+            if (typeof openPrivateChatWithUser === 'function') {
+              openPrivateChatWithUser(cleanTarget);
+            }
+          };
         }
+
+        const btnMutePlayer = document.getElementById('btn-profile-mute-player');
         if (btnMutePlayer) {
-          btnMutePlayer.classList.remove('hidden');
-          btnMutePlayer.dataset.username = username;
-          const isMuted = (GameEngine.state.mutedUsers || []).includes(username);
-          const muteIcon = document.getElementById('profile-mute-btn-icon');
-          const muteText = document.getElementById('profile-mute-btn-text');
-          if (isMuted) {
-            btnMutePlayer.className = 'py-2.5 bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border border-emerald-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
-            if (muteIcon) muteIcon.className = 'fa-solid fa-volume-high text-xs';
-            if (muteText) muteText.textContent = 'إلغاء كتم اللاعب';
-          } else {
-            btnMutePlayer.className = 'py-2.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer';
-            if (muteIcon) muteIcon.className = 'fa-solid fa-volume-xmark text-xs';
-            if (muteText) muteText.textContent = 'كتم في الشات';
-          }
+          btnMutePlayer.onclick = () => {
+            if (typeof toggleMuteUser === 'function') {
+              toggleMuteUser(cleanTarget);
+            }
+          };
         }
+
+        const btnProfileBlock = document.getElementById('btn-profile-block-player');
         if (btnProfileBlock) {
-          btnProfileBlock.classList.remove('hidden');
-          btnProfileBlock.dataset.username = username;
-          if (GameEngine.state.blockedUsers && GameEngine.state.blockedUsers.includes(username)) {
-            btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span class="text-rose-500">إلغاء الحظر</span>';
-          } else {
-            btnProfileBlock.innerHTML = '<i class="fa-solid fa-ban"></i> <span>حظر اللاعب</span>';
-          }
+          btnProfileBlock.onclick = () => {
+            if (typeof toggleBlockUser === 'function') {
+              toggleBlockUser(cleanTarget);
+            }
+          };
         }
       }
 
+      // 9. Online Status Badge
       const isOnline = pState.lastSeen && (Date.now() - pState.lastSeen < 120000);
       const onlineBadge = document.getElementById('profile-card-online-badge');
       if (onlineBadge) {
         if (isOnline) {
-          onlineBadge.innerHTML ='<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block ml-1"></span> متصل الآن';
-          onlineBadge.className ='px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/20 text-emerald-400 text-[9px]';
+          onlineBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> <span>متصل الآن</span>';
+          onlineBadge.className = 'px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/30 text-emerald-400 text-[10px] font-bold flex items-center gap-1.5 shrink-0';
         } else {
-          onlineBadge.innerHTML ='<span class="w-1.5 h-1.5 rounded-full bg-slate-500 inline-block ml-1"></span> غير متصل';
-          onlineBadge.className ='px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[9px] border border-slate-800';
+          onlineBadge.innerHTML = '<span class="w-2 h-2 rounded-full bg-slate-500"></span> <span>غير متصل</span>';
+          onlineBadge.className = 'px-2.5 py-1 rounded-full bg-slate-900 text-slate-400 text-[10px] font-bold border border-slate-800 flex items-center gap-1.5 shrink-0';
         }
       }
 
@@ -17223,6 +17096,197 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       showToast('خطأ بروفايل', err.message,'error');
     }
   }
+
+  // ─────────────────────────────────────────────
+  // CYBER-TYCOON PROFILE: EXECUTIVE GEAR & AVATARS
+  // ─────────────────────────────────────────────
+  window.UI = window.UI || {};
+
+  function openCharacterSelectorModal() {
+    const grid = document.getElementById('character-avatars-grid');
+    if (!grid) return;
+    grid.innerHTML = '';
+
+    const avatars = (typeof GameEngine !== 'undefined' && GameEngine.getCharacterAvatars) ? GameEngine.getCharacterAvatars() : [];
+    const activeCharId = (GameEngine.state && GameEngine.state.characterAvatar) || 'avatar_male_arab';
+
+    avatars.forEach(av => {
+      const isSelected = av.id === activeCharId;
+      const card = document.createElement('div');
+      card.className = `p-3 rounded-2xl border transition-all cursor-pointer flex flex-col items-center text-center relative overflow-hidden group ${
+        isSelected 
+          ? 'bg-gradient-to-b from-cyan-950/80 to-slate-950 border-cyan-400 shadow-[0_0_20px_rgba(6,182,212,0.4)]' 
+          : 'bg-slate-900/70 border-slate-800 hover:border-cyan-500/50 hover:bg-slate-900'
+      }`;
+
+      card.innerHTML = `
+        <div class="relative w-20 h-24 sm:w-24 sm:h-28 rounded-xl overflow-hidden border ${isSelected ? 'border-cyan-400' : 'border-slate-700 group-hover:border-cyan-400/60'} mb-2 bg-slate-950 shadow">
+          <img src="${av.image}" class="w-full h-full object-cover object-top group-hover:scale-105 transition duration-300" alt="${escapeHtml(av.name)}">
+          ${isSelected ? '<span class="absolute top-1 right-1 px-1.5 py-0.5 bg-cyan-500 text-slate-950 font-black text-[9px] rounded-md shadow flex items-center gap-1"><i class="fa-solid fa-check"></i> المفعّلة</span>' : ''}
+        </div>
+        <h4 class="font-bold text-xs ${isSelected ? 'text-cyan-300' : 'text-slate-200 group-hover:text-white'} mb-0.5">${escapeHtml(av.name)}</h4>
+        <span class="px-2 py-0.5 rounded-full bg-slate-800/80 text-[9px] font-bold ${isSelected ? 'text-cyan-400 border border-cyan-500/30' : 'text-slate-400'}">${escapeHtml(av.badge)}</span>
+        <button class="w-full mt-2 py-1.5 rounded-xl text-[10px] font-black transition active:scale-95 ${
+          isSelected 
+            ? 'bg-cyan-500 text-slate-950 shadow' 
+            : 'bg-slate-800 group-hover:bg-cyan-500/20 text-slate-300 group-hover:text-cyan-300'
+        }">
+          ${isSelected ? 'الشخصية الحالية' : 'اختيار الشخصية'}
+        </button>
+      `;
+
+      card.onclick = () => selectCharacterAvatar(av.id);
+      grid.appendChild(card);
+    });
+
+    const modal = document.getElementById('character-selector-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  function selectCharacterAvatar(avatarId) {
+    try {
+      if (typeof GameEngine === 'undefined' || !GameEngine.setCharacterAvatar) {
+        throw new Error('محرك اللعبة غير متاح.');
+      }
+      const res = GameEngine.setCharacterAvatar(avatarId);
+      if (res && res.success) {
+        const heroImg = document.getElementById('profile-hero-character-img');
+        if (heroImg && res.character) {
+          heroImg.src = res.character.image;
+          heroImg.alt = res.character.name;
+        }
+        showToast('تم تحديث الشخصية', `تم اختيار [${res.character.name}] كشخصيتك الرسمية في اللعبة!`, 'success');
+        document.getElementById('character-selector-modal')?.classList.add('hidden');
+        if (typeof renderAll === 'function') renderAll();
+      }
+    } catch (err) {
+      showToast('خطأ في اختيار الشخصية', err.message, 'error');
+    }
+  }
+
+  function openExecutiveGearModal(gearId, customPlayerState = null) {
+    try {
+      const config = (typeof GameEngine !== 'undefined' && GameEngine.getExecutiveGearConfig) ? GameEngine.getExecutiveGearConfig()[gearId] : null;
+      if (!config) return;
+
+      const isOther = Boolean(customPlayerState && customPlayerState.username && customPlayerState.username !== GameEngine.state.username);
+      const targetState = isOther ? customPlayerState : (GameEngine.state || {});
+      const gearData = targetState.executiveGear || {};
+      const currentGear = gearData[gearId] || { level: 1, stars: 1 };
+      const curLvl = Number(currentGear.level) || 1;
+      const curStars = Math.max(1, Math.min(5, Number(currentGear.stars) || Math.ceil(curLvl / 2)));
+
+      const modalTitle = document.getElementById('gear-modal-title');
+      const modalIcon = document.getElementById('gear-modal-icon');
+      const modalName = document.getElementById('gear-modal-name');
+      const modalLvl = document.getElementById('gear-modal-level-badge');
+      const modalStars = document.getElementById('gear-modal-stars');
+      const modalDesc = document.getElementById('gear-modal-description');
+      const modalBonus = document.getElementById('gear-modal-current-bonus');
+      const upgradeSection = document.getElementById('gear-modal-upgrade-section');
+
+      if (modalTitle) modalTitle.textContent = config.name;
+      if (modalIcon) modalIcon.src = config.icon;
+      if (modalName) modalName.textContent = config.name;
+      if (modalLvl) modalLvl.textContent = `المستوى ${curLvl}`;
+      if (modalStars) {
+        modalStars.innerHTML = Array(curStars).fill('<i class="fa-solid fa-star"></i>').join('');
+      }
+      if (modalDesc) modalDesc.textContent = config.description;
+
+      const bonusInfo = config.getBonus(curLvl);
+      if (modalBonus) {
+        modalBonus.innerHTML = `<i class="fa-solid fa-circle-check"></i> <span>${escapeHtml(bonusInfo.text)}</span>`;
+      }
+
+      if (upgradeSection) {
+        if (isOther) {
+          upgradeSection.innerHTML = `
+            <div class="text-center py-2 text-slate-400 text-xs">
+              <i class="fa-solid fa-lock text-slate-500 mb-1 block text-base"></i>
+              <span>هذه الأداة خاصة بملف اللاعب (${escapeHtml(customPlayerState.username)})</span>
+            </div>
+          `;
+          upgradeSection.classList.remove('hidden');
+        } else if (curLvl >= config.maxLevel) {
+          upgradeSection.innerHTML = `
+            <div class="text-center py-2 text-amber-400 font-bold text-xs bg-amber-950/40 rounded-xl border border-amber-500/30">
+              <i class="fa-solid fa-crown text-yellow-400 mr-1"></i>
+              <span>تم الوصول إلى الحد الأقصى من الترقية (المستوى ${config.maxLevel})</span>
+            </div>
+          `;
+          upgradeSection.classList.remove('hidden');
+        } else {
+          const costGold = Math.round(config.baseUpgradeCostGold * curLvl);
+          upgradeSection.innerHTML = `
+            <div class="flex items-center justify-between text-[11px] mb-2">
+              <span class="text-slate-300">تكلفة الترقية للمستوى ${curLvl + 1}:</span>
+              <span class="text-yellow-400 font-black flex items-center gap-1 numbers-font">
+                <i class="fa-solid fa-coins"></i> ${costGold.toLocaleString()} سبيكة ذهب
+              </span>
+            </div>
+            <button id="btn-upgrade-executive-gear" type="button"
+              class="w-full py-2.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-yellow-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+              <i class="fa-solid fa-arrow-up"></i>
+              <span>ترقية الأداة الآن بالذهب (${costGold} ذهب)</span>
+            </button>
+          `;
+          upgradeSection.classList.remove('hidden');
+
+          const newBtn = document.getElementById('btn-upgrade-executive-gear');
+          if (newBtn) {
+            newBtn.onclick = () => upgradeActiveExecutiveGear(gearId);
+          }
+        }
+      }
+
+      document.getElementById('executive-gear-modal')?.classList.remove('hidden');
+    } catch (err) {
+      showToast('خطأ الأداة', err.message, 'error');
+    }
+  }
+
+  function upgradeActiveExecutiveGear(gearId) {
+    try {
+      if (typeof GameEngine === 'undefined' || !GameEngine.upgradeExecutiveGear) {
+        throw new Error('محرك اللعبة غير متاح.');
+      }
+      const res = GameEngine.upgradeExecutiveGear(gearId);
+      if (res && res.success) {
+        const lvlEl = document.getElementById(`gear-lvl-${gearId}`);
+        const starsEl = document.getElementById(`gear-stars-${gearId}`);
+        if (lvlEl) lvlEl.textContent = `L.${res.newLevel}`;
+        if (starsEl) {
+          starsEl.innerHTML = Array(res.newStars).fill('<i class="fa-solid fa-star"></i>').join('');
+        }
+
+        showToast('تمت الترقية بنجاح!', `تمت ترقية الأداة إلى المستوى ${res.newLevel} بنجاح! الرصيد المتبقي: ${res.remainingGold.toLocaleString()} سبيكة ذهب.`, 'success');
+        openExecutiveGearModal(gearId, null);
+        if (typeof renderAll === 'function') renderAll();
+      }
+    } catch (err) {
+      showToast('تعذر الترقية', err.message, 'error');
+    }
+  }
+
+  function openAvatarModal() {
+    const modal = document.getElementById('avatar-upload-modal');
+    if (modal) modal.classList.remove('hidden');
+  }
+
+  // Expose to window and window.UI
+  window.UI.openCharacterSelectorModal = openCharacterSelectorModal;
+  window.UI.selectCharacterAvatar = selectCharacterAvatar;
+  window.UI.openExecutiveGearModal = openExecutiveGearModal;
+  window.UI.upgradeActiveExecutiveGear = upgradeActiveExecutiveGear;
+  window.UI.openAvatarModal = openAvatarModal;
+
+  window.openCharacterSelectorModal = openCharacterSelectorModal;
+  window.selectCharacterAvatar = selectCharacterAvatar;
+  window.openExecutiveGearModal = openExecutiveGearModal;
+  window.upgradeActiveExecutiveGear = upgradeActiveExecutiveGear;
+  window.openAvatarModal = openAvatarModal;
+  window.openPlayerProfileCard = openPlayerProfileCard;
 
   async function handleMailAction(mailId, action) {
     try {

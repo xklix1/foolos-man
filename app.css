@@ -2115,6 +2115,63 @@ html[dir="ltr"] .chat-bubble-glow-blue-flame[data-vip-tag=""]::before {
   left: 140%;
 }
 
+/* ═══════════════════════════════════════════
+   CYBER-TYCOON PROFILE & EXECUTIVE GEAR
+═══════════════════════════════════════════ */
+.cyber-profile-panel {
+  background: radial-gradient(circle at 50% 20%, rgba(14, 165, 233, 0.12), transparent 70%),
+              linear-gradient(180deg, #050d18 0%, #03080f 100%);
+  border: 2px solid rgba(6, 182, 212, 0.45);
+  box-shadow: 0 0 40px rgba(6, 182, 212, 0.18), inset 0 0 25px rgba(6, 182, 212, 0.08);
+}
 
+.cyber-header-badge {
+  background: linear-gradient(180deg, #0f2b3e 0%, #081622 100%);
+  border: 1.5px solid #00f0ff;
+  box-shadow: 0 0 15px rgba(0, 240, 255, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
 
+.cyber-close-btn {
+  background: linear-gradient(135deg, #a16207 0%, #ca8a04 50%, #78350f 100%);
+  border: 2px solid #fde047;
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+}
+.cyber-close-btn:hover {
+  filter: brightness(1.2);
+  transform: scale(1.05);
+}
 
+.cyber-gear-slot {
+  position: relative;
+  background: linear-gradient(145deg, rgba(15, 30, 48, 0.92) 0%, rgba(6, 15, 25, 0.95) 100%);
+  border: 1.5px solid rgba(6, 182, 212, 0.5);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.6), 0 0 12px rgba(6, 182, 212, 0.2);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: pointer;
+}
+.cyber-gear-slot:hover {
+  border-color: #00f0ff;
+  box-shadow: 0 10px 25px rgba(0, 240, 255, 0.35), inset 0 0 10px rgba(0, 240, 255, 0.2);
+  transform: translateY(-2px) scale(1.03);
+}
+
+.cyber-gear-slot.active-equipped {
+  border-color: #eab308;
+  box-shadow: 0 0 15px rgba(234, 179, 8, 0.35);
+}
+
+.cyber-stat-card {
+  background: linear-gradient(180deg, rgba(11, 24, 38, 0.85) 0%, rgba(5, 13, 22, 0.92) 100%);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.cyber-avatar-stage {
+  position: relative;
+  background: radial-gradient(circle at 50% 40%, rgba(6, 182, 212, 0.22), transparent 75%);
+}
+
+.cyber-stars-row {
+  color: #facc15;
+  filter: drop-shadow(0 0 4px rgba(250, 204, 21, 0.6));
+}

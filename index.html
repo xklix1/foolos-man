@@ -5899,115 +5899,310 @@
     </div>
   </div>
 
-  <!-- ==================== V2: PLAYER PROFILE CARD MODAL ==================== -->
+  <!-- ==================== V3: CYBER-TYCOON PLAYER PROFILE MODAL ==================== -->
   <div id="player-profile-modal" dir="rtl"
-    class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+    class="hidden fixed inset-0 z-[130] flex items-center justify-center bg-black/85 backdrop-blur-md p-2 sm:p-4 animate-fade-in">
     <div
-      class="glass-panel w-full max-w-md max-h-[85vh] sm:max-h-[88vh] flex flex-col rounded-3xl border-2 border-yellow-500/50 bg-slate-950/98 shadow-2xl text-right relative overflow-hidden">
+      class="cyber-profile-panel w-full max-w-lg max-h-[92vh] flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl">
       
-      <!-- Sticky/Fixed Profile Header -->
-      <div class="flex items-center justify-between gap-3 p-4 sm:p-5 border-b border-slate-800/80 bg-slate-950/95 backdrop-blur shrink-0 relative z-10">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="relative shrink-0">
-            <div id="profile-card-avatar-box"
-              class="w-12 h-12 rounded-2xl bg-yellow-500/10 border border-yellow-500/20 flex items-center justify-center text-yellow-400 overflow-hidden shadow-md">
-              <i id="profile-card-avatar-icon" class="fa-solid fa-user text-xl"></i>
+      <!-- Top Cyber Header -->
+      <div class="flex items-center justify-between gap-2 p-3.5 sm:p-4 border-b border-cyan-500/30 bg-slate-950/90 backdrop-blur shrink-0 relative z-20">
+        <!-- Close Button (Gold Beveled) -->
+        <button id="btn-close-profile-modal" onclick="document.getElementById('player-profile-modal').classList.add('hidden')"
+          class="cyber-close-btn w-9 h-9 rounded-xl text-slate-950 font-black flex items-center justify-center transition active:scale-95 shadow shrink-0 cursor-pointer" title="إغلاق الملف">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+
+        <!-- Center Player Title Badge -->
+        <div class="cyber-header-badge px-4 py-1.5 rounded-2xl flex items-center gap-2 max-w-[220px] sm:max-w-[260px] truncate">
+          <i class="fa-solid fa-crown text-yellow-400 text-xs animate-pulse"></i>
+          <h3 id="profile-card-username" class="text-xs sm:text-sm font-black text-cyan-300 truncate">NewU</h3>
+          <span id="profile-card-title-badge" class="text-[10px] text-yellow-400 font-bold truncate">عامل مبتدئ</span>
+        </div>
+
+        <!-- Online Status Indicator -->
+        <div id="profile-card-online-badge"
+          class="px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-400 text-[10px] font-bold flex items-center gap-1.5 shrink-0">
+          <span class="w-2 h-2 rounded-full bg-slate-500"></span>
+          <span>غير متصل</span>
+        </div>
+      </div>
+
+      <!-- Scrollable Body with Hero Showcase & Cards -->
+      <div class="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3 custom-scrollbar text-xs">
+
+        <!-- 1. HERO SHOWCASE: Character Avatar + 4 Surrounding Gear Slots -->
+        <div class="relative rounded-2xl p-2 sm:p-3 bg-gradient-to-b from-cyan-950/20 via-slate-950/80 to-slate-950 border border-cyan-500/30 overflow-hidden">
+          
+          <!-- Background Glow Elements -->
+          <div class="absolute inset-0 bg-[radial-gradient(circle_at_50%_35%,rgba(6,182,212,0.18),transparent_70%)] pointer-events-none"></div>
+
+          <div class="grid grid-cols-12 gap-2 items-center relative z-10">
+            
+            <!-- Left 2 Gear Slots (Ledger & Pen) -->
+            <div class="col-span-3 sm:col-span-3 flex flex-col gap-2.5">
+              <!-- Top Left: Ledger -->
+              <div id="slot-gear-ledger" class="cyber-gear-slot p-2 rounded-2xl text-center group" onclick="window.UI.openExecutiveGearModal('ledger')">
+                <div class="relative w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-1 rounded-xl overflow-hidden border border-cyan-400/40 bg-slate-900 shadow-inner">
+                  <img id="gear-img-ledger" src="assets/gear_ledger.jpg" class="w-full h-full object-cover group-hover:scale-110 transition duration-300" alt="دفتر حسابات">
+                  <span id="gear-lvl-ledger" class="absolute top-0.5 right-0.5 px-1 py-0.2 bg-cyan-500 text-slate-950 font-black text-[9px] rounded-md shadow">L.1</span>
+                </div>
+                <div id="gear-stars-ledger" class="cyber-stars-row text-[8px] sm:text-[9px] mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                </div>
+                <p class="text-[10px] font-bold text-cyan-200 truncate">دفتر حسابات</p>
+              </div>
+
+              <!-- Bottom Left: Pen -->
+              <div id="slot-gear-pen" class="cyber-gear-slot p-2 rounded-2xl text-center group" onclick="window.UI.openExecutiveGearModal('pen')">
+                <div class="relative w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-1 rounded-xl overflow-hidden border border-cyan-400/40 bg-slate-900 shadow-inner">
+                  <img id="gear-img-pen" src="assets/gear_pen.jpg" class="w-full h-full object-cover group-hover:scale-110 transition duration-300" alt="قلم">
+                  <span id="gear-lvl-pen" class="absolute top-0.5 right-0.5 px-1 py-0.2 bg-cyan-500 text-slate-950 font-black text-[9px] rounded-md shadow">L.1</span>
+                </div>
+                <div id="gear-stars-pen" class="cyber-stars-row text-[8px] sm:text-[9px] mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                </div>
+                <p class="text-[10px] font-bold text-cyan-200 truncate">قلم التوقيع</p>
+              </div>
             </div>
-            <button id="btn-profile-card-edit-avatar" type="button" class="hidden absolute -bottom-1 -right-1 w-5 h-5 rounded-md bg-yellow-400 text-slate-950 flex items-center justify-center shadow-md hover:scale-110 active:scale-95 transition cursor-pointer" title="تغيير صورتك الشخصية">
-              <i class="fa-solid fa-camera text-[9px]"></i>
-            </button>
-          </div>
-          <div class="min-w-0">
-            <div class="flex items-center gap-2">
-              <h3 id="profile-card-username" class="text-base sm:text-lg font-black text-white truncate">---</h3>
-              <span id="profile-card-online-badge"
-                class="px-2 py-0.5 rounded-full bg-slate-900 text-slate-400 text-[9px] border border-slate-800 shrink-0">غير متصل</span>
+
+            <!-- Center Character Avatar Stage -->
+            <div class="col-span-6 sm:col-span-6 text-center relative">
+              <div class="relative mx-auto w-full max-w-[200px] h-[220px] sm:h-[260px] rounded-2xl overflow-hidden border-2 border-cyan-400/60 shadow-[0_0_25px_rgba(6,182,212,0.35)] bg-slate-950">
+                <img id="profile-hero-character-img" src="assets/avatar_male_arab.jpg" class="w-full h-full object-cover object-top" alt="شخصية اللاعب">
+                
+                <!-- Overlay gradient -->
+                <div class="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-transparent pointer-events-none"></div>
+
+                <!-- Active Character Switch Button (Only on own profile) -->
+                <button id="btn-switch-hero-character" type="button"
+                  class="hidden absolute bottom-2 left-1/2 -translate-x-1/2 px-2.5 py-1 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black text-[10px] shadow-lg shadow-cyan-500/30 flex items-center gap-1.5 transition active:scale-95 cursor-pointer z-10 whitespace-nowrap">
+                  <i class="fa-solid fa-user-gear"></i>
+                  <span>تبديل الشخصية</span>
+                </button>
+              </div>
             </div>
-            <p id="profile-card-title" class="text-xs text-yellow-400 font-bold truncate">عامل مبتدئ</p>
+
+            <!-- Right 2 Gear Slots (Laptop & Financial Terminal) -->
+            <div class="col-span-3 sm:col-span-3 flex flex-col gap-2.5">
+              <!-- Top Right: Laptop -->
+              <div id="slot-gear-laptop" class="cyber-gear-slot p-2 rounded-2xl text-center group" onclick="window.UI.openExecutiveGearModal('laptop')">
+                <div class="relative w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-1 rounded-xl overflow-hidden border border-cyan-400/40 bg-slate-900 shadow-inner">
+                  <img id="gear-img-laptop" src="assets/gear_laptop.jpg" class="w-full h-full object-cover group-hover:scale-110 transition duration-300" alt="لابتوب">
+                  <span id="gear-lvl-laptop" class="absolute top-0.5 right-0.5 px-1 py-0.2 bg-cyan-500 text-slate-950 font-black text-[9px] rounded-md shadow">L.1</span>
+                </div>
+                <div id="gear-stars-laptop" class="cyber-stars-row text-[8px] sm:text-[9px] mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                </div>
+                <p class="text-[10px] font-bold text-cyan-200 truncate">لابتوب التداول</p>
+              </div>
+
+              <!-- Bottom Right: Terminal -->
+              <div id="slot-gear-terminal" class="cyber-gear-slot p-2 rounded-2xl text-center group" onclick="window.UI.openExecutiveGearModal('terminal')">
+                <div class="relative w-12 h-12 sm:w-14 sm:h-14 mx-auto mb-1 rounded-xl overflow-hidden border border-cyan-400/40 bg-slate-900 shadow-inner">
+                  <img id="gear-img-terminal" src="assets/gear_terminal.jpg" class="w-full h-full object-cover group-hover:scale-110 transition duration-300" alt="دفتر ماليات">
+                  <span id="gear-lvl-terminal" class="absolute top-0.5 right-0.5 px-1 py-0.2 bg-cyan-500 text-slate-950 font-black text-[9px] rounded-md shadow">L.1</span>
+                </div>
+                <div id="gear-stars-terminal" class="cyber-stars-row text-[8px] sm:text-[9px] mb-0.5">
+                  <i class="fa-solid fa-star"></i>
+                </div>
+                <p class="text-[10px] font-bold text-cyan-200 truncate">دفتر ماليات</p>
+              </div>
+            </div>
+
           </div>
         </div>
-        <button id="btn-close-profile-modal"
-          class="w-9 h-9 rounded-xl bg-slate-900/90 border border-slate-700 text-slate-300 hover:text-white hover:bg-rose-600 hover:border-rose-500 flex items-center justify-center transition shadow shrink-0" title="إغلاق الملف">
+
+        <!-- 2. STATS PANELS (Horizontal Clean Layout) -->
+        <div class="grid grid-cols-2 gap-2">
+          <!-- Net Worth Panel -->
+          <div class="cyber-stat-card p-3 rounded-2xl text-right">
+            <span class="text-cyan-400 block text-[10px] font-bold mb-1 flex items-center gap-1">
+              <i class="fa-solid fa-vault text-[11px]"></i>
+              <span>صافي الثروة الكلية</span>
+            </span>
+            <div id="profile-card-networth" class="numbers-font font-black text-yellow-400 text-sm sm:text-base truncate">0 جنيه</div>
+            <span id="profile-card-networth-short" class="text-[10px] text-slate-400 font-bold block">(0.0)</span>
+          </div>
+
+          <!-- Job & Join Date Panel -->
+          <div class="cyber-stat-card p-3 rounded-2xl text-right flex flex-col justify-between">
+            <div>
+              <span class="text-cyan-400 block text-[10px] font-bold mb-1 flex items-center gap-1">
+                <i class="fa-solid fa-user-tie text-[11px]"></i>
+                <span>السمعة والوظيفة</span>
+              </span>
+              <div id="profile-card-job" class="font-bold text-white text-xs truncate">عامل باليومية</div>
+            </div>
+            <div class="mt-1 pt-1 border-t border-slate-800 text-[10px] text-slate-400 flex items-center justify-between">
+              <span>تاريخ الانضمام:</span>
+              <span id="profile-card-createdat" class="numbers-font font-bold text-slate-200">2026/01/01</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. HONORS & ACHIEVEMENTS SHELF -->
+        <div id="profile-card-honors-section" class="cyber-stat-card p-3 rounded-2xl space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-[11px] font-black text-cyan-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-medal text-yellow-400 text-xs"></i>
+              <span>الأوسمة والإنجازات</span>
+            </span>
+            <span class="px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 text-[9px] font-bold border border-cyan-500/20">سجل الشرف</span>
+          </div>
+          <div id="profile-card-badges-list" class="flex items-center gap-2 flex-wrap pt-0.5">
+            <!-- Dynamic Badges -->
+          </div>
+        </div>
+
+        <!-- 4. PLAYER BUSINESSES & ASSETS -->
+        <div class="cyber-stat-card p-3 rounded-2xl text-xs text-slate-300 space-y-1.5">
+          <h4 class="font-bold text-cyan-300 mb-1 flex items-center gap-1.5 text-[11px]">
+            <i class="fa-solid fa-building text-cyan-400"></i>
+            <span>ممتلكات وأعمال اللاعب</span>
+          </h4>
+          <div id="profile-card-assets-summary" class="space-y-1 text-[11px] text-slate-200">
+            <!-- Dynamic Assets List -->
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Action Buttons Footer -->
+      <div class="shrink-0 p-3 sm:p-4 border-t border-cyan-500/30 bg-slate-950/95 space-y-2 relative z-20">
+        <div id="profile-self-actions" class="hidden grid grid-cols-2 gap-2">
+          <button onclick="window.UI.openCharacterSelectorModal()"
+            class="w-full py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-cyan-500/20 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-users text-sm"></i>
+            <span>اختيار الشخصية (6 شخصيات)</span>
+          </button>
+          <button onclick="window.UI.openAvatarModal()"
+            class="w-full py-2.5 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-400 hover:to-amber-400 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 active:scale-95 cursor-pointer">
+            <i class="fa-solid fa-camera text-sm"></i>
+            <span>تغيير صورتك المرفوعة</span>
+          </button>
+        </div>
+
+        <div id="profile-other-actions" class="space-y-2">
+          <div>
+            <button id="btn-profile-transfer-money"
+              class="w-full py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-money-bill-transfer text-sm"></i>
+              <span>تحويل أموال لهذا اللاعب</span>
+            </button>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <button id="btn-profile-private-chat"
+              class="py-2.5 bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-400 border border-cyan-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-comments text-xs"></i>
+              <span>محادثة خاصة</span>
+            </button>
+            <button id="btn-profile-mute-player"
+              class="py-2.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
+              <i class="fa-solid fa-volume-xmark text-xs" id="profile-mute-btn-icon"></i>
+              <span id="profile-mute-btn-text">كتم في الشات</span>
+            </button>
+          </div>
+          <button id="btn-profile-block-player"
+            class="w-full py-1.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
+            <i class="fa-solid fa-ban text-[10px]"></i>
+            <span>حظر اللاعب</span>
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ==================== CHARACTER SELECTOR MODAL (6 TYCOON AVATARS) ==================== -->
+  <div id="character-selector-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+    <div
+      class="cyber-profile-panel w-full max-w-lg max-h-[90vh] flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl">
+      
+      <div class="flex items-center justify-between p-4 border-b border-cyan-500/30 bg-slate-950/90 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-sm">
+            <i class="fa-solid fa-users"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white">اختيار الشخصية التنفيذية</h3>
+            <p class="text-[10px] text-slate-400">حدد الشخصية التي تعبر عن هويتك في اللعبة</p>
+          </div>
+        </div>
+        <button onclick="document.getElementById('character-selector-modal').classList.add('hidden')"
+          class="cyber-close-btn w-8 h-8 rounded-xl text-slate-950 font-black flex items-center justify-center transition active:scale-95 shadow cursor-pointer">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
       </div>
 
-      <!-- Scrollable Body with smooth scrollbar -->
-      <div class="flex-1 overflow-y-auto p-4 sm:p-5 space-y-3.5 text-xs">
-
-        <!-- Season Honors & Badges Section -->
-        <div id="profile-card-honors-section" class="p-3 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-950 to-slate-900 border border-yellow-500/30 shadow-md space-y-2">
-          <div class="flex items-center justify-between">
-            <span class="text-[11px] font-black text-yellow-400 flex items-center gap-1.5">
-              <i class="fa-solid fa-medal text-xs"></i>
-              <span>أوسمة وإنجازات المواسم</span>
-            </span>
-            <span class="px-2 py-0.5 rounded-full bg-yellow-500/10 text-yellow-300 text-[9px] font-bold border border-yellow-500/20">سجل الشرف S1</span>
-          </div>
-          <div id="profile-card-badges-list" class="flex items-center gap-2 flex-wrap pt-0.5">
-            <!-- Dynamic Honors Badges Injected Here -->
-          </div>
+      <div class="flex-1 overflow-y-auto p-4 custom-scrollbar">
+        <div id="character-avatars-grid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- Injected via JavaScript -->
         </div>
-
-        <!-- Stats Grid (Compact 2x2) -->
-        <div class="grid grid-cols-2 gap-2.5">
-          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
-            <span class="text-slate-400 block text-[10px] mb-0.5">إجمالي الثروة (Net Worth)</span>
-            <span id="profile-card-networth" class="numbers-font font-black text-yellow-400 text-xs sm:text-sm">0 جنيه</span>
-          </div>
-          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
-            <span class="text-slate-400 block text-[10px] mb-0.5">السمعة بالعالم السفلي</span>
-            <span id="profile-card-reputation" class="numbers-font font-black text-rose-400 text-xs sm:text-sm">0 </span>
-          </div>
-          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
-            <span class="text-slate-400 block text-[10px] mb-0.5">تاريخ انضمامه</span>
-            <span id="profile-card-createdat" class="numbers-font font-bold text-slate-200 text-[11px]">---</span>
-          </div>
-          <div class="p-2.5 bg-slate-900/70 rounded-xl border border-slate-800/80">
-            <span class="text-slate-400 block text-[10px] mb-0.5">الوظيفة والمهنة</span>
-            <span id="profile-card-job" class="font-bold text-sky-400 text-[11px] truncate block">عامل مبتدئ</span>
-          </div>
-        </div>
-
-        <!-- Assets Summary -->
-        <div class="p-3 bg-slate-900/60 rounded-xl border border-slate-800/80 text-xs text-slate-300">
-          <h4 class="font-bold text-white mb-1.5 flex items-center gap-1.5 text-[11px]">
-            <i class="fa-solid fa-briefcase text-yellow-500"></i>
-            <span>ممتلكات وأعمال اللاعب</span>
-          </h4>
-          <div id="profile-card-assets-summary" class="space-y-1 text-[11px]">
-            <!-- Dyn text summary of assets -->
-          </div>
-        </div>
-
       </div>
 
-      <!-- Sticky Action Buttons Footer -->
-      <div class="shrink-0 p-3 sm:p-4 border-t border-slate-800/80 bg-slate-950/95 space-y-2">
-        <div>
-          <button id="btn-profile-transfer-money"
-            class="w-full py-2.5 bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 cursor-pointer">
-            <i class="fa-solid fa-money-bill-transfer text-sm"></i>
-            <span>تحويل أموال لهذا اللاعب</span>
-          </button>
+    </div>
+  </div>
+
+  <!-- ==================== EXECUTIVE GEAR UPGRADE & INSPECT MODAL ==================== -->
+  <div id="executive-gear-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-black/85 backdrop-blur-md p-3 sm:p-4 animate-fade-in">
+    <div
+      class="cyber-profile-panel w-full max-w-sm flex flex-col rounded-3xl text-right relative overflow-hidden shadow-2xl">
+      
+      <div class="flex items-center justify-between p-4 border-b border-cyan-500/30 bg-slate-950/90 shrink-0">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-sm">
+            <i class="fa-solid fa-shield-halved"></i>
+          </div>
+          <h3 id="gear-modal-title" class="text-sm font-black text-white">عتاد تنفيذي</h3>
         </div>
-        <div class="grid grid-cols-2 gap-2">
-          <button id="btn-profile-private-chat"
-            class="py-2.5 bg-sky-500/15 hover:bg-sky-500/25 text-sky-400 border border-sky-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
-            <i class="fa-solid fa-comments text-xs"></i>
-            <span>محادثة خاصة</span>
-          </button>
-          <button id="btn-profile-mute-player"
-            class="py-2.5 bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 active:scale-95 cursor-pointer">
-            <i class="fa-solid fa-volume-xmark text-xs" id="profile-mute-btn-icon"></i>
-            <span id="profile-mute-btn-text">كتم في الشات</span>
-          </button>
-        </div>
-        <button id="btn-profile-block-player"
-          class="w-full py-1.5 bg-rose-950/20 hover:bg-rose-950/40 text-rose-400 border border-rose-500/20 rounded-xl text-[11px] font-bold transition flex items-center justify-center gap-1.5 cursor-pointer">
-          <i class="fa-solid fa-ban text-[10px]"></i>
-          <span>حظر اللاعب</span>
+        <button onclick="document.getElementById('executive-gear-modal').classList.add('hidden')"
+          class="cyber-close-btn w-8 h-8 rounded-xl text-slate-950 font-black flex items-center justify-center transition active:scale-95 shadow cursor-pointer">
+          <i class="fa-solid fa-xmark text-sm"></i>
         </button>
+      </div>
+
+      <div class="p-4 space-y-3.5 text-xs">
+        <div class="flex items-center gap-3 bg-slate-900/80 p-3 rounded-2xl border border-cyan-500/30">
+          <div class="w-16 h-16 rounded-2xl overflow-hidden border border-cyan-400/50 shrink-0 shadow-lg shadow-cyan-500/20">
+            <img id="gear-modal-icon" src="assets/gear_ledger.jpg" class="w-full h-full object-cover" alt="عتاد">
+          </div>
+          <div class="min-w-0 flex-1">
+            <div class="flex items-center justify-between gap-1 mb-1">
+              <h4 id="gear-modal-name" class="font-black text-white text-sm truncate">دفتر حسابات</h4>
+              <span id="gear-modal-level-badge" class="px-2 py-0.5 bg-cyan-500/20 text-cyan-300 font-black text-[10px] rounded-lg border border-cyan-500/30 shrink-0">مستوى 1</span>
+            </div>
+            <div id="gear-modal-stars" class="cyber-stars-row text-xs mb-1">
+              <i class="fa-solid fa-star"></i>
+            </div>
+          </div>
+        </div>
+
+        <p id="gear-modal-description" class="text-slate-300 text-[11px] leading-relaxed">وصف الأداة والمزايا التنفيذية.</p>
+
+        <div class="p-3 bg-cyan-950/30 rounded-2xl border border-cyan-500/30 space-y-1.5">
+          <div class="text-slate-400 text-[10px]">البونص الحالي المفعّل:</div>
+          <div id="gear-modal-current-bonus" class="text-emerald-400 font-bold text-xs flex items-center gap-1.5">
+            <i class="fa-solid fa-circle-check"></i>
+            <span>+4% كفاءة استهلاك البضائع</span>
+          </div>
+        </div>
+
+        <div id="gear-modal-upgrade-section" class="p-3 bg-yellow-950/20 rounded-2xl border border-yellow-500/30 space-y-2">
+          <div class="flex items-center justify-between text-[11px]">
+            <span class="text-slate-300">تكلفة الترقية للمستوى التالي:</span>
+            <span id="gear-modal-cost-gold" class="text-yellow-400 font-black flex items-center gap-1 numbers-font">
+              <i class="fa-solid fa-coins"></i> 75 سبيكة ذهب
+            </span>
+          </div>
+          <button id="btn-upgrade-executive-gear"
+            class="w-full py-2.5 bg-gradient-to-r from-yellow-500 via-amber-400 to-yellow-500 hover:from-yellow-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-xs shadow-lg shadow-yellow-500/25 transition active:scale-95 flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-arrow-up"></i>
+            <span>ترقية الأداة الآن بالذهب</span>
+          </button>
+        </div>
       </div>
 
     </div>
@@ -6030,7 +6225,7 @@
             <p class="text-[11px] text-slate-400">ارفع صورتك الخاصة لتظهر في الشات والبروفايل</p>
           </div>
         </div>
-        <button id="btn-close-avatar-modal" type="button"
+        <button id="btn-close-avatar-modal" type="button" onclick="document.getElementById('avatar-upload-modal').classList.add('hidden')"
           class="w-8 h-8 rounded-xl bg-slate-900 border border-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition cursor-pointer">
           <i class="fa-solid fa-xmark text-sm"></i>
         </button>
