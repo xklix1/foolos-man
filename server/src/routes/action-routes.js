@@ -17,6 +17,17 @@ const farmEngine = require('../engine/farm-engine');
 const incomeVaultEngine = require('../engine/income-vault-engine');
 const propertyCarEngine = require('../engine/property-car-engine');
 const stockEngine = require('../engine/stock-exchange-engine');
+const industryEngine = require('../engine/industry-engine');
+const tradeEngine = require('../engine/trade-engine');
+const investmentEngine = require('../engine/investment-engine');
+const storeEngine = require('../engine/store-engine');
+const smugglingEngine = require('../engine/smuggling-engine');
+const casinoEngine = require('../engine/casino-engine');
+const {
+  launchMarketingCampaign,
+  convertToFranchise,
+  fileTaxDeclaration
+} = require('../engine/business-engine');
 
 const AVATARS_DIR = path.resolve(__dirname, '../../../uploads/avatars');
 
@@ -1954,6 +1965,213 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         cash: session.state.cash,
         netWorth: session.state.netWorth
       });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/industry/unlock
+  fastify.post('/api/action/industry/unlock', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { sectorId } = request.body || {};
+    try {
+      const res = industryEngine.unlockIndustrySector(session.state, sectorId);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/industry/upgrade
+  fastify.post('/api/action/industry/upgrade', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { sectorId, stageKey, multiplier = 1 } = request.body || {};
+    try {
+      const res = industryEngine.upgradeIndustryStage(session.state, sectorId, stageKey, multiplier);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/trade/buy-cargo
+  fastify.post('/api/action/trade/buy-cargo', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { commodityId, quantity = 1 } = request.body || {};
+    try {
+      const res = tradeEngine.buyImportCargo(session.state, commodityId, quantity, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/trade/upgrade-warehouse
+  fastify.post('/api/action/trade/upgrade-warehouse', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    try {
+      const res = tradeEngine.upgradeWarehouse(session.state);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/investment/start
+  fastify.post('/api/action/investment/start', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { planId, amount } = request.body || {};
+    try {
+      const res = investmentEngine.startInvestment(session.state, planId, amount, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/farm/buy-livestock
+  fastify.post('/api/action/farm/buy-livestock', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { type, count = 1 } = request.body || {};
+    try {
+      const res = farmEngine.buyFarmLivestock(session.state, type, count);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/store/buy-item
+  fastify.post('/api/action/store/buy-item', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { itemId } = request.body || {};
+    try {
+      const res = storeEngine.buyStoreItem(session.state, itemId, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/black-market/buy-gear
+  fastify.post('/api/action/black-market/buy-gear', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { gearId } = request.body || {};
+    try {
+      const res = storeEngine.buyBlackMarketGear(session.state, gearId, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/black-market/bribe
+  fastify.post('/api/action/black-market/bribe', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    try {
+      const res = storeEngine.bribePolice(session.state);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/smuggling/buy-vehicle
+  fastify.post('/api/action/smuggling/buy-vehicle', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { vehicleId } = request.body || {};
+    try {
+      const res = smugglingEngine.buySmugglingVehicle(session.state, vehicleId);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/business/marketing
+  fastify.post('/api/action/business/marketing', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { businessId } = request.body || {};
+    try {
+      const res = launchMarketingCampaign(session.state, businessId, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/business/franchise
+  fastify.post('/api/action/business/franchise', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { businessId } = request.body || {};
+    try {
+      const res = convertToFranchise(session.state, businessId);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/tax/file-declaration
+  fastify.post('/api/action/tax/file-declaration', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    try {
+      const res = fileTaxDeclaration(session.state);
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/casino/bet
+  fastify.post('/api/action/casino/bet', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { betAmount, gameName } = request.body || {};
+    try {
+      const res = casinoEngine.deductCasinoBet(session.state, betAmount, gameName, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/casino/settle
+  fastify.post('/api/action/casino/settle', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { betAmount, grossPayout, gameName } = request.body || {};
+    try {
+      const res = casinoEngine.settleCasinoPayout(session.state, betAmount, grossPayout, gameName, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
     } catch (err) {
       return reply.code(400).send({ error: err.message });
     }

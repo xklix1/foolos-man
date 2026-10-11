@@ -161,11 +161,101 @@ function getAfkManagerRenewalCost(playerState) {
   return Math.max(1000, Math.min(500000, tenPercent));
 }
 
+function getCairoTodayStr(serverNow = Date.now()) {
+  const d = new Date(serverNow + (3 * 3600 * 1000));
+  return d.toISOString().split('T')[0];
+}
+
+function launchMarketingCampaign(playerState, key, serverNow = Date.now()) {
+  const biz = BUSINESSES[key];
+  if (!biz) throw new Error("المشروع غير متوفر.");
+  const b = playerState.businesses && playerState.businesses[key];
+  if (!b || b.level <= 0) throw new Error("يجب شراء وتأسيس المشروع أولاً لإطلاق حملة إعلانية.");
+
+  const today = getCairoTodayStr(serverNow);
+  if (!playerState.dailyMarketingCampaigns || playerState.dailyMarketingCampaigns.date !== today) {
+    playerState.dailyMarketingCampaigns = { date: today, count: 0 };
+  }
+  if (playerState.dailyMarketingCampaigns.count >= 5) {
+    throw new Error("وصلت إلى الحد الأقصى اليومي من الحملات الإعلانية (5 حملات/يوم). تجدد الحصة غداً.");
+  }
+
+  const campaignCost = Math.floor(biz.cost * 0.25);
+  const cash = Number(playerState.cash) || 0;
+  if (cash < campaignCost) {
+    throw new Error(`تكلفة إطلاق الحملة الإعلانية هي ${campaignCost.toLocaleString()} EGP. رصيدك غير كافٍ.`);
+  }
+
+  playerState.cash -= campaignCost;
+  b.marketingTicks = 1200; // 1200 ticks × 3 sec/tick = 3600 sec = 1 hour
+  playerState.dailyMarketingCampaigns.count++;
+
+  return {
+    success: true,
+    businessId: key,
+    cost: campaignCost,
+    durationSec: 3600,
+    marketingTicks: b.marketingTicks,
+    cash: playerState.cash
+  };
+}
+
+function convertToFranchise(playerState, key) {
+  const biz = BUSINESSES[key];
+  if (!biz || biz.allowFranchise === false) {
+    throw new Error("هذا المشروع منشأة كبرى ولا يدعم نظام الفرانشايز أو العلامات التجارية.");
+  }
+  const b = playerState.businesses && playerState.businesses[key];
+  if (!b || b.level < 10) throw new Error("يجب ترقية المشروع للمستوى 10 أولاً.");
+  if (b.isFranchise) throw new Error("هذا المشروع علامة تجارية مسجلة بالفعل.");
+
+  const franchiseCost = Math.floor(biz.cost * 15);
+  const cash = Number(playerState.cash) || 0;
+  if (cash < franchiseCost) {
+    throw new Error(`رصيدك غير كافٍ لتسجيل العلامة التجارية. تحتاج: ${franchiseCost.toLocaleString()} EGP.`);
+  }
+
+  playerState.cash -= franchiseCost;
+  b.isFranchise = true;
+
+  return {
+    success: true,
+    businessId: key,
+    cost: franchiseCost,
+    isFranchise: true,
+    cash: playerState.cash
+  };
+}
+
+function fileTaxDeclaration(playerState) {
+  const cost = 100000;
+  const cash = Number(playerState.cash) || 0;
+  if (cash < cost) {
+    throw new Error(`تحتاج إلى ${cost.toLocaleString()} EGP كاش لتقديم الإقرار والتسوية الضريبية.`);
+  }
+
+  playerState.cash -= cost;
+  playerState.totalTaxesPaid = (Number(playerState.totalTaxesPaid) || 0) + cost;
+  playerState.xp = (Number(playerState.xp) || 0) + 250;
+
+  return {
+    success: true,
+    cost,
+    xpGain: 250,
+    cash: playerState.cash,
+    xp: playerState.xp,
+    totalTaxesPaid: playerState.totalTaxesPaid
+  };
+}
+
 module.exports = {
   calculateSingleBusinessProfit,
   calculateAllBusinessesHourly,
   getBusinessUpgradeCost,
   getBusinessSupplyCost,
   getBusinessWorkerHireCost,
-  getAfkManagerRenewalCost
+  getAfkManagerRenewalCost,
+  launchMarketingCampaign,
+  convertToFranchise,
+  fileTaxDeclaration
 };

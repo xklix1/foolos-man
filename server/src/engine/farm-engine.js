@@ -1097,6 +1097,50 @@ function fulfillFarmContract(state, contractId, contractData = null) {
   };
 }
 
+function buyFarmLivestock(state, type, count = 1) {
+  const f = ensureFarmState(state);
+  if (!f.unlocked) throw new Error("يجب تملك المزرعة أولاً.");
+  const def = FARM_LIVESTOCK_CONFIG[type];
+  if (!def) throw new Error("نوع المواشي المحدد غير صالح.");
+
+  const current = type === 'cow' ? (Number(f.livestock.cows) || 0) : (Number(f.livestock.chickens) || 0);
+  const qty = Math.max(1, parseInt(count, 10) || 1);
+  if (current + qty > def.maxCount) {
+    throw new Error(`وصلت للحد الأقصى المسموح من ${def.name} (${def.maxCount}).`);
+  }
+
+  const totalCost = def.cost * qty;
+  const totalFunds = (Number(state.cash) || 0) + (Number(state.bank) || 0);
+  if (totalFunds < totalCost) {
+    throw new Error(`كلفة شراء ${qty} من "${def.name}" هي ${totalCost.toLocaleString()} EGP. رصيدك لا يكفي.`);
+  }
+
+  if ((Number(state.cash) || 0) >= totalCost) {
+    state.cash -= totalCost;
+  } else {
+    const rem = totalCost - (Number(state.cash) || 0);
+    state.cash = 0;
+    state.bank -= rem;
+  }
+
+  if (type === 'cow') {
+    f.livestock.cows = current + qty;
+  } else {
+    f.livestock.chickens = current + qty;
+  }
+
+  return {
+    type,
+    purchasedCount: qty,
+    totalCost,
+    newTotal: current + qty,
+    livestock: f.livestock,
+    cash: state.cash,
+    bank: state.bank,
+    farm: f
+  };
+}
+
 module.exports = {
   DAILY_FARM_LIQUIDATION_CAP,
   FARM_CONFIG,
@@ -1114,6 +1158,7 @@ module.exports = {
   upgradeFarmFertilizer,
   upgradeFarmSilo,
   hireFarmWorker,
+  buyFarmLivestock,
   plantFarmCrop,
   plantAllFarmPlots,
   harvestFarmCrop,

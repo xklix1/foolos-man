@@ -282,7 +282,10 @@ class SessionManager {
     if (clientState.farm && typeof clientState.farm === 'object') {
       const sFarmLiq = (s.farm && s.farm.dailyLiquidation && typeof s.farm.dailyLiquidation === 'object') ? s.farm.dailyLiquidation : null;
       const cFarmLiq = (clientState.farm.dailyLiquidation && typeof clientState.farm.dailyLiquidation === 'object') ? clientState.farm.dailyLiquidation : null;
-      
+      if (s.farm && s.farm.livestock && clientState.farm.livestock && !isAdminGrant) {
+        clientState.farm.livestock.cows = Math.min(Number(clientState.farm.livestock.cows || 0), Number(s.farm.livestock.cows || 0));
+        clientState.farm.livestock.chickens = Math.min(Number(clientState.farm.livestock.chickens || 0), Number(s.farm.livestock.chickens || 0));
+      }
       s.farm = clientState.farm;
       if (sFarmLiq && cFarmLiq && sFarmLiq.date === cFarmLiq.date) {
         s.farm.dailyLiquidation = {
@@ -421,22 +424,17 @@ class SessionManager {
     }
     if (clientState.industry && typeof clientState.industry === 'object') {
       if (!s.industry || typeof s.industry !== 'object') s.industry = {};
-      if (!isClientStale) {
+      if (isAdminGrant) {
         s.industry = clientState.industry;
       } else {
-        // Anti-rollback: preserve client unlocks and higher levels even if client timestamp is slightly older
-        Object.keys(clientState.industry).forEach(secKey => {
+        // Dual Lockdown: Stages & unlocks are strictly Server-Authoritative.
+        // Sync merges operational fields (readyStock, lastCollectedAt) while preserving server levels.
+        Object.keys(s.industry).forEach(secKey => {
+          const sSec = s.industry[secKey];
           const cSec = clientState.industry[secKey];
-          if (cSec && typeof cSec === 'object' && cSec.unlocked) {
-            if (!s.industry[secKey]) {
-              s.industry[secKey] = cSec;
-            } else {
-              s.industry[secKey].unlocked = true;
-              s.industry[secKey].stage1 = Math.max(Number(s.industry[secKey].stage1 || 0), Number(cSec.stage1 || 0));
-              s.industry[secKey].stage2 = Math.max(Number(s.industry[secKey].stage2 || 0), Number(cSec.stage2 || 0));
-              s.industry[secKey].stage3 = Math.max(Number(s.industry[secKey].stage3 || 0), Number(cSec.stage3 || 0));
-              s.industry[secKey].logistics = Math.max(Number(s.industry[secKey].logistics || 0), Number(cSec.logistics || 0));
-            }
+          if (sSec && sSec.unlocked && cSec && typeof cSec === 'object') {
+            sSec.readyStock = Number(cSec.readyStock) || sSec.readyStock || 0;
+            if (cSec.lastCollectedAt) sSec.lastCollectedAt = cSec.lastCollectedAt;
           }
         });
       }
@@ -448,13 +446,65 @@ class SessionManager {
       s.crypto = clientState.crypto;
     }
     if (Array.isArray(clientState.investments)) {
-      s.investments = clientState.investments;
+      if (isAdminGrant) {
+        s.investments = clientState.investments;
+      } else {
+        // Dual Lockdown: Term investments must be purchased via /api/action/investment/start.
+        // Sync can only advance ticksRemaining on valid server certificates.
+        const srvMap = new Map((s.investments || []).map(inv => [inv.id, inv]));
+        clientState.investments.forEach(cInv => {
+          const sInv = srvMap.get(cInv.id);
+          if (sInv && cInv.ticksRemaining !== undefined) {
+            sInv.ticksRemaining = Math.min(Number(sInv.ticksRemaining), Number(cInv.ticksRemaining));
+          }
+        });
+      }
     }
     if (clientState.tradeCompany && typeof clientState.tradeCompany === 'object') {
-      s.tradeCompany = clientState.tradeCompany;
+      if (!s.tradeCompany || typeof s.tradeCompany !== 'object') {
+        s.tradeCompany = { warehouseCapacity: 10, warehouse: {}, activeImports: [], activeExports: [] };
+      }
+      if (isAdminGrant) {
+        s.tradeCompany = clientState.tradeCompany;
+      } else {
+        // Dual Lockdown: warehouseCapacity is server-authoritative.
+        if (clientState.tradeCompany.warehouse && typeof clientState.tradeCompany.warehouse === 'object') {
+          s.tradeCompany.warehouse = clientState.tradeCompany.warehouse;
+        }
+        if (Array.isArray(clientState.tradeCompany.activeExports)) {
+          s.tradeCompany.activeExports = clientState.tradeCompany.activeExports;
+        }
+        if (Array.isArray(clientState.tradeCompany.activeImports)) {
+          const srvMap = new Map((s.tradeCompany.activeImports || []).map(o => [o.id, o]));
+          clientState.tradeCompany.activeImports.forEach(cOrder => {
+            const sOrder = srvMap.get(cOrder.id);
+            if (sOrder && cOrder.arrived !== undefined) {
+              sOrder.arrived = Boolean(cOrder.arrived);
+            }
+          });
+        }
+      }
     }
     if (clientState.inventory && typeof clientState.inventory === 'object') {
-      s.inventory = clientState.inventory;
+      if (isAdminGrant) {
+        s.inventory = clientState.inventory;
+      } else {
+        // Dual Lockdown: Inventory items must be purchased via server endpoints.
+        s.inventory = s.inventory || {};
+        Object.keys(s.inventory).forEach(k => {
+          if (clientState.inventory[k] === 0 || clientState.inventory[k] === undefined) {
+            s.inventory[k] = 0;
+          }
+        });
+      }
+    }
+    if (clientState.smugglingFleet && typeof clientState.smugglingFleet === 'object') {
+      if (isAdminGrant) {
+        s.smugglingFleet = clientState.smugglingFleet;
+      } else {
+        // Server-authoritative smuggling fleet
+        s.smugglingFleet = s.smugglingFleet || {};
+      }
     }
     if (clientState.executiveGear && typeof clientState.executiveGear === 'object') {
       s.executiveGear = s.executiveGear || {

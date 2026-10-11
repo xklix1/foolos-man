@@ -290,7 +290,13 @@ async function sessionRoutes(fastify, options) {
           assets: activeSession.state.assets,
           ownedCars: activeSession.state.ownedCars,
           stocks: activeSession.state.stocks,
-          incomeVault: activeSession.state.incomeVault || 0
+          incomeVault: activeSession.state.incomeVault || 0,
+          industry: activeSession.state.industry,
+          investments: activeSession.state.investments,
+          tradeCompany: activeSession.state.tradeCompany,
+          inventory: activeSession.state.inventory,
+          smugglingFleet: activeSession.state.smugglingFleet,
+          businesses: activeSession.state.businesses
         } : null,
         serverTime: Date.now()
       };

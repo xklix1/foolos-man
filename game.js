@@ -2618,6 +2618,11 @@ const GameEngine = (() => {
     state.xp = (state.xp || 0) + 250;
     recordPlayerActivity('إقرار ضريبي',`تقديم إقرار ضريبي طوعي وتسوية ${cost.toLocaleString()} ج.م (+250 XP)`,'banking');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.fileTaxDeclaration().catch(() => {});
+    }
+
     forceSaveState(true);
     return { cost, xpGain: 250 };
   }
@@ -4218,6 +4223,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسجيل علامة تجارية',`تحويل مشروع"${biz.name}" إلى علامة تجارية مسجلة (Franchise)`,'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.convertToFranchise(key).catch(() => {});
+    }
+
     forceSaveState(true);
     return true;
   }
@@ -4353,6 +4363,11 @@ const GameEngine = (() => {
     state.dailyMarketingCampaigns.count++;
 
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.launchMarketingCampaign(key).catch(() => {});
+    }
+
     forceSaveState(true);
     return {
       cost: campaignCost,
@@ -4768,6 +4783,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء متجر',`شراء وتفعيل أداة "${item.name}" (الاستخدام ${usedToday + 1}/${maxUses} لليوم)`,'store');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyStoreItem(itemId).catch(() => {});
+    }
+
     forceSaveState(true);
     return item;
   }
@@ -4983,6 +5003,10 @@ const GameEngine = (() => {
     if (!state.itemDurations) state.itemDurations = {};
     state.itemDurations[gearId] = item.durationTicks;
 
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyBlackMarketGear(gearId).catch(() => {});
+    }
+
     forceSaveState(true);
     return item;
   }
@@ -5006,6 +5030,11 @@ const GameEngine = (() => {
     }
     state.jailTimer = 0;
     state.heatLevel = 0;
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.bribePolice().catch(() => {});
+    }
+
     forceSaveState(true);
     return { bribeCost };
   }
@@ -5150,6 +5179,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('استثمار مالي',`إيداع ${amount.toLocaleString()} ج.م في"${plan.name}"`,'investment');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.startInvestment(planId, amount).catch(() => {});
+    }
+
     forceSaveState(true);
     return {
       plan,
@@ -5223,6 +5257,11 @@ const GameEngine = (() => {
       state.casinoCooldownUntil = getTrustedNow() + CASINO_COOLDOWN_MS;
     }
     state.cash -= betAmount;
+
+    // Dispatch to Authoritative Server
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.deductCasinoBet(betAmount, 'الكازينو').catch(() => {});
+    }
 
     // 5. Anti Save-Scumming: Immediately persist deduction so reload/close forfeits bet
     forceSaveState(true);
@@ -5311,6 +5350,11 @@ const GameEngine = (() => {
 
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('casino_play', 1);
+
+    if (finalPayout > 0 && typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.settleCasinoPayout(betAmount, grossPayout, gameName).catch(() => {});
+    }
+
     forceSaveState(true);
 
     return {
@@ -5717,6 +5761,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('شراء مركبة تهريب',`شراء ${v.name} وتضمينها للأسطول بقيمة ${v.cost.toLocaleString()} ج.م.`,'dark');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buySmugglingVehicle(vehicleId).catch(() => {});
+    }
+
     forceSaveState(true);
   }
 
@@ -6172,6 +6221,11 @@ const GameEngine = (() => {
     recordPlayerActivity('استيراد بضاعة',`بدء استيراد ${quantity} وحدة من"${item.name}" بتكلفة ${baseCost.toLocaleString()} EGP + ${customsAndFreightFee.toLocaleString()} EGP رسوم جمركية وشحن دولي (تصل خلال ${Math.round(item.importDurationSec / 60)} دقيقة).`,'trade');
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyImportCargo(commodityId, quantity).catch(() => {});
+    }
+
     forceSaveState(true);
 
     return importOrder;
@@ -6364,6 +6418,11 @@ const GameEngine = (() => {
     recordPlayerActivity('توسعة مستودع الاستيراد',`توسعة المستودع الرئيسي (+10 حاويات) لتصبح السعة الإجمالية ${state.tradeCompany.warehouseCapacity} حاوية.`,'trade');
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.upgradeWarehouse().catch(() => {});
+    }
+
     forceSaveState(true);
 
     return {
@@ -6557,6 +6616,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('ترخيص قطاع صناعي',`الحصول على رخصة وتأسيس"${info.definition.name}" بتكلفة ${cost.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.unlockIndustrySector(sectorId).catch(() => {});
+    }
+
     forceSaveState(true);
 
     return {
@@ -6648,6 +6712,11 @@ const GameEngine = (() => {
     info.state[stageKey] = curLvl + multi.count;
     recordPlayerActivity('تطوير خط إنتاج صناعي ',`ترقية"${stDef.name}" في ${info.definition.name} بمقدار +${multi.count} (إلى المستوى ${info.state[stageKey]}) بتكلفة ${cost.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.upgradeIndustryStage(sectorId, stageKey, multiplier).catch(() => {});
+    }
+
     forceSaveState(true);
 
     return {
@@ -7819,6 +7888,11 @@ const GameEngine = (() => {
 
     recordPlayerActivity('توسعة الثروة الحيوانية ', `شراء ${count} من "${def.name}" بتكلفة ${totalCost.toLocaleString()} EGP. إجمالي القطيع: ${(current + count)}`, 'business');
     state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.buyFarmLivestock(type, count).catch(() => {});
+    }
+
     forceSaveState(true);
 
     return {

@@ -262,6 +262,70 @@ const TRADE_COMMODITIES = {
   ev_cars: { id: 'ev_cars', name: 'سيارات كهربائية متطورة', unitCost: 85000 }
 };
 
+const INVESTMENTS = {
+  short: {
+    id: 'short',
+    name: 'وديعة بنكية سريعة',
+    durationTicks: 3600,
+    rate: 0.015,
+    minAmount: 5000,
+    maxAmount: 100000
+  },
+  medium: {
+    id: 'medium',
+    name: 'صندوق استثمار عقاري وسندات',
+    durationTicks: 10800,
+    rate: 0.035,
+    minAmount: 25000,
+    maxAmount: 350000
+  },
+  long: {
+    id: 'long',
+    name: 'صندوق أسهم وتحوط دولي خاص',
+    durationTicks: 28800,
+    rate: 0.07,
+    minAmount: 100000,
+    maxAmount: 1200000
+  },
+  venture: {
+    id: 'venture',
+    name: 'صندوق الاكتتابات والشركات المليارية',
+    durationTicks: 64800,
+    rate: 0.12,
+    minAmount: 500000,
+    maxAmount: 4000000
+  },
+  imperial: {
+    id: 'imperial',
+    name: 'صندوق الثروة الإمبراطوري الماسي',
+    durationTicks: 129600,
+    rate: 0.18,
+    minAmount: 2000000,
+    maxAmount: 10000000
+  }
+};
+
+const STORE_ITEMS = {
+  gold_pen: { id: 'gold_pen', name: 'القلم الذهبي للمدراء', cost: 20000, durationTicks: 180, cooldownSec: 600, maxDailyUses: 4 },
+  premium_lawyer: { id: 'premium_lawyer', name: 'توكيل محامٍ دولي قدير', cost: 100000, durationTicks: 300, cooldownSec: 900, maxDailyUses: 3 },
+  energy_drink: { id: 'energy_drink', name: 'مشروب الطاقة والتركيز الفائق', cost: 25000, durationTicks: 90, cooldownSec: 480, maxDailyUses: 5 },
+  tax_shield: { id: 'tax_shield', name: 'درع الإعفاء والملاذ الضريبي', cost: 600000, durationTicks: 7200, cooldownSec: 86400, maxDailyUses: 1 },
+  market_scanner: { id: 'market_scanner', name: 'ماسح البورصة والتداول الذكي', cost: 200000, durationTicks: 240, cooldownSec: 1200, maxDailyUses: 3 }
+};
+
+const BLACK_MARKET_GEAR = {
+  radar_jammer: { id: 'radar_jammer', name: 'جهاز تشويش رادارات الشرطة', cost: 80000, durationTicks: 240 },
+  fake_passport: { id: 'fake_passport', name: 'جواز سفر دبلوماسي مزور', cost: 600000, durationTicks: 300 },
+  crypto_cleaner: { id: 'crypto_cleaner', name: 'بروتوكول تشفير مالي (Zero-Trace)', cost: 200000, durationTicks: 200 },
+  diplomatic_bag: { id: 'diplomatic_bag', name: 'حقيبة التشفير الدبلوماسية المصفحة', cost: 800000, durationTicks: 360 }
+};
+
+const SMUGGLING_VEHICLES = {
+  speedboat: { id: 'speedboat', name: 'قارب سريع مضاد للرادار', cost: 2000000, capacity: 50 },
+  plane: { id: 'plane', name: 'طائرة شحن جوي خفيفة', cost: 15000000, capacity: 200 },
+  ship: { id: 'ship', name: 'سفينة حاويات عملاقة', cost: 60000000, capacity: 1000 }
+};
+
 module.exports = {
   BUSINESSES,
   ASSETS,
@@ -269,6 +333,10 @@ module.exports = {
   TITLES,
   CAR_TEMPLATES,
   INDUSTRIAL_SECTORS,
-  TRADE_COMMODITIES
+  TRADE_COMMODITIES,
+  INVESTMENTS,
+  STORE_ITEMS,
+  BLACK_MARKET_GEAR,
+  SMUGGLING_VEHICLES
 };
 

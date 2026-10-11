@@ -341,6 +341,161 @@ var ServerBridge = (() => {
     return _reconcileBusinessResponse(res);
   }
 
+  function _reconcileGenericActionResponse(res, updateFn) {
+    if (!res || !res.success) return res;
+    if (typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.bank !== undefined) s.bank = res.bank;
+        if (res.dirtyCash !== undefined) s.dirtyCash = res.dirtyCash;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.title !== undefined) s.title = res.title;
+        if (res.xp !== undefined) s.xp = res.xp;
+        if (typeof updateFn === 'function') updateFn(s, res);
+      }
+      if (typeof UI !== 'undefined' && UI.renderStatsBar) {
+        try { UI.renderStatsBar(); } catch (_) {}
+      }
+    }
+    return res;
+  }
+
+  async function unlockIndustrySector(sectorId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/industry/unlock', { username: _activeUsername, sectorId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.industry) s.industry = r.industry;
+      if (typeof UI !== 'undefined' && UI.renderIndustryEmpirePanel) { try { UI.renderIndustryEmpirePanel(); } catch (_) {} }
+    });
+  }
+
+  async function upgradeIndustryStage(sectorId, stageKey, multiplier = 1) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/industry/upgrade', { username: _activeUsername, sectorId, stageKey, multiplier });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.industry) s.industry = r.industry;
+      if (typeof UI !== 'undefined' && UI.renderIndustryEmpirePanel) { try { UI.renderIndustryEmpirePanel(); } catch (_) {} }
+    });
+  }
+
+  async function buyImportCargo(commodityId, quantity = 1) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/trade/buy-cargo', { username: _activeUsername, commodityId, quantity });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.tradeCompany) s.tradeCompany = r.tradeCompany;
+      if (typeof UI !== 'undefined' && UI.renderTradeCompanyPanel) { try { UI.renderTradeCompanyPanel(); } catch (_) {} }
+    });
+  }
+
+  async function upgradeWarehouse() {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/trade/upgrade-warehouse', { username: _activeUsername });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.tradeCompany) s.tradeCompany = r.tradeCompany;
+      if (typeof UI !== 'undefined' && UI.renderTradeCompanyPanel) { try { UI.renderTradeCompanyPanel(); } catch (_) {} }
+    });
+  }
+
+  async function startInvestment(planId, amount) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/investment/start', { username: _activeUsername, planId, amount });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.investments) s.investments = r.investments;
+      if (typeof UI !== 'undefined' && UI.renderInvestmentsPanel) { try { UI.renderInvestmentsPanel(); } catch (_) {} }
+    });
+  }
+
+  async function buyFarmLivestock(type, count = 1) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/farm/buy-livestock', { username: _activeUsername, type, count });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.farm) s.farm = r.farm;
+      if (typeof UI !== 'undefined' && UI.renderFarmPanel) { try { UI.renderFarmPanel(); } catch (_) {} }
+    });
+  }
+
+  async function buyStoreItem(itemId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/store/buy-item', { username: _activeUsername, itemId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.inventory) s.inventory = r.inventory;
+      if (r.itemDurations) s.itemDurations = r.itemDurations;
+      if (typeof UI !== 'undefined' && UI.renderStorePanel) { try { UI.renderStorePanel(); } catch (_) {} }
+    });
+  }
+
+  async function buyBlackMarketGear(gearId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/black-market/buy-gear', { username: _activeUsername, gearId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.inventory) s.inventory = r.inventory;
+      if (typeof UI !== 'undefined' && UI.renderBlackMarketPanel) { try { UI.renderBlackMarketPanel(); } catch (_) {} }
+    });
+  }
+
+  async function bribePolice() {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/black-market/bribe', { username: _activeUsername });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      s.jailTimer = 0;
+      s.heatLevel = 0;
+      s.raidActive = false;
+      if (typeof UI !== 'undefined' && UI.renderBlackMarketPanel) { try { UI.renderBlackMarketPanel(); } catch (_) {} }
+    });
+  }
+
+  async function buySmugglingVehicle(vehicleId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/smuggling/buy-vehicle', { username: _activeUsername, vehicleId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.smugglingFleet) s.smugglingFleet = r.smugglingFleet;
+      if (typeof UI !== 'undefined' && UI.renderSmugglingPanel) { try { UI.renderSmugglingPanel(); } catch (_) {} }
+    });
+  }
+
+  async function launchMarketingCampaign(businessId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/business/marketing', { username: _activeUsername, businessId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (s.businesses && s.businesses[businessId] && r.marketingTicks !== undefined) {
+        s.businesses[businessId].marketingTicks = r.marketingTicks;
+      }
+      if (typeof UI !== 'undefined' && UI.renderBusinesses) { try { UI.renderBusinesses(true); } catch (_) {} }
+    });
+  }
+
+  async function convertToFranchise(businessId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/business/franchise', { username: _activeUsername, businessId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (s.businesses && s.businesses[businessId]) {
+        s.businesses[businessId].isFranchise = true;
+      }
+      if (typeof UI !== 'undefined' && UI.renderBusinesses) { try { UI.renderBusinesses(true); } catch (_) {} }
+    });
+  }
+
+  async function fileTaxDeclaration() {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/tax/file-declaration', { username: _activeUsername });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.totalTaxesPaid !== undefined) s.totalTaxesPaid = r.totalTaxesPaid;
+    });
+  }
+
+  async function deductCasinoBet(betAmount, gameName = 'الكازينو') {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/casino/bet', { username: _activeUsername, betAmount, gameName });
+    return _reconcileGenericActionResponse(res);
+  }
+
+  async function settleCasinoPayout(betAmount, grossPayout, gameName = 'الكازينو') {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/casino/settle', { username: _activeUsername, betAmount, grossPayout, gameName });
+    return _reconcileGenericActionResponse(res);
+  }
+
   /**
    * Bank deposit or withdrawal
    */
@@ -1120,6 +1275,21 @@ var ServerBridge = (() => {
     supplyBusiness,
     hireWorker,
     fireWorker,
+    unlockIndustrySector,
+    upgradeIndustryStage,
+    buyImportCargo,
+    upgradeWarehouse,
+    startInvestment,
+    buyFarmLivestock,
+    buyStoreItem,
+    buyBlackMarketGear,
+    bribePolice,
+    buySmugglingVehicle,
+    launchMarketingCampaign,
+    convertToFranchise,
+    fileTaxDeclaration,
+    deductCasinoBet,
+    settleCasinoPayout,
     bankAction,
     changePin,
     notifyWireTransfer,
