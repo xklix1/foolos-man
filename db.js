@@ -256,7 +256,7 @@ var AppDB = (() => {
         const adminTok = (typeof window !== 'undefined' && window._ADMIN_MUTATE_TOKEN)
           || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_admin_auth_token'))
           || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_admin_auth_token'))
-          || 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99';
+          || null;
 
         if (adminTok) {
           try {
