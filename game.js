@@ -2706,14 +2706,9 @@ const GameEngine = (() => {
       }
     }
 
-    // 2. Bank compound interest accrual (Hourly rate distributed per tick)
+    // 2. Bank Interest: Manual Daily Claim Mode (no automatic per-tick balance mutation to eliminate balance swing)
     ensureDailyEconomyReset(state);
-    const interestGained = calculateBankInterestPerTick(state);
-    if (interestGained > 0) {
-      state.bank += interestGained;
-      state.dailyBankInterest = (state.dailyBankInterest || 0) + interestGained;
-      updates.bankInterestGained = interestGained;
-    }
+    updates.bankInterestGained = 0;
 
     // 3. Peer-to-Peer Hired Job Salary (Hourly salary distributed per tick)
     if (state.hiredJob && state.lastPuzzleSolved && (getTrustedNow() - state.lastPuzzleSolved < 86400000)) {

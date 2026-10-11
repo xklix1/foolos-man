@@ -24,7 +24,7 @@ test('Server-Authoritative Cashflow & Bank Accrual (No Swing)', async (t) => {
       bank: initialBank,
       netWorth: 1050000,
       businesses: {
-        kiosk: { level: 2, workers: 10, price: 20 }
+        kiosk: { level: 2, workers: 10, price: 20, suppliesTicks: 3600 }
       },
       lastCashflowAccrualAt: Date.now() - 3600 * 1000 // 1 hour ago
     },
@@ -32,7 +32,7 @@ test('Server-Authoritative Cashflow & Bank Accrual (No Swing)', async (t) => {
     lastActivity: Date.now() - 3600 * 1000
   });
 
-  await t.test('Server credits continuous cashflow (businesses + interest) on sync based on elapsed time', async () => {
+  await t.test('Server credits continuous cashflow from businesses on sync based on elapsed time', async () => {
     // Client sends sync
     const clientPayload = {
       username: username,
@@ -42,9 +42,7 @@ test('Server-Authoritative Cashflow & Bank Accrual (No Swing)', async (t) => {
     await sessionManager.updateSessionState(uKey, clientPayload, false);
 
     const session = sessionManager.sessions.get(uKey);
-    // 1 hour on 1M EGP at 0.015% = 150 EGP + kiosk profit
-    assert.ok(session.state.bank > initialBank, `Bank balance must increase (Current: ${session.state.bank})`);
-    assert.ok(session.state.bank >= initialBank + 150, 'Bank should earn interest + kiosk profit');
+    assert.ok(session.state.bank > initialBank, `Bank balance must increase from business profits (Current: ${session.state.bank})`);
   });
 
   await t.test('Client sending stale or modified bank balance NEVER causes a downward swing', async () => {

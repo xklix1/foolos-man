@@ -4688,6 +4688,7 @@ const UIController = (() => {
     // Fetch and render transfer requests & bank history
     fetchAndRenderTransferRequests();
     loadTransferHistory();
+    updateBankInDOM();
   }
 
   function updateBankInDOM() {
@@ -4812,6 +4813,60 @@ const UIController = (() => {
 
     // Live update dynamic locking countdown on all investment cards
     updateInvestmentCardsDOM(s);
+
+    // Update Daily Bank Interest Claim Box
+    const interestEstEl = document.getElementById('bank-daily-interest-estimate');
+    const claimInterestBtn = document.getElementById('btn-claim-bank-interest');
+    if (interestEstEl || claimInterestBtn) {
+      const now = Date.now();
+      const todayStr = new Date(now).toISOString().slice(0, 10);
+      const isClaimedToday = s.dailyBankInterestClaim && s.dailyBankInterestClaim.date === todayStr;
+      const currentBank = Math.max(0, Number(s.bank || 0));
+
+      // Calculate estimate with brackets (0.36% daily rate, max 250k)
+      let effBalance = Math.min(currentBank, 5000000);
+      if (currentBank > 5000000) effBalance += Math.min(currentBank - 5000000, 20000000) * 0.40;
+      if (currentBank > 25000000) effBalance += Math.min(currentBank - 25000000, 75000000) * 0.15;
+
+      let baseRate = 0.0036;
+      if (s.activeCar === 'rolls') baseRate *= 1.05;
+      if (s.inventory && s.inventory.diamond_card > 0) baseRate *= 1.10;
+
+      const estInterest = Math.min(250000, Math.floor(effBalance * baseRate));
+
+      if (isClaimedToday) {
+        if (interestEstEl) {
+          const claimedAmt = Number(s.dailyBankInterestClaim.amount || 0);
+          interestEstEl.textContent = `تم تحصيل عائد اليوم (${claimedAmt.toLocaleString()} ج.م) ✓ - يتاح مجدداً غداً`;
+          interestEstEl.className = 'text-[11px] text-emerald-400 font-semibold block mt-0.5';
+        }
+        if (claimInterestBtn) {
+          claimInterestBtn.disabled = true;
+          claimInterestBtn.className = 'px-3.5 py-1.5 bg-slate-800 text-slate-500 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-not-allowed';
+          claimInterestBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم التحصيل';
+        }
+      } else if (currentBank <= 0 || estInterest <= 0) {
+        if (interestEstEl) {
+          interestEstEl.textContent = 'عائد اليوم المقدر: 0 ج.م (أودع أموالك بالبنك أولاً)';
+          interestEstEl.className = 'text-[11px] text-slate-400 block mt-0.5';
+        }
+        if (claimInterestBtn) {
+          claimInterestBtn.disabled = true;
+          claimInterestBtn.className = 'px-3.5 py-1.5 bg-slate-800 text-slate-500 rounded-lg text-xs font-bold transition flex items-center gap-1.5 cursor-not-allowed';
+          claimInterestBtn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar"></i> تحصيل الفائدة';
+        }
+      } else {
+        if (interestEstEl) {
+          interestEstEl.textContent = `عائد اليوم المقدر: ~${estInterest.toLocaleString()} ج.م (الحد الأقصى 250k)`;
+          interestEstEl.className = 'text-[11px] text-emerald-300 font-medium block mt-0.5';
+        }
+        if (claimInterestBtn) {
+          claimInterestBtn.disabled = false;
+          claimInterestBtn.className = 'px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer';
+          claimInterestBtn.innerHTML = '<i class="fa-solid fa-hand-holding-dollar"></i> تحصيل الفائدة';
+        }
+      }
+    }
   }
 
   // --- Work Shift Cooldown Controller ---
@@ -5305,6 +5360,35 @@ const UIController = (() => {
           showToast('فشل السحب', err.message, 'error');
         } finally {
           withdrawBtn.disabled = false;
+        }
+      });
+    }
+
+    // Daily Bank Interest Claim Action
+    const claimInterestBtn = document.getElementById('btn-claim-bank-interest');
+    if (claimInterestBtn) {
+      claimInterestBtn.addEventListener('click', async () => {
+        try {
+          claimInterestBtn.disabled = true;
+          if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
+            throw new Error("تحصيل الفائدة المصرفية يتطلب اتصالاً بالإنترنت لتأكيد الرصيد.");
+          }
+          const res = await window.ServerBridge.claimBankInterest();
+          if (res && res.success) {
+            if (res.cash !== undefined) GameEngine.state.cash = res.cash;
+            if (res.bank !== undefined) GameEngine.state.bank = res.bank;
+            if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
+            if (res.dailyBankInterestClaim) GameEngine.state.dailyBankInterestClaim = res.dailyBankInterestClaim;
+            if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
+            showToast('عائد مصرفي', `تم تحصيل ${Number(res.interestClaimed || 0).toLocaleString()} EGP عائد وديعة وإيداعها في رصيدك البنكي بنجاح!`, 'success');
+            renderAll();
+          } else if (res && res.error) {
+            throw new Error(res.error);
+          }
+        } catch (err) {
+          showToast('فشل التحصيل', err.message, 'error');
+        } finally {
+          updateBankInDOM();
         }
       });
     }
@@ -8538,10 +8622,15 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
                 }
               }
 
-              if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
-              if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
-              if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
-              if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
+              // Authoritative Bridge Guard: Live balances (cash, bank, netWorth) are strictly synchronized
+              // via ServerBridge. Only adopt from raw DB polling if ServerBridge is offline or explicit admin grant.
+              const isBridgeOnline = typeof window !== 'undefined' && window.ServerBridge && window.ServerBridge.isServerOnline();
+              if (!isBridgeOnline) {
+                if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
+                if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
+                if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
+                if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
+              }
               if (typeof data.xp === 'number') GameEngine.state.xp = data.xp;
               if (data.jobId) GameEngine.state.jobId = data.jobId;
               if (data.title) GameEngine.state.title = data.title;

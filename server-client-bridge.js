@@ -510,6 +510,19 @@ var ServerBridge = (() => {
   }
 
   /**
+   * Claim daily bank deposit interest authoritatively
+   */
+  async function claimBankInterest() {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/bank/claim-interest', {
+      username: _activeUsername
+    });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.dailyBankInterestClaim) s.dailyBankInterestClaim = r.dailyBankInterestClaim;
+    });
+  }
+
+  /**
    * Sends 30-second heartbeat to maintain active session
    */
   async function sendHeartbeat() {
@@ -1291,6 +1304,7 @@ var ServerBridge = (() => {
     deductCasinoBet,
     settleCasinoPayout,
     bankAction,
+    claimBankInterest,
     changePin,
     notifyWireTransfer,
     sendTransferRequest,

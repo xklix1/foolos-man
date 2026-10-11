@@ -52,19 +52,8 @@ function calculateAuthoritativeHourlyCashflow(playerState) {
     });
   }
 
-  // 4. Bank Compound Interest
-  const bankBal = Number(playerState.bank || 0);
-  if (bankBal > 0) {
-    let baseRate = 0.00015; // 0.015% per hour (~13% APY)
-    if (playerState.activeCar === 'rolls') baseRate *= 1.05;
-    if (playerState.inventory && playerState.inventory.diamond_card > 0) baseRate *= 1.10;
-
-    let effBalance = Math.min(bankBal, 5000000);
-    if (bankBal > 5000000) effBalance += Math.min(bankBal - 5000000, 20000000) * 0.40;
-    if (bankBal > 25000000) effBalance += Math.min(bankBal - 25000000, 75000000) * 0.15;
-
-    hourlyIncome += Math.floor(effBalance * baseRate);
-  }
+  // 4. Bank Compound Interest: Handled via explicit daily claim endpoint /api/action/bank/claim-interest
+  // (Disabled continuous automatic compounding to eliminate balance fluctuation and race conditions)
 
   // 5. Hired Peer Job Salary
   if (playerState.hiredJob && playerState.hiredJob.salary) {

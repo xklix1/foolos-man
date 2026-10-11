@@ -256,9 +256,27 @@ class SessionManager {
       const highestTs = Math.max(sessionAdminTs, clientAdminTs, Date.now());
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
-    } else if (clientAdminTs >= sessionAdminTs) {
-      s.adminModifiedTimestamp = clientAdminTs;
-      session._lastProcessedAdminTs = clientAdminTs;
+    } else {
+      // Reconcile liquid cash: if player spent cash, always accept the deduction so server cash doesn't stay inflated
+      if (incomingCash <= Number(s.cash || 0)) {
+        s.cash = incomingCash;
+      } else {
+        const now = Date.now();
+        const timeSinceLastSync = Math.max(1, (now - (session.lastSyncTime || now)) / 1000);
+        const maxAllowedJump = Math.max(500000, Math.floor(50000000 / 3600 * timeSinceLastSync));
+        const cashDiff = incomingCash - Number(s.cash || 0);
+        if (cashDiff <= maxAllowedJump) {
+          s.cash = incomingCash;
+        } else {
+          s.cash = (Number(s.cash) || 0) + maxAllowedJump;
+        }
+      }
+      session.lastSyncTime = Date.now();
+
+      if (clientAdminTs >= sessionAdminTs) {
+        s.adminModifiedTimestamp = clientAdminTs;
+        session._lastProcessedAdminTs = clientAdminTs;
+      }
     }
 
     // Accrue Server-Authoritative Net Cashflow into Bank (Businesses + Real Estate + Cars + Bank Interest + Careers)

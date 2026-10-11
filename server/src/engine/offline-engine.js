@@ -141,14 +141,8 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
     });
   }
 
-  // 4. Bank Compound Interest (0.015% per hour, 250k daily cap)
+  // 4. Bank Interest: Manual Daily Claim Mode (no automatic offline compounding into bank)
   let bankInterestEarned = 0;
-  if (profitableSeconds >= 10 && playerState.bank > 0) {
-    const hourlyRate = 0.00015;
-    const rollsBonus = (playerState.activeCar === 'rolls') ? 1.05 : 1.0;
-    const hourlyInterest = Math.floor((playerState.bank * hourlyRate) * rollsBonus);
-    bankInterestEarned = Math.min(250000, Math.floor((hourlyInterest / 3600) * profitableSeconds));
-  }
 
   // 5. Always Deplete Supplies by Total Elapsed Time
   if (playerState.businesses) {

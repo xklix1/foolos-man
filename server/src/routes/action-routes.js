@@ -557,6 +557,73 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     };
   });
 
+  // 5.5 POST /api/action/bank/claim-interest (Claim Daily Bank Deposit Interest)
+  fastify.post('/api/action/bank/claim-interest', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const s = session.state;
+
+    const now = Date.now();
+    const today = new Date(now).toISOString().slice(0, 10);
+    if (!s.dailyBankInterestClaim) {
+      s.dailyBankInterestClaim = { date: '', amount: 0 };
+    }
+
+    if (s.dailyBankInterestClaim.date === today) {
+      return reply.code(400).send({
+        error: 'لقد قمت بتحصيل عائد الفائدة البنكية لليوم بالفعل. يمكنك التحصيل مجدداً غداً!',
+        alreadyClaimed: true
+      });
+    }
+
+    const currentBank = Math.max(0, Number(s.bank || 0));
+    if (currentBank <= 0) {
+      return reply.code(400).send({ error: 'لا يوجد رصيد إيداع في البنك لاحتساب عائد فائدة.' });
+    }
+
+    // Daily interest calculation with brackets (0.36% daily rate ~ 13% APY, capped at 250,000 EGP)
+    let effBalance = Math.min(currentBank, 5000000);
+    if (currentBank > 5000000) effBalance += Math.min(currentBank - 5000000, 20000000) * 0.40;
+    if (currentBank > 25000000) effBalance += Math.min(currentBank - 25000000, 75000000) * 0.15;
+
+    let baseRate = 0.0036; // 0.36% daily
+    if (s.activeCar === 'rolls') baseRate *= 1.05;
+    if (s.inventory && s.inventory.diamond_card > 0) baseRate *= 1.10;
+
+    const interestAmt = Math.min(250000, Math.floor(effBalance * baseRate));
+    if (interestAmt <= 0) {
+      return reply.code(400).send({ error: 'عائد الفائدة المحتسب أقل من 1 ج.م.' });
+    }
+
+    s.bank = Math.round(((Number(s.bank) || 0) + interestAmt) * 100) / 100;
+    s.dailyBankInterestClaim = { date: today, amount: interestAmt, claimedAt: now };
+    s.netWorth = calculateNetWorth(s);
+
+    if (!Array.isArray(s.activityLog)) s.activityLog = [];
+    s.activityLog.unshift({
+      action: 'تحصيل فائدة بنكية',
+      details: `تحصيل العائد اليومي للوديعة المصرفية بقيمة ${interestAmt.toLocaleString()} ج.م`,
+      category: 'banking',
+      timestamp: now,
+      amount: interestAmt,
+      cash: s.cash,
+      bank: s.bank
+    });
+    if (s.activityLog.length > 3500) s.activityLog.length = 3500;
+
+    sessionManager.markDirty(session.username);
+    await dbService.savePlayerState(session.username, s);
+
+    return {
+      success: true,
+      interestClaimed: interestAmt,
+      cash: s.cash,
+      bank: s.bank,
+      netWorth: s.netWorth,
+      dailyBankInterestClaim: s.dailyBankInterestClaim
+    };
+  });
+
   const EXECUTIVE_GEAR_CONFIG = {
     ledger: { unlockNetWorth: 500000, unlockGoldCost: 25, baseUpgradeCostGold: 20, maxLevel: 15 },
     laptop: { unlockNetWorth: 5000000, unlockGoldCost: 50, baseUpgradeCostGold: 30, maxLevel: 15 },
