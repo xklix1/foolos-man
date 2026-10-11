@@ -64,8 +64,25 @@ test('Bank 100% Deposit All and Withdraw All Tests', async () => {
     assert.strictEqual(sweepRes.success, true);
     assert.strictEqual(sweepRes.cash, 0, 'Even floor balance deposit must cleanly sweep all cash without leaving decimals');
     assert.strictEqual(sweepRes.bank, 3000.45);
+    // 5. Test Mega-Withdrawal (200 Million EGP) & Zero-Sum Sync Persistence
+    activeSess.state.cash = 0;
+    activeSess.state.bank = 200000000; // 200M EGP in bank
+    const megaWithdrawRes = await ServerBridge.bankAction('withdraw', 150000000); // Withdraw 150M EGP
+    assert.strictEqual(megaWithdrawRes.success, true);
+    assert.strictEqual(megaWithdrawRes.cash, 150000000, 'Cash must receive full 150M without disappearing');
+    assert.strictEqual(megaWithdrawRes.bank, 50000000, 'Bank must have remaining 50M');
 
-    console.log('[Test] All Bank 100% Deposit All and Withdraw All tests PASSED!');
+    // Simulate client state sync after mega-withdrawal
+    const clientState = {
+      username: testUser,
+      cash: 150000000,
+      bank: 50000000
+    };
+    await sessionManager.updateSessionState(testUser.toLowerCase(), clientState, false);
+    assert.strictEqual(activeSess.state.cash, 150000000, 'Zero-Sum transfer must NOT clamp 150M cash down to 500k!');
+    assert.strictEqual(activeSess.state.bank, 50000000, 'Bank must remain 50M!');
+
+    console.log('[Test] All Bank 100% Deposit All, Withdraw All, and Mega-Withdrawal tests PASSED!');
   } finally {
     sessionManager.sessions.delete('bank_all_tester');
     if (sessionManager.flushIntervalTimer) clearInterval(sessionManager.flushIntervalTimer);

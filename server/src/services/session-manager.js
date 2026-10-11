@@ -257,19 +257,40 @@ class SessionManager {
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
     } else {
-      // Reconcile liquid cash: if player spent cash, always accept the deduction so server cash doesn't stay inflated
-      if (incomingCash <= Number(s.cash || 0)) {
+      // 1. Zero-Sum Internal Transfer (Cash <-> Bank transfers)
+      // When moving money between cash and bank:
+      // (a) Withdrawal: Cash increases and Bank decreases by the same amount.
+      // (b) Deposit: Bank increases and Cash decreases by the same amount.
+      const cashDiff = incomingCash - Number(s.cash || 0);
+      const bankDiff = incomingBank - Number(s.bank || 0);
+      const isInternalWithdrawal = (cashDiff > 0 && bankDiff < 0 && Math.abs(cashDiff + bankDiff) <= 100);
+      const isInternalDeposit = (bankDiff > 0 && cashDiff < 0 && Math.abs(cashDiff + bankDiff) <= 100);
+
+      if (isInternalWithdrawal) {
+        // Player withdrew funds from Bank to Cash: update both without clamping
         s.cash = incomingCash;
+        s.bank = incomingBank;
+      } else if (isInternalDeposit) {
+        // Player deposited funds from Cash to Bank: update both without clamping
+        s.cash = incomingCash;
+        s.bank = incomingBank;
       } else {
-        const now = Date.now();
-        const timeSinceLastSync = Math.max(1, (now - (session.lastSyncTime || now)) / 1000);
-        const maxAllowedJump = Math.max(500000, Math.floor(50000000 / 3600 * timeSinceLastSync));
-        const cashDiff = incomingCash - Number(s.cash || 0);
-        if (cashDiff <= maxAllowedJump) {
+        // Not a zero-sum transfer:
+        // (a) If player spent cash (supplies, items, business upgrades), always accept cash deduction
+        if (incomingCash <= Number(s.cash || 0)) {
           s.cash = incomingCash;
         } else {
-          s.cash = (Number(s.cash) || 0) + maxAllowedJump;
+          // Cash increased without bank deduction: check against max allowed velocity jump
+          const now = Date.now();
+          const timeSinceLastSync = Math.max(1, (now - (session.lastSyncTime || now)) / 1000);
+          const maxAllowedJump = Math.max(500000, Math.floor(50000000 / 3600 * timeSinceLastSync));
+          if (cashDiff <= maxAllowedJump) {
+            s.cash = incomingCash;
+          } else {
+            s.cash = (Number(s.cash) || 0) + maxAllowedJump;
+          }
         }
+        // Bank remains server-authoritative for passive accruals, so it never swings downward on non-withdrawals
       }
       session.lastSyncTime = Date.now();
 

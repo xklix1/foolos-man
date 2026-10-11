@@ -543,7 +543,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       bank: s.bank
     });
     if (s.activityLog.length > 3500) s.activityLog.length = 3500;
-
+    s.adminModifiedTimestamp = Math.max(Number(s.adminModifiedTimestamp || 0), Date.now());
     sessionManager.markDirty(session.username);
     await dbService.savePlayerState(session.username, s);
 
@@ -553,7 +553,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       amount: val,
       cash: s.cash,
       bank: s.bank,
-      netWorth: s.netWorth
+      netWorth: s.netWorth,
+      adminModifiedTimestamp: s.adminModifiedTimestamp
     };
   });
 

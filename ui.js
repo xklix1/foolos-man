@@ -5309,6 +5309,7 @@ const UIController = (() => {
             if (res.cash !== undefined) GameEngine.state.cash = res.cash;
             if (res.bank !== undefined) GameEngine.state.bank = res.bank;
             if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
+            if (res.adminModifiedTimestamp !== undefined) GameEngine.state.adminModifiedTimestamp = res.adminModifiedTimestamp;
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             input.value = '';
@@ -5347,6 +5348,7 @@ const UIController = (() => {
             if (res.cash !== undefined) GameEngine.state.cash = res.cash;
             if (res.bank !== undefined) GameEngine.state.bank = res.bank;
             if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
+            if (res.adminModifiedTimestamp !== undefined) GameEngine.state.adminModifiedTimestamp = res.adminModifiedTimestamp;
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             input.value = '';
