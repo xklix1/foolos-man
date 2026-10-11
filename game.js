@@ -3953,11 +3953,34 @@ const GameEngine = (() => {
     return state;
   }
 
+  function getAfkManagerRenewalCost() {
+    let hourlyPassive = 0;
+    if (state.businesses) {
+      for (const [key, b] of Object.entries(state.businesses)) {
+        if (!b || b.level <= 0) continue;
+        const bizDef = BUSINESSES[key];
+        if (!bizDef) continue;
+        const baseMargin = Math.max(1, (bizDef.optimumPrice || 10) - (bizDef.costOfGoods || 5));
+        const lvlMult = 1 + (b.level - 1) * 0.25;
+        const workerMult = 1 + (b.workers || 0) * 0.05;
+        hourlyPassive += (bizDef.baseDemand || 50) * baseMargin * lvlMult * workerMult;
+      }
+    }
+    return Math.max(1000, Math.min(500000, Math.round(hourlyPassive * 0.10)));
+  }
+
   function renewAfkManager() {
     if (!activeUsername) throw new Error("لا توجد جلسة لاعب نشطة.");
+    const cost = getAfkManagerRenewalCost();
+    if (state.cash < cost) {
+      throw new Error(`رصيدك غير كافٍ لتجديد وردية الإدارة (12 ساعة). تحتاج: ${cost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
+    }
+
+    state.cash -= cost;
     const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
     state.afkManagerExpiresAt = getTrustedNow() + TWELVE_HOURS_MS;
     state.netWorth = calculateNetWorth();
+    recordPlayerActivity('إدارة المشاريع', `تجديد وتفعيل وردية الإدارة الآلية (12 ساعة) بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
 
     // Dispatch to Authoritative Server if connected
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
@@ -3969,6 +3992,7 @@ const GameEngine = (() => {
     // the server so isManagerActive = true on next login and offline earnings are calculated.
     AppDB.savePlayerState(activeUsername, state, true);
     return {
+      costPaid: cost,
       expiresAt: state.afkManagerExpiresAt,
       remainingMs: TWELVE_HOURS_MS
     };
@@ -4246,6 +4270,12 @@ const GameEngine = (() => {
 
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
+
+    // Dispatch to Authoritative Server
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.hireWorker(key).catch(() => {});
+    }
+
     forceSaveState(true);
     return {
       workers: bizState.workers,
@@ -4260,6 +4290,12 @@ const GameEngine = (() => {
 
     bizState.workers--;
     state.netWorth = calculateNetWorth();
+
+    // Dispatch to Authoritative Server
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      ServerBridge.fireWorker(key).catch(() => {});
+    }
+
     forceSaveState(true);
     return bizState.workers;
   }
@@ -5876,7 +5912,7 @@ const GameEngine = (() => {
 
     // Dispatch to Authoritative Server
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.buySupplies(1).catch(() => {});
+      ServerBridge.supplyBusiness(key).catch(() => {});
     }
 
     forceSaveState(true);
@@ -8770,6 +8806,7 @@ const GameEngine = (() => {
     getNetWorthBreakdown,
     getAppropriateTitle,
     renewAfkManager,
+    getAfkManagerRenewalCost,
     forceSaveState,
     saveState: forceSaveState,
     getState: () => state,

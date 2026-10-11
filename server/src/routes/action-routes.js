@@ -10,7 +10,7 @@ const config = require('../config/env');
 const sessionManager = require('../services/session-manager');
 const dbService = require('../services/db-service');
 const { BUSINESSES } = require('../engine/definitions');
-const { getBusinessUpgradeCost } = require('../engine/business-engine');
+const { getBusinessUpgradeCost, getBusinessSupplyCost, getBusinessWorkerHireCost, getAfkManagerRenewalCost } = require('../engine/business-engine');
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
 const eventService = require('../services/event-service');
 const farmEngine = require('../engine/farm-engine');
@@ -131,7 +131,7 @@ async function actionRoutes(fastify, options) {
 
 const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
-  // 2. POST /api/action/buy-business (Business Purchase / Upgrade)
+  // 2. POST /api/action/buy-business   // 2. POST /api/action/buy-business (Business Purchase / Upgrade)
   fastify.post('/api/action/buy-business', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
@@ -145,7 +145,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       businessId === 'constructor' ||
       businessId === 'prototype'
     ) {
-      return reply.code(400).send({ error: 'Invalid business identifier' });
+      return reply.code(400).send({ error: 'المشروع غير متوفر أو غير صالح.' });
     }
 
     const s = session.state;
@@ -155,31 +155,35 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         level: 0,
         workers: 0,
         price: BUSINESSES[businessId].optimumPrice,
-        suppliesTicks: 12 * 3600 // 12 hours initial supplies
+        suppliesTicks: 3600 // 1 hour initial supplies on buy
       };
     }
 
     const b = s.businesses[businessId];
     if (!b || typeof b !== 'object') {
-      return reply.code(400).send({ error: 'Invalid business state' });
+      return reply.code(400).send({ error: 'حالة المشروع غير صالحة.' });
     }
     const currentLevel = b.level || 0;
-    const upgradeCost = getBusinessUpgradeCost(businessId, currentLevel);
+    if (currentLevel >= 10) {
+      return reply.code(400).send({ error: 'لقد وصل المشروع للحد الأقصى من المستويات (المستوى 10).' });
+    }
+
+    const upgradeCost = getBusinessUpgradeCost(businessId, currentLevel, s);
 
     // Validate sufficient funds
-    if (s.cash < upgradeCost) {
+    if ((Number(s.cash) || 0) < upgradeCost) {
       return reply.code(400).send({
-        error: 'Insufficient funds for business upgrade',
+        error: `رصيدك غير كافٍ. تحتاج: ${upgradeCost.toLocaleString()} EGP — لديك: ${(Number(s.cash) || 0).toLocaleString()} EGP`,
         requiredCash: upgradeCost,
         currentCash: s.cash
       });
     }
 
     // Authoritatively deduct and upgrade
-    s.cash -= upgradeCost;
+    s.cash = (Number(s.cash) || 0) - upgradeCost;
     b.level = currentLevel + 1;
     if (!b.suppliesTicks || b.suppliesTicks <= 0) {
-      b.suppliesTicks = 12 * 3600; // Refill 12 hours upon initial purchase
+      b.suppliesTicks = 3600; // Refill 1 hour upon initial purchase
     }
 
     s.netWorth = calculateNetWorth(s);
@@ -194,11 +198,12 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       costPaid: upgradeCost,
       cash: s.cash,
       netWorth: s.netWorth,
-      title: s.title
+      title: s.title,
+      businesses: s.businesses
     };
   });
 
-  // 3. POST /api/action/renew-afk (12-Hour AFK Manager Extension — 10 requests/min limit)
+  // 3. POST /api/action/renew-afk (12-Hour AFK Manager Extension — Dynamic Fee)
   fastify.post('/api/action/renew-afk', {
     config: {
       rateLimit: {
@@ -214,7 +219,17 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const s = session.state;
     const now = Date.now();
 
-    // Reset expiry to 12 hours from current trusted server now
+    // Dynamic fee: 10% of total passive hourly profit from businesses (min 1,000, max 500,000)
+    const renewalCost = getAfkManagerRenewalCost(s);
+    if ((Number(s.cash) || 0) < renewalCost) {
+      return reply.code(400).send({
+        error: `رصيدك غير كافٍ لتجديد ترخيص الإدارة (12 ساعة). تحتاج: ${renewalCost.toLocaleString()} EGP — لديك: ${(Number(s.cash) || 0).toLocaleString()} EGP`,
+        requiredCash: renewalCost,
+        currentCash: s.cash
+      });
+    }
+
+    s.cash = (Number(s.cash) || 0) - renewalCost;
     s.afkManagerExpiresAt = now + TWELVE_HOURS_MS;
     s.netWorth = calculateNetWorth(s);
 
@@ -223,51 +238,225 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     return {
       success: true,
+      costPaid: renewalCost,
       afkManagerExpiresAt: s.afkManagerExpiresAt,
       remainingMs: TWELVE_HOURS_MS,
-      serverTime: now
+      serverTime: now,
+      cash: s.cash,
+      netWorth: s.netWorth
     };
   });
 
-  // 4. POST /api/action/buy-supplies (Restock Business Supplies)
-  fastify.post('/api/action/buy-supplies', async (request, reply) => {
+  // 4. POST /api/action/business/supply & /api/action/buy-supplies (Restock Business Supplies)
+  fastify.post('/api/action/business/supply', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
 
-    const { hours = 12 } = request.body || {};
-    const refillHours = Math.max(1, Math.min(24, parseInt(hours, 10) || 12));
-    const refillSeconds = refillHours * 3600;
+    const { businessId } = request.body || {};
+    if (!businessId || !ALLOWED_BUSINESS_KEYS.has(businessId)) {
+      return reply.code(400).send({ error: 'المشروع غير متوفر أو غير صالح.' });
+    }
 
     const s = session.state;
-    // Flat supplies cost: 250 cash per hour of supplies
-    const totalCost = refillHours * 250;
-    if (s.cash < totalCost) {
+    if (!s.businesses || !s.businesses[businessId] || (s.businesses[businessId].level || 0) <= 0) {
+      return reply.code(400).send({ error: 'يجب تأسيس وشراء المشروع أولاً لتوريد البضاعة له.' });
+    }
+
+    const b = s.businesses[businessId];
+    const currentTicks = Math.max(0, Number(b.suppliesTicks) || 0);
+    const MAX_SUPPLIES_TICKS = 43200; // 12 hours
+    const SUPPLY_INCREMENT_TICKS = 3600; // 1 hour
+
+    if (currentTicks >= MAX_SUPPLIES_TICKS) {
+      return reply.code(400).send({ error: 'وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!' });
+    }
+
+    const supplyCost = getBusinessSupplyCost(businessId, b);
+    if ((Number(s.cash) || 0) < supplyCost) {
       return reply.code(400).send({
-        error: 'Insufficient cash for supplies',
-        requiredCash: totalCost,
+        error: `رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(s.cash) || 0).toLocaleString()} EGP`,
+        requiredCash: supplyCost,
         currentCash: s.cash
       });
     }
 
-    s.cash -= totalCost;
-    if (s.businesses) {
-      Object.keys(s.businesses).forEach(bk => {
-        const b = s.businesses[bk];
-        if (b && b.level > 0) {
-          b.suppliesTicks = (b.suppliesTicks || 0) + refillSeconds;
-        }
-      });
-    }
-
+    s.cash = (Number(s.cash) || 0) - supplyCost;
+    b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
     s.netWorth = calculateNetWorth(s);
+
     sessionManager.markDirty(session.username);
 
     return {
       success: true,
-      refilledHours: refillHours,
+      businessId,
+      costPaid: supplyCost,
+      suppliesTicks: b.suppliesTicks,
+      hoursStacked: (b.suppliesTicks / 3600).toFixed(1),
+      cash: s.cash,
+      netWorth: s.netWorth,
+      businesses: s.businesses
+    };
+  });
+
+  fastify.post('/api/action/buy-supplies', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    const { businessId } = request.body || {};
+    const s = session.state;
+    if (!s.businesses || typeof s.businesses !== 'object') s.businesses = {};
+
+    if (businessId && ALLOWED_BUSINESS_KEYS.has(businessId)) {
+      if (!s.businesses[businessId] || (s.businesses[businessId].level || 0) <= 0) {
+        return reply.code(400).send({ error: 'يجب تأسيس وشراء المشروع أولاً لتوريد البضاعة له.' });
+      }
+      const b = s.businesses[businessId];
+      const currentTicks = Math.max(0, Number(b.suppliesTicks) || 0);
+      const MAX_SUPPLIES_TICKS = 43200;
+      if (currentTicks >= MAX_SUPPLIES_TICKS) {
+        return reply.code(400).send({ error: 'وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!' });
+      }
+      const supplyCost = getBusinessSupplyCost(businessId, b);
+      if ((Number(s.cash) || 0) < supplyCost) {
+        return reply.code(400).send({
+          error: `رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP`,
+          requiredCash: supplyCost,
+          currentCash: s.cash
+        });
+      }
+      s.cash = (Number(s.cash) || 0) - supplyCost;
+      b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + 3600);
+      s.netWorth = calculateNetWorth(s);
+      sessionManager.markDirty(session.username);
+      return {
+        success: true,
+        businessId,
+        costPaid: supplyCost,
+        suppliesTicks: b.suppliesTicks,
+        hoursStacked: (b.suppliesTicks / 3600).toFixed(1),
+        cash: s.cash,
+        netWorth: s.netWorth,
+        businesses: s.businesses
+      };
+    }
+
+    // Default global restock
+    let totalCost = 0;
+    const MAX_SUPPLIES_TICKS = 43200;
+    Object.keys(s.businesses).forEach(bk => {
+      const b = s.businesses[bk];
+      if (b && b.level > 0 && (b.suppliesTicks || 0) < MAX_SUPPLIES_TICKS) {
+        totalCost += getBusinessSupplyCost(bk, b);
+      }
+    });
+
+    if (totalCost > 0 && (Number(s.cash) || 0) >= totalCost) {
+      s.cash = (Number(s.cash) || 0) - totalCost;
+      Object.keys(s.businesses).forEach(bk => {
+        const b = s.businesses[bk];
+        if (b && b.level > 0) {
+          b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, (b.suppliesTicks || 0) + 3600);
+        }
+      });
+      s.netWorth = calculateNetWorth(s);
+      sessionManager.markDirty(session.username);
+    }
+
+    return {
+      success: true,
       costPaid: totalCost,
       cash: s.cash,
-      netWorth: s.netWorth
+      netWorth: s.netWorth,
+      businesses: s.businesses
+    };
+  });
+
+  // POST /api/action/business/hire-worker (Authoritative Worker Hiring)
+  fastify.post('/api/action/business/hire-worker', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    const { businessId } = request.body || {};
+    if (!businessId || !ALLOWED_BUSINESS_KEYS.has(businessId)) {
+      return reply.code(400).send({ error: 'المشروع غير متوفر أو غير صالح.' });
+    }
+
+    const s = session.state;
+    if (!s.businesses || !s.businesses[businessId] || (s.businesses[businessId].level || 0) <= 0) {
+      return reply.code(400).send({ error: 'يجب شراء المشروع أولاً.' });
+    }
+
+    const biz = BUSINESSES[businessId];
+    const b = s.businesses[businessId];
+    const maxAllowed = biz.maxWorkers || 50;
+    const maxWorkersForLvl = Math.min(maxAllowed, Math.max(1, Math.ceil(((b.level || 1) / 10) * maxAllowed)));
+    const currentWorkers = Number(b.workers || 0);
+
+    if (currentWorkers >= maxWorkersForLvl) {
+      if (currentWorkers >= maxAllowed) {
+        return reply.code(400).send({ error: `وصل المشروع للحد الأقصى المطلق للعمالة المسموح بها (${maxAllowed} عامل).` });
+      }
+      return reply.code(400).send({ error: `الحد الأقصى للعمال في المستوى ${b.level} هو ${maxWorkersForLvl} عمال. رقّ المشروع لإتاحة شواغر جديدة.` });
+    }
+
+    const hireCost = getBusinessWorkerHireCost(businessId, b);
+    if ((Number(s.cash) || 0) < hireCost) {
+      return reply.code(400).send({
+        error: `تكلفة توظيف عامل إضافي هي ${hireCost.toLocaleString()} جنيه. الرصيد غير كافٍ.`,
+        requiredCash: hireCost,
+        currentCash: s.cash
+      });
+    }
+
+    s.cash = (Number(s.cash) || 0) - hireCost;
+    b.workers = currentWorkers + 1;
+    s.netWorth = calculateNetWorth(s);
+
+    sessionManager.markDirty(session.username);
+
+    return {
+      success: true,
+      businessId,
+      workers: b.workers,
+      costPaid: hireCost,
+      cash: s.cash,
+      netWorth: s.netWorth,
+      businesses: s.businesses
+    };
+  });
+
+  // POST /api/action/business/fire-worker (Authoritative Worker Dismissal)
+  fastify.post('/api/action/business/fire-worker', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+
+    const { businessId } = request.body || {};
+    if (!businessId || !ALLOWED_BUSINESS_KEYS.has(businessId)) {
+      return reply.code(400).send({ error: 'المشروع غير متوفر أو غير صالح.' });
+    }
+
+    const s = session.state;
+    if (!s.businesses || !s.businesses[businessId]) {
+      return reply.code(400).send({ error: 'المشروع غير متوفر.' });
+    }
+
+    const b = s.businesses[businessId];
+    if ((b.workers || 0) <= 0) {
+      return reply.code(400).send({ error: 'لا يوجد عمال لتسريحهم.' });
+    }
+
+    b.workers = Math.max(0, (b.workers || 0) - 1);
+    s.netWorth = calculateNetWorth(s);
+
+    sessionManager.markDirty(session.username);
+
+    return {
+      success: true,
+      businessId,
+      workers: b.workers,
+      cash: s.cash,
+      netWorth: s.netWorth,
+      businesses: s.businesses
     };
   });
 

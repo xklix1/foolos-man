@@ -115,17 +115,57 @@ function calculateAllBusinessesHourly(playerState) {
 
 /**
  * Calculates the purchase / upgrade cost for a business level
+ * Matching game.js:4150
  */
-function getBusinessUpgradeCost(key, currentLevel) {
+function getBusinessUpgradeCost(key, currentLevel, playerState = {}) {
   const bizConfig = BUSINESSES[key];
   if (!bizConfig) return 0;
   if (currentLevel <= 0) return bizConfig.cost;
-  // Upgrade scaling formula: baseCost * (1.15 ^ level)
-  return Math.floor(bizConfig.cost * Math.pow(1.15, currentLevel));
+  // Upgrade scaling formula: baseCost * (1.75 ^ level)
+  const baseCost = Math.floor(bizConfig.cost * Math.pow(1.75, currentLevel));
+  const hasTaxShield = Boolean(playerState.inventory && playerState.inventory.tax_shield > 0);
+  return hasTaxShield ? Math.floor(baseCost * 0.875) : baseCost;
+}
+
+/**
+ * Calculates 1-hour operating supplies cost for any business (~20% of base hourly output)
+ * Matching game.js:5839
+ */
+function getBusinessSupplyCost(key, bizState) {
+  const biz = BUSINESSES[key];
+  if (!biz) return 50;
+  const lvl = Math.max(1, (bizState && bizState.level) || 1);
+  const baseMargin = Math.max(1, biz.optimumPrice - biz.costOfGoods);
+  const hourlyCapacity = biz.baseDemand * baseMargin * (1 + (lvl - 1) * 0.25);
+  return Math.max(50, Math.round(hourlyCapacity * 0.20));
+}
+
+/**
+ * Calculates worker hiring cost (scales with current count of workers)
+ * Matching game.js:4239
+ */
+function getBusinessWorkerHireCost(key, bizState) {
+  const biz = BUSINESSES[key];
+  if (!biz) return 0;
+  const currentWorkers = Number((bizState && bizState.workers) || 0);
+  return Math.floor(biz.cost * 0.15 * (1 + currentWorkers));
+}
+
+/**
+ * Calculates 12-Hour AFK Auto-Manager renewal cost:
+ * Dynamic: 10% of total passive hourly profit from businesses (min 1,000 EGP, max 500,000 EGP)
+ */
+function getAfkManagerRenewalCost(playerState) {
+  const hourlyProfit = calculateAllBusinessesHourly(playerState);
+  const tenPercent = Math.round(hourlyProfit * 0.10);
+  return Math.max(1000, Math.min(500000, tenPercent));
 }
 
 module.exports = {
   calculateSingleBusinessProfit,
   calculateAllBusinessesHourly,
-  getBusinessUpgradeCost
+  getBusinessUpgradeCost,
+  getBusinessSupplyCost,
+  getBusinessWorkerHireCost,
+  getAfkManagerRenewalCost
 };

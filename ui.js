@@ -3713,44 +3713,48 @@ const UIController = (() => {
     const expiry = s.afkManagerExpiresAt || 0;
     const remainingMs = Math.max(0, expiry - now);
 
+    const renewalCost = (window.GameEngine && typeof window.GameEngine.getAfkManagerRenewalCost === 'function')
+      ? window.GameEngine.getAfkManagerRenewalCost()
+      : 1000;
+
     if (remainingMs > 0) {
       const totalSec = Math.floor(remainingMs / 1000);
       const hours = Math.floor(totalSec / 3600);
       const mins = Math.floor((totalSec % 3600) / 60);
       const secs = totalSec % 60;
-      const formatted =`${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
+      const formatted = `${hours.toString().padStart(2,'0')}:${mins.toString().padStart(2,'0')}:${secs.toString().padStart(2,'0')}`;
       const pct = Math.min(100, Math.max(2, Math.round((remainingMs / (12 * 3600 * 1000)) * 100)));
 
       if (badgeEl) {
-        badgeEl.innerHTML =`<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>نشط (تجميع مستمر)`;
-        badgeEl.className ='text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-emerald-500/20 text-emerald-300 border-emerald-500/30 flex items-center gap-1';
+        badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span>نشط (تجميع مستمر)`;
+        badgeEl.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-emerald-500/20 text-emerald-300 border-emerald-500/30 flex items-center gap-1';
       }
       if (barEl) {
-        barEl.style.width =`${pct}%`;
-        barEl.className ='bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500';
+        barEl.style.width = `${pct}%`;
+        barEl.className = 'bg-gradient-to-r from-emerald-500 to-teal-400 h-full transition-all duration-500';
       }
       if (timeEl) {
-        timeEl.textContent =`${formatted} متبقية`;
-        timeEl.className ='numbers-font text-xs font-bold text-emerald-400';
+        timeEl.textContent = `${formatted} متبقية`;
+        timeEl.className = 'numbers-font text-xs font-bold text-emerald-400';
       }
       if (btnTextEl) {
-        btnTextEl.textContent ='تمديد وردية الإدارة (12 ساعة)';
+        btnTextEl.textContent = `تمديد وردية الإدارة (12 ساعة) - ${formatCompactNumber(renewalCost)} ج.م`;
       }
     } else {
       if (badgeEl) {
-        badgeEl.innerHTML =`<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>متوقف (يلزم التفعيل)`;
-        badgeEl.className ='text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-rose-500/20 text-rose-300 border-rose-500/30 flex items-center gap-1';
+        badgeEl.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>متوقف (يلزم التفعيل)`;
+        badgeEl.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-black border bg-rose-500/20 text-rose-300 border-rose-500/30 flex items-center gap-1';
       }
       if (barEl) {
-        barEl.style.width ='0%';
-        barEl.className ='bg-rose-500 h-full transition-all duration-500';
+        barEl.style.width = '0%';
+        barEl.className = 'bg-rose-500 h-full transition-all duration-500';
       }
       if (timeEl) {
-        timeEl.textContent ='منتهي (انتهت الـ 12 ساعة)';
-        timeEl.className ='numbers-font text-xs font-bold text-rose-400';
+        timeEl.textContent = 'منتهي (انتهت الـ 12 ساعة)';
+        timeEl.className = 'numbers-font text-xs font-bold text-rose-400';
       }
       if (btnTextEl) {
-        btnTextEl.textContent ='تفعيل وردية الإدارة (12 ساعة)';
+        btnTextEl.textContent = `تفعيل وردية الإدارة (12 ساعة) - ${formatCompactNumber(renewalCost)} ج.م`;
       }
     }
 
@@ -5177,7 +5181,8 @@ const UIController = (() => {
         try {
           const res = GameEngine.renewAfkManager();
           playMenuSound('success');
-          showToast('تجديد وردية الإدارة','تم تفعيل ترخيص الإدارة الذاتية والأرباح أثناء الغياب لمدة 12 ساعة بنجاح!','success');
+          const costText = (res && res.costPaid) ? ` بتكلفة ${res.costPaid.toLocaleString()} ج.م` : '';
+          showToast('تجديد وردية الإدارة', `تم تفعيل ترخيص الإدارة الذاتية والأرباح أثناء الغياب لمدة 12 ساعة بنجاح!${costText}`, 'success');
           renderAll();
         } catch (err) {
           showToast('خطأ التجديد', err.message,'error');

@@ -248,15 +248,38 @@ var ServerBridge = (() => {
     }
   }
 
+  function _reconcileBusinessResponse(res) {
+    if (!res || !res.success) return res;
+    if (typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.title !== undefined) s.title = res.title;
+        if (res.afkManagerExpiresAt !== undefined) s.afkManagerExpiresAt = res.afkManagerExpiresAt;
+        if (res.businesses && typeof res.businesses === 'object') {
+          s.businesses = s.businesses || {};
+          Object.assign(s.businesses, res.businesses);
+        }
+      }
+      if (typeof UI !== 'undefined') {
+        if (UI.renderBusinesses) { try { UI.renderBusinesses(true); } catch (_) {} }
+        if (UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+      }
+    }
+    return res;
+  }
+
   /**
    * Purchases or upgrades a business authoritatively on the server
    */
   async function buyBusiness(businessId) {
     if (!_isServerOnline || !_activeUsername) return null;
-    return await _post('/api/action/buy-business', {
+    const res = await _post('/api/action/buy-business', {
       username: _activeUsername,
       businessId
     });
+    return _reconcileBusinessResponse(res);
   }
 
   /**
@@ -264,9 +287,22 @@ var ServerBridge = (() => {
    */
   async function renewAfkManager() {
     if (!_isServerOnline || !_activeUsername) return null;
-    return await _post('/api/action/renew-afk', {
+    const res = await _post('/api/action/renew-afk', {
       username: _activeUsername
     });
+    return _reconcileBusinessResponse(res);
+  }
+
+  /**
+   * Authoritatively supplies goods to a specific business
+   */
+  async function supplyBusiness(businessId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/business/supply', {
+      username: _activeUsername,
+      businessId
+    });
+    return _reconcileBusinessResponse(res);
   }
 
   /**
@@ -274,10 +310,35 @@ var ServerBridge = (() => {
    */
   async function buySupplies(hours = 12) {
     if (!_isServerOnline || !_activeUsername) return null;
-    return await _post('/api/action/buy-supplies', {
+    const res = await _post('/api/action/buy-supplies', {
       username: _activeUsername,
       hours
     });
+    return _reconcileBusinessResponse(res);
+  }
+
+  /**
+   * Authoritatively hires a worker for a business
+   */
+  async function hireWorker(businessId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/business/hire-worker', {
+      username: _activeUsername,
+      businessId
+    });
+    return _reconcileBusinessResponse(res);
+  }
+
+  /**
+   * Authoritatively fires a worker from a business
+   */
+  async function fireWorker(businessId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/business/fire-worker', {
+      username: _activeUsername,
+      businessId
+    });
+    return _reconcileBusinessResponse(res);
   }
 
   /**
@@ -1056,6 +1117,9 @@ var ServerBridge = (() => {
     buyBusiness,
     renewAfkManager,
     buySupplies,
+    supplyBusiness,
+    hireWorker,
+    fireWorker,
     bankAction,
     changePin,
     notifyWireTransfer,
