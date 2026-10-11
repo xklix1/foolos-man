@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.0",
-  "build": 1791668400000,
-  "timestamp": 1791668400000,
-  "notes": "Major Architecture Milestone v10.0.0: Pure Thin-Client Engine, Server-Authoritative Wealth & Markets, Loop-Safe Cache Purge",
-  "releaseNotes": "تحديث رئيسي v10.0.0: تحويل اللعبة إلى واجهة عرض سحابية مؤمنة بالكامل 100%، البورصة العالمية الموحدة، وتفريغ آمن للكاش بدون أي تكرار"
+  "version": "v10.0.1",
+  "build": 1791672000000,
+  "timestamp": 1791672000000,
+  "notes": "Fix bank withdrawal cash persistence & shield against stale client sync overwrite",
+  "releaseNotes": "إصلاح جذري لسحب الأموال البنكية وتثبيت الكاش في الذاكرة الحية والسيرفر وحمايته من التصفير"
 }

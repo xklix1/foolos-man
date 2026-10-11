@@ -76,13 +76,25 @@ test('Bank 100% Deposit All and Withdraw All Tests', async () => {
     const clientState = {
       username: testUser,
       cash: 150000000,
-      bank: 50000000
+      bank: 50000000,
+      adminModifiedTimestamp: megaWithdrawRes.adminModifiedTimestamp
     };
     await sessionManager.updateSessionState(testUser.toLowerCase(), clientState, false);
     assert.strictEqual(activeSess.state.cash, 150000000, 'Zero-Sum transfer must NOT clamp 150M cash down to 500k!');
     assert.strictEqual(activeSess.state.bank, 50000000, 'Bank must remain 50M!');
 
-    console.log('[Test] All Bank 100% Deposit All, Withdraw All, and Mega-Withdrawal tests PASSED!');
+    // 6. Test In-Flight Stale Sync Shield (Stale Client Payload with 0 cash MUST NOT overwrite 150M cash!)
+    const staleInFlightPayload = {
+      username: testUser,
+      cash: 0, // Old pre-withdrawal cash
+      bank: 200000000, // Old pre-withdrawal bank
+      adminModifiedTimestamp: (megaWithdrawRes.adminModifiedTimestamp || Date.now()) - 5000 // 5 seconds older
+    };
+    await sessionManager.updateSessionState(testUser.toLowerCase(), staleInFlightPayload, false);
+    assert.strictEqual(activeSess.state.cash, 150000000, 'Stale in-flight sync MUST NEVER wipe out the 150M withdrawn cash!');
+    assert.strictEqual(activeSess.state.bank, 50000000, 'Bank must remain 50M!');
+
+    console.log('[Test] All Bank 100% Deposit All, Withdraw All, Mega-Withdrawal, and Stale Sync Shield tests PASSED!');
   } finally {
     sessionManager.sessions.delete('bank_all_tester');
     if (sessionManager.flushIntervalTimer) clearInterval(sessionManager.flushIntervalTimer);

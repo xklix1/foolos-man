@@ -256,6 +256,12 @@ class SessionManager {
       const highestTs = Math.max(sessionAdminTs, clientAdminTs, Date.now());
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
+    } else if (isClientStale) {
+      // CRITICAL DATA INTEGRITY SHIELD:
+      // The client's snapshot has an older adminModifiedTimestamp than the active session
+      // (e.g. an in-flight background sync queued before a bank withdrawal, wire transfer, or server reward).
+      // Under no circumstances should stale client monetary balances overwrite authoritative server balances!
+      session.lastSyncTime = Date.now();
     } else {
       // 1. Zero-Sum Internal Transfer (Cash <-> Bank transfers)
       // When moving money between cash and bank:

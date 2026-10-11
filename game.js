@@ -9014,7 +9014,7 @@ if (typeof window !=="undefined") {
   const _safeGameEngine = new Proxy(GameEngine, {
     get(target, prop) {
       if (prop === 'state') {
-        try { return Object.freeze(Object.assign({}, target.state)); } catch(e) { return {}; }
+        return target.getState ? target.getState() : target.state;
       }
       return target[prop];
     },

@@ -5080,15 +5080,18 @@ const UIController = (() => {
         playMenuSound('success');
 
         // Apply changes to local GameEngine.state immediately
-        if (result && result.playerUpdates && result.playerUpdates.cash !== undefined) {
-          GameEngine.state.cash = Number(result.playerUpdates.cash);
-          GameEngine.state.netWorth = Number(result.playerUpdates.netWorth);
-        } else if (result && result.amount) {
-          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + Number(result.amount);
-          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + Number(result.amount);
-        } else if (typeof result === 'number') {
-          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) + result;
-          GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + result;
+        const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+        if (s) {
+          if (result && result.playerUpdates && result.playerUpdates.cash !== undefined) {
+            s.cash = Number(result.playerUpdates.cash);
+            s.netWorth = Number(result.playerUpdates.netWorth);
+          } else if (result && result.amount) {
+            s.cash = (Number(s.cash) || 0) + Number(result.amount);
+            s.netWorth = (Number(s.netWorth) || 0) + Number(result.amount);
+          } else if (typeof result === 'number') {
+            s.cash = (Number(s.cash) || 0) + result;
+            s.netWorth = (Number(s.netWorth) || 0) + result;
+          }
         }
 
         // Persist immediately to local storage and queue cloud save
@@ -5306,10 +5309,13 @@ const UIController = (() => {
           }
           const res = await window.ServerBridge.bankAction('deposit', isAll ? 'all' : val, isAll);
           if (res && res.success) {
-            if (res.cash !== undefined) GameEngine.state.cash = res.cash;
-            if (res.bank !== undefined) GameEngine.state.bank = res.bank;
-            if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
-            if (res.adminModifiedTimestamp !== undefined) GameEngine.state.adminModifiedTimestamp = res.adminModifiedTimestamp;
+            const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+            if (s) {
+              if (res.cash !== undefined) s.cash = res.cash;
+              if (res.bank !== undefined) s.bank = res.bank;
+              if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+              if (res.adminModifiedTimestamp !== undefined) s.adminModifiedTimestamp = res.adminModifiedTimestamp;
+            }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             input.value = '';
@@ -5345,10 +5351,13 @@ const UIController = (() => {
           }
           const res = await window.ServerBridge.bankAction('withdraw', isAll ? 'all' : val, isAll);
           if (res && res.success) {
-            if (res.cash !== undefined) GameEngine.state.cash = res.cash;
-            if (res.bank !== undefined) GameEngine.state.bank = res.bank;
-            if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
-            if (res.adminModifiedTimestamp !== undefined) GameEngine.state.adminModifiedTimestamp = res.adminModifiedTimestamp;
+            const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+            if (s) {
+              if (res.cash !== undefined) s.cash = res.cash;
+              if (res.bank !== undefined) s.bank = res.bank;
+              if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+              if (res.adminModifiedTimestamp !== undefined) s.adminModifiedTimestamp = res.adminModifiedTimestamp;
+            }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             input.value = '';
@@ -5377,10 +5386,14 @@ const UIController = (() => {
           }
           const res = await window.ServerBridge.claimBankInterest();
           if (res && res.success) {
-            if (res.cash !== undefined) GameEngine.state.cash = res.cash;
-            if (res.bank !== undefined) GameEngine.state.bank = res.bank;
-            if (res.netWorth !== undefined) GameEngine.state.netWorth = res.netWorth;
-            if (res.dailyBankInterestClaim) GameEngine.state.dailyBankInterestClaim = res.dailyBankInterestClaim;
+            const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+            if (s) {
+              if (res.cash !== undefined) s.cash = res.cash;
+              if (res.bank !== undefined) s.bank = res.bank;
+              if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+              if (res.dailyBankInterestClaim) s.dailyBankInterestClaim = res.dailyBankInterestClaim;
+              if (res.adminModifiedTimestamp !== undefined) s.adminModifiedTimestamp = res.adminModifiedTimestamp;
+            }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             showToast('عائد مصرفي', `تم تحصيل ${Number(res.interestClaimed || 0).toLocaleString()} EGP عائد وديعة وإيداعها في رصيدك البنكي بنجاح!`, 'success');
             renderAll();
@@ -5530,11 +5543,12 @@ const UIController = (() => {
 
         // Fetch latest authoritative state from database to ensure 100% synchronization
         const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
-        if (updatedState && GameEngine.state) {
-          GameEngine.state.cash = Number(updatedState.cash || 0);
-          GameEngine.state.bank = Number(updatedState.bank || 0);
-          GameEngine.state.netWorth = Number(updatedState.netWorth || 0);
-          GameEngine.state.adminModifiedTimestamp = Number(updatedState.adminModifiedTimestamp || 0);
+        const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+        if (updatedState && s) {
+          s.cash = Number(updatedState.cash || 0);
+          s.bank = Number(updatedState.bank || 0);
+          s.netWorth = Number(updatedState.netWorth || 0);
+          s.adminModifiedTimestamp = Number(updatedState.adminModifiedTimestamp || 0);
         }
 
         // Reset fields

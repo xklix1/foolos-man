@@ -501,11 +501,16 @@ var ServerBridge = (() => {
    */
   async function bankAction(type, amount, isAll = false) {
     if (!_isServerOnline || !_activeUsername) return null;
-    return await _post('/api/action/bank', {
+    const res = await _post('/api/action/bank', {
       username: _activeUsername,
       type,
       amount,
       isAll: isAll || amount === 'all'
+    });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.adminModifiedTimestamp !== undefined) {
+        s.adminModifiedTimestamp = Math.max(Number(s.adminModifiedTimestamp || 0), Number(r.adminModifiedTimestamp));
+      }
     });
   }
 
