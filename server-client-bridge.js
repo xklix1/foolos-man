@@ -507,11 +507,7 @@ var ServerBridge = (() => {
       amount,
       isAll: isAll || amount === 'all'
     });
-    return _reconcileGenericActionResponse(res, (s, r) => {
-      if (r.adminModifiedTimestamp !== undefined) {
-        s.adminModifiedTimestamp = Math.max(Number(s.adminModifiedTimestamp || 0), Number(r.adminModifiedTimestamp));
-      }
-    });
+    return _reconcileGenericActionResponse(res);
   }
 
   /**

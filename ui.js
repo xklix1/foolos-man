@@ -5314,7 +5314,6 @@ const UIController = (() => {
               if (res.cash !== undefined) s.cash = res.cash;
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
-              if (res.adminModifiedTimestamp !== undefined) s.adminModifiedTimestamp = res.adminModifiedTimestamp;
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
@@ -5356,7 +5355,6 @@ const UIController = (() => {
               if (res.cash !== undefined) s.cash = res.cash;
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
-              if (res.adminModifiedTimestamp !== undefined) s.adminModifiedTimestamp = res.adminModifiedTimestamp;
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
@@ -5392,7 +5390,6 @@ const UIController = (() => {
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
               if (res.dailyBankInterestClaim) s.dailyBankInterestClaim = res.dailyBankInterestClaim;
-              if (res.adminModifiedTimestamp !== undefined) s.adminModifiedTimestamp = res.adminModifiedTimestamp;
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             showToast('عائد مصرفي', `تم تحصيل ${Number(res.interestClaimed || 0).toLocaleString()} EGP عائد وديعة وإيداعها في رصيدك البنكي بنجاح!`, 'success');
@@ -8585,10 +8582,14 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             if (!doc.exists) return;
             const data = doc.data();
 
-            // Initial snapshot: record the current timestamp
+            // Initial snapshot: record the current timestamp (initialized to at least Date.now() to prevent stale triggers)
             if (lastAdminActionTimestamp === null) {
-              lastAdminActionTimestamp = Number(data.adminModifiedTimestamp || 0);
-              if (data.isBanned) {
+              lastAdminActionTimestamp = Math.max(
+                Number(data.adminModifiedTimestamp || 0),
+                Number((GameEngine.state && GameEngine.state.adminModifiedTimestamp) || 0),
+                Date.now()
+              );
+              if (data.isBanned || data.is_banned) {
                 unsubUser();
                 handleBannedUser();
               }
@@ -8619,128 +8620,104 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
               return;
             }
 
-            // Process all external admin modifications and incoming wire transfers instantly in real-time (NO RELOAD NEEDED)
-            // Guard: skip applying DB snapshot if a local PATCH (deposit/withdraw) is currently in-flight
-            // or was just completed (800ms grace), to prevent stale DB reads from overwriting local changes
+            // Guard: skip applying DB snapshot if a local cloud write is currently in-flight
             if (window._dbPendingCloudWrite) return;
             if (window._dbPendingCloudWriteClearedAt && (Date.now() - window._dbPendingCloudWriteClearedAt) < 800) return;
-            if (data.adminModifiedTimestamp && data.adminModifiedTimestamp > lastAdminActionTimestamp) {
-              lastAdminActionTimestamp = data.adminModifiedTimestamp;
-              if (GameEngine.state) {
-                GameEngine.state.adminModifiedTimestamp = data.adminModifiedTimestamp;
+
+            const currentLocalAdminTs = Math.max(
+              Number(lastAdminActionTimestamp || 0),
+              Number((GameEngine.state && GameEngine.state.adminModifiedTimestamp) || 0)
+            );
+
+            // If timestamp did not advance beyond current known admin action, simply update tracking and return
+            if (!data.adminModifiedTimestamp || data.adminModifiedTimestamp <= currentLocalAdminTs) {
+              if (data.adminModifiedTimestamp) {
+                lastAdminActionTimestamp = Math.max(lastAdminActionTimestamp, data.adminModifiedTimestamp);
               }
-
-              // Jail update
-              if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
-                GameEngine.state.jailTimer = data.jailTimer;
-                if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
-                  handleJailedUser(data.jailTimer);
-                }
-              }
-
-              // Authoritative Bridge Guard: Live balances (cash, bank, netWorth) are strictly synchronized
-              // via ServerBridge. Only adopt from raw DB polling if ServerBridge is offline or explicit admin grant.
-              const isBridgeOnline = typeof window !== 'undefined' && window.ServerBridge && window.ServerBridge.isServerOnline();
-              if (!isBridgeOnline) {
-                if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
-                if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
-                if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
-                if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
-              }
-              if (typeof data.xp === 'number') GameEngine.state.xp = data.xp;
-              if (data.jobId) GameEngine.state.jobId = data.jobId;
-              if (data.title) GameEngine.state.title = data.title;
-              if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
-
-              const hasSuspField = Boolean(
-                data.underSuspicion !== undefined || 
-                (data.state && data.state.underSuspicion !== undefined) ||
-                data.freezeUntil !== undefined ||
-                (data.state && data.state.freezeUntil !== undefined) ||
-                data.is_under_suspicion !== undefined ||
-                data.isUnderSuspicion !== undefined
-              );
-              if (hasSuspField) {
-                const isLiveSusp = Boolean(
-                  data.underSuspicion || 
-                  (data.state && data.state.underSuspicion) || 
-                  (data.freezeUntil && data.freezeUntil > Date.now()) ||
-                  (data.state && data.state.freezeUntil && data.state.freezeUntil > Date.now()) ||
-                  data.is_under_suspicion || 
-                  data.isUnderSuspicion
-                );
-                GameEngine.state.underSuspicion = isLiveSusp;
-                if (isLiveSusp) {
-                  const reasonText = (data.state && data.state.freezeReason) || data.freezeReason || '';
-                  enforceSuspicionStatus(true, reasonText);
-                } else {
-                  if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
-                  enforceSuspicionStatus(false);
-                }
-              }
-
-              // Deep merge all possessions, businesses, assets, cars, items and perks from state
-              if (data.state && typeof data.state === 'object') {
-                const st = data.state;
-                if (st.businesses) GameEngine.state.businesses = JSON.parse(JSON.stringify(st.businesses));
-                if (st.assets) GameEngine.state.assets = JSON.parse(JSON.stringify(st.assets));
-                if (st.stocks) GameEngine.state.stocks = JSON.parse(JSON.stringify(st.stocks));
-                if (st.crypto) GameEngine.state.crypto = JSON.parse(JSON.stringify(st.crypto));
-                if (st.inventory) GameEngine.state.inventory = JSON.parse(JSON.stringify(st.inventory));
-                if (st.ownedCars) GameEngine.state.ownedCars = JSON.parse(JSON.stringify(st.ownedCars));
-                if (st.activeCar !== undefined) GameEngine.state.activeCar = st.activeCar;
-                if (st.customItems) GameEngine.state.customItems = JSON.parse(JSON.stringify(st.customItems));
-                if (st.itemDurations) GameEngine.state.itemDurations = JSON.parse(JSON.stringify(st.itemDurations));
-                if (st.tradeCompany) GameEngine.state.tradeCompany = JSON.parse(JSON.stringify(st.tradeCompany));
-                if (st.industry) GameEngine.state.industry = JSON.parse(JSON.stringify(st.industry));
-                if (st.farm) {
-                  GameEngine.state.farm = JSON.parse(JSON.stringify(st.farm));
-                  if (typeof renderFarm === 'function') renderFarm();
-                }
-                if (st.smugglingFleet) GameEngine.state.smugglingFleet = JSON.parse(JSON.stringify(st.smugglingFleet));
-                if (st.underworldRep !== undefined) GameEngine.state.underworldRep = st.underworldRep;
-                if (st.heatLevel !== undefined) GameEngine.state.heatLevel = st.heatLevel;
-                if (st.afkManagerExpiresAt !== undefined) GameEngine.state.afkManagerExpiresAt = st.afkManagerExpiresAt;
-                if (st.chatGlow !== undefined) GameEngine.state.chatGlow = st.chatGlow;
-                if (st.hasChatGlow !== undefined) GameEngine.state.hasChatGlow = st.hasChatGlow;
-                if (st.unlockedChatGlows) GameEngine.state.unlockedChatGlows = JSON.parse(JSON.stringify(st.unlockedChatGlows));
-                if (st.isVerified !== undefined) GameEngine.state.isVerified = st.isVerified;
-                if (st.vipVerified !== undefined) GameEngine.state.vipVerified = st.vipVerified;
-                if (st.customBadge !== undefined) GameEngine.state.customBadge = st.customBadge;
-                if (st.seasonBadge !== undefined) GameEngine.state.seasonBadge = st.seasonBadge;
-                if (st.badgeTitle !== undefined) GameEngine.state.badgeTitle = st.badgeTitle;
-                if (st.badges) GameEngine.state.badges = JSON.parse(JSON.stringify(st.badges));
-                if (st.activeLoan !== undefined) GameEngine.state.activeLoan = st.activeLoan;
-                if (st.investments) GameEngine.state.investments = JSON.parse(JSON.stringify(st.investments));
-              }
-
-              GameEngine.state.adminModifiedTimestamp = data.adminModifiedTimestamp;
-
-              if (typeof GameEngine.calculateTotalNetWorth === 'function') {
-                GameEngine.calculateTotalNetWorth();
-              }
-
-              try {
-                if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
-                  AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
-                }
-              } catch (e) { }
-
-              // Clean toast notice and instant dynamic UI re-render (NO RELOAD POPUP)
-              showToast('إشعار إداري', 'تم استلام وتحديث بيانات وممتلكات حسابك فورياً من قبل الإدارة.', 'success');
-              if (typeof playMenuSound === 'function') playMenuSound('success');
-              renderAll();
-
-              // Also trigger active sub-tab renders if user has open drawers or tabs
-              try {
-                if (typeof renderBusinesses === 'function') renderBusinesses();
-                if (typeof renderAssets === 'function') renderAssets();
-                if (typeof renderInventory === 'function') renderInventory();
-                if (typeof renderCars === 'function') renderCars();
-                if (typeof renderFarm === 'function') renderFarm();
-                if (typeof renderHeader === 'function') renderHeader();
-              } catch (_) {}
+              return;
             }
+
+            // Timestamp strictly advanced from an external admin action
+            lastAdminActionTimestamp = data.adminModifiedTimestamp;
+            if (GameEngine.state) {
+              GameEngine.state.adminModifiedTimestamp = data.adminModifiedTimestamp;
+            }
+
+            // Jail update
+            if (typeof data.jailTimer === 'number' && data.jailTimer !== GameEngine.state.jailTimer) {
+              GameEngine.state.jailTimer = data.jailTimer;
+              if (data.jailTimer > 0 && typeof handleJailedUser === 'function') {
+                handleJailedUser(data.jailTimer);
+              }
+            }
+
+            // Authoritative Bridge Guard: Live balances (cash, bank, netWorth) are strictly synchronized
+            // via ServerBridge. Only adopt from raw DB polling if ServerBridge is offline.
+            const isBridgeOnline = typeof window !== 'undefined' && window.ServerBridge && window.ServerBridge.isServerOnline();
+            if (!isBridgeOnline) {
+              if (typeof data.cash === 'number') GameEngine.state.cash = data.cash;
+              if (typeof data.bank === 'number') GameEngine.state.bank = data.bank;
+              if (typeof data.dirtyCash === 'number') GameEngine.state.dirtyCash = data.dirtyCash;
+              if (typeof data.netWorth === 'number') GameEngine.state.netWorth = data.netWorth;
+            }
+            if (typeof data.xp === 'number') GameEngine.state.xp = data.xp;
+            if (data.jobId) GameEngine.state.jobId = data.jobId;
+            if (data.title) GameEngine.state.title = data.title;
+            if (data.isAdmin !== undefined) GameEngine.state.isAdmin = Boolean(data.isAdmin);
+
+            const hasSuspField = Boolean(
+              data.underSuspicion !== undefined || 
+              (data.state && data.state.underSuspicion !== undefined) ||
+              data.freezeUntil !== undefined ||
+              (data.state && data.state.freezeUntil !== undefined) ||
+              data.is_under_suspicion !== undefined ||
+              data.isUnderSuspicion !== undefined
+            );
+            if (hasSuspField) {
+              const isLiveSusp = Boolean(
+                data.underSuspicion || 
+                (data.state && data.state.underSuspicion) || 
+                (data.freezeUntil && data.freezeUntil > Date.now()) ||
+                (data.state && data.state.freezeUntil && data.state.freezeUntil > Date.now()) ||
+                data.is_under_suspicion || 
+                data.isUnderSuspicion
+              );
+              GameEngine.state.underSuspicion = isLiveSusp;
+              if (isLiveSusp) {
+                const reasonText = (data.state && data.state.freezeReason) || data.freezeReason || '';
+                enforceSuspicionStatus(true, reasonText);
+              } else {
+                if (typeof window !== 'undefined') window._isUnderSuspicionLocked = false;
+                enforceSuspicionStatus(false);
+              }
+            }
+
+            // Adopt ONLY administrative badges, titles, and cosmetic perks from state
+            // CRITICAL: NEVER overwrite businesses, farm, stocks, assets, or inventory! Player's active gameplay progress is 100% protected!
+            if (data.state && typeof data.state === 'object') {
+              const st = data.state;
+              if (st.chatGlow !== undefined) GameEngine.state.chatGlow = st.chatGlow;
+              if (st.hasChatGlow !== undefined) GameEngine.state.hasChatGlow = st.hasChatGlow;
+              if (st.unlockedChatGlows) GameEngine.state.unlockedChatGlows = JSON.parse(JSON.stringify(st.unlockedChatGlows));
+              if (st.isVerified !== undefined) GameEngine.state.isVerified = st.isVerified;
+              if (st.vipVerified !== undefined) GameEngine.state.vipVerified = st.vipVerified;
+              if (st.customBadge !== undefined) GameEngine.state.customBadge = st.customBadge;
+              if (st.seasonBadge !== undefined) GameEngine.state.seasonBadge = st.seasonBadge;
+              if (st.badgeTitle !== undefined) GameEngine.state.badgeTitle = st.badgeTitle;
+              if (st.badges) GameEngine.state.badges = JSON.parse(JSON.stringify(st.badges));
+            }
+
+            if (typeof GameEngine.calculateTotalNetWorth === 'function') {
+              GameEngine.calculateTotalNetWorth();
+            }
+
+            try {
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+              }
+            } catch (e) { }
+
+            renderAll();
           }, (err) => console.error("User doc listen err:", err));
         activeListeners.push(unsubUser);
       } catch (userErr) {

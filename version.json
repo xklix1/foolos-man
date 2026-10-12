@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.1",
-  "build": 1791672000000,
-  "timestamp": 1791672000000,
-  "notes": "Fix bank withdrawal cash persistence & shield against stale client sync overwrite",
-  "releaseNotes": "إصلاح جذري لسحب الأموال البنكية وتثبيت الكاش في الذاكرة الحية والسيرفر وحمايته من التصفير"
+  "version": "v10.0.2",
+  "build": 1791763600000,
+  "timestamp": 1791763600000,
+  "notes": "Fix adminModifiedTimestamp sync: eliminate account rollbacks and remove unwanted admin toasts",
+  "releaseNotes": "إصلاح جذري لمزامنة الحساب ومنع رجوع الشركات والممتلكات للخلف وإلغاء الإشعارات الإدارية العشوائية"
 }

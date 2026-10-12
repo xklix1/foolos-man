@@ -215,11 +215,22 @@ class SessionManager {
 
     const s = session.state;
 
+    // Synchronize monetary balances
+    let incomingCash = Number(clientState.cash);
+    if (isNaN(incomingCash) || incomingCash < 0) incomingCash = Number(s.cash || 0);
+    let incomingBank = Number(clientState.bank);
+    if (isNaN(incomingBank) || incomingBank < 0) incomingBank = Number(s.bank || 0);
+
     // Monetary Stale Client Protection: If server session was modified by an admin (or top-up)
     // with a timestamp newer than incoming client state, DO NOT allow stale client balances to overwrite!
     const sessionAdminTs = Number(s.adminModifiedTimestamp || 0);
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
-    const isClientStale = sessionAdminTs > 0 && clientAdminTs < sessionAdminTs;
+    const hasRecentBankAction = Boolean(
+      session.lastServerBankActionAt &&
+      (Date.now() - session.lastServerBankActionAt < 15000) &&
+      (s.cash !== incomingCash || s.bank !== incomingBank)
+    );
+    const isClientStale = (sessionAdminTs > 0 && clientAdminTs < sessionAdminTs) || hasRecentBankAction;
     // CRITICAL SECURITY ENFORCEMENT:
     // Client sync payloads CANNOT grant themselves admin authority via timestamps or spoofed flags.
     // isAdminGrant is ONLY valid when explicitly invoked from an authenticated server admin context.
@@ -228,12 +239,6 @@ class SessionManager {
     // Beta Features (Gold currency - strictly gated to literal developer account 'Khaled' / 'خالد' only)
     const isLiteralKhaled = typeof username === 'string' &&
       ['khaled', 'خالد', 'rasalmal', 'rasalmal1', 'rasalmal2'].includes(username.trim().toLowerCase());
-
-    // Synchronize monetary balances
-    let incomingCash = Number(clientState.cash);
-    if (isNaN(incomingCash) || incomingCash < 0) incomingCash = Number(s.cash || 0);
-    let incomingBank = Number(clientState.bank);
-    if (isNaN(incomingBank) || incomingBank < 0) incomingBank = Number(s.bank || 0);
 
     // Zero-Sum Internal Asset Transfer: Cash <-> Bank transfers are completely exempt from velocity clamps
     const prevLiquidTotal = (Number(s.cash) || 0) + (Number(s.bank) || 0);
