@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.4",
-  "build": 1791777000000,
-  "timestamp": 1791777000000,
-  "notes": "Instant authoritative admin balance grant sync and anti-overwrite guard",
-  "releaseNotes": "تحديث v10.0.4: إصلاح وتثبيت فوري للإيداعات المالية المباشرة من لوحة الإدارة والرقابة وحمايتها من الكتابة العكسية."
+  "version": "v10.0.5",
+  "build": 1791785500000,
+  "timestamp": 1791785500000,
+  "notes": "Mandatory update: Full mailbox route fixes, Service Worker hardening, and session token renewal",
+  "releaseNotes": "تحديث إجباري v10.0.5: إصلاح كامل لصندوق البريد، تحصين الـ Service Worker، وتجديد فوري لجلسات التزامن مع السيرفر."
 }
