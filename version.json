@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.2",
-  "build": 1791763600000,
-  "timestamp": 1791763600000,
-  "notes": "Fix adminModifiedTimestamp sync: eliminate account rollbacks and remove unwanted admin toasts",
-  "releaseNotes": "إصلاح جذري لمزامنة الحساب ومنع رجوع الشركات والممتلكات للخلف وإلغاء الإشعارات الإدارية العشوائية"
+  "version": "v10.0.3",
+  "build": 1791771000000,
+  "timestamp": 1791771000000,
+  "notes": "Full browser cache purge with bulletproof anti-reload loop shield across all game modules",
+  "releaseNotes": "تحديث v10.0.3: تفريغ شامل لكاش المتصفح لجميع اللاعبين، تفعيل أحدث إصدارات المحرك، وتأمين كامل ضد تكرار إعادة التحميل (Anti-Reload Loop)"
 }

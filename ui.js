@@ -25357,40 +25357,51 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
             const s = await res.json();
             const curVer = (window._CLIENT_VERSION || 'v9.6.0');
             if (s && s.version && s.version !== curVer) {
-              const curParam = new URL(window.location.href).searchParams.get('_v');
-              if (curParam === s.version) {
-                return; // Already running with target version param
-              }
-              const loopKey = 'rasalmal_watchdog_reload_' + s.version;
-              const reloadedCount = Number(sessionStorage.getItem(loopKey) || 0);
-              if (reloadedCount < 1) {
-                sessionStorage.setItem(loopKey, String(reloadedCount + 1));
-                console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer, 'Triggering instant auto-update.');
-                
-                // Flush local state cleanly before reloading to avoid any data loss
-                try {
-                  if (typeof GameEngine !== 'undefined' && GameEngine.activeUsername && typeof AppDB !== 'undefined' && typeof AppDB.flushStateToCloudOnExit === 'function') {
-                    AppDB.flushStateToCloudOnExit(GameEngine.activeUsername, GameEngine.state);
-                  }
-                } catch (_) {}
+              const bustKey = 'rasalmal_bust_' + s.version;
+              const lastBust = Math.max(
+                Number(localStorage.getItem('rasalmal_last_bust_ts') || 0),
+                Number(sessionStorage.getItem('rasalmal_last_bust_ts') || 0)
+              );
+              const attempts = Math.max(
+                Number(localStorage.getItem(bustKey) || 0),
+                Number(sessionStorage.getItem(bustKey) || 0)
+              );
 
-                if ('caches' in window) {
-                  try {
-                    const keys = await caches.keys();
-                    await Promise.all(keys.map(k => caches.delete(k)));
-                  } catch (_) {}
-                }
-                if ('serviceWorker' in navigator) {
-                  try {
-                    const regs = await navigator.serviceWorker.getRegistrations();
-                    await Promise.all(regs.map(r => r.unregister()));
-                  } catch (_) {}
-                }
-                const url = new URL(window.location.href);
-                url.searchParams.set('_v', s.version);
-                window.location.replace(url.toString());
-                return;
+              if (now - lastBust < 45000 || attempts >= 1) {
+                return; // Cooldown active or already reloaded for this version
               }
+
+              try {
+                localStorage.setItem('rasalmal_last_bust_ts', String(now));
+                localStorage.setItem(bustKey, '1');
+                sessionStorage.setItem('rasalmal_last_bust_ts', String(now));
+                sessionStorage.setItem(bustKey, '1');
+              } catch (_) {}
+
+              console.warn('[Auto-Updater] Game update detected:', s.version, 'Current:', curVer, 'Triggering single safe auto-update.');
+              
+              // Flush local state cleanly before reloading to avoid any data loss
+              try {
+                if (typeof GameEngine !== 'undefined' && GameEngine.activeUsername && typeof AppDB !== 'undefined' && typeof AppDB.flushStateToCloudOnExit === 'function') {
+                  AppDB.flushStateToCloudOnExit(GameEngine.activeUsername, GameEngine.state);
+                }
+              } catch (_) {}
+
+              if ('caches' in window) {
+                try {
+                  const keys = await caches.keys();
+                  await Promise.all(keys.map(k => caches.delete(k)));
+                } catch (_) {}
+              }
+              if ('serviceWorker' in navigator) {
+                try {
+                  const regs = await navigator.serviceWorker.getRegistrations();
+                  regs.forEach(r => r.update());
+                } catch (_) {}
+              }
+              const target = window.location.origin + window.location.pathname + '?_bust=' + now;
+              window.location.replace(target);
+              return;
             }
           }
         } catch (_) {}

@@ -44,7 +44,7 @@ var PWAManager = (() => {
     // 1. Register Service Worker (Production & Local)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
-        const swVer = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v9.6.0';
+        const swVer = (typeof window !== 'undefined' && window._CLIENT_VERSION) || 'v10.0.3';
         navigator.serviceWorker.register('/sw.js?v=' + swVer, { updateViaCache: 'none' })
           .then((registration) => {
             console.log('[PWAManager] ServiceWorker registered with scope:', registration.scope);
@@ -77,15 +77,18 @@ var PWAManager = (() => {
             const lastReload = Math.max(
               Number(localStorage.getItem('rasalmal_sw_reload_ts') || 0),
               Number(sessionStorage.getItem('rasalmal_sw_reload_ts') || 0),
-              Number(localStorage.getItem('rasalmal_last_bust_ts') || 0)
+              Number(localStorage.getItem('rasalmal_last_bust_ts') || 0),
+              Number(sessionStorage.getItem('rasalmal_last_bust_ts') || 0)
             );
-            if (Date.now() - lastReload < 30000) {
+            if (Date.now() - lastReload < 45000) {
               console.log('[PWAManager] Controller changed but reloaded recently (debounced).');
               return;
             }
             const now = Date.now();
             localStorage.setItem('rasalmal_sw_reload_ts', String(now));
             sessionStorage.setItem('rasalmal_sw_reload_ts', String(now));
+            localStorage.setItem('rasalmal_last_bust_ts', String(now));
+            sessionStorage.setItem('rasalmal_last_bust_ts', String(now));
           } catch (_) {}
           refreshing = true;
           console.log('[PWAManager] Controller changed. Reloading for newest game build...');
