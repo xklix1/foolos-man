@@ -1728,7 +1728,11 @@ window.AirportUI = (() => {
     try {
       if (typeof window.renderStatsBar === 'function') {
         window.renderStatsBar();
-      } else if (typeof window.renderHeader === 'function') {
+      }
+      if (typeof window.UI !== 'undefined' && typeof window.UI.renderStatsBar === 'function') {
+        window.UI.renderStatsBar();
+      }
+      if (typeof window.renderHeader === 'function') {
         window.renderHeader();
       }
     } catch (_) {}
@@ -2192,6 +2196,8 @@ window.AirportUI = (() => {
             window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
           }
           persistGameState();
+          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+          if (typeof window.UI !== 'undefined' && typeof window.UI.renderStatsBar === 'function') window.UI.renderStatsBar();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
             window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) (${res.message || 'عوائد الرحلة'})`, 'business');
           }

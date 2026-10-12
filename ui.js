@@ -3571,6 +3571,7 @@ const UIController = (() => {
       else adminChatControls.classList.add('hidden');
     }
   }
+  window.renderStatsBar = renderStatsBar;
 
   // --- General Render Manager ---
   function renderAll() {
@@ -21486,17 +21487,22 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
     // Bind claim buttons
     list.querySelectorAll('.btn-claim-trade-export').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const orderId = btn.getAttribute('data-id');
+        btn.disabled = true;
+        const origHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري تحصيل الأرباح...</span>`;
         try {
-          const res = GameEngine.claimExportProfit(orderId);
+          const res = await GameEngine.claimExportProfit(orderId);
           playMenuSound('success');
-          showToast('تحصيل أرباح التصدير',`تم تحصيل مبلغ ${res.payout.toLocaleString()} EGP وأودع مباشرة في حسابك البنكي! صافي الربح المحقق: +${res.profit.toLocaleString()} EGP.`,'success');
+          showToast('تحصيل أرباح التصدير', `تم تحصيل مبلغ ${res.payout.toLocaleString()} EGP وأودع مباشرة في رصيدك الكاش! صافي الربح المحقق: +${res.profit.toLocaleString()} EGP.`, 'success');
           if (typeof renderDailyQuests === "function") renderDailyQuests();
           renderTradePanel();
           renderStatsBar();
         } catch (err) {
-          showToast('فشل التحصيل', err.message,'error');
+          btn.disabled = false;
+          btn.innerHTML = origHtml;
+          showToast('فشل التحصيل', err.message, 'error');
         }
       });
     });
@@ -23542,7 +23548,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
                   <span>تم استلام الأرباح (${c.payout.toLocaleString()} EGP)</span>
                 </button>
               ` : `
-                <button ${(!canFulfillAll || exceedsDailyCap) ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}')"`} type="button"
+                <button ${(!canFulfillAll || exceedsDailyCap) ? 'disabled' : `onclick="window.UI?.fulfillFarmContract('${c.id}', this)"`} type="button"
                   class="w-full py-2.5 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 ${canFulfillAll && !exceedsDailyCap ? 'bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 shadow-lg shadow-emerald-500/20 active:scale-95 cursor-pointer' : 'bg-slate-900 text-slate-600 border border-slate-800 cursor-not-allowed'}">
                   <i class="${exceedsDailyCap ? 'fa-solid fa-ban text-rose-400' : 'fa-solid fa-truck-fast text-sm'}"></i>
                   <span>${exceedsDailyCap ? `تجاوز السقف اليومي (المتبقي: ${dailyLiq.remaining.toLocaleString()} EGP)` : (canFulfillAll ? 'تسليم الشحنة وتحصيل ' + c.payout.toLocaleString() + ' EGP ' : (missingCount > 1 ? `المخزون ناقص (${missingCount} أصناف)` : 'المخزون غير كافٍ'))}</span>
@@ -23645,10 +23651,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function sellSingleFarmCrop(cropId) {
+  async function sellSingleFarmCrop(cropId) {
     try {
       playCasinoSound('win');
-      const res = GameEngine.sellFarmCrop(cropId);
+      const res = await GameEngine.sellFarmCrop(cropId);
       const rev = Number(res.totalPrice || res.totalRevenue || 0);
       showToast('تسييل المحصول ', `تم تفريغ ${res.qty.toLocaleString()} وحدة من "${res.crop.name}" بسعر التكلفة الرأسمالية (+${rev.toLocaleString()} EGP). الأرباح محصورة في عقود التوريد B2B.`, 'warning');
     } catch (e) {
@@ -23660,13 +23666,13 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function emergencyDumpFarmCrop(cropId) {
-    sellSingleFarmCrop(cropId);
+  async function emergencyDumpFarmCrop(cropId) {
+    await sellSingleFarmCrop(cropId);
   }
 
-  function emergencyDumpProcessedGood(recipeId) {
+  async function emergencyDumpProcessedGood(recipeId) {
     try {
-      const res = GameEngine.emergencyDumpProcessedGood(recipeId);
+      const res = await GameEngine.emergencyDumpProcessedGood(recipeId);
       playCasinoSound('win');
       const soldQty = Number((res && (res.sellQty || res.qty)) || 0);
       const rev = Number((res && (res.totalPrice || res.totalRevenue)) || 0);
@@ -23681,9 +23687,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function emergencyDumpLivestockProduce(produceKey) {
+  async function emergencyDumpLivestockProduce(produceKey) {
     try {
-      const res = GameEngine.emergencyDumpLivestockProduce(produceKey);
+      const res = await GameEngine.emergencyDumpLivestockProduce(produceKey);
       playCasinoSound('win');
       const soldQty = Number((res && (res.sellQty || res.qty)) || 0);
       const rev = Number((res && (res.totalPrice || res.totalRevenue)) || 0);
@@ -23864,16 +23870,25 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function fulfillFarmContract(contractId) {
+  async function fulfillFarmContract(contractId, btn = null) {
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التوريد والتحصيل...';
+    }
     try {
       playCasinoSound('jackpot');
-      const res = GameEngine.fulfillFarmContract(contractId);
-      showToast('توريد صفقة B2B ناجحة ', `مبروك! تم توريد طلبية ${res.contract.clientName} بنجاح وقبض +${res.payout.toLocaleString()} EGP (+ ${res.repReward} سمعة)!`, 'success');
+      const res = await GameEngine.fulfillFarmContract(contractId);
+      showToast('توريد صفقة B2B ناجحة ', `مبروك! تم توريد طلبية ${res.contract?.clientName || 'العميل'} بنجاح وقبض +${(res.payout || 0).toLocaleString()} EGP (+ ${(res.repReward || 0)} سمعة)!`, 'success');
       renderFarmPanel();
       renderStatsBar();
     } catch (e) {
+      if (btn) {
+        btn.disabled = false;
+      }
       playMenuSound('error');
       showToast('تعذر إنجاز العقد', e.message, 'error');
+      renderFarmPanel();
+      renderStatsBar();
     }
   }
 
@@ -25207,6 +25222,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
   return {
     init,
     renderAll,
+    renderStatsBar,
     switchTab,
     openMobileNav,
     closeMobileNav,
@@ -25379,6 +25395,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 // Export globally
 window.UIController = UIController;
 window.UI = UIController;
+window.renderStatsBar = UIController.renderStatsBar;
 window.showToast = UIController.showToast;
 window.openNetWorthBreakdownModal = UIController.openNetWorthBreakdownModal;
 window.closeNetWorthBreakdownModal = UIController.closeNetWorthBreakdownModal;

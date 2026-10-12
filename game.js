@@ -6367,7 +6367,19 @@ const GameEngine = (() => {
     return exportOrder;
   }
 
-  function claimExportProfit(exportId) {
+  async function claimExportProfit(exportId) {
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.claimExportProfit(exportId);
+      if (serverRes && serverRes.success) {
+        trackDailyQuestProgress('trade_shipment', 1);
+        recordPlayerActivity('تحصيل أرباح تصدير', `تم تحصيل عائد تصدير شحنة "${serverRes.commodityName || ''}" من ${serverRes.buyerName || ''} بمبلغ +${(serverRes.payout || 0).toLocaleString()} EGP (صافي ربح: +${(serverRes.profit || 0).toLocaleString()} EGP).`, 'trade');
+        state._legitimateTransactionBypass = true;
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return serverRes;
+      }
+    }
+
     if (!state.tradeCompany || !state.tradeCompany.activeExports) {
       throw new Error("لا توجد شحنات تصدير مسجلة.");
     }
@@ -6385,8 +6397,8 @@ const GameEngine = (() => {
       throw new Error("تم تحصيل أرباح هذه الشحنة مسبقاً.");
     }
 
-    // Pay out to bank
-    state.bank = (state.bank || 0) + order.totalPayout;
+    // Pay out directly to liquid cash (الكاش السائل)
+    state.cash = (Number(state.cash) || 0) + (Number(order.totalPayout) || 0);
     state.tradeCompany.totalProfitEarned = (state.tradeCompany.totalProfitEarned || 0) + (order.estProfit || 0);
     state.tradeCompany.totalShipmentsCompleted = (state.tradeCompany.totalShipmentsCompleted || 0) + 1;
 
@@ -6397,11 +6409,11 @@ const GameEngine = (() => {
     state.tradeCompany.activeExports.splice(index, 1);
 
     trackDailyQuestProgress('trade_shipment', 1);
-    recordPlayerActivity('تحصيل أرباح تصدير',`تم تحصيل عائد تصدير شحنة"${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`,'trade');
+    recordPlayerActivity('تحصيل أرباح تصدير', `تم تحصيل عائد تصدير شحنة "${order.commodityName}" من ${order.buyerName} بمبلغ +${order.totalPayout.toLocaleString()} EGP (صافي ربح: +${order.estProfit.toLocaleString()} EGP).`, 'trade');
     state._legitimateTransactionBypass = true;
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
-    forceSaveState(true);
+    await forceSaveState(true);
 
     return {
       payout: order.totalPayout,
@@ -7571,7 +7583,7 @@ const GameEngine = (() => {
     };
   }
 
-  function sellFarmCrop(cropId) {
+  async function sellFarmCrop(cropId) {
     assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
@@ -7602,6 +7614,22 @@ const GameEngine = (() => {
       totalPrice = sellQty * unitCropCost;
     }
 
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.sellFarmCrop(cropId, sellQty, f.inventory);
+      if (serverRes && serverRes.success) {
+        const rev = Number(serverRes.result?.totalPrice || serverRes.result?.totalRevenue || totalPrice);
+        recordPlayerActivity('تسييل اضطراري لتفريغ الصومعة ', `تسييل ${sellQty.toLocaleString()} وحدة من "${crop.name}" بسعر التكلفة فقط (+${rev.toLocaleString()} EGP) لتفريغ الصومعة. الأرباح محصورة في عقود B2B.`, 'business');
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return {
+          crop,
+          qty: sellQty,
+          totalPrice: rev,
+          isEmergencyDump: true
+        };
+      }
+    }
+
     assertAndRecordFarmLiquidation(f, totalPrice);
 
     f.inventory[cropId] = Math.max(0, available - sellQty);
@@ -7611,12 +7639,9 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسييل اضطراري لتفريغ الصومعة ', `تسييل ${sellQty.toLocaleString()} وحدة من "${crop.name}" بسعر التكلفة فقط (+${totalPrice.toLocaleString()} EGP) لتفريغ الصومعة. الأرباح محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
 
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellFarmCrop(cropId, sellQty, f.inventory).catch(e => console.warn('[FarmEngine] Server sell sync warning:', e.message));
-    }
-
-    forceSaveState(true);
     return {
       crop,
       qty: sellQty,
@@ -7625,7 +7650,7 @@ const GameEngine = (() => {
     };
   }
 
-  function sellAllFarmCrops() {
+  async function sellAllFarmCrops() {
     assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
@@ -7666,6 +7691,25 @@ const GameEngine = (() => {
       throw new Error("لا توجد محاصيل مخزنة في مستودع المزرعة لتسييلها حالياً أو تم استنفاد السقف اليومي.");
     }
 
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.sellAllFarmCrops(f.inventory);
+      if (serverRes && serverRes.success) {
+        const rev = Number(serverRes.result?.totalRevenue || serverRes.result?.grandTotal || grandTotal);
+        recordPlayerActivity('تفريغ اضطراري للصوامع ', `تسييل شامل لـ ${itemsSold.toLocaleString()} وحدة محاصيل بسعر التكلفة الرأسمالية فقط (+${rev.toLocaleString()} EGP).`, 'business');
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return {
+          grandTotal: rev,
+          totalRevenue: rev,
+          revenue: rev,
+          itemsSold,
+          totalUnits: itemsSold,
+          soldBreakdown,
+          isEmergencyDump: true
+        };
+      }
+    }
+
     assertAndRecordFarmLiquidation(f, grandTotal);
 
     state.cash = (state.cash || 0) + grandTotal;
@@ -7674,12 +7718,9 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تفريغ اضطراري للصوامع ', `تسييل شامل لـ ${itemsSold.toLocaleString()} وحدة محاصيل بسعر التكلفة الرأسمالية فقط (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
 
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellAllFarmCrops(f.inventory).catch(e => console.warn('[FarmEngine] Server sell-all sync warning:', e.message));
-    }
-
-    forceSaveState(true);
     return {
       grandTotal,
       totalRevenue: grandTotal,
@@ -7734,7 +7775,7 @@ const GameEngine = (() => {
     };
   }
 
-  function sellProcessedGood(recipeId, qty = null) {
+  async function sellProcessedGood(recipeId, qty = null) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     assertFarmRateLimit('البيع');
     const f = ensureFarmState();
@@ -7769,6 +7810,27 @@ const GameEngine = (() => {
       totalPrice = sellQty * rawCostPerUnit;
     }
 
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.sellProcessedGood(recipeId, sellQty, f.processing && f.processing.storage);
+      if (serverRes && serverRes.success) {
+        const rev = Number(serverRes.result?.totalPrice || serverRes.result?.totalRevenue || totalPrice);
+        recordPlayerActivity('تسييل اضطراري لمنتج مصنع ', `تفريغ ${sellQty.toLocaleString()} عبوة من "${recipe.name}" بسعر التكلفة الخام (+${rev.toLocaleString()} EGP). الأرباح الفاخرة محصورة في عقود B2B.`, 'business');
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return {
+          recipe,
+          sellQty,
+          qty: sellQty,
+          totalPrice: rev,
+          totalRevenue: rev,
+          revenue: rev,
+          grandTotal: rev,
+          remaining: f.processing.storage[recipeId],
+          isEmergencyDump: true
+        };
+      }
+    }
+
     assertAndRecordFarmLiquidation(f, totalPrice);
 
     f.processing.storage[recipeId] = Math.max(0, f.processing.storage[recipeId] - sellQty);
@@ -7778,12 +7840,8 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تسييل اضطراري لمنتج مصنع ', `تفريغ ${sellQty.toLocaleString()} عبوة من "${recipe.name}" بسعر التكلفة الخام (+${totalPrice.toLocaleString()} EGP). الأرباح الفاخرة محصورة في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
-
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellProcessedGood(recipeId, sellQty, f.processing && f.processing.storage).catch(e => console.warn('[FarmEngine] Server sell-processed sync warning:', e.message));
-    }
-
-    forceSaveState(true);
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
 
     return {
       recipe,
@@ -7798,7 +7856,7 @@ const GameEngine = (() => {
     };
   }
 
-  function sellAllProcessedGoods() {
+  async function sellAllProcessedGoods() {
     assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
@@ -7842,6 +7900,24 @@ const GameEngine = (() => {
       throw new Error("مستودع المنتجات المصنعة فارغ أو تم استنفاد السقف المتبقي اليوم. المحاصيل المتبقية محفوظة في المزرعة.");
     }
 
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.sellAllProcessedGoods(f.processing && f.processing.storage);
+      if (serverRes && serverRes.success) {
+        const rev = Number(serverRes.result?.totalRevenue || serverRes.result?.grandTotal || grandTotal);
+        recordPlayerActivity('تفريغ اضطراري للمنتجات المصنعة ', `تسييل شامل لـ ${itemsSold.toLocaleString()} عبوة مصنعة بسعر التكلفة الخام (+${rev.toLocaleString()} EGP).`, 'business');
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return {
+          itemsSold,
+          grandTotal: rev,
+          totalUnits: itemsSold,
+          totalRevenue: rev,
+          soldBreakdown,
+          isEmergencyDump: true
+        };
+      }
+    }
+
     assertAndRecordFarmLiquidation(f, grandTotal);
 
     state.cash = (state.cash || 0) + grandTotal;
@@ -7850,12 +7926,8 @@ const GameEngine = (() => {
 
     recordPlayerActivity('تفريغ اضطراري للمنتجات المصنعة ', `تسييل شامل لـ ${itemsSold.toLocaleString()} عبوة مصنعة بسعر التكلفة الخام (+${grandTotal.toLocaleString()} EGP).`, 'business');
     state.netWorth = calculateNetWorth();
-
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellAllProcessedGoods(f.processing && f.processing.storage).catch(e => console.warn('[FarmEngine] Server sell-all-processed sync warning:', e.message));
-    }
-
-    forceSaveState(true);
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
 
     return {
       itemsSold,
@@ -7924,7 +7996,7 @@ const GameEngine = (() => {
     };
   }
 
-  function sellLivestockProduce(produceKey, qty = null) {
+  async function sellLivestockProduce(produceKey, qty = null) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     assertFarmRateLimit('البيع');
     const f = ensureFarmState();
@@ -7956,6 +8028,28 @@ const GameEngine = (() => {
       totalPrice = sellQty * pricePerUnit;
     }
 
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.sellLivestockProduce(produceKey, sellQty, f.livestock);
+      if (serverRes && serverRes.success) {
+        const rev = Number(serverRes.result?.totalPrice || serverRes.result?.totalRevenue || totalPrice);
+        const names = { milk: 'حليب أبقار طازج', eggs: 'كراتين بيض مائدة', compost: 'سماد عضوي حيواني' };
+        recordPlayerActivity('تسييل اضطراري لإنتاج المزرعة ', `تفريغ ${sellQty.toLocaleString()} وحدة من ${names[produceKey]} بسعر التكلفة الرمزية (+${rev.toLocaleString()} EGP). أرباح الألبان الحقيقية في عقود B2B.`, 'business');
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return {
+          produceKey,
+          sellQty,
+          qty: sellQty,
+          totalPrice: rev,
+          revenue: rev,
+          totalRevenue: rev,
+          grandTotal: rev,
+          remaining: f.livestock[produceKey],
+          isEmergencyDump: true
+        };
+      }
+    }
+
     assertAndRecordFarmLiquidation(f, totalPrice);
 
     f.livestock[produceKey] = Math.max(0, f.livestock[produceKey] - sellQty);
@@ -7966,12 +8060,8 @@ const GameEngine = (() => {
     const names = { milk: 'حليب أبقار طازج', eggs: 'كراتين بيض مائدة', compost: 'سماد عضوي حيواني' };
     recordPlayerActivity('تسييل اضطراري لإنتاج المزرعة ', `تفريغ ${sellQty.toLocaleString()} وحدة من ${names[produceKey]} بسعر التكلفة الرمزية (+${totalPrice.toLocaleString()} EGP). أرباح الألبان الحقيقية في عقود B2B.`, 'business');
     state.netWorth = calculateNetWorth();
-
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellLivestockProduce(produceKey, sellQty, f.livestock).catch(e => console.warn('[FarmEngine] Server sell-livestock sync warning:', e.message));
-    }
-
-    forceSaveState(true);
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
 
     return {
       produceKey,
@@ -7986,7 +8076,7 @@ const GameEngine = (() => {
     };
   }
 
-  function sellAllLivestockProduce() {
+  async function sellAllLivestockProduce() {
     assertFarmRateLimit('البيع');
     const f = ensureFarmState();
     if (!f.unlocked) throw new Error("المزرعة غير مفعلة.");
@@ -8041,6 +8131,26 @@ const GameEngine = (() => {
     }
 
     const finalTotal = (soldMilk * 5) + (soldEggs * 5) + (soldCompost * 10);
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.sellAllLivestockProduce(ls);
+      if (serverRes && serverRes.success) {
+        const rev = Number(serverRes.result?.grandTotal || serverRes.result?.totalRevenue || finalTotal);
+        recordPlayerActivity('بيع كامل الإنتاج الحيواني ', `بيع كافة منتجات المزرعة الحيوانية بإجمالي +${rev.toLocaleString()} EGP نقداً!`, 'business');
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return {
+          grandTotal: rev,
+          totalRevenue: rev,
+          revenue: rev,
+          milk: soldMilk,
+          eggs: soldEggs,
+          compost: soldCompost,
+          isEmergencyDump: true
+        };
+      }
+    }
+
     assertAndRecordFarmLiquidation(f, finalTotal);
 
     ls.milk = Math.max(0, ls.milk - soldMilk);
@@ -8052,12 +8162,8 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع كامل الإنتاج الحيواني ', `بيع كافة منتجات المزرعة الحيوانية بإجمالي +${finalTotal.toLocaleString()} EGP نقداً!`, 'business');
     state.netWorth = calculateNetWorth();
-
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellAllLivestockProduce(ls).catch(e => console.warn('[FarmEngine] Server sell-all-livestock sync warning:', e.message));
-    }
-
-    forceSaveState(true);
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
 
     return {
       grandTotal: finalTotal,
@@ -8302,7 +8408,7 @@ const GameEngine = (() => {
     return f.contracts.active;
   }
 
-  function fulfillFarmContract(contractId) {
+  async function fulfillFarmContract(contractId) {
     assertFarmRateLimit('العقود', 400);
     if (state.jailTimer > 0) throw new Error("أنت مسجون!");
     const f = ensureFarmState();
@@ -8350,7 +8456,24 @@ const GameEngine = (() => {
       }
     }
 
-    // 2. Deduct all requirements
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.fulfillFarmContract(contractId, contract);
+      if (serverRes && serverRes.success) {
+        const summaryText = reqs.map(r => `${r.quantityNeeded} ${r.itemName}`).join(' + ');
+        recordPlayerActivity('إنجاز عقد توريد تجاري ', `تم توريد طلبية (${summaryText}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        await forceSaveState(true);
+        return {
+          contract,
+          payout: contract.payout,
+          repReward: contract.repReward,
+          newReputation: f.contracts?.reputation,
+          completedToday: f.contracts?.completedToday
+        };
+      }
+    }
+
+    // 2. Deduct all requirements locally
     for (const req of reqs) {
       if (req.itemType === 'crop') {
         f.inventory[req.itemId] -= req.quantityNeeded;
@@ -8378,12 +8501,8 @@ const GameEngine = (() => {
     recordPlayerActivity('إنجاز عقد توريد تجاري ', `تم توريد طلبية (${summaryText}) لـ "${contract.clientName}" وقبض ${contract.payout.toLocaleString()} EGP (+${contract.bonusPercent}% بونص | +${contract.repReward} سمعة)!`, 'business');
 
     state.netWorth = calculateNetWorth();
-
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.fulfillFarmContract(contractId, contract).catch(e => console.warn('[FarmEngine] Server contract sync warning:', e.message));
-    }
-
-    forceSaveState(true);
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
 
     return {
       contract,

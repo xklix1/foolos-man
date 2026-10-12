@@ -375,6 +375,9 @@ var ServerBridge = (() => {
       if (typeof UI !== 'undefined' && UI.renderStatsBar) {
         try { UI.renderStatsBar(); } catch (_) {}
       }
+      if (typeof window !== 'undefined' && typeof window.renderStatsBar === 'function') {
+        try { window.renderStatsBar(); } catch (_) {}
+      }
     }
     return res;
   }
@@ -411,6 +414,16 @@ var ServerBridge = (() => {
     const res = await _post('/api/action/trade/upgrade-warehouse', { username: _activeUsername });
     return _reconcileGenericActionResponse(res, (s, r) => {
       if (r.tradeCompany) s.tradeCompany = r.tradeCompany;
+      if (typeof UI !== 'undefined' && UI.renderTradeCompanyPanel) { try { UI.renderTradeCompanyPanel(); } catch (_) {} }
+    });
+  }
+
+  async function claimExportProfit(exportId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/trade/claim-export', { username: _activeUsername, exportId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.tradeCompany) s.tradeCompany = r.tradeCompany;
+      if (typeof UI !== 'undefined' && UI.renderTradePanel) { try { UI.renderTradePanel(); } catch (_) {} }
       if (typeof UI !== 'undefined' && UI.renderTradeCompanyPanel) { try { UI.renderTradeCompanyPanel(); } catch (_) {} }
     });
   }
@@ -846,10 +859,16 @@ var ServerBridge = (() => {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    return await _post('/api/airport/claim-flight', {
+    const res = await _post('/api/airport/claim-flight', {
       username: user,
       token,
       planeId
+    });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.airport) s.airport = r.airport;
+      if (typeof window.AirportUI !== 'undefined' && window.AirportUI.renderAirportPanel) {
+        try { window.AirportUI.renderAirportPanel(); } catch (_) {}
+      }
     });
   }
 
@@ -857,9 +876,15 @@ var ServerBridge = (() => {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    return await _post('/api/airport/claim-duty-free', {
+    const res = await _post('/api/airport/claim-duty-free', {
       username: user,
       token
+    });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.airport) s.airport = r.airport;
+      if (typeof window.AirportUI !== 'undefined' && window.AirportUI.renderAirportPanel) {
+        try { window.AirportUI.renderAirportPanel(); } catch (_) {}
+      }
     });
   }
 
@@ -867,9 +892,15 @@ var ServerBridge = (() => {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    return await _post('/api/airport/transit', {
+    const res = await _post('/api/airport/transit', {
       username: user,
       token
+    });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.airport) s.airport = r.airport;
+      if (typeof window.AirportUI !== 'undefined' && window.AirportUI.renderAirportPanel) {
+        try { window.AirportUI.renderAirportPanel(); } catch (_) {}
+      }
     });
   }
 
@@ -944,6 +975,9 @@ var ServerBridge = (() => {
       if (typeof UI !== 'undefined') {
         if (UI.renderFarmPanel) { try { UI.renderFarmPanel(); } catch (_) {} }
         if (UI.renderStatsBar) { try { UI.renderStatsBar(); } catch (_) {} }
+      }
+      if (typeof window !== 'undefined' && typeof window.renderStatsBar === 'function') {
+        try { window.renderStatsBar(); } catch (_) {}
       }
     }
     return res;
@@ -1333,6 +1367,7 @@ var ServerBridge = (() => {
     upgradeIndustryStage,
     buyImportCargo,
     upgradeWarehouse,
+    claimExportProfit,
     startInvestment,
     buyFarmLivestock,
     buyStoreItem,

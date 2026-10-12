@@ -135,8 +135,56 @@ function upgradeWarehouse(state) {
   };
 }
 
+function claimExportProfit(state, exportId, serverNow = Date.now()) {
+  if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك تحصيل أرباح التصدير.");
+  const tc = ensureTradeState(state);
+  if (!Array.isArray(tc.activeExports) || tc.activeExports.length === 0) {
+    throw new Error("لا توجد شحنات تصدير مسجلة.");
+  }
+  const index = tc.activeExports.findIndex(e => e.id === exportId);
+  if (index === -1) throw new Error("عقد التصدير المحدد غير موجود.");
+  const order = tc.activeExports[index];
+
+  if (serverNow < order.deliveryTime && !order.delivered) {
+    const remSec = Math.ceil((order.deliveryTime - serverNow) / 1000);
+    throw new Error(`الشحنة ما زالت في طريقها للعميل! متبقي على الوصول والتسليم: ${remSec} ثانية.`);
+  }
+
+  if (order.claimed) {
+    throw new Error("تم تحصيل أرباح هذه الشحنة مسبقاً.");
+  }
+
+  const payout = Number(order.totalPayout) || 0;
+  const estProfit = Number(order.estProfit) || 0;
+
+  // Credit directly to Liquid Cash (الكاش السائل)
+  state.cash = (Number(state.cash) || 0) + payout;
+  tc.totalProfitEarned = (Number(tc.totalProfitEarned) || 0) + estProfit;
+  tc.totalShipmentsCompleted = (Number(tc.totalShipmentsCompleted) || 0) + 1;
+  tc.dailyTradeProfit = (Number(tc.dailyTradeProfit) || 0) + Math.max(0, estProfit);
+
+  // Remove from activeExports
+  tc.activeExports.splice(index, 1);
+
+  state.netWorth = calculateNetWorth(state);
+
+  return {
+    success: true,
+    exportId,
+    payout,
+    profit: estProfit,
+    buyerName: order.buyerName || '',
+    commodityName: order.commodityName || '',
+    cash: state.cash,
+    bank: state.bank,
+    netWorth: state.netWorth,
+    tradeCompany: tc
+  };
+}
+
 module.exports = {
   ensureTradeState,
   buyImportCargo,
-  upgradeWarehouse
+  upgradeWarehouse,
+  claimExportProfit
 };

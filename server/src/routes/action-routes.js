@@ -2111,6 +2111,23 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
+  // POST /api/action/trade/claim-export
+  fastify.post('/api/action/trade/claim-export', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { exportId } = request.body || {};
+    if (!exportId) {
+      return reply.code(400).send({ error: 'exportId is required' });
+    }
+    try {
+      const res = tradeEngine.claimExportProfit(session.state, exportId, Date.now());
+      sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
   // POST /api/action/investment/start
   fastify.post('/api/action/investment/start', async (request, reply) => {
     const session = await resolveSession(request, reply);
