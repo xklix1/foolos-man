@@ -251,8 +251,15 @@ async function sessionRoutes(fastify, options) {
     };
   });
 
-  // POST /api/session/sync-state (Synchronizes complete client state to authoritative session & DB)
-  fastify.post('/api/session/sync-state', async (request, reply) => {
+  // POST /api/session/sync-state (Synchronizes complete client state to authoritative session & DB - Max 30 req/min)
+  fastify.post('/api/session/sync-state', {
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const { username, state, immediate = false } = request.body || {};
     const effectiveToken = extractBearerToken(request);
 

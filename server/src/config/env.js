@@ -22,6 +22,7 @@ const config = {
   AUTOSAVE_INTERVAL_MS: 5000, // 5 seconds write-behind to DB
   MAX_OFFLINE_SECONDS: 12 * 3600, // 12 hours max offline accumulation
   SESSION_IDLE_TIMEOUT_MS: 15 * 60 * 1000, // 15 minutes before unloading session from RAM
+  MAX_CPS: 25, // 25 clicks per second generous clicker limit
   
   // Resend Email API
   RESEND_API_KEY: process.env.RESEND_API_KEY || Buffer.from('cmVfaDFiMTE5eGdfQ1FlQzRUamM0TmQ1NnVuOTVGQUtHcjRC', 'base64').toString('utf8'),

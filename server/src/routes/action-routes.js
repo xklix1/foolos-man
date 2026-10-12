@@ -83,11 +83,11 @@ async function actionRoutes(fastify, options) {
     return session;
   }
 
-  // 1. POST /api/action/click (Clicker / Tap Action — 10 requests/sec limit)
+  // 1. POST /api/action/click (Clicker / Tap Action — 25 requests/sec limit)
   fastify.post('/api/action/click', {
     config: {
       rateLimit: {
-        max: 10,
+        max: 25,
         timeWindow: 1000
       }
     }
@@ -99,8 +99,8 @@ async function actionRoutes(fastify, options) {
     const clickCount = Math.max(1, Math.min(100, parseInt(count, 10) || 1));
     const durationSec = Math.max(0.1, (parseInt(durationMs, 10) || 1000) / 1000);
 
-    // Strict Anti-Autoclicker Validation: Cap at MAX_CPS (15 clicks/sec)
-    const maxAllowedClicks = Math.ceil(durationSec * config.MAX_CPS) + 5; // +5 tolerance for burst latency
+    // Strict Anti-Autoclicker Validation: Cap at MAX_CPS (25 clicks/sec)
+    const maxAllowedClicks = Math.ceil(durationSec * (config.MAX_CPS || 25)) + 10; // +10 tolerance for burst latency
     if (clickCount > maxAllowedClicks) {
       return reply.code(429).send({
         error: 'Click rate limit exceeded (Anti-Autoclicker)',
@@ -1084,8 +1084,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     };
   });
 
-  // 14. POST /api/action/transfer-notify (Wire Transfer Notification to in-memory active session)
-  fastify.post('/api/action/transfer-notify', async (request, reply) => {
+  // 14. POST /api/action/transfer-notify (Wire Transfer Notification to in-memory active session - Max 15/min)
+  fastify.post('/api/action/transfer-notify', {
+    config: {
+      rateLimit: {
+        max: 15,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const { sender, recipient, amount, netAmount } = request.body || {};
     if (!recipient || !amount) {
       return reply.code(400).send({ error: 'recipient and amount are required' });
@@ -1137,8 +1144,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     };
   });
 
-  // 15. POST /api/action/transfer-request (Authoritative proxy for peer-to-peer transfer requests)
-  fastify.post('/api/action/transfer-request', async (request, reply) => {
+  // 15. POST /api/action/transfer-request (Authoritative proxy for peer-to-peer transfer requests - Max 15/min)
+  fastify.post('/api/action/transfer-request', {
+    config: {
+      rateLimit: {
+        max: 15,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const { sender, recipient, amount } = request.body || {};
     if (!sender || !recipient || !amount) {
       return reply.code(400).send({ error: 'sender, recipient and amount are required' });
@@ -1986,8 +2000,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
-  // POST /api/action/stock/buy
-  fastify.post('/api/action/stock/buy', async (request, reply) => {
+  // POST /api/action/stock/buy (Max 60 trades/min per user)
+  fastify.post('/api/action/stock/buy', {
+    config: {
+      rateLimit: {
+        max: 60,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
     if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
@@ -2007,8 +2028,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
-  // POST /api/action/stock/sell
-  fastify.post('/api/action/stock/sell', async (request, reply) => {
+  // POST /api/action/stock/sell (Max 60 trades/min per user)
+  fastify.post('/api/action/stock/sell', {
+    config: {
+      rateLimit: {
+        max: 60,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
     if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });

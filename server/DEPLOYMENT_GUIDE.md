@@ -72,11 +72,21 @@ pm2 logs rasalmal-core
 
 ---
 
-## Step 4: Configure Nginx Reverse Proxy
-Add the `/api/` reverse proxy block to your Nginx configuration for `rasalmal.online` (usually in `/etc/nginx/sites-available/rasalmal`):
+## Step 4: Configure Nginx Reverse Proxy with Anti-Lag Flood Defense
+Add the `/api/` reverse proxy block with flood defense rate limiting to your Nginx configuration (or see [`server/nginx-anti-lag.conf`](file:///c:/Users/khale/.gemini/antigravity-ide/scratch/foolos-man-tycoon/server/nginx-anti-lag.conf)):
 
 ```nginx
+# Add outside server block (in http block or /etc/nginx/conf.d/):
+limit_req_zone $binary_remote_addr zone=rasalmal_api_flood:10m rate=15r/s;
+limit_conn_zone $binary_remote_addr zone=rasalmal_conn_limit:10m;
+
+# Inside server block for rasalmal.online:
+limit_conn rasalmal_conn_limit 35;
+
 location /api/ {
+    limit_req zone=rasalmal_api_flood burst=30 nodelay;
+    limit_req_status 429;
+
     proxy_pass http://127.0.0.1:3001;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
@@ -86,7 +96,9 @@ location /api/ {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
     proxy_cache_bypass $http_upgrade;
-    proxy_read_timeout 60s;
+    proxy_connect_timeout 5s;
+    proxy_send_timeout 15s;
+    proxy_read_timeout 30s;
 }
 
 location /health {

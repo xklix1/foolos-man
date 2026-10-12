@@ -15,17 +15,41 @@ const app = Fastify({
   }
 });
 
-// Register Global Rate Limiting across all endpoints
+// Register Global Anti-Lag Dual-Layer Rate Limiting across all endpoints
 app.register(require('@fastify/rate-limit'), {
   global: true,
-  max: 300, // 300 requests per minute per IP (5 requests/sec baseline)
+  max: 300, // 300 requests per minute per user/IP (generous 5 requests/sec baseline)
   timeWindow: 60 * 1000,
-  cache: 10000,
+  cache: 20000,
+  keyGenerator: (request) => {
+    // 1. If authenticated with Bearer session token, rate-limit by user session
+    const authHeader = request.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.slice(7).trim();
+      if (token && token.length >= 10) return `usr_tok:${token.slice(0, 32)}`;
+    }
+    // 2. If request has username in body or query, rate-limit by username
+    if (request.body && typeof request.body === 'object' && request.body.username) {
+      const u = String(request.body.username).trim().toLowerCase();
+      if (u) return `usr:${u}`;
+    }
+    if (request.query && typeof request.query === 'object' && request.query.username) {
+      const u = String(request.query.username).trim().toLowerCase();
+      if (u) return `usr:${u}`;
+    }
+    // 3. Fallback to real IP (respecting Nginx/Cloudflare X-Forwarded-For)
+    const xff = request.headers['x-forwarded-for'];
+    if (xff) {
+      const clientIp = xff.split(',')[0].trim();
+      if (clientIp) return `ip:${clientIp}`;
+    }
+    return `ip:${request.ip || 'unknown'}`;
+  },
   errorResponseBuilder: (request, context) => {
     return {
       statusCode: 429,
       error: 'Too Many Requests',
-      message: `Rate limit exceeded. Maximum ${context.max} requests per ${Math.round(context.ttl / 1000)} seconds. Please slow down.`,
+      message: `تم تجاوز معدل الطلبات المسموح به لحماية استقرار السيرفر ومنع اللاج. يرجى التمهل بضع ثوانٍ. (الحد الأقصى ${context.max} طلب لكل ${Math.round(context.ttl / 1000)} ثانية)`,
       retryAfter: Math.ceil(context.ttl / 1000)
     };
   }

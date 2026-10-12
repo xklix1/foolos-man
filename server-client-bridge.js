@@ -120,10 +120,28 @@ var ServerBridge = (() => {
         }
       }
 
+      // Handle 429 Rate Limit (Anti-Lag friendly throttle)
+      if (res.status === 429) {
+        const now = Date.now();
+        if (typeof window !== 'undefined') {
+          if (!window._last429Toast || now - window._last429Toast > 8000) {
+            window._last429Toast = now;
+            if (typeof window.showToast === 'function') {
+              window.showToast(
+                ' تم التمهل مؤقتاً',
+                'أنت ترسل أوامر بسرعة فائقة! تم تهدئة الطلبات لثوانٍ معدودة لحماية استقرار السيرفر ومنع اللاج.',
+                'warning'
+              );
+            }
+          }
+        }
+      }
+
       const errorObj = new Error(errMsg);
       errorObj.status = res.status;
       errorObj.code = errCode;
       errorObj.isAuthError = (res.status === 401);
+      errorObj.isRateLimit = (res.status === 429);
       throw errorObj;
     }
 
