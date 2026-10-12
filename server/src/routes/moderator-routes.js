@@ -2038,13 +2038,17 @@ async function moderatorRoutes(fastify, options) {
             body: JSON.stringify({
               sender: 'إدارة الرقابة والأمان',
               recipient: pDoc.username,
-              type: 'system_announcement',
+              type: 'admin_balance_grant',
               payload: {
                 title: ' إيداع بنكي معتمد من الرقابة',
                 message: `تم إيداع مبلغ $${addAmount.toLocaleString('en-US')} في حسابك البنكي بنجاح بواسطة إدارة الرقابة.\nالبيان: ${cleanReason}`,
                 amount: addAmount,
+                totalAmount: addAmount,
                 addedBank: addAmount,
+                addedCash: 0,
                 newBank: updatedBank,
+                newCash: currentCash,
+                isPreApplied: true,
                 timestamp: ts
               },
               status: 'unread',

@@ -8622,6 +8622,51 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             handleJailedUser(fresh.jailTimer);
           }
         }
+
+        // Live Admin Wealth & Balance Sync (Cash, Bank, NetWorth, Gold)
+        const freshAdminTs = Number(fresh.admin_modified_timestamp || fresh.adminModifiedTimestamp || (fresh.state && fresh.state.adminModifiedTimestamp) || 0);
+        const currentAdminTs = Number((GameEngine.state && GameEngine.state.adminModifiedTimestamp) || 0);
+
+        if (GameEngine.state && freshAdminTs >= currentAdminTs && freshAdminTs > 0) {
+          const freshBank = Number(fresh.bank !== undefined ? fresh.bank : (fresh.state && fresh.state.bank));
+          const freshCash = Number(fresh.cash !== undefined ? fresh.cash : (fresh.state && fresh.state.cash));
+          const freshGold = Number(fresh.gold !== undefined ? fresh.gold : (fresh.state && fresh.state.gold));
+          const freshWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : (fresh.net_worth !== undefined ? fresh.net_worth : (fresh.state && fresh.state.netWorth)));
+
+          let changed = false;
+          if (!isNaN(freshBank) && Math.abs(freshBank - Number(GameEngine.state.bank || 0)) > 0.01) {
+            GameEngine.state.bank = freshBank;
+            changed = true;
+          }
+          if (!isNaN(freshCash) && Math.abs(freshCash - Number(GameEngine.state.cash || 0)) > 0.01) {
+            GameEngine.state.cash = freshCash;
+            changed = true;
+          }
+          if (!isNaN(freshGold) && Math.abs(freshGold - Number(GameEngine.state.gold || 0)) > 0.01) {
+            GameEngine.state.gold = freshGold;
+            changed = true;
+          }
+          if (!isNaN(freshWorth)) {
+            GameEngine.state.netWorth = freshWorth;
+          } else {
+            if (typeof GameEngine.calculateTotalNetWorth === 'function') GameEngine.calculateTotalNetWorth();
+          }
+
+          if (freshAdminTs > currentAdminTs) {
+            GameEngine.state.adminModifiedTimestamp = freshAdminTs;
+          }
+          GameEngine.state._legitimateTransactionBypass = true;
+
+          if (changed) {
+            try {
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, GameEngine.state);
+              }
+            } catch (_) {}
+            if (typeof renderAll === 'function') renderAll();
+            if (typeof renderHeader === 'function') renderHeader();
+          }
+        }
       } catch (e) {
         console.warn('[Realtime] checkLiveUserStatus error:', e);
       }
@@ -18704,6 +18749,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
   async function processInboxSystemMessages(mails) {
     if (!mails || mails.length === 0) return;
+    if (typeof window !== 'undefined') window.processInboxSystemMessages = processInboxSystemMessages;
 
     // 0. Process incoming Top-up approvals (Live in-game package delivery)
     const topupMails = mails.filter(m => (m.type === 'topup_receipt' || (m.payload && m.payload.topupDetails)) && (m.status === 'unread' || m.status === 'pending'));
@@ -18933,7 +18979,6 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             (addBank > 0 ? ` (بنك: +${addBank.toLocaleString()})` : ''),
           'success'
         );
-        break;
       }
     }
 
@@ -18997,7 +19042,6 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           `تم خصم ${totalAmount.toLocaleString()} EGP من ${deductCash > 0 ? 'الكاش' : 'البنك'}.\nالسبب: ${reason}`,
           'warning'
         );
-        break;
       }
     }
 
@@ -19039,7 +19083,6 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           `تمت إضافة +${addGold.toLocaleString()} ذهبة إلى حسابك فوراً من قبل الإدارة. الرصيد الإجمالي: ${Number(GameEngine.state.gold).toLocaleString()} ذهبة.`,
           'success'
         );
-        break;
       }
     }
 

@@ -2449,7 +2449,9 @@ var AppDB = (() => {
       _pendingCloudWrite = true;
       if (typeof window !== 'undefined') window._dbPendingCloudWrite = true;
       let res;
-      const patchEndpoint = `players?username=ilike.${encodeURIComponent(u)}`;
+      const clientAdminTs = Number(payload.admin_modified_timestamp || state.adminModifiedTimestamp || 0);
+      const adminGuard = clientAdminTs > 0 ? `&admin_modified_timestamp=lte.${clientAdminTs}` : '';
+      const patchEndpoint = `players?username=ilike.${encodeURIComponent(u)}${adminGuard}`;
       try {
         res = await _api(patchEndpoint, {
           method:'PATCH',
@@ -3104,6 +3106,163 @@ var AppDB = (() => {
                     });
                   }
                 }
+                // 2.7 Instant Admin Balance Grant (Live In-Game Cash / Bank Injection)
+                else if (type === 'admin_balance_grant' || (type === 'system_announcement' && (payload.addedBank || payload.addedCash || payload.newBank || payload.newCash))) {
+                  const addCash = Number(payload.addedCash || 0);
+                  const addBank = Number(payload.addedBank || 0);
+                  const totalAmt = Number(payload.totalAmount || payload.amount || (addCash + addBank));
+                  const grantTs = Number(payload.timestamp || m.created_at || Date.now());
+
+                  if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
+                    const st = window.GameEngine.state;
+                    if (payload.isPreApplied && payload.newBank !== undefined && !isNaN(Number(payload.newBank))) {
+                      st.bank = Number(payload.newBank);
+                    } else if (addBank !== 0) {
+                      st.bank = (Number(st.bank) || 0) + addBank;
+                    }
+
+                    if (payload.isPreApplied && payload.newCash !== undefined && !isNaN(Number(payload.newCash))) {
+                      st.cash = Number(payload.newCash);
+                    } else if (addCash !== 0) {
+                      st.cash = (Number(st.cash) || 0) + addCash;
+                    }
+
+                    st.adminModifiedTimestamp = Math.max(Number(st.adminModifiedTimestamp || 0), grantTs);
+                    st._legitimateTransactionBypass = true;
+                    if (typeof window.GameEngine.calculateTotalNetWorth === 'function') {
+                      window.GameEngine.calculateTotalNetWorth();
+                    } else {
+                      st.netWorth = (Number(st.cash) || 0) + (Number(st.bank) || 0);
+                    }
+
+                    if (typeof setEncryptedLocalState === 'function') {
+                      setEncryptedLocalState(`rasalmal_state_${window.GameEngine.activeUsername}`, st);
+                    }
+
+                    savePlayerState(window.GameEngine.activeUsername, st, true).catch(() => {});
+
+                    if (typeof window.playMenuSound === 'function') window.playMenuSound('cash');
+                    if (typeof window.renderAll === 'function') window.renderAll();
+                    if (typeof window.renderHeader === 'function') window.renderHeader();
+                  }
+
+                  const detailsStr = (addCash > 0 ? ` (كاش: +${addCash.toLocaleString()} EGP)` : '') +
+                                     (addBank > 0 ? ` (بنك: +${addBank.toLocaleString()} EGP)` : '');
+                  _notifyUser(
+                    ' إيداع مالي إداري مباشر!',
+                    `تم إيداع +${totalAmt.toLocaleString()} EGP في حسابك بنجاح من قبل إدارة اللعبة!${detailsStr}`,
+                    'success',
+                    'cash'
+                  );
+                  updateMailStatus(m.id, 'read').catch(() => {});
+                }
+                // 2.8 Instant Admin Balance Deduction (Live In-Game Cash / Bank Deduction)
+                else if (type === 'admin_balance_deduct') {
+                  const deductCash = Number(payload.deductedCash || (payload.target === 'cash' ? payload.amount : 0) || 0);
+                  const deductBank = Number(payload.deductedBank || (payload.target === 'bank' ? payload.amount : 0) || 0);
+                  const totalDeduct = Number(payload.totalAmount || payload.amount || (deductCash + deductBank));
+                  const deductTs = Number(payload.timestamp || m.created_at || Date.now());
+
+                  if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
+                    const st = window.GameEngine.state;
+                    if (payload.isPreApplied && payload.newBank !== undefined && !isNaN(Number(payload.newBank))) {
+                      st.bank = Number(payload.newBank);
+                    } else if (deductBank !== 0) {
+                      st.bank = Math.max(0, (Number(st.bank) || 0) - deductBank);
+                    }
+
+                    if (payload.isPreApplied && payload.newCash !== undefined && !isNaN(Number(payload.newCash))) {
+                      st.cash = Number(payload.newCash);
+                    } else if (deductCash !== 0) {
+                      st.cash = Math.max(0, (Number(st.cash) || 0) - deductCash);
+                    }
+
+                    st.adminModifiedTimestamp = Math.max(Number(st.adminModifiedTimestamp || 0), deductTs);
+                    st._legitimateTransactionBypass = true;
+                    if (typeof window.GameEngine.calculateTotalNetWorth === 'function') {
+                      window.GameEngine.calculateTotalNetWorth();
+                    } else {
+                      st.netWorth = (Number(st.cash) || 0) + (Number(st.bank) || 0);
+                    }
+
+                    if (typeof setEncryptedLocalState === 'function') {
+                      setEncryptedLocalState(`rasalmal_state_${window.GameEngine.activeUsername}`, st);
+                    }
+
+                    savePlayerState(window.GameEngine.activeUsername, st, true).catch(() => {});
+
+                    if (typeof window.playMenuSound === 'function') window.playMenuSound('alert');
+                    if (typeof window.renderAll === 'function') window.renderAll();
+                    if (typeof window.renderHeader === 'function') window.renderHeader();
+                  }
+
+                  _notifyUser(
+                    ' خصم مالي إداري',
+                    `تم خصم ${totalDeduct.toLocaleString()} EGP من حسابك بواسطة إدارة الرقابة.${payload.reason ? '\nالسبب: ' + payload.reason : ''}`,
+                    'warning',
+                    'alert'
+                  );
+                  updateMailStatus(m.id, 'read').catch(() => {});
+                }
+                // 2.9 Instant Admin Gold Grant
+                else if (type === 'admin_gold_grant') {
+                  const addGold = Number(payload.addedGold || payload.amount || 0);
+                  const grantTs = Number(payload.timestamp || m.created_at || Date.now());
+
+                  if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
+                    const st = window.GameEngine.state;
+                    if (payload.isPreApplied && payload.newGold !== undefined && !isNaN(Number(payload.newGold))) {
+                      st.gold = Number(payload.newGold);
+                    } else if (addGold > 0) {
+                      st.gold = (Number(st.gold) || 0) + addGold;
+                    }
+
+                    st.adminModifiedTimestamp = Math.max(Number(st.adminModifiedTimestamp || 0), grantTs);
+                    if (typeof setEncryptedLocalState === 'function') {
+                      setEncryptedLocalState(`rasalmal_state_${window.GameEngine.activeUsername}`, st);
+                    }
+
+                    savePlayerState(window.GameEngine.activeUsername, st, true).catch(() => {});
+
+                    if (typeof window.playMenuSound === 'function') window.playMenuSound('success');
+                    if (typeof window.renderAll === 'function') window.renderAll();
+                    if (typeof window.renderHeader === 'function') window.renderHeader();
+                  }
+
+                  _notifyUser(
+                    ' إيداع سبائك ذهب!',
+                    `تم إضافة +${addGold.toLocaleString()} سبيكة ذهب لحسابك من قبل الإدارة!`,
+                    'success',
+                    'success'
+                  );
+                  updateMailStatus(m.id, 'read').catch(() => {});
+                }
+                // 2.95 Admin State Sync Signal
+                else if (type === 'admin_sync') {
+                  try {
+                    if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) {
+                      getPlayerState(window.GameEngine.activeUsername).then(freshState => {
+                        if (!freshState) return;
+                        if (window.GameEngine && window.GameEngine.state) {
+                          const st = window.GameEngine.state;
+                          st.bank = Number(freshState.bank !== undefined ? freshState.bank : st.bank);
+                          st.cash = Number(freshState.cash !== undefined ? freshState.cash : st.cash);
+                          st.netWorth = Number(freshState.netWorth !== undefined ? freshState.netWorth : (freshState.net_worth !== undefined ? freshState.net_worth : st.netWorth));
+                          st.adminModifiedTimestamp = Number(freshState.adminModifiedTimestamp || freshState.admin_modified_timestamp || st.adminModifiedTimestamp);
+                          if (freshState.gold !== undefined || (freshState.state && freshState.state.gold !== undefined)) {
+                            st.gold = Number(freshState.gold !== undefined ? freshState.gold : freshState.state.gold);
+                          }
+                          if (typeof setEncryptedLocalState === 'function') {
+                            setEncryptedLocalState(`rasalmal_state_${window.GameEngine.activeUsername}`, st);
+                          }
+                          if (typeof window.renderAll === 'function') window.renderAll();
+                          if (typeof window.renderHeader === 'function') window.renderHeader();
+                        }
+                      }).catch(() => {});
+                    }
+                  } catch (_) {}
+                  updateMailStatus(m.id, 'read').catch(() => {});
+                }
                 // 3. Other System/Player Notifications
                 else {
                   const title = payload.title || m.title || ' إشعار جديد';
@@ -3115,10 +3274,13 @@ var AppDB = (() => {
           }
           lastKnownMailIds = new Set(rows.map(r => r.id));
           isFirstRun = false;
-          if (rows && rows.some(r => r.type === 'admin_sync' || r.type === 'admin_balance_grant' || r.type === 'topup_receipt' || r.type === 'transfer_received')) {
+          if (rows && rows.some(r => r.type === 'admin_sync' || r.type === 'admin_balance_grant' || r.type === 'admin_balance_deduct' || r.type === 'admin_gold_grant' || r.type === 'topup_receipt' || r.type === 'transfer_received')) {
             if (typeof window !== 'undefined' && typeof window._triggerPlayerDocCheck === 'function') {
               window._triggerPlayerDocCheck();
             }
+          }
+          if (typeof window !== 'undefined' && typeof window.processInboxSystemMessages === 'function') {
+            window.processInboxSystemMessages(rows);
           }
           callback(rows);
         }

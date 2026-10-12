@@ -1503,10 +1503,13 @@
           freshPlayer.adminModifiedTimestamp = now;
           freshPlayer.isReset = false;
           delete freshPlayer.resetTimestamp;
-          if (freshPlayer.state && typeof freshPlayer.state === 'object') {
-            freshPlayer.state.isReset = false;
-            delete freshPlayer.state.resetTimestamp;
-          }
+          if (!freshPlayer.state || typeof freshPlayer.state !== 'object') freshPlayer.state = {};
+          freshPlayer.state.cash = newCash;
+          freshPlayer.state.bank = newBank;
+          freshPlayer.state.netWorth = newWorth;
+          freshPlayer.state.adminModifiedTimestamp = now;
+          freshPlayer.state.isReset = false;
+          delete freshPlayer.state.resetTimestamp;
 
           // Record permanent Admin Grant in player's activity log and adminGrants
           const grantEntry = {
@@ -1540,10 +1543,13 @@
             selectedPlayerState.adminModifiedTimestamp = now;
             selectedPlayerState.isReset = false;
             delete selectedPlayerState.resetTimestamp;
-            if (selectedPlayerState.state && typeof selectedPlayerState.state === 'object') {
-              selectedPlayerState.state.isReset = false;
-              delete selectedPlayerState.state.resetTimestamp;
-            }
+            if (!selectedPlayerState.state || typeof selectedPlayerState.state !== 'object') selectedPlayerState.state = {};
+            selectedPlayerState.state.cash = newCash;
+            selectedPlayerState.state.bank = newBank;
+            selectedPlayerState.state.netWorth = newWorth;
+            selectedPlayerState.state.adminModifiedTimestamp = now;
+            selectedPlayerState.state.isReset = false;
+            delete selectedPlayerState.state.resetTimestamp;
             if (!Array.isArray(selectedPlayerState.activityLog)) selectedPlayerState.activityLog = [];
             selectedPlayerState.activityLog.unshift(grantEntry);
             if (!Array.isArray(selectedPlayerState.adminGrants)) selectedPlayerState.adminGrants = [];
