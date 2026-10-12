@@ -397,12 +397,41 @@
           <td class="p-2.5 text-center numbers-font font-bold text-emerald-400">${Number(p.cash || 0).toLocaleString()} EGP</td>
           <td class="p-2.5 text-center">${statusBadge}</td>
           <td class="p-2.5 text-left">
-            <button data-user="${p.username}" class="btn-select-player px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-400 hover:text-slate-950 rounded text-[10px] font-bold transition">إدارة </button>
+            <div class="flex items-center justify-end gap-1.5">
+              <button data-user="${p.username}" class="btn-select-player px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-400 hover:text-slate-950 rounded text-[10px] font-bold transition">إدارة </button>
+              <button data-user="${p.username}" class="btn-quick-deduct-player px-2.5 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 rounded text-[10px] font-bold transition cursor-pointer flex items-center gap-1 shadow-sm" title="خصم مالي فوري من اللاعب">
+                <i class="fa-solid fa-file-invoice-dollar text-[10px]"></i>
+                <span>خصم</span>
+              </button>
+            </div>
           </td>`;
 
         tr.addEventListener('click', (e) => {
           selectPlayerForModeration(p.username);
         });
+
+        const deductBtn = tr.querySelector('.btn-quick-deduct-player');
+        if (deductBtn) {
+          deductBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await selectPlayerForModeration(p.username);
+            if (typeof switchPlayerSubTab === 'function') {
+              switchPlayerSubTab('finances');
+            }
+            setTimeout(() => {
+              const deductInp = document.getElementById('admin-deduct-amount');
+              if (deductInp) {
+                deductInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                deductInp.focus();
+                const cardCont = deductInp.closest('.border-rose-500\\/50') || deductInp.parentElement;
+                if (cardCont) {
+                  cardCont.classList.add('ring-2', 'ring-rose-500', 'glow-rose');
+                  setTimeout(() => cardCont.classList.remove('ring-2', 'ring-rose-500', 'glow-rose'), 2000);
+                }
+              }
+            }, 300);
+          });
+        }
 
         playersTableBody.appendChild(tr);
       });
@@ -1805,6 +1834,32 @@
           instantDeductBtn.disabled = false;
           instantDeductBtn.innerHTML = '<i class="fa-solid fa-minus-circle text-sm"></i> <span>خصم المبلغ فوراً</span>';
         }
+      });
+    }
+
+    // Header Quick Deduct Balance Button (Direct jump to finances subtab and focus deduction card)
+    const headerDeductBtn = document.getElementById('btn-admin-header-quick-deduct');
+    if (headerDeductBtn) {
+      headerDeductBtn.addEventListener('click', () => {
+        if (!selectedPlayer) {
+          showToast('خصم رصيد', 'يرجى اختيار لاعب أولاً من القائمة.', 'info');
+          return;
+        }
+        if (typeof switchPlayerSubTab === 'function') {
+          switchPlayerSubTab('finances');
+        }
+        setTimeout(() => {
+          const deductInp = document.getElementById('admin-deduct-amount');
+          if (deductInp) {
+            deductInp.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            deductInp.focus();
+            const cardCont = deductInp.closest('.border-rose-500\\/50') || deductInp.parentElement;
+            if (cardCont) {
+              cardCont.classList.add('ring-2', 'ring-rose-500', 'glow-rose');
+              setTimeout(() => cardCont.classList.remove('ring-2', 'ring-rose-500', 'glow-rose'), 2000);
+            }
+          }
+        }, 150);
       });
     }
 
