@@ -1387,8 +1387,8 @@ const GameEngine = (() => {
       bank: currentBank,
       ...extra
     });
-    if (state.activityLog.length > 3500) {
-      state.activityLog.length = 3500; // Keep extensive history of 3500 entries (covers full 30+ days)
+    if (state.activityLog.length > 200) {
+      state.activityLog.length = 200; // Cap to 200 entries to prevent payload bloat and mobile quota issues
     }
   }
 
@@ -3322,6 +3322,11 @@ const GameEngine = (() => {
         },
         _loadedFromCloud: true
       });
+
+      // Cap activityLog to 200 entries on session load to prevent payload bloat
+      if (Array.isArray(state.activityLog) && state.activityLog.length > 200) {
+        state.activityLog = state.activityLog.slice(0, 200);
+      }
 
       // Restore AFK Manager Expiry timestamp
       const rawAfkExpiry = (dbState.afk_manager_expires_at != null ? Number(dbState.afk_manager_expires_at) : (dbState.afkManagerExpiresAt != null ? Number(dbState.afkManagerExpiresAt) : (dbState.state && (dbState.state.afkManagerExpiresAt != null ? Number(dbState.state.afkManagerExpiresAt) : Number(dbState.state.afk_manager_expires_at || 0)))));
@@ -5732,9 +5737,10 @@ const GameEngine = (() => {
     }
     const claimed = state.incomeVault || 0;
     state.incomeVault = 0;
-    state.cash = (state.cash || 0) + claimed;
+    state.bank = (state.bank || 0) + claimed;
+    state.netWorth = calculateNetWorth();
     forceSaveState(true);
-    return Promise.resolve({ success: true, claimed, cash: state.cash });
+    return Promise.resolve({ success: true, claimed, bank: state.bank, cash: state.cash });
   }
 
   // --- Smuggling Actions (New V2 Balanced) ---
@@ -8556,9 +8562,9 @@ const GameEngine = (() => {
       });
     }
 
-    // Anti-Cheat: Validate investments
+    // Anti-Cheat: Validate investments (Wealth-Proportional cap, min 500M)
     if (state.investments && typeof state.investments === 'object') {
-      const maxInvCap = 50000000; // 50M cap per investment slot
+      const maxInvCap = Math.max(500000000, Number(state.netWorth || 0));
       Object.keys(state.investments).forEach(ik => {
         const val = state.investments[ik];
         if (typeof val === 'number') {

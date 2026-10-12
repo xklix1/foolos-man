@@ -247,8 +247,29 @@ var AppDB = (() => {
       }
     }
 
-    const res = await fetch(url, { ...options, headers });
-    const dateHeader = res.headers.get('date');
+    let res = null;
+    let fetchErr = null;
+    const isRead = method === 'GET' || method === 'HEAD';
+    const maxRetries = (options.retries !== undefined) ? options.retries : (isRead ? 2 : 0);
+
+    for (let attempt = 0; attempt <= maxRetries; attempt++) {
+      try {
+        res = await fetch(url, { ...options, headers });
+        if (res.ok || !isRead || (res.status !== 502 && res.status !== 503 && res.status !== 504 && res.status !== 429)) {
+          break;
+        }
+      } catch (err) {
+        fetchErr = err;
+        if (attempt >= maxRetries) throw err;
+      }
+      if (attempt < maxRetries) {
+        await new Promise(r => setTimeout(r, 250 * (attempt + 1)));
+      }
+    }
+
+    if (!res && fetchErr) throw fetchErr;
+
+    const dateHeader = res ? res.headers.get('date') : null;
     if (dateHeader) _updateServerTimeFromHeader(dateHeader);
 
     if (!res.ok) {
@@ -1471,13 +1492,13 @@ var AppDB = (() => {
     }
   }
 
-  async function verifyPin(username, inputPin) {
+  async function verifyPin(username, inputPin, returnFullRow = false) {
     if (!username || !inputPin) return false;
     const u = username.trim();
     const p = String(inputPin).trim();
 
     // Query case-insensitively and sort by last_seen descending to prioritize most recently active account over duplicates
-    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=username,pin,net_worth,state`);
+    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=username,pin,cash,bank,net_worth,title,is_admin,is_banned,jail_timer,state`);
     if (!rows || rows.length === 0) return false;
 
     // Verify PIN first
@@ -1497,7 +1518,7 @@ var AppDB = (() => {
         stored.replace(/^s256_/, '') === hashed ||
         stored === p
       ) {
-        return true;
+        return returnFullRow ? { ok: true, canonicalUsername: r.username, row: r } : true;
       }
     }
     return false;
@@ -1534,6 +1555,9 @@ var AppDB = (() => {
 
       const row = rows[0];
       const stateObj = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
+      if (Array.isArray(stateObj.activityLog) && stateObj.activityLog.length > 200) {
+        stateObj.activityLog = stateObj.activityLog.slice(-200);
+      }
       const resetTs = Number(row.resetTimestamp || (row.state && row.state.resetTimestamp) || 0);
       const isStaleReset = resetTs > 0 && (resetTs > (Date.now() + 60000) || (Date.now() - resetTs) > (24 * 60 * 60 * 1000));
       const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + u) || 0) : 0;
@@ -1734,6 +1758,7 @@ var AppDB = (() => {
           return d.toISOString().split('T')[0];
         })();
 
+        const locResetAck = Number(local?.lastLimitsResetAck || 0);
         const srvResetAt = Number(stateObj.limitsResetAt || (row.state && row.state.limitsResetAt) || 0);
         const isAuthoritativeLimitsReset = (srvResetAt > 0 && srvResetAt > locResetAck);
 
@@ -2319,6 +2344,7 @@ var AppDB = (() => {
 
   function _sanitizePayloadBeforeCloudPush(payload, state) {
     if (!payload || !state) return;
+    const uLower = String(state.username || payload.username || 'player').trim().toLowerCase();
 
     // STRICT: Client push must NEVER set or escalate is_admin or is_banned
     delete payload.is_admin;
@@ -2338,21 +2364,26 @@ var AppDB = (() => {
         }
       }
     }
-    // 4. Currency sanity caps & Velocity Clamping
-    const MAX_ALLOWED_CURRENCY = 50000000000; // 50 Billion EGP realistic absolute ceiling
+    // 4. Currency sanity caps & Wealth-Proportional Velocity Clamping
+    const playerNetWorth = Math.max(0, Number(state.netWorth || payload.net_worth || 0));
+    // Ceiling expands dynamically with player wealth (minimum 100 Trillion EGP)
+    const MAX_ALLOWED_CURRENCY = Math.max(100000000000000, playerNetWorth * 10);
     const curTotal = (Number(payload.cash) || 0) + (Number(payload.bank) || 0);
     const lastVerifiedTotal = (_lastVerifiedCloudWealth !== null) ? Number(_lastVerifiedCloudWealth) : curTotal;
     const wealthJump = curTotal - lastVerifiedTotal;
 
-    // Detect abnormal jump without admin grant (> 50M jump in a single sync)
+    // Detect abnormal jump without admin grant:
+    // Dynamic threshold: Math.max(500,000,000, playerNetWorth)
+    const wealthThreshold = Math.max(500000000, playerNetWorth);
     const hasAdminGrant = Boolean(
       (state.adminModifiedTimestamp && state.adminModifiedTimestamp > _lastVerifiedCloudTime) ||
       state._adminGrantBypass ||
       payload._adminGrantBypass
     );
-    if (wealthJump > 50000000 && !hasAdminGrant) {
-      console.warn(`[AntiCheat] Abnormal wealth jump detected (${wealthJump}). Reverting excess flow injection.`);
-      const cappedBank = Math.max(0, Number(payload.bank || 0) - (wealthJump - 5000000));
+    if (wealthJump > wealthThreshold && !hasAdminGrant) {
+      console.warn(`[AntiCheat] Abnormal wealth jump detected (${wealthJump} > ${wealthThreshold}). Reverting excess flow injection.`);
+      const safeAllowance = Math.max(50000000, Math.floor(wealthThreshold * 0.1));
+      const cappedBank = Math.max(0, Number(payload.bank || 0) - (wealthJump - safeAllowance));
       payload.bank = cappedBank;
       state.bank = cappedBank;
     }
@@ -2431,6 +2462,8 @@ var AppDB = (() => {
         const sRes = await window.ServerBridge.syncState(state, true, u);
         if (sRes && (sRes.success || sRes.saved !== false)) {
           _lastCloudSyncTimestamp = Date.now();
+          const syncedTotal = (Number(state.cash) || 0) + (Number(state.bank) || 0);
+          notifyLegitimateWealthGain(syncedTotal);
           return sRes;
         }
       } catch (bridgeErr) {
@@ -2502,6 +2535,8 @@ var AppDB = (() => {
         }
       }
       _lastCloudSyncTimestamp = Date.now();
+      const syncedTotal = (Number(state.cash) || 0) + (Number(state.bank) || 0);
+      notifyLegitimateWealthGain(syncedTotal);
       return res;
     } catch (err) {
       console.warn('[Sync] Direct Supabase push note:', err.message);
@@ -7021,8 +7056,8 @@ var AppDB = (() => {
     }
 
     // 1.5 Verify PIN
-    const ok = await verifyPin(u, pin);
-    if (!ok) {
+    const verifyRes = await verifyPin(u, pin, true);
+    if (!verifyRes || !verifyRes.ok) {
       try {
         const exists = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
         if (!exists || exists.length === 0) {
@@ -7033,16 +7068,50 @@ var AppDB = (() => {
       }
       throw new Error('الرقم السري غير صحيح. يرجى التأكد من الرمز والمحاولة مرة أخرى.');
     }
-    const state = await getPlayerState(u);
+
+    const canonicalUser = (verifyRes && verifyRes.canonicalUsername) ? verifyRes.canonicalUsername : u;
+
+    // 2. Fetch player state with up to 3 automatic retries and backoff
+    let state = null;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        state = await getPlayerState(canonicalUser);
+        if (state) break;
+      } catch (err) {
+        console.warn(`[DB] loginPlayer getPlayerState attempt ${attempt} failed:`, err.message);
+      }
+      if (attempt < 3) {
+        await new Promise(r => setTimeout(r, attempt * 300));
+      }
+    }
+
+    // Authoritative Fallback from verified row if network dropped right after PIN verification
+    if (!state && verifyRes.row) {
+      console.warn('[DB] getPlayerState returned null after PIN verification; using verified row fallback for', canonicalUser);
+      const row = verifyRes.row;
+      const fallbackState = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
+      fallbackState.username = row.username;
+      fallbackState.cash = (row.cash !== null && row.cash !== undefined) ? Number(row.cash) : Number((row.state && row.state.cash) || 0);
+      fallbackState.bank = (row.bank !== null && row.bank !== undefined) ? Number(row.bank) : Number((row.state && row.state.bank) || 0);
+      fallbackState.netWorth = (row.net_worth !== null && row.net_worth !== undefined) ? Number(row.net_worth) : Number((row.state && row.state.netWorth) || 0);
+      fallbackState.title = row.title || fallbackState.title || 'عامل مبتدئ';
+      fallbackState.isAdmin = row.is_admin === true;
+      fallbackState.isBanned = row.is_banned === true;
+      fallbackState.jailTimer = Number(row.jail_timer || 0);
+      fallbackState._loadedFromCloud = true;
+      try {
+        setEncryptedLocalState(`rasalmal_state_${row.username}`, fallbackState);
+      } catch (_) {}
+      state = fallbackState;
+    }
+
     if (!state) {
       throw new Error('تعذر تحميل بيانات الحساب من السحابة، يرجى المحاولة مرة أخرى.');
     }
 
-
-
     // 3. Player account ban check
     if (state.isBanned || state.is_banned) {
-      if (['khaled', 'خالد'].includes(String(u).trim().toLowerCase()) || state.isAdmin) {
+      if (['khaled', 'خالد'].includes(String(canonicalUser).trim().toLowerCase()) || state.isAdmin) {
         state.isBanned = false;
         state.is_banned = false;
       } else {
@@ -7055,7 +7124,7 @@ var AppDB = (() => {
 
     // 3.5 Player account freeze check
     if (state.freezeUntil && state.freezeUntil > Date.now()) {
-      if (!['khaled', 'خالد'].includes(String(u).trim().toLowerCase()) && !state.isAdmin) {
+      if (!['khaled', 'خالد'].includes(String(canonicalUser).trim().toLowerCase()) && !state.isAdmin) {
         if (typeof window !== 'undefined' && typeof window.handleFrozenUser === 'function') {
           window.handleFrozenUser(state.freezeUntil, state.freezeReason, state.frozenBy);
         }
@@ -7065,7 +7134,7 @@ var AppDB = (() => {
     // Track device linkage asynchronously without blocking login (bypass for admin)
     (async () => {
       try {
-        if (u.toLowerCase() === 'khaled' || state.isAdmin || state.is_admin) return;
+        if (canonicalUser.toLowerCase() === 'khaled' || state.isAdmin || state.is_admin) return;
         const fp = await DeviceFingerprint.getFingerprint();
         let stateChanged = false;
         if (!state.known_devices) state.known_devices = [];
@@ -7074,18 +7143,18 @@ var AppDB = (() => {
           stateChanged = true;
         }
         if (stateChanged) {
-          savePlayerState(u, state).catch(() => {});
+          savePlayerState(canonicalUser, state).catch(() => {});
         }
 
         const reg = await getDeviceRegistry();
         let regChanged = false;
         if (!reg.devices[fp]) {
-          reg.devices[fp] = u;
+          reg.devices[fp] = canonicalUser;
           regChanged = true;
         }
-        if (!reg.accounts[u]) reg.accounts[u] = [];
-        if (!reg.accounts[u].includes(fp)) {
-          reg.accounts[u].push(fp);
+        if (!reg.accounts[canonicalUser]) reg.accounts[canonicalUser] = [];
+        if (!reg.accounts[canonicalUser].includes(fp)) {
+          reg.accounts[canonicalUser].push(fp);
           regChanged = true;
         }
         if (regChanged) {
@@ -7093,7 +7162,7 @@ var AppDB = (() => {
         }
 
         if (!DeviceFingerprint.getRegisteredAccountOnDevice()) {
-          DeviceFingerprint.recordRegisteredAccountOnDevice(u);
+          DeviceFingerprint.recordRegisteredAccountOnDevice(canonicalUser);
         }
       } catch (devErr) {
         console.warn('[DB] login device tracking warning:', devErr.message);

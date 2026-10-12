@@ -90,5 +90,4 @@ test('Bank Precision Withdrawal & Anti-Ghost Cash Accrual', async (t) => {
   sessionManager.sessions.delete(uKey);
   if (sessionManager.flushIntervalTimer) clearInterval(sessionManager.flushIntervalTimer);
   await app.close();
-  process.exit(0);
 });

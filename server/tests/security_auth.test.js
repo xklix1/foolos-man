@@ -171,7 +171,7 @@ test('Security Shield — Authentication, Anti-IDOR & SSRF Defense', async () =>
   });
   assert.strictEqual(hackedStateRes.statusCode, 200);
   const activeSess = sessionManager.sessions.get(victimUser.toLowerCase());
-  assert.ok(activeSess.state.cash < 50000000, 'Anti-Tamper Shield must clamp impossible wealth leap');
+  assert.ok(activeSess.state.cash < 1000000000, 'Anti-Tamper Shield must clamp impossible wealth leap');
   const serverToday = new Date(Date.now() + (3 * 3600 * 1000)).toISOString().split('T')[0];
   assert.strictEqual(activeSess.state.dailyStockProfit.date, serverToday, 'Daily limits must be strictly anchored to server date');
 

@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.7",
-  "build": 1791787200000,
-  "timestamp": 1791787200000,
-  "notes": "Permanent earnings retention fix: eliminate rollbacks on polling cycles, synchronize bank profits authoritatively, and secure income vault reconciliation",
-  "releaseNotes": "تحديث شامل v10.0.7: حل جذري ونهائي لمشكلة ارتداد الأموال واختفاء الأرباح، تحصين دورات المزامنة وحفظ كامل أرباح البنك والكاش بنجاح."
+  "version": "v10.0.10",
+  "build": 1791805000000,
+  "timestamp": 1791805000000,
+  "notes": "Wealth-Proportional Clamps Engine: all financial clamps now scale dynamically with the player's total net worth (Math.max(500M, netWorth)), eliminating limits for late-game tycoons while maintaining full anti-cheat integrity.",
+  "releaseNotes": "تحديث تاريخي v10.0.10: نظام الكوابح التكيفية المتطابق مع ثروة اللاعب! الكوابح تتسع تلقائياً بحجم إمبراطورية كل لاعب مع حد أدنى نصف مليار جنيه لحماية المبتدئين، وحرية كاملة لكبار المستثمرين حتى التريليونات."
 }

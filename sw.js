@@ -3,7 +3,7 @@
  * Cache Strategy: Strict Network-Only for APIs & Backend, Strict Network-First for Static Game Assets.
  */
 
-const CACHE_NAME = 'rasalmal-v10.0.7';
+const CACHE_NAME = 'rasalmal-v10.0.10';
 
 // Essential static shell assets to pre-cache on install (NEVER precache HTML or version.json)
 const PRECACHE_ASSETS = [
@@ -91,7 +91,13 @@ self.addEventListener('fetch', (event) => {
                             url.searchParams.has('v') ||
                             url.searchParams.has('_hard_reload');
 
-  if (isApi || isVaultOrAdmin || isBusterOrVersion) {
+  // CRITICAL: NEVER intercept API, REST, Supabase, or backend requests with Service Worker!
+  // Allowing the browser to handle network calls natively prevents synthetic 503 errors and connection stalls on mobile.
+  if (isApi) {
+    return;
+  }
+
+  if (isVaultOrAdmin || isBusterOrVersion) {
     // Network-Only: Direct fetch, zero caching intervention, never fallback to /index.html
     event.respondWith(
       fetch(req, { cache: 'no-store' }).catch(() => {

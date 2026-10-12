@@ -277,8 +277,11 @@ class SessionManager {
       // (b) Deposit: Bank increases and Cash decreases by the same amount.
       const cashDiff = incomingCash - Number(s.cash || 0);
       const bankDiff = incomingBank - Number(s.bank || 0);
-      const isInternalWithdrawal = (cashDiff > 0 && bankDiff < 0 && Math.abs(cashDiff + bankDiff) <= 100);
-      const isInternalDeposit = (bankDiff > 0 && cashDiff < 0 && Math.abs(cashDiff + bankDiff) <= 100);
+      // Absorb server passive cashflow and interest accrual in bank during withdrawal/deposit (tolerance up to player's wealth, minimum 50M)
+      const playerWealth = Math.max(0, Number(s.netWorth || 0));
+      const transferTolerance = Math.max(50000000, playerWealth);
+      const isInternalWithdrawal = (cashDiff > 0 && bankDiff < 0 && (cashDiff <= Math.abs(bankDiff) + transferTolerance));
+      const isInternalDeposit = (bankDiff > 0 && cashDiff < 0 && (bankDiff <= Math.abs(cashDiff) + transferTolerance));
 
       if (isInternalWithdrawal) {
         // Player withdrew funds from Bank to Cash: update both without clamping
@@ -289,10 +292,13 @@ class SessionManager {
         s.cash = incomingCash;
         s.bank = incomingBank;
       } else {
-        // Not a zero-sum transfer:
+        // Not an internal transfer:
         const now = Date.now();
         const timeSinceLastSync = Math.max(1, (now - (session.lastSyncTime || now)) / 1000);
-        const maxAllowedJump = Math.max(500000, Math.floor(50000000 / 3600 * timeSinceLastSync));
+        // Wealth-Proportional Elastic Jump Ceiling:
+        // Baseline floor: 500,000,000 (500M) for early-game players.
+        // For tycoons/whales: expands dynamically to match player's entire net worth (playerWealth)!
+        const maxAllowedJump = Math.max(500000000, playerWealth, Math.floor(1000000000 / 3600 * timeSinceLastSync));
 
         // (a) If player spent cash (supplies, items, business upgrades), always accept cash deduction
         if (incomingCash <= Number(s.cash || 0)) {

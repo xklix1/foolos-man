@@ -595,8 +595,27 @@ var ServerBridge = (() => {
       if (res && res.authoritativeState && typeof GameEngine !== 'undefined') {
         const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
         if (s) {
-          if (res.authoritativeState.cash !== undefined) s.cash = res.authoritativeState.cash;
-          if (res.authoritativeState.bank !== undefined) s.bank = res.authoritativeState.bank;
+          const playerWealthTolerance = Math.max(500000000, Number(s.netWorth || 0));
+          if (res.authoritativeState.cash !== undefined) {
+            const localCash = Number(s.cash || 0);
+            const serverCash = Number(res.authoritativeState.cash || 0);
+            // If local cash is higher within wealth-proportional ceiling, retain newer client state
+            // to eliminate visual jump/oscillation caused by in-flight sync races
+            if (localCash > serverCash && (localCash - serverCash) <= playerWealthTolerance) {
+              // Keep local cash
+            } else {
+              s.cash = serverCash;
+            }
+          }
+          if (res.authoritativeState.bank !== undefined) {
+            const localBank = Number(s.bank || 0);
+            const serverBank = Number(res.authoritativeState.bank || 0);
+            if (localBank > serverBank && (localBank - serverBank) <= playerWealthTolerance) {
+              // Keep local bank
+            } else {
+              s.bank = serverBank;
+            }
+          }
           if (res.authoritativeState.dirtyCash !== undefined) s.dirtyCash = res.authoritativeState.dirtyCash;
           if (res.authoritativeState.netWorth !== undefined) s.netWorth = res.authoritativeState.netWorth;
           if (res.authoritativeState.title !== undefined) s.title = res.authoritativeState.title;
