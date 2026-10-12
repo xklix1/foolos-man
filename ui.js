@@ -2943,10 +2943,6 @@ const UIController = (() => {
       renderTradePanel();
     } else if (tabId ==='industry') {
       renderIndustryPanel();
-    } else if (tabId ==='airport') {
-      if (window.AirportUI && typeof window.AirportUI.renderAirportPanel === 'function') {
-        window.AirportUI.renderAirportPanel();
-      }
     } else if (tabId ==='farm' && isFarmTesterAccount()) {
       renderFarmPanel();
     } else if (tabId ==='investments') {
@@ -3639,7 +3635,12 @@ const UIController = (() => {
         renderInvestmentsTab();
         break;
     }
-    translateDOM(document.body);
+    const curPanel = document.getElementById(`panel-${activeTab}`);
+    if (curPanel) {
+      translateDOM(curPanel);
+    } else {
+      translateDOM(document.body);
+    }
   }
 
   // --- Tab 1: Dashboard Panel ---

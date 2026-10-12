@@ -224,7 +224,7 @@ window.AirportUI = (() => {
     }, 1000);
   }
 
-  function renderAirportPanel() {
+  function renderAirportPanel(forceFull = false) {
     const container = document.getElementById('airport-main-container');
     if (!container) return;
 
@@ -233,9 +233,19 @@ window.AirportUI = (() => {
 
     if (!airport || !airport.unlocked) {
       renderUnlockGateway(container, state);
-    } else {
-      renderActiveAirport(container, state);
+      return;
     }
+
+    const subtabContainer = document.getElementById('airport-subtab-container');
+    const heroName = document.getElementById('airport-hero-name');
+
+    if (!forceFull && subtabContainer && heroName) {
+      updateActiveAirportLiveStats(airport, state);
+      renderActiveSubtabOnly(airport, state);
+      return;
+    }
+
+    renderActiveAirport(container, state);
   }
 
   /**
@@ -517,7 +527,7 @@ window.AirportUI = (() => {
             <div class="flex items-center gap-3 flex-wrap">
               <h2 id="airport-hero-name" class="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
                 <i class="fa-solid fa-plane-departure text-sky-400"></i>
-                <span>${airport.name || 'مطار رأس المال الدولي'}</span>
+                <span id="airport-hero-name-text">${airport.name || 'مطار رأس المال الدولي'}</span>
               </h2>
               <button id="btn-airport-rename" title="تعديل اسم المطار"
                 class="w-7 h-7 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-amber-400 border border-slate-700 flex items-center justify-center transition cursor-pointer text-xs">
@@ -528,7 +538,7 @@ window.AirportUI = (() => {
                 <span>المطار يعمل بكامل طاقته</span>
               </span>
             </div>
-            <p class="text-xs text-slate-300">
+            <p id="airport-hero-stats-line" class="text-xs text-slate-300">
               الأسطول الجوي: <strong class="text-sky-400 numbers-font font-bold">${fleet.length} / 12 طائرة</strong> | 
               إجمالي الرحلات: <strong class="text-amber-400 numbers-font font-bold">${(stats.totalFlights || 0).toLocaleString()}</strong> | 
               صافي الأرباح: <strong class="text-emerald-400 numbers-font font-bold">${(stats.totalNetProfit || stats.totalRevenue || 0).toLocaleString()} ج.م</strong>
@@ -561,7 +571,7 @@ window.AirportUI = (() => {
       <div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar border-b border-slate-800">
         <button data-subtab="flights" class="airport-nav-subtab px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${_activeSubtab === 'flights' ? 'bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/20' : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800'}">
           <i class="fa-solid fa-plane-up"></i>
-          <span>لوحة الرحلات (${fleet.length})</span>
+          <span>لوحة الرحلات <span id="airport-subtab-badge-flights">(${fleet.length})</span></span>
         </button>
         <button data-subtab="fleet" class="airport-nav-subtab px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer ${_activeSubtab === 'fleet' ? 'bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/20' : 'bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800'}">
           <i class="fa-solid fa-plane"></i>
@@ -589,6 +599,101 @@ window.AirportUI = (() => {
     `;
 
     bindAirportEvents(airport, state);
+  }
+
+  function updateActiveAirportLiveStats(airport, state) {
+    const ap = airport || (state && state.airport) || {};
+    const fleet = Array.isArray(ap.fleet) ? ap.fleet : [];
+    const stats = ap.stats || {};
+
+    const nameText = document.getElementById('airport-hero-name-text');
+    if (nameText && ap.name) {
+      nameText.textContent = ap.name;
+    }
+
+    const statsLine = document.getElementById('airport-hero-stats-line');
+    if (statsLine) {
+      statsLine.innerHTML = `الأسطول الجوي: <strong class="text-sky-400 numbers-font font-bold">${fleet.length} / 12 طائرة</strong> | ` +
+        `إجمالي الرحلات: <strong class="text-amber-400 numbers-font font-bold">${(stats.totalFlights || 0).toLocaleString()}</strong> | ` +
+        `صافي الأرباح: <strong class="text-emerald-400 numbers-font font-bold">${(stats.totalNetProfit || stats.totalRevenue || 0).toLocaleString()} ج.م</strong>`;
+    }
+
+    const badgeFlights = document.getElementById('airport-subtab-badge-flights');
+    if (badgeFlights) {
+      badgeFlights.textContent = `(${fleet.length})`;
+    }
+
+    const dutyFreeAmount = document.getElementById('airport-duty-free-amount');
+    if (dutyFreeAmount) {
+      const dutyFreeAccumulated = calculateDutyFreeClient(ap);
+      dutyFreeAmount.textContent = `+${dutyFreeAccumulated.toLocaleString()} ج.م`;
+    }
+  }
+
+  function renderActiveSubtabOnly(airport, state) {
+    const subtabContainer = document.getElementById('airport-subtab-container');
+    if (!subtabContainer) return;
+    subtabContainer.innerHTML = renderSubtabContent(airport, state);
+  }
+
+  function switchSubtab(subtabId) {
+    _activeSubtab = subtabId;
+    const navBtns = document.querySelectorAll('.airport-nav-subtab');
+    navBtns.forEach(btn => {
+      const st = btn.getAttribute('data-subtab');
+      if (st === subtabId) {
+        btn.className = 'airport-nav-subtab px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer bg-sky-500 text-slate-950 font-black shadow-lg shadow-sky-500/20';
+      } else {
+        btn.className = 'airport-nav-subtab px-4 py-2.5 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer bg-slate-900/60 text-slate-400 hover:text-white border border-slate-800';
+      }
+    });
+
+    const liveState = getLiveGameState();
+    renderActiveSubtabOnly(liveState.airport || {}, liveState);
+  }
+
+  function updateFlightsStatusBar(ap) {
+    const statusBar = document.getElementById('airport-flights-status-bar');
+    if (!statusBar) return;
+    const fleet = Array.isArray(ap.fleet) ? ap.fleet : [];
+    const inFlightCount = fleet.filter(p => p.status === 'in_flight').length;
+    statusBar.className = `p-3.5 rounded-2xl bg-slate-900/90 border ${inFlightCount >= 5 ? 'border-rose-500/40 bg-rose-950/20' : 'border-sky-500/20'} flex items-center justify-between flex-wrap gap-2 text-xs shadow-lg`;
+    statusBar.innerHTML = `
+      <div class="flex items-center gap-2">
+        <span class="w-2.5 h-2.5 rounded-full ${inFlightCount >= 5 ? 'bg-rose-500 animate-ping' : 'bg-emerald-400'}"></span>
+        <span class="text-slate-200 font-bold">الرحلات المحلقة في الجو:</span>
+        <span class="px-2.5 py-0.5 rounded-lg ${inFlightCount >= 5 ? 'bg-rose-500/20 text-rose-300 border border-rose-500/40' : 'bg-sky-500/20 text-sky-300 border border-sky-500/40'} font-black numbers-font text-xs">
+          ${inFlightCount} / 5 طائرات (الحد الأقصى)
+        </span>
+      </div>
+      <div class="text-[11px]">
+        ${inFlightCount >= 5 
+          ? '<span class="text-rose-400 font-bold flex items-center gap-1"><i class="fa-solid fa-triangle-exclamation"></i> تم بلوغ الحد الأقصى (5 طائرات محلقة). انتظر هبوط إحداها.</span>' 
+          : `<span class="text-slate-400">يمكنك إطلاق <strong class="text-emerald-400">${5 - inFlightCount}</strong> رحلات إضافية في نفس الوقت</span>`}
+      </div>
+    `;
+  }
+
+  function updatePlaneCardDOM(planeId) {
+    const cardEl = document.getElementById(`card-plane-${planeId}`);
+    if (!cardEl) return false;
+
+    const state = getLiveGameState();
+    const ap = state.airport || {};
+    const fleet = Array.isArray(ap.fleet) ? ap.fleet : [];
+    const plane = fleet.find(p => p.id === planeId);
+    if (!plane) return false;
+
+    const temp = document.createElement('div');
+    temp.innerHTML = renderPlaneCard(plane, ap, state);
+    const newCard = temp.firstElementChild;
+    if (newCard) {
+      cardEl.replaceWith(newCard);
+      updateFlightsStatusBar(ap);
+      updateActiveAirportLiveStats(ap, state);
+      return true;
+    }
+    return false;
   }
 
   function renderSubtabContent(airport, state) {
@@ -631,7 +736,7 @@ window.AirportUI = (() => {
     return `
       <div class="space-y-4">
         <!-- Max 5 Active Flights Status Bar -->
-        <div class="p-3.5 rounded-2xl bg-slate-900/90 border ${inFlightCount >= 5 ? 'border-rose-500/40 bg-rose-950/20' : 'border-sky-500/20'} flex items-center justify-between flex-wrap gap-2 text-xs shadow-lg">
+        <div id="airport-flights-status-bar" class="p-3.5 rounded-2xl bg-slate-900/90 border ${inFlightCount >= 5 ? 'border-rose-500/40 bg-rose-950/20' : 'border-sky-500/20'} flex items-center justify-between flex-wrap gap-2 text-xs shadow-lg">
           <div class="flex items-center gap-2">
             <span class="w-2.5 h-2.5 rounded-full ${inFlightCount >= 5 ? 'bg-rose-500 animate-ping' : 'bg-emerald-400'}"></span>
             <span class="text-slate-200 font-bold">الرحلات المحلقة في الجو:</span>
@@ -1498,15 +1603,23 @@ window.AirportUI = (() => {
   }
 
   function updateFlightTimers() {
-    const timerEls = document.querySelectorAll('[id^="timer-"]');
+    if (typeof document !== 'undefined' && document.hidden) return;
+    const panel = document.getElementById('panel-airport');
+    const isAirportVisible = panel && !panel.classList.contains('hidden');
+
     const now = getTrustedNow();
     const liveState = getLiveGameState();
     const ap = liveState.airport;
 
-    // Trigger Smart Auto-Pilot for Tier 3 Managers
+    // Trigger Smart Auto-Pilot for Tier 3 Managers (runs smoothly in background)
     if (ap) {
       runAutopilotCycle(ap, liveState, now);
     }
+
+    // Only perform DOM queries and numerical updates if airport panel is actively visible!
+    if (!isAirportVisible) return;
+
+    const timerEls = document.querySelectorAll('[id^="timer-"]');
 
     timerEls.forEach(el => {
       const landingTime = Number(el.getAttribute('data-landing') || 0);
@@ -1610,22 +1723,35 @@ window.AirportUI = (() => {
     return (window.GameEngine && window.GameEngine.state) || {};
   }
 
-  function persistGameState() {
+  let _persistDebounceTimer = null;
+  function persistGameState(immediate = false) {
     try {
-      if (window.GameEngine && typeof window.GameEngine.forceSaveState === 'function') {
-        window.GameEngine.forceSaveState(true);
-      } else if (window.GameEngine && typeof window.GameEngine.saveState === 'function') {
-        window.GameEngine.saveState();
-      }
-      if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.savePlayerState === 'function' && window.GameEngine && window.GameEngine.activeUsername) {
-        window.AppDB.savePlayerState(window.GameEngine.activeUsername, window.GameEngine.state, true).catch(() => {});
+      if (typeof window.renderStatsBar === 'function') {
+        window.renderStatsBar();
+      } else if (typeof window.renderHeader === 'function') {
+        window.renderHeader();
       }
     } catch (_) {}
-    if (typeof window.renderHeader === 'function') {
-      window.renderHeader();
-    }
-    if (typeof window.renderAll === 'function') {
-      window.renderAll();
+
+    const doSave = () => {
+      try {
+        if (window.GameEngine && typeof window.GameEngine.forceSaveState === 'function') {
+          window.GameEngine.forceSaveState(true);
+        } else if (window.GameEngine && typeof window.GameEngine.saveState === 'function') {
+          window.GameEngine.saveState();
+        }
+        if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.savePlayerState === 'function' && window.GameEngine && window.GameEngine.activeUsername) {
+          window.AppDB.savePlayerState(window.GameEngine.activeUsername, window.GameEngine.state, true).catch(() => {});
+        }
+      } catch (_) {}
+    };
+
+    if (immediate) {
+      if (_persistDebounceTimer) clearTimeout(_persistDebounceTimer);
+      doSave();
+    } else {
+      if (_persistDebounceTimer) clearTimeout(_persistDebounceTimer);
+      _persistDebounceTimer = setTimeout(doSave, 350);
     }
   }
 
@@ -1675,36 +1801,37 @@ window.AirportUI = (() => {
     // Subtab navigation
     const subtabButtons = document.querySelectorAll('.airport-nav-subtab');
     subtabButtons.forEach(btn => {
-      btn.addEventListener('click', () => {
-        _activeSubtab = btn.getAttribute('data-subtab');
-        renderAirportPanel();
-      });
+      btn.onclick = () => {
+        const subtab = btn.getAttribute('data-subtab');
+        if (subtab) switchSubtab(subtab);
+      };
     });
 
     // Rename Button
     const btnRename = document.getElementById('btn-airport-rename');
     if (btnRename) {
-      btnRename.addEventListener('click', async () => {
+      btnRename.onclick = async () => {
         const liveState = getLiveGameState();
         const curAirport = liveState.airport || {};
         const curName = curAirport.name || 'مطار رأس المال الدولي';
         const newName = prompt('اكتب الاسم الجديد لمطارك:', curName);
         if (newName && newName.trim() && newName.trim() !== curName) {
           curAirport.name = newName.trim();
-          persistGameState();
+          persistGameState(true);
           showAirportToast('تم تعديل اسم المطار بنجاح!', 'success');
-          renderAirportPanel();
+          const nameEl = document.getElementById('airport-hero-name-text');
+          if (nameEl) nameEl.textContent = newName.trim();
           if (window.ServerBridge && typeof window.ServerBridge.renameAirport === 'function') {
             try { await window.ServerBridge.renameAirport(newName.trim()); } catch (_) {}
           }
         }
-      });
+      };
     }
 
     // Duty Free Claim Button
     const btnDutyFree = document.getElementById('btn-claim-duty-free');
     if (btnDutyFree) {
-      btnDutyFree.addEventListener('click', async () => {
+      btnDutyFree.onclick = async () => {
         const liveState = getLiveGameState();
         const ap = liveState.airport;
         if (!ap) return;
@@ -1744,26 +1871,25 @@ window.AirportUI = (() => {
                 window.GameEngine.recordPlayerActivity('تحصيل أرباح السوق الحرة بالمطار ', `تحصيل إيرادات السوق الحرة بالمطار بقيمة (+${(res.earnings || amt).toLocaleString()} ج.م)`, 'business');
               }
               showAirportToast(res.message || ` تم تحصيل +${(res.earnings || amt).toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
-              renderAirportPanel();
+              updateActiveAirportLiveStats(liveState.airport, liveState);
               return;
             } else {
               showAirportToast(res?.error || 'تعذر تحصيل أرباح السوق الحرة', 'error');
-              renderAirportPanel();
+              updateActiveAirportLiveStats(liveState.airport, liveState);
               return;
             }
           } catch (err) {
-            // CRITICAL: Block offline fallback on server business rejection!
             const errMsg = err?.message || '';
             if (err.status === 400 || err.status === 403 || errMsg.includes('الحد الأدنى') || errMsg.includes('الانتظار') || errMsg.includes('تتراكم') || errMsg.includes('تفعيل') || errMsg.includes('متراكمة')) {
               showAirportToast(errMsg || 'تعذر تحصيل أرباح السوق الحرة', 'error');
-              renderAirportPanel();
+              updateActiveAirportLiveStats(liveState.airport, liveState);
               return;
             }
             console.warn('[AirportUI] claimDutyFree network failed, evaluating offline fallback:', err);
           }
         }
 
-        // Offline fallback (STRICT: only if server completely unreachable AND amt >= 1000 AND elapsed >= 60s)
+        // Offline fallback
         if (amt >= 1000 && (!lastClaim || elapsedMs >= 60000)) {
           liveState.cash = (Number(liveState.cash) || 0) + amt;
           ap.lastDutyFreeCollectionAt = Date.now();
@@ -1780,8 +1906,8 @@ window.AirportUI = (() => {
           }
           showAirportToast(` تم تحصيل +${amt.toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
         }
-        renderAirportPanel();
-      });
+        updateActiveAirportLiveStats(ap, liveState);
+      };
     }
   }
 
@@ -1848,7 +1974,9 @@ window.AirportUI = (() => {
           }
           const minStr = Math.floor(eco.durationSec / 60);
           showAirportToast(res.message || ` أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}.`, 'success');
-          renderAirportPanel();
+          if (!updatePlaneCardDOM(planeId)) {
+            renderAirportPanel();
+          }
           return;
         } else {
           showAirportToast(res?.error || 'تعذر إقلاع الرحلة من السيرفر', 'error');
@@ -1909,7 +2037,9 @@ window.AirportUI = (() => {
     }
     const minStr = Math.floor(eco.durationSec / 60);
     showAirportToast(` أقلعت الرحلة إلى ${dest.name}! وقت الهبوط خلال ${minStr > 0 ? minStr + ' دقيقة' : eco.durationSec + ' ثانية'}. (صافي الربح: +${eco.netProfit.toLocaleString()} ج.م)`, 'success');
-    renderAirportPanel();
+    if (!updatePlaneCardDOM(planeId)) {
+      renderAirportPanel();
+    }
   }
 
   async function speedupFlight(planeId) {
@@ -1957,7 +2087,9 @@ window.AirportUI = (() => {
             window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
           }
           showAirportToast(res.message || ' تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
-          renderAirportPanel();
+          if (!updatePlaneCardDOM(planeId)) {
+            renderAirportPanel();
+          }
           return;
         } else {
           showAirportToast(res?.error || 'تعذر تسريع الرحلة', 'error');
@@ -1988,7 +2120,9 @@ window.AirportUI = (() => {
       window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
     }
     showAirportToast(' تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
-    renderAirportPanel();
+    if (!updatePlaneCardDOM(planeId)) {
+      renderAirportPanel();
+    }
   }
 
   async function claimFlight(planeId) {
@@ -2063,7 +2197,9 @@ window.AirportUI = (() => {
           }
           showAirportToast(res.message || ' تم تحصيل عوائد الرحلة بنجاح!', 'success');
           _claimingPlanes.delete(planeId);
-          renderAirportPanel();
+          if (!updatePlaneCardDOM(planeId)) {
+            renderAirportPanel();
+          }
           return;
         } else {
           throw new Error((res && res.error) || 'فشل التحقق من السيرفر');
@@ -2081,7 +2217,9 @@ window.AirportUI = (() => {
           plane.activeFlight = null;
           persistGameState();
           showAirportToast(' عوائد هذه الرحلة تم تحصيلها وتحديث رصيدك بالفعل.', 'info');
-          renderAirportPanel();
+          if (!updatePlaneCardDOM(planeId)) {
+            renderAirportPanel();
+          }
           return;
         }
 
@@ -2129,7 +2267,9 @@ window.AirportUI = (() => {
               window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
             }
             showAirportToast(` هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (يرجى إعادة تأكيد كلمة السر لتحديث الحفظ السحابي)`, 'warning');
-            renderAirportPanel();
+            if (!updatePlaneCardDOM(planeId)) {
+              renderAirportPanel();
+            }
 
             setTimeout(() => {
               if (typeof window.showAuthModal === 'function') {
@@ -2198,7 +2338,9 @@ window.AirportUI = (() => {
     }
     showAirportToast(` هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (صافي ربح: +${netProfit.toLocaleString()} ج.م) و +${xp} XP`, 'success');
     _claimingPlanes.delete(planeId);
-    renderAirportPanel();
+    if (!updatePlaneCardDOM(planeId)) {
+      renderAirportPanel();
+    }
   }
 
   async function sellPlane(planeId) {
@@ -2663,14 +2805,14 @@ window.AirportUI = (() => {
   }
 
   function setSubtab(tab) {
-    _activeSubtab = tab;
-    renderAirportPanel();
+    switchSubtab(tab);
   }
 
   return {
     init,
     renderAirportPanel,
     setSubtab,
+    switchSubtab,
     launchFlight,
     speedupFlight,
     claimFlight,
@@ -2681,6 +2823,7 @@ window.AirportUI = (() => {
     hireManager,
     toggleAutopilot,
     updateEconomicsPreview,
+    updatePlaneCardDOM,
     AIRCRAFT_META,
     FACILITY_META,
     AIRPORT_MANAGERS_META,
