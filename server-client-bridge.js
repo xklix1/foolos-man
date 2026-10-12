@@ -216,8 +216,11 @@ var ServerBridge = (() => {
     } catch (err) {
       console.warn('[ServerBridge] Server session start failed, falling back to local adapter:', err.message);
       if (err.status === 401 || (err.message && (err.message.includes('Invalid') || err.message.includes('expired')))) {
-        if (_activeUsername && typeof localStorage !== 'undefined') {
-          try { localStorage.removeItem('rasalmal_auth_token_' + _activeUsername); } catch (_) {}
+        if (typeof localStorage !== 'undefined') {
+          try {
+            if (_activeUsername) localStorage.removeItem('rasalmal_auth_token_' + _activeUsername);
+            if (username) localStorage.removeItem('rasalmal_auth_token_' + String(username).trim());
+          } catch (_) {}
         }
         _sessionToken = null;
       }

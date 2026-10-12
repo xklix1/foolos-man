@@ -88,11 +88,19 @@ self.addEventListener('fetch', (event) => {
   const isBusterOrVersion = url.pathname.endsWith('version.json') || 
                             url.pathname.endsWith('sw.js') || 
                             url.searchParams.has('_t') ||
+                            url.searchParams.has('v') ||
                             url.searchParams.has('_hard_reload');
 
   if (isApi || isVaultOrAdmin || isBusterOrVersion) {
     // Network-Only: Direct fetch, zero caching intervention, never fallback to /index.html
-    event.respondWith(fetch(req, { cache: 'no-store' }));
+    event.respondWith(
+      fetch(req, { cache: 'no-store' }).catch(() => {
+        if (req.mode === 'navigate') {
+          return caches.match('/index.html').then(res => res || new Response('Offline', { status: 503 }));
+        }
+        return new Response('', { status: 503, statusText: 'Offline or Service Unavailable' });
+      })
+    );
     return;
   }
 
@@ -122,7 +130,7 @@ self.addEventListener('fetch', (event) => {
           return networkResponse;
         })
         .catch(() => {
-          return caches.match(req);
+          return caches.match(req).then(cached => cached || new Response('', { status: 503, statusText: 'Offline' }));
         })
     );
     return;
@@ -144,7 +152,7 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => cachedResponse);
+        .catch(() => cachedResponse || new Response('', { status: 408, statusText: 'Request Timeout' }));
 
       // Return cached response immediately for blazing fast 0-latency load and low data usage
       return cachedResponse || fetchPromise;

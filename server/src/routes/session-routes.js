@@ -349,11 +349,35 @@ async function sessionRoutes(fastify, options) {
     };
   });
 
-  // POST /api/mailbox/status (Mark mailbox item as read/claimed with service role)
+  // POST /api/mailbox/status (Mark mailbox item as read/claimed/deleted or mark all read with service role)
   fastify.post('/api/mailbox/status', async (request, reply) => {
-    const { mailId, status } = request.body || {};
-    if (!mailId) return reply.code(400).send({ error: 'mailId is required' });
+    const { mailId, status, action, username } = request.body || {};
     try {
+      if (action === 'delete') {
+        if (!mailId) return reply.code(400).send({ error: 'mailId is required for delete' });
+        const res = await fetch(`${dbService.url}/rest/v1/mailbox?id=eq.${encodeURIComponent(mailId)}`, {
+          method: 'DELETE',
+          headers: dbService.getHeaders()
+        });
+        return { success: res.ok, status: res.status };
+      }
+
+      if (action === 'mark_all_read') {
+        if (!username) return reply.code(400).send({ error: 'username is required' });
+        const res1 = await fetch(`${dbService.url}/rest/v1/mailbox?recipient=ilike.${encodeURIComponent(String(username).trim())}&status=eq.unread`, {
+          method: 'PATCH',
+          headers: dbService.getHeaders(),
+          body: JSON.stringify({ status: 'read' })
+        });
+        const res2 = await fetch(`${dbService.url}/rest/v1/mailbox?recipient=ilike.${encodeURIComponent(String(username).trim())}&status=eq.pending`, {
+          method: 'PATCH',
+          headers: dbService.getHeaders(),
+          body: JSON.stringify({ status: 'read' })
+        });
+        return { success: res1.ok || res2.ok };
+      }
+
+      if (!mailId) return reply.code(400).send({ error: 'mailId is required' });
       const res = await fetch(`${dbService.url}/rest/v1/mailbox?id=eq.${encodeURIComponent(mailId)}`, {
         method: 'PATCH',
         headers: dbService.getHeaders(),

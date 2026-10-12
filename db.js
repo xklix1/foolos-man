@@ -33,6 +33,7 @@ var AppDB = (() => {
   let _lastVerifiedCloudWealth = null;
   let _lastVerifiedCloudXp = null;
   let _lastVerifiedCloudTime = 0;
+  let _settingAdminFlagState = false;
 
   // ─────────────────────────────────────────────
   // CONCURRENT SESSION & MULTI-DEVICE PROTECTION
@@ -1560,12 +1561,12 @@ var AppDB = (() => {
       stateObj.title = row.title || stateObj.title ||'عامل مبتدئ';
       stateObj.isAdmin = row.is_admin === true;
       if (typeof window !== 'undefined' && isCurrentPlayer) {
-        // Use the AppDB._settingAdminFlag guard — required by the read-only defineProperty in game.js
+        // Use the _settingAdminFlagState guard — required by the read-only defineProperty in game.js
         try {
-          AppDB._settingAdminFlag = true;
+          _settingAdminFlagState = true;
           window._isServerVerifiedAdmin = row.is_admin === true;
         } finally {
-          AppDB._settingAdminFlag = false;
+          _settingAdminFlagState = false;
         }
       }
       if (isCurrentPlayer) {
@@ -3331,20 +3332,31 @@ var AppDB = (() => {
     }
   }
 
+  function _getServerApiBase() {
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.getApiBase === 'function') {
+      return ServerBridge.getApiBase();
+    }
+    if (typeof window !== 'undefined' && window.SERVER_API_URL) {
+      return window.SERVER_API_URL.replace(/\/$/, '');
+    }
+    if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+      return 'http://localhost:3001';
+    }
+    return '';
+  }
+
   async function updateMailStatus(mailId, status) {
     if (!mailId) return false;
     try {
-      const serverUrl = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL : '';
-      if (serverUrl) {
-        try {
-          const sRes = await fetch(`${serverUrl.replace(/\/$/, '')}/api/mailbox/status`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ mailId, status: status || 'read' })
-          });
-          if (sRes.ok) return true;
-        } catch (_) {}
-      }
+      const apiBase = _getServerApiBase();
+      try {
+        const sRes = await fetch(`${apiBase}/api/mailbox/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mailId, status: status || 'read' })
+        });
+        if (sRes.ok) return true;
+      } catch (_) {}
       await _api(`mailbox?id=eq.${encodeURIComponent(mailId)}`, {
         method:'PATCH',
         body: JSON.stringify({ status })
@@ -3357,15 +3369,39 @@ var AppDB = (() => {
   }
 
   async function deleteMail(mailId) {
-    await _api(`mailbox?id=eq.${encodeURIComponent(mailId)}`, {
-      method:'DELETE'
-    });
-    return true;
+    if (!mailId) return false;
+    try {
+      const apiBase = _getServerApiBase();
+      try {
+        const sRes = await fetch(`${apiBase}/api/mailbox/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mailId, action: 'delete' })
+        });
+        if (sRes.ok) return true;
+      } catch (_) {}
+      await _api(`mailbox?id=eq.${encodeURIComponent(mailId)}`, {
+        method:'DELETE'
+      });
+      return true;
+    } catch (e) {
+      console.warn('[DB] deleteMail note:', e.message);
+      return false;
+    }
   }
 
   async function markAllMailsRead(username) {
     if (!username) return true;
     try {
+      const apiBase = _getServerApiBase();
+      try {
+        const sRes = await fetch(`${apiBase}/api/mailbox/status`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: username.trim(), action: 'mark_all_read' })
+        });
+        if (sRes.ok) return true;
+      } catch (_) {}
       await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&status=eq.unread`, {
         method:'PATCH',
         body: JSON.stringify({ status:'read' })
@@ -7333,7 +7369,15 @@ var AppDB = (() => {
     // Expose runtime token accessor for inline scripts that load before db.js is fully parsed
     _getAnonKey: () => _getRuntimeToken(),
     // Internal guard used by game.js defineProperty to allow legitimate admin flag updates
-    _settingAdminFlag: false
+    get _settingAdminFlag() {
+      return _settingAdminFlagState;
+    },
+    set _settingAdminFlag(val) {
+      _settingAdminFlagState = Boolean(val);
+    },
+    _setSettingAdminFlag: (val) => {
+      _settingAdminFlagState = Boolean(val);
+    }
   };
 })();
 
@@ -7345,14 +7389,20 @@ if (typeof window !=="undefined") {
   Object.freeze(AppDB);
   const _safeAppDB = new Proxy(AppDB, {
     get(target, prop) {
+      if (prop === '_settingAdminFlag') return _settingAdminFlagState;
       return target[prop];
     },
-    set() {
-      console.warn('[Security] Direct mutation of AppDB is blocked.');
+    set(target, prop, value) {
+      if (prop === '_settingAdminFlag') {
+        _settingAdminFlagState = Boolean(value);
+        return true;
+      }
+      console.warn('[Security] Direct mutation of AppDB is blocked:', prop);
       return false;
     },
-    defineProperty() {
-      console.warn('[Security] Redefining properties on AppDB is blocked.');
+    defineProperty(target, prop) {
+      if (prop === '_settingAdminFlag') return true;
+      console.warn('[Security] Redefining properties on AppDB is blocked:', prop);
       return false;
     },
     deleteProperty() {
