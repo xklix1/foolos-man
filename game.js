@@ -4476,7 +4476,7 @@ const GameEngine = (() => {
   }
 
   // Buy Stocks (with 1.0% Brokerage Commission, 45s Holding Period, & Max Shares Cap)
-  function buyStock(sym, shares, quotedPrice = null) {
+  async function buyStock(sym, shares, quotedPrice = null) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       throw new Error(" تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
     }
@@ -4514,17 +4514,31 @@ const GameEngine = (() => {
       throw new Error(`رصيدك غير كافٍ. تحتاج: ${totalCost.toLocaleString()} EGP (شامل عمولة السمسرة ${fee.toLocaleString()} EGP) — لديك: ${state.cash.toLocaleString()} EGP`);
     }
 
-    state.cash -= totalCost;
+    // Server-Authoritative execution when online
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.buyStock(sym, shares, currentPrice);
+      if (serverRes && serverRes.success) {
+        if (serverRes.stocks) state.stocks = serverRes.stocks;
+        if (serverRes.cash !== undefined) state.cash = serverRes.cash;
+        if (serverRes.netWorth !== undefined) state.netWorth = serverRes.netWorth;
+        state.stockCooldowns = state.stockCooldowns || {};
+        state.stockCooldowns[sym] = (serverRes.result && serverRes.result.holdingCooldownUntil) || (getTrustedNow() + 45000);
+        state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بسعر ${currentPrice.toLocaleString()} ج.م للسهم بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
+        trackDailyQuestProgress('stock_trade', 1);
+        await forceSaveState(true);
+        return { shares, price: currentPrice, grossCost, fee, totalCost };
+      }
+    }
 
-    // Calculate new average purchase price based on gross purchase
+    // Local / Offline fallback execution
+    state.cash -= totalCost;
     const currentAvg = state.stocks[sym].avgPrice || 0;
     const newShares = currentShares + shares;
     const newAvg = Math.floor(((currentShares * currentAvg) + grossCost) / newShares);
-
     state.stocks[sym].shares = newShares;
     state.stocks[sym].avgPrice = newAvg;
-
-    // Set 45-second holding cooldown on this stock and 3s global trade cooldown
     state.stockCooldowns = state.stockCooldowns || {};
     state.stockCooldowns[sym] = getTrustedNow() + 45000;
     state.stockTradeCooldownUntil = getTrustedNow() + 3000;
@@ -4533,17 +4547,12 @@ const GameEngine = (() => {
     trackDailyQuestProgress('stock_trade', 1);
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
-
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.buyStock(sym, shares, currentPrice).catch(e => console.warn('[StockEngine] Server buy sync warning:', e.message));
-    }
-
-    forceSaveState(true);
+    await forceSaveState(true);
     return { shares, price: currentPrice, grossCost, fee, totalCost };
   }
 
   // Sell Stocks (with 1.0% Brokerage Commission, 10% Capital Gains Tax, & 45s Cooldown Check)
-  function sellStock(sym, shares, quotedPrice = null) {
+  async function sellStock(sym, shares, quotedPrice = null) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       throw new Error(" تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
     }
@@ -4579,10 +4588,9 @@ const GameEngine = (() => {
     const grossReturn = currentPrice * shares;
     const fee = Math.max(5, Math.floor(grossReturn * 0.01)); // 1.0% عمولة سمسرة (مخفضة لتشجيع التداول)
 
-    // 2. Daily Realized Profit Cap (1,000,000 EGP per day) & 10% Capital Gains Tax
+    // 2. Daily Realized Profit Cap (3,000,000 EGP per day) & Capital Gains
     const avgPrice = state.stocks[sym].avgPrice || 0;
     const costBasis = avgPrice * shares;
-    let capitalGainsTax = 0;
     let rawProfit = 0;
     let allowedProfit = 0;
     let capHit = false;
@@ -4601,17 +4609,11 @@ const GameEngine = (() => {
       } else {
         allowedProfit = rawProfit;
       }
-
-      if (allowedProfit > 0) {
-        capitalGainsTax = 0; // معفى تماماً من أي ضرائب رأسمالية بموجب موسم العفو الضريبي
-        state.dailyStockProfit.realizedProfit += allowedProfit;
-      }
     }
 
-    // Principal (costBasis) is 100% protected and refunded!
     let netReturn = 0;
     if (grossReturn > costBasis) {
-      netReturn = Math.max(0, costBasis + allowedProfit - fee - capitalGainsTax);
+      netReturn = Math.max(0, costBasis + allowedProfit - fee);
     } else {
       netReturn = Math.max(0, grossReturn - fee);
     }
@@ -4625,6 +4627,50 @@ const GameEngine = (() => {
       netReturn += scannerCompensation;
     }
 
+    // Server-Authoritative execution when online
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.sellStock(sym, shares, currentPrice);
+      if (serverRes && serverRes.success) {
+        if (serverRes.stocks) state.stocks = serverRes.stocks;
+        if (serverRes.cash !== undefined) state.cash = serverRes.cash;
+        if (serverRes.netWorth !== undefined) state.netWorth = serverRes.netWorth;
+        if (serverRes.result && serverRes.result.dailyRealizedProfit !== undefined) {
+          state.dailyStockProfit.realizedProfit = serverRes.result.dailyRealizedProfit;
+        } else if (allowedProfit > 0) {
+          state.dailyStockProfit.realizedProfit += allowedProfit;
+        }
+        state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+
+        let logDetails = `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+        if (capHit) {
+          logDetails += ` [سقف الأرباح اليومي: تم احتساب ${allowedProfit.toLocaleString()} ج.م واسترداد رأس المال بالكامل]`;
+        }
+        recordPlayerActivity('بيع أسهم', logDetails, 'stock');
+        trackDailyQuestProgress('stock_trade', 1);
+        await forceSaveState(true);
+        return {
+          shares,
+          price: currentPrice,
+          grossReturn,
+          fee,
+          capitalGainsTax: 0,
+          scannerCompensation,
+          totalReturn: netReturn,
+          rawProfit,
+          allowedProfit,
+          capHit,
+          cappedSurplus,
+          dailyProfitUsed: state.dailyStockProfit.realizedProfit,
+          dailyProfitCap: DAILY_STOCK_PROFIT_CAP
+        };
+      }
+    }
+
+    // Local / Offline fallback execution
+    if (allowedProfit > 0) {
+      state.dailyStockProfit.realizedProfit += allowedProfit;
+    }
     state.stocks[sym].shares = Math.max(0, (state.stocks[sym].shares || 0) - shares);
     if (state.stocks[sym].shares === 0) {
       state.stocks[sym].avgPrice = 0;
@@ -4633,9 +4679,6 @@ const GameEngine = (() => {
     state.stockTradeCooldownUntil = getTrustedNow() + 3000;
 
     let logDetails = `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
-    if (capitalGainsTax > 0) {
-      logDetails += ` [ضريبة أرباح: ${capitalGainsTax.toLocaleString()} ج.م]`;
-    }
     if (capHit) {
       logDetails += ` [سقف الأرباح اليومي: تم احتساب ${allowedProfit.toLocaleString()} ج.م واسترداد رأس المال بالكامل]`;
     }
@@ -4649,17 +4692,13 @@ const GameEngine = (() => {
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
 
-    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellStock(sym, shares, currentPrice).catch(e => console.warn('[StockEngine] Server sell sync warning:', e.message));
-    }
-
-    forceSaveState(true);
+    await forceSaveState(true);
     return {
       shares,
       price: currentPrice,
       grossReturn,
       fee,
-      capitalGainsTax,
+      capitalGainsTax: 0,
       scannerCompensation,
       totalReturn: netReturn,
       rawProfit,

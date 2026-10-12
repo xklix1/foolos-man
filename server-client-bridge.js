@@ -1235,6 +1235,13 @@ var ServerBridge = (() => {
         if (res.stocks) s.stocks = res.stocks;
         if (res.cash !== undefined) s.cash = res.cash;
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.result && res.result.holdingCooldownUntil && s.stockCooldowns) {
+          s.stockCooldowns[symbol] = res.result.holdingCooldownUntil;
+        }
+      }
+      if (typeof UI !== 'undefined') {
+        if (typeof UI.renderStatsBar === 'function') { try { UI.renderStatsBar(); } catch (_) {} }
+        if (typeof UI.renderStocks === 'function') { try { UI.renderStocks(true); } catch (_) {} }
       }
     }
     return res;
@@ -1255,6 +1262,13 @@ var ServerBridge = (() => {
         if (res.stocks) s.stocks = res.stocks;
         if (res.cash !== undefined) s.cash = res.cash;
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.result && res.result.dailyRealizedProfit !== undefined && s.dailyStockProfit) {
+          s.dailyStockProfit.realizedProfit = res.result.dailyRealizedProfit;
+        }
+      }
+      if (typeof UI !== 'undefined') {
+        if (typeof UI.renderStatsBar === 'function') { try { UI.renderStatsBar(); } catch (_) {} }
+        if (typeof UI.renderStocks === 'function') { try { UI.renderStocks(true); } catch (_) {} }
       }
     }
     return res;

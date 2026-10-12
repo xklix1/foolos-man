@@ -6884,6 +6884,10 @@ const UIController = (() => {
       const netProfit = ownedShares > 0 ? (netPayout - costBasis) : 0;
       const profitPct = costBasis > 0 ? ((netProfit / costBasis) * 100) : 0;
 
+      const holdingCooldown = Number((s.stockCooldowns && s.stockCooldowns[sym]) || (s.stockHoldingCooldowns && s.stockHoldingCooldowns[sym]) || 0);
+      const remHoldingSec = Math.max(0, Math.ceil((holdingCooldown - Date.now()) / 1000));
+      const isLockedByHolding = remHoldingSec > 0;
+
       const card = document.createElement('div');
       card.id = `stock-card-${sym}`;
       card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
@@ -6958,10 +6962,10 @@ const UIController = (() => {
           </div>
           <div class="flex flex-col">
             <div class="flex gap-1 mb-1">
-              <button id="btn-sell-all-${sym}" class="w-full py-0.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[10px] text-rose-300 rounded font-bold" ${ownedData.shares === 0 ?'disabled' :''}>${window.currentLang ==='en' ?' Sell All' :' بيع كل الأسهم'}</button>
+              <button id="btn-sell-all-${sym}" class="w-full py-0.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[10px] text-rose-300 rounded font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" ${ownedShares === 0 || isLockedByHolding ? 'disabled' : ''}>${isLockedByHolding ? `⏳ حظر (${remHoldingSec}ث)` : (window.currentLang === 'en' ? ' Sell All' : ' بيع كل الأسهم')}</button>
             </div>
             <input type="number" id="shares-sell-input-${sym}" placeholder="${window.currentLang ==='en' ?'Qty' :'الكمية'}" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
-            <button id="btn-sell-shares-${sym}" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition" ${ownedData.shares === 0 ?'disabled' :''}>${window.currentLang ==='en' ?'Sell Shares' :'بيع الأسهم'}</button>
+            <button id="btn-sell-shares-${sym}" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" ${ownedShares === 0 || isLockedByHolding ? 'disabled' : ''}>${isLockedByHolding ? `⏳ حظر بيع (${remHoldingSec}ث)` : (window.currentLang ==='en' ?'Sell Shares' :'بيع الأسهم')}</button>
           </div>
         </div>`;
 
@@ -7017,7 +7021,7 @@ const UIController = (() => {
       // Sell All Shares trigger
       const sellAllBtn = card.querySelector(`#btn-sell-all-${sym}`);
       if (sellAllBtn) {
-        sellAllBtn.addEventListener('click', () => {
+        sellAllBtn.addEventListener('click', async () => {
           try {
             const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
             if (owned.shares <= 0) throw new Error("لا تملك أي أسهم في هذه الشركة لبيعها.");
@@ -7025,7 +7029,11 @@ const UIController = (() => {
             const sharesToSell = owned.shares;
             const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
             const currP = prices[prices.length - 1];
-            const res = GameEngine.sellStock(sym, sharesToSell, currP);
+
+            sellAllBtn.disabled = true;
+            sellAllBtn.textContent = 'جاري التنفيذ...';
+
+            const res = await GameEngine.sellStock(sym, sharesToSell, currP);
             const totalPayout = res.totalReturn || (res.price * res.shares);
             const costBasis = prevAvgPrice * sharesToSell;
             const profitOrLoss = totalPayout - costBasis;
@@ -7042,78 +7050,98 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             showToast(title, detailsMsg, isWin ? 'success' : 'info');
             if (res.capHit) {
               setTimeout(() => {
-                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (1,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
+                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (3,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
               }, 400);
             }
             renderStocks(true);
             renderStatsBar();
+            if (typeof renderAll === 'function') renderAll();
           } catch (err) {
             showToast('فشل البيع', err.message, 'error');
+            renderStocks(true);
           }
         });
       }
 
       // Buy Shares trigger
-      card.querySelector(`#btn-buy-shares-${sym}`).addEventListener('click', () => {
-        const input = card.querySelector(`#shares-buy-input-${sym}`);
-        const count = parseInt(input.value);
-        try {
-          if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
-          const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
-          const currP = prices[prices.length - 1];
-          const res = GameEngine.buyStock(sym, count, currP);
-          input.value = '';
-          const calcBox = card.querySelector(`#stock-buy-calc-${sym}`);
-          if (calcBox) calcBox.classList.add('hidden');
-          const detailsMsg = `تم شراء ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م للسهم:
+      const buyBtn = card.querySelector(`#btn-buy-shares-${sym}`);
+      if (buyBtn) {
+        buyBtn.addEventListener('click', async () => {
+          const input = card.querySelector(`#shares-buy-input-${sym}`);
+          const count = parseInt(input.value);
+          try {
+            if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
+            const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+            const currP = prices[prices.length - 1];
+
+            buyBtn.disabled = true;
+            buyBtn.textContent = 'جاري الشراء...';
+
+            const res = await GameEngine.buyStock(sym, count, currP);
+            input.value = '';
+            const calcBox = card.querySelector(`#stock-buy-calc-${sym}`);
+            if (calcBox) calcBox.classList.add('hidden');
+            const detailsMsg = `تم شراء ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م للسهم:
  إجمالي الأسهم: ${res.grossCost.toLocaleString()} ج.م
  عمولة سمسرة (1%): ${res.fee.toLocaleString()} ج.م
  إجمالي الخصم من الكاش: ${res.totalCost.toLocaleString()} ج.م`;
-          showToast('شراء أسهم ناجح', detailsMsg, 'success');
-          renderStocks(true);
-          renderStatsBar();
-        } catch (err) {
-          showToast('فشل الشراء', err.message, 'error');
-        }
-      });
+            showToast('شراء أسهم ناجح', detailsMsg, 'success');
+            renderStocks(true);
+            renderStatsBar();
+            if (typeof renderAll === 'function') renderAll();
+          } catch (err) {
+            showToast('فشل الشراء', err.message, 'error');
+            renderStocks(true);
+          }
+        });
+      }
 
       // Sell Shares trigger
-      card.querySelector(`#btn-sell-shares-${sym}`).addEventListener('click', () => {
-        const input = card.querySelector(`#shares-sell-input-${sym}`);
-        const count = parseInt(input.value);
-        try {
-          if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
-          const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
-          const prevAvgPrice = owned.avgPrice || 0;
-          const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
-          const currP = prices[prices.length - 1];
-          const res = GameEngine.sellStock(sym, count, currP);
-          const totalPayout = res.totalReturn || (res.price * res.shares);
-          const costBasis = prevAvgPrice * res.shares;
-          const profitOrLoss = totalPayout - costBasis;
-          const fee = res.fee || Math.max(5, Math.floor((res.price * res.shares) * 0.01));
-          const isWin = profitOrLoss >= 0;
+      const sellSharesBtn = card.querySelector(`#btn-sell-shares-${sym}`);
+      if (sellSharesBtn) {
+        sellSharesBtn.addEventListener('click', async () => {
+          const input = card.querySelector(`#shares-sell-input-${sym}`);
+          const count = parseInt(input.value);
+          try {
+            if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
+            const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
+            const prevAvgPrice = owned.avgPrice || 0;
+            const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+            const currP = prices[prices.length - 1];
 
-          input.value = '';
-          const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
-          const detailsMsg = `تم بيع ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م:
+            sellSharesBtn.disabled = true;
+            sellSharesBtn.textContent = 'جاري التنفيذ...';
+
+            const res = await GameEngine.sellStock(sym, count, currP);
+            const totalPayout = res.totalReturn || (res.price * res.shares);
+            const costBasis = prevAvgPrice * res.shares;
+            const profitOrLoss = totalPayout - costBasis;
+            const fee = res.fee || Math.max(5, Math.floor((res.price * res.shares) * 0.01));
+            const isWin = profitOrLoss >= 0;
+
+            input.value = '';
+            const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
+            const detailsMsg = `تم بيع ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م:
  رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
 ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
  عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
  إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
 
-          showToast(title, detailsMsg, isWin ? 'success' : 'info');
-          if (res.capHit) {
-            setTimeout(() => {
-              showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (1,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
-            }, 400);
+            showToast(title, detailsMsg, isWin ? 'success' : 'info');
+            if (res.capHit) {
+              setTimeout(() => {
+                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (3,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
+              }, 400);
+            }
+            renderStocks(true);
+            renderStatsBar();
+            if (typeof renderAll === 'function') renderAll();
+          } catch (err) {
+            showToast('فشل البيع', err.message, 'error');
+            renderStocks(true);
           }
-          renderStocks(true);
-          renderStatsBar();
-        } catch (err) {
-          showToast('فشل البيع', err.message, 'error');
-        }
-      });
+        });
+      }
 
       container.appendChild(card);
     });
@@ -7202,11 +7230,33 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         profitEl.className = `numbers-font font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`;
       }
 
+      const holdingCooldown = Number((s.stockCooldowns && s.stockCooldowns[sym]) || (s.stockHoldingCooldowns && s.stockHoldingCooldowns[sym]) || 0);
+      const remHoldingSec = Math.max(0, Math.ceil((holdingCooldown - Date.now()) / 1000));
+      const isLockedByHolding = remHoldingSec > 0;
+
       const sellAllBtn = document.getElementById(`btn-sell-all-${sym}`);
-      if (sellAllBtn) sellAllBtn.disabled = (ownedData.shares === 0);
+      if (sellAllBtn && !sellAllBtn.textContent.includes('جاري')) {
+        sellAllBtn.disabled = (ownedShares === 0 || isLockedByHolding);
+        if (isLockedByHolding) {
+          sellAllBtn.textContent = `⏳ حظر (${remHoldingSec}ث)`;
+          sellAllBtn.title = `فترة حظر البيع مؤقتة: متبقي ${remHoldingSec} ثانية`;
+        } else {
+          sellAllBtn.textContent = window.currentLang === 'en' ? ' Sell All' : ' بيع كل الأسهم';
+          sellAllBtn.title = '';
+        }
+      }
 
       const sellBtn = document.getElementById(`btn-sell-shares-${sym}`);
-      if (sellBtn) sellBtn.disabled = (ownedData.shares === 0);
+      if (sellBtn && !sellBtn.textContent.includes('جاري')) {
+        sellBtn.disabled = (ownedShares === 0 || isLockedByHolding);
+        if (isLockedByHolding) {
+          sellBtn.textContent = `⏳ حظر بيع (${remHoldingSec}ث)`;
+          sellBtn.title = `فترة حظر البيع مؤقتة: متبقي ${remHoldingSec} ثانية`;
+        } else {
+          sellBtn.textContent = window.currentLang === 'en' ? 'Sell Shares' : 'بيع الأسهم';
+          sellBtn.title = '';
+        }
+      }
     });
 
     const tickerEl = document.getElementById('stock-market-news-ticker');

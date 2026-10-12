@@ -136,7 +136,7 @@ function getMarketOverview(serverNow = Date.now()) {
 }
 
 function getCairoTodayString(serverNow = Date.now()) {
-  return new Date(serverNow + (2 * 3600 * 1000)).toISOString().slice(0, 10);
+  return new Date(serverNow + (3 * 3600 * 1000)).toISOString().slice(0, 10);
 }
 
 function ensureDailyStockTracking(state, serverNow = Date.now()) {
