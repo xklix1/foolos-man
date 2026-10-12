@@ -108,6 +108,7 @@ app.register(require('./routes/auction-routes'));
 app.register(require('./routes/museum-routes'));
 app.register(require('./routes/push-routes'));
 app.register(require('./routes/auth-otp-routes'));
+app.register(require('./routes/chat-routes'));
 app.register(require('./routes/admin-routes'), { 
   prefix: '/api/admin',
   sessionManager: require('./services/session-manager')

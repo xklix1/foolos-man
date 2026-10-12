@@ -6256,13 +6256,63 @@ var AppDB = (() => {
       }
     }
 
+    // 1. First Priority: Authoritative Backend Server API (Powered by Supabase Service Role Key)
+    try {
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+        ? window.SERVER_API_URL.replace(/\/$/, '') 
+        : (typeof window !== 'undefined' ? window.location.origin : '');
+
+      const srvRes = await fetch(`${apiBase}/api/chat/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: sender,
+          senderTitle: senderTitle,
+          message: trimmedMsg,
+          extraMeta: {
+            ...extraMeta,
+            facebookVerified: Boolean(facebookVerified)
+          }
+        })
+      });
+
+      if (srvRes.ok) {
+        const srvData = await srvRes.json();
+        if (srvData && srvData.success) {
+          if (Array.isArray(srvData.messages)) {
+            _cachedChatMessages = srvData.messages;
+            _lastChatUpdatedAt = srvData.updated_at || Date.now();
+          } else if (srvData.chatMessage) {
+            _cachedChatMessages.push(srvData.chatMessage);
+            if (_cachedChatMessages.length > 100) _cachedChatMessages = _cachedChatMessages.slice(-100);
+            _lastChatUpdatedAt = srvData.updated_at || Date.now();
+          }
+          // Notify local listeners immediately
+          _chatCallbacks.forEach(cb => {
+            try { cb(_cachedChatMessages); } catch (e) {}
+          });
+          return true;
+        }
+      } else {
+        const errJson = await srvRes.json().catch(() => null);
+        if (errJson && errJson.message) {
+          throw new Error(errJson.message);
+        }
+      }
+    } catch (srvErr) {
+      if (srvErr.message && (srvErr.message.includes('كتم') || srvErr.message.includes('مجمد') || srvErr.message.includes('محظور') || srvErr.message.includes('لفظ') || srvErr.message.includes('التمهل'))) {
+        throw srvErr;
+      }
+      console.warn('[DB] Server chat endpoint fallback:', srvErr.message);
+    }
+
+    // 2. Fallback: Direct PostgREST query if server endpoint was unreachable
     try {
       const rows = await _api("globals?id=eq.chat_feed&select=data,updated_at");
       let currentFeed = [];
       if (rows && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
         currentFeed = rows[0].data.messages;
       } else if (_cachedChatMessages && _cachedChatMessages.length > 0) {
-        // Safe fallback to local cache to NEVER wipe out chat history on transient read failure
         currentFeed = [..._cachedChatMessages];
       }
 
@@ -6302,7 +6352,7 @@ var AppDB = (() => {
       // Strictly ensure chronological ordering by timestamp
       mergedFeed.sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
 
-      const finalFeed = mergedFeed.length > 50 ? mergedFeed.slice(mergedFeed.length - 50) : mergedFeed;
+      const finalFeed = mergedFeed.length > 100 ? mergedFeed.slice(mergedFeed.length - 100) : mergedFeed;
 
       const nowTs = Date.now();
       _cachedChatMessages = finalFeed;
@@ -6340,7 +6390,6 @@ var AppDB = (() => {
           if (remoteTs <= _lastChatUpdatedAt) {
             return _cachedChatMessages; // No new messages! Saved 20KB egress!
           }
-          // IMPORTANT: Do NOT update _lastChatUpdatedAt here! Only update after full payload is successfully received below.
         }
       }
 
@@ -6351,6 +6400,21 @@ var AppDB = (() => {
         _cachedChatMessages = rows[0].data.messages;
         return _cachedChatMessages;
       }
+
+      // 3. Fallback to server endpoint if PostgREST read was empty
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+        ? window.SERVER_API_URL.replace(/\/$/, '') 
+        : (typeof window !== 'undefined' ? window.location.origin : '');
+      const srvRes = await fetch(`${apiBase}/api/chat/messages`);
+      if (srvRes.ok) {
+        const srvData = await srvRes.json();
+        if (srvData && Array.isArray(srvData.messages) && srvData.messages.length > 0) {
+          _lastChatUpdatedAt = Number(srvData.updated_at || Date.now());
+          _cachedChatMessages = srvData.messages;
+          return _cachedChatMessages;
+        }
+      }
+
       return _cachedChatMessages;
     } catch (e) {
       return _cachedChatMessages;
