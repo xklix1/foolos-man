@@ -4358,7 +4358,7 @@ const GameEngine = (() => {
 
   // Deposit Cash to Bank
   function depositToBank(amount, isAll = false) {
-    const isAllAction = isAll === true || amount === 'all' || (Number(amount) >= (state.cash || 0));
+    const isAllAction = isAll === true || amount === 'all';
     const currentCash = Math.max(0, Number(state.cash) || 0);
     const depositAmt = isAllAction ? currentCash : Math.floor(Math.max(1, Number(amount) || 0));
 
@@ -4400,7 +4400,7 @@ const GameEngine = (() => {
 
   // Withdraw Cash from Bank
   function withdrawFromBank(amount, isAll = false) {
-    const isAllAction = isAll === true || amount === 'all' || (Number(amount) >= (state.bank || 0));
+    const isAllAction = isAll === true || amount === 'all';
     const currentBank = Math.max(0, Number(state.bank) || 0);
     const withdrawAmt = isAllAction ? currentBank : Math.floor(Math.max(1, Number(amount) || 0));
 

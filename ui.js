@@ -5298,17 +5298,18 @@ const UIController = (() => {
         const input = document.getElementById('bank-amount-input');
         const inputVal = parseFloat(input.value);
         const currentCash = Number(GameEngine.state.cash || 0);
-        const isAll = (input.dataset.all === 'deposit') || (!isNaN(inputVal) && inputVal >= Math.floor(currentCash));
-        const val = isAll ? currentCash : parseInt(input.value);
+        const isExplicitAll = (input.dataset.all === 'deposit') && 
+                              (input.dataset.allVal !== undefined && String(input.value).trim() === String(input.dataset.allVal).trim());
+        const val = isExplicitAll ? currentCash : parseInt(input.value, 10);
         try {
           if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للإيداع.");
-          if (!isAll && currentCash < val) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
+          if (!isExplicitAll && currentCash < val) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
 
           depositBtn.disabled = true;
           if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
             throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
           }
-          const res = await window.ServerBridge.bankAction('deposit', isAll ? 'all' : val, isAll);
+          const res = await window.ServerBridge.bankAction('deposit', isExplicitAll ? 'all' : val, isExplicitAll);
           if (res && res.success) {
             const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
             if (s) {
@@ -5318,6 +5319,7 @@ const UIController = (() => {
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
+            delete input.dataset.allVal;
             input.value = '';
             showToast('إيداع بنكي', `تم إيداع ${Number(res.amount || val).toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
             renderAll();
@@ -5339,17 +5341,18 @@ const UIController = (() => {
         const input = document.getElementById('bank-amount-input');
         const inputVal = parseFloat(input.value);
         const currentBank = Number(GameEngine.state.bank || 0);
-        const isAll = (input.dataset.all === 'withdraw') || (!isNaN(inputVal) && inputVal >= Math.floor(currentBank));
-        const val = isAll ? currentBank : parseInt(input.value);
+        const isExplicitAll = (input.dataset.all === 'withdraw') && 
+                              (input.dataset.allVal !== undefined && String(input.value).trim() === String(input.dataset.allVal).trim());
+        const val = isExplicitAll ? currentBank : parseInt(input.value, 10);
         try {
           if (!val || val <= 0) throw new Error("يرجى إدخال مبلغ صحيح للسحب.");
-          if (!isAll && currentBank < val) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
+          if (!isExplicitAll && currentBank < val) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
 
           withdrawBtn.disabled = true;
           if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
             throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
           }
-          const res = await window.ServerBridge.bankAction('withdraw', isAll ? 'all' : val, isAll);
+          const res = await window.ServerBridge.bankAction('withdraw', isExplicitAll ? 'all' : val, isExplicitAll);
           if (res && res.success) {
             const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
             if (s) {
@@ -5359,6 +5362,7 @@ const UIController = (() => {
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
+            delete input.dataset.allVal;
             input.value = '';
             showToast('سحب بنكي', `تم سحب ${Number(res.amount || val).toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
             renderAll();
@@ -5443,9 +5447,14 @@ const UIController = (() => {
     const bankInputEl = document.getElementById('bank-amount-input');
     if (bankInputEl && !bankInputEl._clearAllBound) {
       bankInputEl._clearAllBound = true;
-      bankInputEl.addEventListener('input', () => {
+      const clearAllFlag = () => {
         delete bankInputEl.dataset.all;
-      });
+        delete bankInputEl.dataset.allVal;
+      };
+      bankInputEl.addEventListener('input', clearAllFlag);
+      bankInputEl.addEventListener('keyup', clearAllFlag);
+      bankInputEl.addEventListener('change', clearAllFlag);
+      bankInputEl.addEventListener('paste', clearAllFlag);
     }
     bankPresets.forEach(btn => {
       btn.addEventListener('click', () => {
@@ -5455,10 +5464,13 @@ const UIController = (() => {
         if (!input) return;
 
         if (pct >= 1.0) {
+          const fullVal = Math.floor(action === 'deposit' ? (GameEngine.state.cash || 0) : (GameEngine.state.bank || 0));
           input.dataset.all = action;
-          input.value = Math.floor(action === 'deposit' ? (GameEngine.state.cash || 0) : (GameEngine.state.bank || 0));
+          input.dataset.allVal = String(fullVal);
+          input.value = fullVal;
         } else {
           delete input.dataset.all;
+          delete input.dataset.allVal;
           if (action === 'deposit') {
             input.value = Math.floor((GameEngine.state.cash || 0) * pct);
           } else {

@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.5",
-  "build": 1791785500000,
-  "timestamp": 1791785500000,
-  "notes": "Mandatory update: Full mailbox route fixes, Service Worker hardening, and session token renewal",
-  "releaseNotes": "تحديث إجباري v10.0.5: إصلاح كامل لصندوق البريد، تحصين الـ Service Worker، وتجديد فوري لجلسات التزامن مع السيرفر."
+  "version": "v10.0.6",
+  "build": 1791786300000,
+  "timestamp": 1791786300000,
+  "notes": "Bank withdrawal precision fix: eliminate phantom cash jumps and lock withdrawal amounts",
+  "releaseNotes": "تحديث v10.0.6: إصلاح دقة السحب البنكي، منع قفزات الكاش الوهمية وتوحيد مسار الأرباح إلى البنك."
 }

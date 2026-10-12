@@ -73,12 +73,7 @@ async function actionRoutes(fastify, options) {
       if (session.state) session.state.sessionToken = effectiveToken;
     }
 
-    // Process passive income vault (auto-claims if AFK Manager is active)
-    if (session.state) {
-      try {
-        incomeVaultEngine.processIncomeVault(session.state, Date.now(), false);
-      } catch (_) {}
-    }
+    // Passive income is authoritative and tracked continuously via cashflow-engine into bank
 
     return session;
   }
@@ -497,9 +492,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       if (currentBank <= 0) {
         return reply.code(400).send({ error: 'لا يوجد رصيد في الحساب البنكي لإتمام السحب' });
       }
-      const isSweepAll = isAllRequested || 
-                         (Number(amount) >= currentBank) || 
-                         (Math.floor(currentBank) > 0 && Number(amount) >= Math.floor(currentBank) && (currentBank - Number(amount)) < 1);
+      const isSweepAll = isAllRequested;
       if (isSweepAll) {
         val = currentBank;
         s.bank = 0;

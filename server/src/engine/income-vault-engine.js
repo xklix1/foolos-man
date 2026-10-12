@@ -75,15 +75,16 @@ function processIncomeVault(state, serverNow = Date.now(), isExplicitClaim = fal
   let claimedAmount = 0;
 
   if (isManagerActive) {
-    // Manager automatically claims directly to cash
+    // With AFK Manager, passive income flows continuously to bank via cashflow-engine.
+    // Safely credit any remaining uncollected vault funds directly to bank.
     claimedAmount = accruedNet + Number(state.incomeVault || 0);
     state.incomeVault = 0;
-    state.cash = (Number(state.cash) || 0) + claimedAmount;
+    state.bank = (Number(state.bank) || 0) + claimedAmount;
   } else if (isExplicitClaim) {
-    // Player explicitly clicked "Claim Income"
+    // Player explicitly clicked "Claim Income": deposit into bank
     claimedAmount = accruedNet + Number(state.incomeVault || 0);
     state.incomeVault = 0;
-    state.cash = (Number(state.cash) || 0) + claimedAmount;
+    state.bank = (Number(state.bank) || 0) + claimedAmount;
   } else {
     // No manager, regular action/tick: accumulate into vault
     state.incomeVault = (Number(state.incomeVault) || 0) + accruedNet;
