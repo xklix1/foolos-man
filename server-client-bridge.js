@@ -1132,6 +1132,7 @@ var ServerBridge = (() => {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {
         if (res.cash !== undefined) s.cash = res.cash;
+        if (res.bank !== undefined) s.bank = res.bank;
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
         s.incomeVault = res.vault || 0;
       }

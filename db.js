@@ -2462,28 +2462,33 @@ var AppDB = (() => {
 
         // Representation returned successfully
 
-        // If representation returns empty array, DB row had a higher admin_modified_timestamp (incoming wire transfer or admin grant)
+        // If representation returns empty array, DB row may have had a higher admin_modified_timestamp
         if (Array.isArray(res) && res.length === 0) {
-          console.warn(`[Sync] Stale cloud push blocked by adminModifiedTimestamp guard for ${u}. Pulling fresh authoritative state from database...`);
+          console.warn(`[Sync] Direct push returned empty representation for ${u}. Verifying authoritative admin state...`);
           getPlayerState(u).then(fresh => {
             if (fresh && typeof window !== 'undefined' && window.GameEngine && window.GameEngine.state) {
               const curUser = (window.GameEngine.activeUsername || '').trim().toLowerCase();
               if (curUser === u.toLowerCase()) {
-                window.GameEngine.state.bank = Number(fresh.bank !== undefined ? fresh.bank : window.GameEngine.state.bank);
-                window.GameEngine.state.cash = Number(fresh.cash !== undefined ? fresh.cash : window.GameEngine.state.cash);
-                window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
-                window.GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || 0);
-                if (fresh.gold !== undefined || (fresh.state && fresh.state.gold !== undefined)) {
-                  window.GameEngine.state.gold = Number(fresh.gold !== undefined ? fresh.gold : fresh.state.gold);
+                const freshAdminTs = Number(fresh.adminModifiedTimestamp || fresh.admin_modified_timestamp || 0);
+                const curAdminTs = Number(window.GameEngine.state.adminModifiedTimestamp || 0);
+                // Only overwrite in-memory state if DB has a strictly newer admin action
+                if (freshAdminTs > curAdminTs) {
+                  window.GameEngine.state.bank = Number(fresh.bank !== undefined ? fresh.bank : window.GameEngine.state.bank);
+                  window.GameEngine.state.cash = Number(fresh.cash !== undefined ? fresh.cash : window.GameEngine.state.cash);
+                  window.GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : window.GameEngine.state.netWorth);
+                  window.GameEngine.state.adminModifiedTimestamp = freshAdminTs;
+                  if (fresh.gold !== undefined || (fresh.state && fresh.state.gold !== undefined)) {
+                    window.GameEngine.state.gold = Number(fresh.gold !== undefined ? fresh.gold : fresh.state.gold);
+                  }
+                  if (fresh.seasonBadge !== undefined || (fresh.state && fresh.state.seasonBadge !== undefined)) {
+                    window.GameEngine.state.seasonBadge = fresh.seasonBadge || (fresh.state && fresh.state.seasonBadge) || '';
+                  }
+                  if (typeof setEncryptedLocalState === 'function') {
+                    setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
+                  }
+                  if (typeof window.renderAll === 'function') window.renderAll();
+                  if (typeof window.renderHeader === 'function') window.renderHeader();
                 }
-                if (fresh.seasonBadge !== undefined || (fresh.state && fresh.state.seasonBadge !== undefined)) {
-                  window.GameEngine.state.seasonBadge = fresh.seasonBadge || (fresh.state && fresh.state.seasonBadge) || '';
-                }
-                if (typeof setEncryptedLocalState === 'function') {
-                  setEncryptedLocalState(`rasalmal_state_${u}`, window.GameEngine.state);
-                }
-                if (typeof window.renderAll === 'function') window.renderAll();
-                if (typeof window.renderHeader === 'function') window.renderHeader();
               }
             }
           }).catch(() => {});

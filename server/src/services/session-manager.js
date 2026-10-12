@@ -225,10 +225,13 @@ class SessionManager {
     // with a timestamp newer than incoming client state, DO NOT allow stale client balances to overwrite!
     const sessionAdminTs = Number(s.adminModifiedTimestamp || 0);
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
+    // Bank action race condition guard:
+    // Strictly detect stale pre-transfer client snapshots (where one balance is higher while the other is lower)
+    // without freezing legitimate gameplay earnings.
     const hasRecentBankAction = Boolean(
       session.lastServerBankActionAt &&
       (Date.now() - session.lastServerBankActionAt < 15000) &&
-      (s.cash !== incomingCash || s.bank !== incomingBank)
+      ((incomingCash > s.cash && incomingBank < s.bank) || (incomingBank > s.bank && incomingCash < s.cash))
     );
     const isClientStale = (sessionAdminTs > 0 && clientAdminTs < sessionAdminTs) || hasRecentBankAction;
     // CRITICAL SECURITY ENFORCEMENT:
@@ -287,21 +290,35 @@ class SessionManager {
         s.bank = incomingBank;
       } else {
         // Not a zero-sum transfer:
+        const now = Date.now();
+        const timeSinceLastSync = Math.max(1, (now - (session.lastSyncTime || now)) / 1000);
+        const maxAllowedJump = Math.max(500000, Math.floor(50000000 / 3600 * timeSinceLastSync));
+
         // (a) If player spent cash (supplies, items, business upgrades), always accept cash deduction
         if (incomingCash <= Number(s.cash || 0)) {
           s.cash = incomingCash;
         } else {
           // Cash increased without bank deduction: check against max allowed velocity jump
-          const now = Date.now();
-          const timeSinceLastSync = Math.max(1, (now - (session.lastSyncTime || now)) / 1000);
-          const maxAllowedJump = Math.max(500000, Math.floor(50000000 / 3600 * timeSinceLastSync));
           if (cashDiff <= maxAllowedJump) {
             s.cash = incomingCash;
           } else {
             s.cash = (Number(s.cash) || 0) + maxAllowedJump;
           }
         }
-        // Bank remains server-authoritative for passive accruals, so it never swings downward on non-withdrawals
+
+        // (b) Bank reconciliation:
+        // Accept legitimate bank growth (farm contracts, investments, dividends, passive profits)
+        if (incomingBank <= Number(s.bank || 0)) {
+          // Accept bank expenditures (transfers, real estate debits)
+          s.bank = incomingBank;
+        } else {
+          // Bank increased: validate against velocity jump
+          if (bankDiff <= maxAllowedJump) {
+            s.bank = incomingBank;
+          } else {
+            s.bank = (Number(s.bank) || 0) + maxAllowedJump;
+          }
+        }
       }
       session.lastSyncTime = Date.now();
 

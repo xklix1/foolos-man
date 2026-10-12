@@ -1891,6 +1891,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         claimed: res.claimed,
         vault: res.vault,
         cash: session.state.cash,
+        bank: session.state.bank,
         netWorth: session.state.netWorth,
         isManagerActive: res.isManagerActive
       });

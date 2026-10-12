@@ -8690,7 +8690,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         const freshAdminTs = Number(fresh.admin_modified_timestamp || fresh.adminModifiedTimestamp || (fresh.state && fresh.state.adminModifiedTimestamp) || 0);
         const currentAdminTs = Number((GameEngine.state && GameEngine.state.adminModifiedTimestamp) || 0);
 
-        if (GameEngine.state && freshAdminTs >= currentAdminTs && freshAdminTs > 0) {
+        // Strictly check that adminModifiedTimestamp has ADVANCED (> not >=), ensuring regular 25s polling never overwrites active gameplay earnings
+        if (GameEngine.state && freshAdminTs > currentAdminTs && freshAdminTs > 0) {
           const freshBank = Number(fresh.bank !== undefined ? fresh.bank : (fresh.state && fresh.state.bank));
           const freshCash = Number(fresh.cash !== undefined ? fresh.cash : (fresh.state && fresh.state.cash));
           const freshGold = Number(fresh.gold !== undefined ? fresh.gold : (fresh.state && fresh.state.gold));
