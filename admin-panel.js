@@ -1597,6 +1597,217 @@
       });
     }
 
+    // Instant Balance Deduction Action (Direct Real-time Deduction from player)
+    const instantDeductBtn = document.getElementById('btn-admin-deduct-balance');
+    if (instantDeductBtn) {
+      instantDeductBtn.addEventListener('click', async () => {
+        if (!selectedPlayer) {
+          showToast('خصم رصيد', 'يرجى اختيار لاعب أولاً من القائمة.', 'error');
+          return;
+        }
+
+        const amountInp = document.getElementById('admin-deduct-amount');
+        const targetSel = document.getElementById('admin-deduct-target');
+        const reasonInp = document.getElementById('admin-deduct-reason');
+
+        const amount = Number(amountInp ? amountInp.value : 0);
+        const target = targetSel ? targetSel.value : 'bank';
+        const reason = reasonInp ? reasonInp.value.trim() : '';
+
+        if (isNaN(amount) || amount <= 0) {
+          showToast('مبلغ غير صالح', 'يرجى إدخال مبلغ صحيح وموجب أكبر من صفر للخصم.', 'error');
+          if (amountInp) amountInp.focus();
+          return;
+        }
+
+        if (!reason || reason.length < 3) {
+          showToast('سبب الخصم مطلوب', 'يرجى كتابة سبب أو بيان واضح لعملية الخصم (3 أحرف على الأقل).', 'error');
+          if (reasonInp) reasonInp.focus();
+          return;
+        }
+
+        const targetLabel = target === 'cash' ? 'الكاش (Cash)' : 'البنك (Bank)';
+        const confirmMsg = `⚠️ تأكيد الخصم المالي الفوري:\n\n• اسم اللاعب: ${selectedPlayer}\n• المبلغ المراد خصمه: ${amount.toLocaleString()} EGP\n• جهة الخصم: [${targetLabel}]\n• السبب: ${reason}\n\nتنبيه: سيتم خصم المبلغ فوراً حتى لو أصبح الرصيد سالباً (كرصيد مدين)، وسيصل إشعار رسمي للاعب. هل أنت متأكد من المتابعة؟`;
+        if (!confirm(confirmMsg)) return;
+
+        try {
+          instantDeductBtn.disabled = true;
+          instantDeductBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري خصم المبلغ وتحديث شاشة اللاعب...</span>';
+
+          // 1. Fetch freshest state from database
+          const freshPlayer = await AppDB.adminGetPlayer(selectedPlayer) || selectedPlayerState || {};
+          const currentCash = Number(freshPlayer.cash || 0);
+          const currentBank = Number(freshPlayer.bank || 0);
+
+          let newCash = currentCash;
+          let newBank = currentBank;
+          let deductCash = 0;
+          let deductBank = 0;
+
+          if (target === 'cash') {
+            deductCash = amount;
+            newCash = currentCash - amount;
+          } else {
+            deductBank = amount;
+            newBank = currentBank - amount;
+          }
+
+          const newWorth = (Number(freshPlayer.netWorth || 0)) - amount;
+          const now = Date.now();
+
+          freshPlayer.cash = newCash;
+          freshPlayer.bank = newBank;
+          freshPlayer.netWorth = newWorth;
+          freshPlayer.adminModifiedTimestamp = now;
+          freshPlayer.isReset = false;
+          delete freshPlayer.resetTimestamp;
+          if (freshPlayer.state && typeof freshPlayer.state === 'object') {
+            freshPlayer.state.cash = newCash;
+            freshPlayer.state.bank = newBank;
+            freshPlayer.state.netWorth = newWorth;
+            freshPlayer.state.adminModifiedTimestamp = now;
+            freshPlayer.state.isReset = false;
+            delete freshPlayer.state.resetTimestamp;
+          }
+
+          // Record deduction in player's activity log and adminGrants/penalties
+          const deductEntry = {
+            id: `adm_ded_${now}_${Math.random().toString(36).substring(2, 6)}`,
+            timestamp: now,
+            action: `خصم مالي مباشر من الإدارة ⚠️`,
+            category: 'admin',
+            details: `خصم فوري بقيمة ${amount.toLocaleString()} EGP من [${targetLabel}]. البيان: ${reason}`,
+            amount: -amount,
+            cash: newCash,
+            bank: newBank,
+            reason: reason
+          };
+
+          if (!Array.isArray(freshPlayer.activityLog)) freshPlayer.activityLog = [];
+          freshPlayer.activityLog.unshift(deductEntry);
+
+          if (!Array.isArray(freshPlayer.adminGrants)) freshPlayer.adminGrants = [];
+          freshPlayer.adminGrants.unshift({
+            id: deductEntry.id,
+            type: 'balance_deduct',
+            title: `خصم مالي فوري (${targetLabel})`,
+            amount: -amount,
+            cash: -deductCash,
+            bank: -deductBank,
+            timestamp: now,
+            target: target,
+            reason: reason,
+            status: 'خصم'
+          });
+
+          // Moderator notes if state object exists
+          const pStateObj = (freshPlayer.state && typeof freshPlayer.state === 'object') ? freshPlayer.state : freshPlayer;
+          if (!Array.isArray(pStateObj.moderatorNotes)) pStateObj.moderatorNotes = [];
+          pStateObj.moderatorNotes.unshift({
+            timestamp: now,
+            action: 'deduct_balance',
+            amount: amount,
+            target: target,
+            reason: reason,
+            modName: 'Admin Panel'
+          });
+
+          if (selectedPlayerState) {
+            selectedPlayerState.cash = newCash;
+            selectedPlayerState.bank = newBank;
+            selectedPlayerState.netWorth = newWorth;
+            selectedPlayerState.adminModifiedTimestamp = now;
+            selectedPlayerState.isReset = false;
+            delete selectedPlayerState.resetTimestamp;
+            if (selectedPlayerState.state && typeof selectedPlayerState.state === 'object') {
+              selectedPlayerState.state.cash = newCash;
+              selectedPlayerState.state.bank = newBank;
+              selectedPlayerState.state.netWorth = newWorth;
+              selectedPlayerState.state.adminModifiedTimestamp = now;
+              selectedPlayerState.state.isReset = false;
+              delete selectedPlayerState.state.resetTimestamp;
+            }
+            if (!Array.isArray(selectedPlayerState.activityLog)) selectedPlayerState.activityLog = [];
+            selectedPlayerState.activityLog.unshift(deductEntry);
+            if (!Array.isArray(selectedPlayerState.adminGrants)) selectedPlayerState.adminGrants = [];
+            selectedPlayerState.adminGrants.unshift(freshPlayer.adminGrants[0]);
+          }
+
+          const canonicalUsername = freshPlayer.username || selectedPlayer;
+
+          // 2. Save directly to Supabase
+          await AppDB.adminSavePlayer(canonicalUsername, freshPlayer);
+
+          // 3. Dispatch high-priority real-time deduction mail to player
+          const deductPayload = {
+            deductedCash: deductCash,
+            deductedBank: deductBank,
+            totalAmount: amount,
+            target: target,
+            newCash: newCash,
+            newBank: newBank,
+            isPreApplied: true,
+            reason: reason,
+            timestamp: now
+          };
+
+          try { await AppDB.sendMail('إدارة اللعبة (Admin)', canonicalUsername, 'admin_balance_deduct', deductPayload); } catch(_) {}
+
+          // 4. If target player is active in this browser session locally, update in-memory GameEngine
+          if (selectedPlayer === GameEngine.activeUsername) {
+            GameEngine.state.cash = newCash;
+            GameEngine.state.bank = newBank;
+            GameEngine.state.netWorth = newWorth;
+            GameEngine.state.adminModifiedTimestamp = now;
+            try {
+              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+                AppDB.setEncryptedLocalState(`rasalmal_state_${selectedPlayer}`, GameEngine.state);
+              }
+            } catch (e) {}
+            renderAll();
+          }
+
+          // 5. Update UI in Admin Dashboard
+          const cashEl = document.getElementById('admin-p-cash');
+          if (cashEl) cashEl.textContent = newCash.toLocaleString();
+          const bankEl = document.getElementById('admin-p-bank');
+          if (bankEl) bankEl.textContent = newBank.toLocaleString();
+          const worthEl = document.getElementById('admin-p-worth');
+          if (worthEl) worthEl.textContent = `${newWorth.toLocaleString()} EGP`;
+
+          const cashInp = document.getElementById('admin-input-cash');
+          if (cashInp) cashInp.value = newCash;
+          const bankInp = document.getElementById('admin-input-bank');
+          if (bankInp) bankInp.value = newBank;
+
+          if (amountInp) amountInp.value = '';
+          if (reasonInp) reasonInp.value = '';
+
+          // 6. Update in cachedPlayers table
+          if (Array.isArray(cachedPlayers)) {
+            const pIdx = cachedPlayers.findIndex(p => p.username === selectedPlayer);
+            if (pIdx !== -1) {
+              cachedPlayers[pIdx].cash = newCash;
+              cachedPlayers[pIdx].bank = newBank;
+              cachedPlayers[pIdx].netWorth = newWorth;
+              cachedPlayers[pIdx].net_worth = newWorth;
+            }
+            renderPlayersTable();
+          }
+
+          showToast('تم الخصم بنجاح ⚠️', `تم خصم ${amount.toLocaleString()} EGP من [${targetLabel}] للاعب [${selectedPlayer}] فوراً! الرصيد الجديد: ${newCash.toLocaleString()} كاش / ${newBank.toLocaleString()} بنك.`, 'warning');
+          logAdminAction(`خصم مالي فوري بقيمة ${amount.toLocaleString()} EGP من [${targetLabel}] للاعب ${selectedPlayer}. السبب: ${reason}`);
+
+        } catch (err) {
+          console.error('[Instant Deduct Error]', err);
+          showToast('فشل خصم الرصيد', err.message || 'حدث خطأ أثناء الاتصال بقاعدة البيانات', 'error');
+        } finally {
+          instantDeductBtn.disabled = false;
+          instantDeductBtn.innerHTML = '<i class="fa-solid fa-minus-circle text-sm"></i> <span>خصم المبلغ فوراً</span>';
+        }
+      });
+    }
+
     // Instant Gold Addition Action (Direct Real-time Sync to player)
     const instantAddGoldBtn = document.getElementById('btn-admin-instant-add-gold');
     if (instantAddGoldBtn) {

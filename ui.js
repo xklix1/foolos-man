@@ -3739,7 +3739,7 @@ const UIController = (() => {
         timeEl.className = 'numbers-font text-xs font-bold text-emerald-400';
       }
       if (btnTextEl) {
-        btnTextEl.textContent = `تمديد وردية الإدارة (12 ساعة) - ${formatCompactNumber(renewalCost)} ج.م`;
+        btnTextEl.textContent = 'تمديد وردية الإدارة (12 ساعة) - مجاناً';
       }
     } else {
       if (badgeEl) {
@@ -3755,7 +3755,7 @@ const UIController = (() => {
         timeEl.className = 'numbers-font text-xs font-bold text-rose-400';
       }
       if (btnTextEl) {
-        btnTextEl.textContent = `تفعيل وردية الإدارة (12 ساعة) - ${formatCompactNumber(renewalCost)} ج.م`;
+        btnTextEl.textContent = 'تفعيل وردية الإدارة (12 ساعة) - مجاناً';
       }
     }
 
@@ -5240,8 +5240,7 @@ const UIController = (() => {
         try {
           const res = GameEngine.renewAfkManager();
           playMenuSound('success');
-          const costText = (res && res.costPaid) ? ` بتكلفة ${res.costPaid.toLocaleString()} ج.م` : '';
-          showToast('تجديد وردية الإدارة', `تم تفعيل ترخيص الإدارة الذاتية والأرباح أثناء الغياب لمدة 12 ساعة بنجاح!${costText}`, 'success');
+          showToast('تجديد وردية الإدارة', 'تم تفعيل وردية الإدارة الذاتية والأرباح أثناء الغياب لمدة 12 ساعة مجاناً بنجاح!', 'success');
           renderAll();
         } catch (err) {
           showToast('خطأ التجديد', err.message,'error');
@@ -6941,6 +6940,20 @@ const UIController = (() => {
               <button data-pct="1.00" class="btn-pct-buy flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-yellow-400 rounded font-bold">100%</button>
             </div>
             <input type="number" id="shares-buy-input-${sym}" placeholder="${window.currentLang ==='en' ?'Qty' :'الكمية'}" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
+            <div id="stock-buy-calc-${sym}" class="text-[10px] text-slate-400 p-1.5 bg-slate-950/80 rounded border border-slate-800/80 mb-1.5 hidden flex flex-col gap-0.5">
+              <div class="flex justify-between text-slate-300">
+                <span>قيمة الأسهم (${currentPrice} ج.م/سهم):</span>
+                <span id="stock-buy-gross-${sym}" class="numbers-font font-bold">0 EGP</span>
+              </div>
+              <div class="flex justify-between text-amber-400/90">
+                <span>عمولة سمسرة (1%):</span>
+                <span id="stock-buy-fee-${sym}" class="numbers-font">0 EGP</span>
+              </div>
+              <div class="flex justify-between border-t border-slate-800 pt-0.5 mt-0.5 font-bold text-emerald-400">
+                <span>إجمالي الخصم من الكاش:</span>
+                <span id="stock-buy-total-${sym}" class="numbers-font font-black">0 EGP</span>
+              </div>
+            </div>
             <button id="btn-buy-shares-${sym}" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">${window.currentLang ==='en' ?'Buy Shares' :'شراء الأسهم'}</button>
           </div>
           <div class="flex flex-col">
@@ -6952,6 +6965,39 @@ const UIController = (() => {
           </div>
         </div>`;
 
+      // Live Buy Calculator Helper
+      const updateBuyCalculator = () => {
+        const input = card.querySelector(`#shares-buy-input-${sym}`);
+        const calcBox = card.querySelector(`#stock-buy-calc-${sym}`);
+        const grossEl = card.querySelector(`#stock-buy-gross-${sym}`);
+        const feeEl = card.querySelector(`#stock-buy-fee-${sym}`);
+        const totalEl = card.querySelector(`#stock-buy-total-${sym}`);
+        if (!input || !calcBox) return;
+
+        const count = parseInt(input.value);
+        if (!count || count <= 0) {
+          calcBox.classList.add('hidden');
+          return;
+        }
+
+        const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+        const currP = prices[prices.length - 1];
+        const gross = count * currP;
+        const fee = Math.max(5, Math.floor(gross * 0.01));
+        const total = gross + fee;
+
+        if (grossEl) grossEl.textContent = `${gross.toLocaleString()} EGP`;
+        if (feeEl) feeEl.textContent = `${fee.toLocaleString()} EGP`;
+        if (totalEl) totalEl.textContent = `${total.toLocaleString()} EGP`;
+        calcBox.classList.remove('hidden');
+      };
+
+      const buyInputEl = card.querySelector(`#shares-buy-input-${sym}`);
+      if (buyInputEl) {
+        buyInputEl.addEventListener('input', updateBuyCalculator);
+        buyInputEl.addEventListener('change', updateBuyCalculator);
+      }
+
       // Percentage Buy Click Listeners
       card.querySelectorAll('.btn-pct-buy').forEach(pctBtn => {
         pctBtn.addEventListener('click', () => {
@@ -6959,9 +7005,12 @@ const UIController = (() => {
           const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
           const currP = prices[prices.length - 1];
           const availableCash = GameEngine.state.cash * pct;
-          const maxSharesPossible = Math.floor(availableCash / currP);
+          const maxSharesPossible = Math.floor(availableCash / (currP * 1.01));
           const input = card.querySelector(`#shares-buy-input-${sym}`);
-          if (input) input.value = maxSharesPossible > 0 ? maxSharesPossible : 1;
+          if (input) {
+            input.value = maxSharesPossible > 0 ? maxSharesPossible : 1;
+            updateBuyCalculator();
+          }
         });
       });
 
@@ -6974,7 +7023,9 @@ const UIController = (() => {
             if (owned.shares <= 0) throw new Error("لا تملك أي أسهم في هذه الشركة لبيعها.");
             const prevAvgPrice = owned.avgPrice || 0;
             const sharesToSell = owned.shares;
-            const res = GameEngine.sellStock(sym, sharesToSell);
+            const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+            const currP = prices[prices.length - 1];
+            const res = GameEngine.sellStock(sym, sharesToSell, currP);
             const totalPayout = res.totalReturn || (res.price * res.shares);
             const costBasis = prevAvgPrice * sharesToSell;
             const profitOrLoss = totalPayout - costBasis;
@@ -6982,7 +7033,7 @@ const UIController = (() => {
             const isWin = profitOrLoss >= 0;
 
             const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
-            const detailsMsg = `تم بيع كامل الأسهم (${res.shares.toLocaleString()} سهم):
+            const detailsMsg = `تم بيع كامل الأسهم (${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م):
  رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
 ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
  عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
@@ -7008,9 +7059,17 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         const count = parseInt(input.value);
         try {
           if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
-          const res = GameEngine.buyStock(sym, count);
+          const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+          const currP = prices[prices.length - 1];
+          const res = GameEngine.buyStock(sym, count, currP);
           input.value = '';
-          showToast('شراء أسهم', `تم شراء عدد ${res.shares} سهم من سهم "${stock.name}" بنجاح.`, 'success');
+          const calcBox = card.querySelector(`#stock-buy-calc-${sym}`);
+          if (calcBox) calcBox.classList.add('hidden');
+          const detailsMsg = `تم شراء ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م للسهم:
+ إجمالي الأسهم: ${res.grossCost.toLocaleString()} ج.م
+ عمولة سمسرة (1%): ${res.fee.toLocaleString()} ج.م
+ إجمالي الخصم من الكاش: ${res.totalCost.toLocaleString()} ج.م`;
+          showToast('شراء أسهم ناجح', detailsMsg, 'success');
           renderStocks(true);
           renderStatsBar();
         } catch (err) {
@@ -7026,7 +7085,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
           const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
           const prevAvgPrice = owned.avgPrice || 0;
-          const res = GameEngine.sellStock(sym, count);
+          const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
+          const currP = prices[prices.length - 1];
+          const res = GameEngine.sellStock(sym, count, currP);
           const totalPayout = res.totalReturn || (res.price * res.shares);
           const costBasis = prevAvgPrice * res.shares;
           const profitOrLoss = totalPayout - costBasis;
@@ -7035,7 +7096,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
           input.value = '';
           const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
-          const detailsMsg = `تم بيع ${res.shares.toLocaleString()} سهم:
+          const detailsMsg = `تم بيع ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م:
  رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
 ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
  عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
@@ -15271,6 +15332,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         m.type === 'admin_popup' || 
         m.type === 'urgent_alert' || 
         m.type === 'admin_balance_grant' || 
+        m.type === 'admin_balance_deduct' || 
         m.type === 'admin_gift' || 
         m.type === 'dividend_claim' ||
         m.sender === 'SYSTEM' || 
@@ -15533,6 +15595,55 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         return;
       }
 
+      // 2.25 Direct Admin Balance Deduction Card
+      if (mail.type === 'admin_balance_deduct') {
+        const deductCash = Number((mail.payload && mail.payload.deductedCash) || 0);
+        const deductBank = Number((mail.payload && mail.payload.deductedBank) || 0);
+        const totalAmount = Number((mail.payload && (mail.payload.totalAmount || mail.payload.amount)) || (deductCash + deductBank));
+        const targetDesc = deductCash > 0 ? 'من الكاش (Cash)' : 'من الوديعة البنكية (Bank)';
+        const reason = (mail.payload && mail.payload.reason) || mail.message || 'إجراء تنظيمي وخصم مالي إداري';
+
+        mailDiv.className = `p-4 rounded-2xl border ${isUnread ? 'bg-gradient-to-r from-rose-500/15 via-slate-900/95 to-slate-900 border-rose-500/50 shadow-lg shadow-rose-500/10' : 'bg-slate-900/40 border-slate-800'} text-xs text-slate-200 space-y-3`;
+        mailDiv.innerHTML = `
+          <div class="flex justify-between items-center border-b border-slate-800/80 pb-2.5">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-400 flex items-center justify-center text-xs font-black">
+                <i class="fa-solid fa-file-invoice-dollar"></i>
+              </div>
+              <div>
+                <h4 class="font-black text-rose-300 text-xs sm:text-sm">إشعار خصم مالي إداري</h4>
+                <span class="text-[10px] text-rose-400 font-bold">تم تطبيق الخصم مباشرة على حسابك </span>
+              </div>
+            </div>
+            <span class="text-[10px] text-slate-400 numbers-font font-bold">${timeStr}</span>
+          </div>
+
+          <div class="p-2.5 rounded-xl bg-slate-950/80 border border-rose-500/20 space-y-1.5">
+            <div class="flex justify-between items-center">
+              <span class="text-[10px] text-slate-400 font-bold">المبلغ المخصوم:</span>
+              <span class="text-xs font-black text-rose-400 numbers-font">-${totalAmount.toLocaleString()} EGP</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-[10px] text-slate-400 font-bold">جهة الخصم:</span>
+              <span class="text-[11px] font-bold text-slate-300">${targetDesc}</span>
+            </div>
+            <div class="pt-1 border-t border-slate-800/80 text-[10px] text-slate-300 leading-relaxed">
+              <span class="font-bold text-amber-400">البيان / السبب: </span>${escapeHtml(reason)}
+            </div>
+          </div>
+
+          <div class="flex justify-between items-center pt-1 border-t border-slate-800/60">
+            <button onclick="window.switchTab('bank')" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 rounded-lg text-[10px] font-bold transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-building-columns"></i> فحص البنك
+            </button>
+            <button onclick="window.UI.deleteMail('${mail.id}')" class="text-[10px] text-rose-400 hover:underline cursor-pointer">
+              <i class="fa-solid fa-trash mr-1"></i> حذف الإشعار
+            </button>
+          </div>`;
+        inboxPanel.appendChild(mailDiv);
+        return;
+      }
+
       // 2.3 Dividend Claim Card
       if (mail.type === 'dividend_claim') {
         const amt = Number((mail.payload && mail.payload.amount) || 0);
@@ -15678,7 +15789,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
                         mail.type === 'transfer_received' ? 'حوالة بنكية' :
                         mail.type === 'admin_popup' ? 'تنبيه إداري' :
                         mail.type === 'investigation_chat' ? 'دردشة خاصة ' :
-                        mail.type === 'admin_balance_grant' ? 'إيداع إداري' : 'رسالة';
+                        mail.type === 'admin_balance_grant' ? 'إيداع إداري' :
+                        mail.type === 'admin_balance_deduct' ? 'خصم إداري' : 'رسالة';
 
       mailDiv.innerHTML = `
         <div class="flex justify-between items-center border-b border-slate-800/80 pb-2">
@@ -18820,6 +18932,70 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             (addCash > 0 ? ` (كاش: +${addCash.toLocaleString()})` : '') +
             (addBank > 0 ? ` (بنك: +${addBank.toLocaleString()})` : ''),
           'success'
+        );
+        break;
+      }
+    }
+
+    // 0.055. Process incoming Instant Admin Balance Deductions (Live in-game balance deduction)
+    const deductMails = mails.filter(m => m.type === 'admin_balance_deduct' && (m.status === 'unread' || m.status === 'pending'));
+    for (const dm of deductMails) {
+      if (!window._processedBalanceDeductIds) window._processedBalanceDeductIds = new Set();
+      let localProcessedDeducts = [];
+      try {
+        localProcessedDeducts = JSON.parse(localStorage.getItem('rasalmal_processed_deducts') || '[]');
+      } catch (_) {}
+
+      if (window._processedBalanceDeductIds.has(dm.id) || localProcessedDeducts.includes(dm.id)) {
+        AppDB.updateMailStatus(dm.id, 'read').catch(() => {});
+        continue;
+      }
+
+      window._processedBalanceDeductIds.add(dm.id);
+      localProcessedDeducts.push(dm.id);
+      try {
+        localStorage.setItem('rasalmal_processed_deducts', JSON.stringify(localProcessedDeducts.slice(-100)));
+      } catch (_) {}
+
+      const p = dm.payload || {};
+      const deductCash = Number(p.deductedCash) || 0;
+      const deductBank = Number(p.deductedBank) || 0;
+      const totalAmount = Number(p.totalAmount) || (deductCash + deductBank);
+      const reason = p.reason || dm.reason || 'إجراء تنظيمي من الإدارة';
+
+      if (GameEngine.state && (deductCash > 0 || deductBank > 0 || p.newCash !== undefined || p.newBank !== undefined)) {
+        if (p.isPreApplied && p.newCash !== undefined) {
+          GameEngine.state.cash = Number(p.newCash);
+          if (p.newBank !== undefined) GameEngine.state.bank = Number(p.newBank);
+        } else {
+          GameEngine.state.cash = (Number(GameEngine.state.cash) || 0) - deductCash;
+          GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) - deductBank;
+        }
+        if (typeof GameEngine.calculateTotalNetWorth === 'function') {
+          GameEngine.calculateTotalNetWorth();
+        } else {
+          GameEngine.state.netWorth = (Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0);
+        }
+
+        const deductTs = Number(p.timestamp || dm.created_at || Date.now());
+        GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), deductTs);
+        GameEngine.state._legitimateTransactionBypass = true;
+
+        try {
+          if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+            AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+          }
+        } catch (_) {}
+
+        await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
+        await AppDB.updateMailStatus(dm.id, 'read');
+
+        renderAll();
+
+        showToast(
+          ' خصم مالي إداري',
+          `تم خصم ${totalAmount.toLocaleString()} EGP من ${deductCash > 0 ? 'الكاش' : 'البنك'}.\nالسبب: ${reason}`,
+          'warning'
         );
         break;
       }

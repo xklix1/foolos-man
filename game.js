@@ -3954,33 +3954,17 @@ const GameEngine = (() => {
   }
 
   function getAfkManagerRenewalCost() {
-    let hourlyPassive = 0;
-    if (state.businesses) {
-      for (const [key, b] of Object.entries(state.businesses)) {
-        if (!b || b.level <= 0) continue;
-        const bizDef = BUSINESSES[key];
-        if (!bizDef) continue;
-        const baseMargin = Math.max(1, (bizDef.optimumPrice || 10) - (bizDef.costOfGoods || 5));
-        const lvlMult = 1 + (b.level - 1) * 0.25;
-        const workerMult = 1 + (b.workers || 0) * 0.05;
-        hourlyPassive += (bizDef.baseDemand || 50) * baseMargin * lvlMult * workerMult;
-      }
-    }
-    return Math.max(1000, Math.min(500000, Math.round(hourlyPassive * 0.10)));
+    return 0; // تمديد وردية الإدارة مجاني بالكامل
   }
 
   function renewAfkManager() {
     if (!activeUsername) throw new Error("لا توجد جلسة لاعب نشطة.");
-    const cost = getAfkManagerRenewalCost();
-    if (state.cash < cost) {
-      throw new Error(`رصيدك غير كافٍ لتجديد وردية الإدارة (12 ساعة). تحتاج: ${cost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
-    }
+    const cost = 0; // تمديد وردية الإدارة مجاني بالكامل بدون أي خصم مالي
 
-    state.cash -= cost;
     const TWELVE_HOURS_MS = 12 * 60 * 60 * 1000;
     state.afkManagerExpiresAt = getTrustedNow() + TWELVE_HOURS_MS;
     state.netWorth = calculateNetWorth();
-    recordPlayerActivity('إدارة المشاريع', `تجديد وتفعيل وردية الإدارة الآلية (12 ساعة) بتكلفة ${cost.toLocaleString()} ج.م`, 'business');
+    recordPlayerActivity('إدارة المشاريع', `تجديد وتفعيل وردية الإدارة الآلية (12 ساعة) مجاناً`, 'business');
 
     // Dispatch to Authoritative Server if connected
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
@@ -3992,7 +3976,7 @@ const GameEngine = (() => {
     // the server so isManagerActive = true on next login and offline earnings are calculated.
     AppDB.savePlayerState(activeUsername, state, true);
     return {
-      costPaid: cost,
+      costPaid: 0,
       expiresAt: state.afkManagerExpiresAt,
       remainingMs: TWELVE_HOURS_MS
     };
@@ -4491,8 +4475,8 @@ const GameEngine = (() => {
     return sellValue;
   }
 
-  // Buy Stocks (with 3.0% Brokerage Commission, 45s Holding Period, & Max Shares Cap)
-  function buyStock(sym, shares) {
+  // Buy Stocks (with 1.0% Brokerage Commission, 45s Holding Period, & Max Shares Cap)
+  function buyStock(sym, shares, quotedPrice = null) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       throw new Error(" تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
     }
@@ -4520,8 +4504,8 @@ const GameEngine = (() => {
     }
 
     const history = stockPrices[sym];
-    if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة بعد. حاول مجدداً.");
-    const currentPrice = history[history.length - 1];
+    const fallbackPrice = (history && history.length > 0) ? history[history.length - 1] : stock.basePrice;
+    const currentPrice = (Number(quotedPrice) > 0) ? Number(quotedPrice) : fallbackPrice;
     const grossCost = currentPrice * shares;
     const fee = Math.max(5, Math.floor(grossCost * 0.01)); // 1.0% عمولة سمسرة (مخفضة لتشجيع التداول)
     const totalCost = grossCost + fee;
@@ -4545,21 +4529,21 @@ const GameEngine = (() => {
     state.stockCooldowns[sym] = getTrustedNow() + 45000;
     state.stockTradeCooldownUntil = getTrustedNow() + 3000;
 
-    recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
+    recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بسعر ${currentPrice.toLocaleString()} ج.م للسهم بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
     trackDailyQuestProgress('stock_trade', 1);
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.buyStock(sym, shares).catch(e => console.warn('[StockEngine] Server buy sync warning:', e.message));
+      ServerBridge.buyStock(sym, shares, currentPrice).catch(e => console.warn('[StockEngine] Server buy sync warning:', e.message));
     }
 
     forceSaveState(true);
     return { shares, price: currentPrice, grossCost, fee, totalCost };
   }
 
-  // Sell Stocks (with 3.0% Brokerage Commission, 10% Capital Gains Tax, & 45s Cooldown Check)
-  function sellStock(sym, shares) {
+  // Sell Stocks (with 1.0% Brokerage Commission, 10% Capital Gains Tax, & 45s Cooldown Check)
+  function sellStock(sym, shares, quotedPrice = null) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       throw new Error(" تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
     }
@@ -4590,8 +4574,8 @@ const GameEngine = (() => {
     }
 
     const history = stockPrices[sym];
-    if (!history || history.length === 0) throw new Error("بيانات السوق غير متوفرة.");
-    const currentPrice = history[history.length - 1];
+    const fallbackPrice = (history && history.length > 0) ? history[history.length - 1] : stock.basePrice;
+    const currentPrice = (Number(quotedPrice) > 0) ? Number(quotedPrice) : fallbackPrice;
     const grossReturn = currentPrice * shares;
     const fee = Math.max(5, Math.floor(grossReturn * 0.01)); // 1.0% عمولة سمسرة (مخفضة لتشجيع التداول)
 
@@ -4666,7 +4650,7 @@ const GameEngine = (() => {
     state.title = getAppropriateTitle(state.netWorth, state.xp);
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.sellStock(sym, shares).catch(e => console.warn('[StockEngine] Server sell sync warning:', e.message));
+      ServerBridge.sellStock(sym, shares, currentPrice).catch(e => console.warn('[StockEngine] Server sell sync warning:', e.message));
     }
 
     forceSaveState(true);

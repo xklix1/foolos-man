@@ -2056,6 +2056,95 @@ async function moderatorRoutes(fastify, options) {
           break;
         }
 
+        case 'deduct_balance': {
+          const deductAmount = Math.max(0, Math.floor(Number(request.body.amount || request.body.deductAmount || 0)));
+          if (!deductAmount || isNaN(deductAmount) || deductAmount <= 0) {
+            return reply.status(400).send({ error: 'Bad Request', message: 'يرجى إدخال مبلغ صحيح لخصمه من رصيد اللاعب (أكبر من صفر).' });
+          }
+
+          const deductTarget = String(request.body.deductTarget || request.body.target || 'bank').toLowerCase() === 'cash' ? 'cash' : 'bank';
+          const currentBank = Number(pDoc.bank !== undefined ? pDoc.bank : (pState.bank || 0));
+          const currentCash = Number(pDoc.cash !== undefined ? pDoc.cash : (pState.cash || 0));
+
+          let updatedBank = currentBank;
+          let updatedCash = currentCash;
+
+          if (deductTarget === 'cash') {
+            updatedCash = currentCash - deductAmount;
+            pDoc.cash = updatedCash;
+            pState.cash = updatedCash;
+          } else {
+            updatedBank = currentBank - deductAmount;
+            pDoc.bank = updatedBank;
+            pState.bank = updatedBank;
+          }
+
+          const updatedNetworth = updatedCash + updatedBank;
+          pDoc.net_worth = updatedNetworth;
+          pState.netWorth = updatedNetworth;
+          pState.adminModifiedTimestamp = ts;
+
+          const targetLabel = deductTarget === 'cash' ? 'الكاش (Cash)' : 'البنك (Bank)';
+          actionDesc = `خصم مالي بقيمة $${deductAmount.toLocaleString('en-US')} من [${targetLabel}] للاعب (${cleanReason})`;
+
+          pState.moderatorNotes.unshift({
+            timestamp: ts,
+            action: 'deduct_balance',
+            amount: deductAmount,
+            target: deductTarget,
+            reason: cleanReason,
+            modName: request.modSession.name
+          });
+
+          if (!Array.isArray(pState.adminGrants)) pState.adminGrants = [];
+          pState.adminGrants.unshift({
+            id: `deduct_${ts}`,
+            timestamp: ts,
+            amount: -deductAmount,
+            cash: deductTarget === 'cash' ? -deductAmount : 0,
+            bank: deductTarget === 'bank' ? -deductAmount : 0,
+            newBank: updatedBank,
+            newCash: updatedCash,
+            gold: 0,
+            type: 'balance_deduct',
+            title: `خصم مالي معتمد من الرقابة (${targetLabel})`,
+            note: cleanReason,
+            status: 'خصم',
+            grantedBy: request.modSession.name
+          });
+          if (pState.adminGrants.length > 30) pState.adminGrants = pState.adminGrants.slice(0, 30);
+
+          // Send notification mailbox message
+          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
+            body: JSON.stringify({
+              sender: 'إدارة الرقابة والأمان',
+              recipient: pDoc.username,
+              type: 'admin_balance_deduct',
+              payload: {
+                title: ' خصم مالي إداري من حسابك',
+                message: `تم خصم مبلغ $${deductAmount.toLocaleString('en-US')} من [${targetLabel}] بواسطة إدارة الرقابة.\nالسبب: ${cleanReason}`,
+                amount: deductAmount,
+                totalAmount: deductAmount,
+                deductedCash: deductTarget === 'cash' ? deductAmount : 0,
+                deductedBank: deductTarget === 'bank' ? deductAmount : 0,
+                target: deductTarget,
+                newBank: updatedBank,
+                newCash: updatedCash,
+                isPreApplied: true,
+                reason: cleanReason,
+                timestamp: ts
+              },
+              status: 'unread',
+              created_at: ts
+            })
+          }).catch(err => {
+            console.warn('[deduct_balance] Failed to send mailbox notification:', err.message);
+          });
+          break;
+        }
+
         default:
           return reply.status(400).send({ error: 'Bad Request', message: `إجراء غير مدعوم: ${action}` });
       }
@@ -2077,6 +2166,10 @@ async function moderatorRoutes(fastify, options) {
       } else if (action === 'unban') {
         patchBody.is_banned = false;
       } else if (action === 'add_bank') {
+        patchBody.bank = pState.bank;
+        patchBody.net_worth = pState.netWorth;
+      } else if (action === 'deduct_balance') {
+        patchBody.cash = pState.cash;
         patchBody.bank = pState.bank;
         patchBody.net_worth = pState.netWorth;
       }
@@ -2131,6 +2224,11 @@ async function moderatorRoutes(fastify, options) {
             session.state.bank = pState.bank;
             session.state.netWorth = pState.netWorth;
             session.state.adminGrants = pState.adminGrants;
+          } else if (action === 'deduct_balance') {
+            session.state.cash = pState.cash;
+            session.state.bank = pState.bank;
+            session.state.netWorth = pState.netWorth;
+            session.state.adminGrants = pState.adminGrants;
           }
           session.state.adminModifiedTimestamp = (action === 'reset_limits' ? ts + 600000 : ts);
           session.dirty = false;
@@ -2138,7 +2236,7 @@ async function moderatorRoutes(fastify, options) {
       }
 
       // 4. Record to staff audit logs
-      await logStaffAudit(request.modSession, target, action, cleanReason, { durationMinutes, amount: request.body.amount || request.body.addBank });
+      await logStaffAudit(request.modSession, target, action, cleanReason, { durationMinutes, amount: request.body.amount || request.body.addBank || request.body.deductAmount, target: request.body.deductTarget });
 
       return reply.send({
         success: true,
@@ -2146,6 +2244,8 @@ async function moderatorRoutes(fastify, options) {
         target: pDoc.username,
         action,
         newBank: pState.bank,
+        newCash: pState.cash,
+        newNetWorth: pState.netWorth,
         timestamp: ts
       });
     } catch (err) {

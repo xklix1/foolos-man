@@ -230,17 +230,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const s = session.state;
     const now = Date.now();
 
-    // Dynamic fee: 10% of total passive hourly profit from businesses (min 1,000, max 500,000)
-    const renewalCost = getAfkManagerRenewalCost(s);
-    if ((Number(s.cash) || 0) < renewalCost) {
-      return reply.code(400).send({
-        error: `رصيدك غير كافٍ لتجديد ترخيص الإدارة (12 ساعة). تحتاج: ${renewalCost.toLocaleString()} EGP — لديك: ${(Number(s.cash) || 0).toLocaleString()} EGP`,
-        requiredCash: renewalCost,
-        currentCash: s.cash
-      });
-    }
-
-    s.cash = (Number(s.cash) || 0) - renewalCost;
+    // Free 12-Hour AFK Manager Extension (0 EGP)
+    const renewalCost = 0;
     s.afkManagerExpiresAt = now + TWELVE_HOURS_MS;
     s.netWorth = calculateNetWorth(s);
 
@@ -2000,9 +1991,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const session = await resolveSession(request, reply);
     if (!session) return;
     if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
-    const { symbol, shares } = request.body || {};
+    const { symbol, shares, price } = request.body || {};
     try {
-      const res = stockEngine.buyStock(session.state, symbol, parseInt(shares, 10), Date.now());
+      const res = stockEngine.buyStock(session.state, symbol, parseInt(shares, 10), Date.now(), price);
       sessionManager.markDirty(session.username);
       return reply.send({
         success: true,
@@ -2021,9 +2012,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const session = await resolveSession(request, reply);
     if (!session) return;
     if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
-    const { symbol, shares } = request.body || {};
+    const { symbol, shares, price } = request.body || {};
     try {
-      const res = stockEngine.sellStock(session.state, symbol, parseInt(shares, 10), Date.now());
+      const res = stockEngine.sellStock(session.state, symbol, parseInt(shares, 10), Date.now(), price);
       sessionManager.markDirty(session.username);
       return reply.send({
         success: true,

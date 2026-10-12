@@ -149,7 +149,7 @@ function ensureDailyStockTracking(state, serverNow = Date.now()) {
   }
 }
 
-function buyStock(state, sym, shares, serverNow = Date.now()) {
+function buyStock(state, sym, shares, serverNow = Date.now(), clientPrice = null) {
   const stock = STOCKS[sym];
   if (!stock) throw new Error('رمز السهم غير صالح.');
   shares = parseInt(shares, 10);
@@ -174,7 +174,19 @@ function buyStock(state, sym, shares, serverNow = Date.now()) {
   }
 
   const currentTick = getUnifiedStockTick(serverNow);
-  const currentPrice = calculateUnifiedPriceAtTick(sym, currentTick, serverNow);
+  const serverCalculatedPrice = calculateUnifiedPriceAtTick(sym, currentTick, serverNow);
+
+  // Authoritative price resolution: honor client quoted price if within safe bounds
+  let currentPrice = serverCalculatedPrice;
+  if (clientPrice !== null && clientPrice !== undefined && !isNaN(clientPrice) && Number(clientPrice) > 0) {
+    const cPrice = Number(clientPrice);
+    const minSafe = stock.floor;
+    const maxSafe = stock.ceiling || Math.round(stock.basePrice * 3.5);
+    if (cPrice >= minSafe && cPrice <= maxSafe && Math.abs(cPrice - serverCalculatedPrice) / serverCalculatedPrice <= 0.25) {
+      currentPrice = cPrice;
+    }
+  }
+
   const grossCost = currentPrice * shares;
   const fee = Math.max(5, Math.floor(grossCost * 0.01)); // 1% brokerage fee
   const totalCost = grossCost + fee;
@@ -214,7 +226,7 @@ function buyStock(state, sym, shares, serverNow = Date.now()) {
   };
 }
 
-function sellStock(state, sym, shares, serverNow = Date.now()) {
+function sellStock(state, sym, shares, serverNow = Date.now(), clientPrice = null) {
   const stock = STOCKS[sym];
   if (!stock) throw new Error('رمز السهم غير صالح.');
   shares = parseInt(shares, 10);
@@ -244,7 +256,18 @@ function sellStock(state, sym, shares, serverNow = Date.now()) {
   }
 
   const currentTick = getUnifiedStockTick(serverNow);
-  const currentPrice = calculateUnifiedPriceAtTick(sym, currentTick, serverNow);
+  const serverCalculatedPrice = calculateUnifiedPriceAtTick(sym, currentTick, serverNow);
+
+  let currentPrice = serverCalculatedPrice;
+  if (clientPrice !== null && clientPrice !== undefined && !isNaN(clientPrice) && Number(clientPrice) > 0) {
+    const cPrice = Number(clientPrice);
+    const minSafe = stock.floor;
+    const maxSafe = stock.ceiling || Math.round(stock.basePrice * 3.5);
+    if (cPrice >= minSafe && cPrice <= maxSafe && Math.abs(cPrice - serverCalculatedPrice) / serverCalculatedPrice <= 0.25) {
+      currentPrice = cPrice;
+    }
+  }
+
   const grossReturn = currentPrice * shares;
   const fee = Math.max(5, Math.floor(grossReturn * 0.01)); // 1% brokerage fee
 

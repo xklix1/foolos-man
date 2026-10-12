@@ -1202,11 +1202,15 @@ var ServerBridge = (() => {
     return await _get('/api/market/stocks');
   }
 
-  async function buyStock(symbol, shares) {
+  async function buyStock(symbol, shares, quotedPrice = null) {
     const user = _activeUsername;
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    const res = await _post('/api/action/stock/buy', { username: user, token, symbol, shares });
+    const body = { username: user, token, symbol, shares };
+    if (quotedPrice !== null && !isNaN(quotedPrice) && Number(quotedPrice) > 0) {
+      body.price = Number(quotedPrice);
+    }
+    const res = await _post('/api/action/stock/buy', body);
     if (res && res.success && typeof GameEngine !== 'undefined') {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {
@@ -1218,11 +1222,15 @@ var ServerBridge = (() => {
     return res;
   }
 
-  async function sellStock(symbol, shares) {
+  async function sellStock(symbol, shares, quotedPrice = null) {
     const user = _activeUsername;
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    const res = await _post('/api/action/stock/sell', { username: user, token, symbol, shares });
+    const body = { username: user, token, symbol, shares };
+    if (quotedPrice !== null && !isNaN(quotedPrice) && Number(quotedPrice) > 0) {
+      body.price = Number(quotedPrice);
+    }
+    const res = await _post('/api/action/stock/sell', body);
     if (res && res.success && typeof GameEngine !== 'undefined') {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {

@@ -153,12 +153,10 @@ function getBusinessWorkerHireCost(key, bizState) {
 
 /**
  * Calculates 12-Hour AFK Auto-Manager renewal cost:
- * Dynamic: 10% of total passive hourly profit from businesses (min 1,000 EGP, max 500,000 EGP)
+ * Free (0 EGP)
  */
 function getAfkManagerRenewalCost(playerState) {
-  const hourlyProfit = calculateAllBusinessesHourly(playerState);
-  const tenPercent = Math.round(hourlyProfit * 0.10);
-  return Math.max(1000, Math.min(500000, tenPercent));
+  return 0;
 }
 
 function getCairoTodayStr(serverNow = Date.now()) {
