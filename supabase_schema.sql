@@ -110,8 +110,10 @@ ALTER TABLE public.gift_codes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.corporations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.live_auctions ENABLE ROW LEVEL SECURITY;
 
--- سياسات الوصول العام عبر Anon Key
-CREATE POLICY "Allow public all on players" ON public.players FOR ALL USING (true) WITH CHECK (true);
+-- سياسات الوصول العام عبر Anon Key (محصنة ومحمية ضد التعديل المباشر)
+CREATE POLICY "Public can view player profiles" ON public.players FOR SELECT TO anon, authenticated USING (true);
+REVOKE UPDATE, DELETE ON public.players FROM anon;
+REVOKE UPDATE, DELETE ON public.players FROM authenticated;
 CREATE POLICY "Allow public all on transfers" ON public.transfers FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public all on transfer_requests" ON public.transfer_requests FOR ALL USING (true) WITH CHECK (true);
 CREATE POLICY "Allow public all on mailbox" ON public.mailbox FOR ALL USING (true) WITH CHECK (true);

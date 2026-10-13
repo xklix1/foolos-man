@@ -118,15 +118,19 @@ BEGIN
       )
     );
 
-    -- قص الزيادة وتثبيت الرصيد على الرصيد القديم + الحد الشرعي الأقصى بدلاً من قبول التريليونات
+    -- قص الزيادة وتثبيت الكاش والبنك على الرصيد القديم + الحد الشرعي الأقصى
+    NEW.cash := OLD.cash;
+    NEW.dirty_cash := OLD.dirty_cash;
     NEW.bank := OLD.bank + LEAST(v_wealth_diff, v_max_allowed_growth);
     
     -- تحديث كائن الـ state ليتطابق مع الرصيد المحمي
     IF NEW.state IS NOT NULL THEN
       NEW.state := jsonb_set(
-        NEW.state,
-        '{bank}',
-        to_jsonb(NEW.bank)
+        jsonb_set(
+          jsonb_set(NEW.state, '{cash}', to_jsonb(NEW.cash)),
+          '{bank}', to_jsonb(NEW.bank)
+        ),
+        '{dirtyCash}', to_jsonb(NEW.dirty_cash)
       );
     END IF;
   END IF;

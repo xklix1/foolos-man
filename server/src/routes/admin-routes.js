@@ -810,6 +810,108 @@ async function adminRoutes(fastify, options) {
       return reply.status(500).send({ success: false, error: err.message });
     }
   });
+  /**
+   * POST /api/admin/apply-security-hardening
+   * Applies complete Nginx lockdown (sensitive directories, PostgREST mutation deny, server_tokens off)
+   * and configures UFW firewall to isolate raw database ports (5432, 6543, 8000).
+   */
+  fastify.post('/apply-security-hardening', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { execSync } = require('child_process');
+    const fs = require('fs');
+    try {
+      const whoami = execSync('whoami').toString().trim();
+      const nginxTarget = '/etc/nginx/sites-available/rasalmal';
+      let nginxStatus = 'not found';
+      let ufwOutput = '';
+      let testOutput = '';
+
+      if (fs.existsSync(nginxTarget)) {
+        let content = fs.readFileSync(nginxTarget, 'utf8');
+        fs.writeFileSync(nginxTarget + '.sec.bak', content, 'utf8');
+
+        // 1. Ensure server_tokens off
+        if (!content.includes('server_tokens off;')) {
+          content = content.replace('server_name rasalmal.online www.rasalmal.online;', 'server_name rasalmal.online www.rasalmal.online;\n    server_tokens off;');
+        }
+
+        // 2. Strict directory shield (blocking /backups, /tasks, /scripts, /server, uploads/private, .git, .env)
+        const oldShieldRegex = /location ~\* \(\\?\/server\\?\/[\s\S]*?return 404;\s*\}/;
+        const newShield = `    # Security shield: block internal directories and files
+    location ~* ^/(backups|tasks|scripts|server|uploads/private|\\.git|\\.env) {
+        deny all;
+        return 404;
+    }`;
+
+        if (oldShieldRegex.test(content)) {
+          content = content.replace(oldShieldRegex, newShield);
+        } else if (!content.includes('^/(backups|tasks|scripts|server')) {
+          content = content.replace('location / {', newShield + '\n\n    location / {');
+        }
+
+        // 3. PostgREST mutation lockdown (limit_except GET HEAD OPTIONS)
+        const oldRestRegex = /location \/rest\/v1\/ \{[\s\S]*?proxy_pass http:\/\/127\.0\.0\.1:8000\/rest\/v1\/;[\s\S]*?\}/;
+        const newRestBlock = `    location /rest/v1/ {
+        limit_except GET HEAD OPTIONS {
+            deny all;
+        }
+        proxy_pass http://127.0.0.1:8000/rest/v1/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_hide_header x-app-version;
+    }`;
+
+        if (oldRestRegex.test(content)) {
+          content = content.replace(oldRestRegex, newRestBlock);
+        }
+
+        fs.writeFileSync(nginxTarget, content, 'utf8');
+
+        try {
+          testOutput = execSync('nginx -t 2>&1').toString();
+          execSync('systemctl reload nginx || nginx -s reload');
+          nginxStatus = 'Nginx successfully fortified and reloaded.';
+        } catch (nErr) {
+          fs.writeFileSync(nginxTarget, fs.readFileSync(nginxTarget + '.sec.bak', 'utf8'), 'utf8');
+          nginxStatus = 'Rolled back due to syntax error: ' + nErr.message;
+        }
+      }
+
+      // 4. Apply UFW firewall lockdown
+      try {
+        const ufwCommands = [
+          'ufw default allow outgoing',
+          'ufw allow 22/tcp',
+          'ufw allow 80/tcp',
+          'ufw allow 443/tcp',
+          'ufw deny 5432/tcp',
+          'ufw deny 6543/tcp',
+          'ufw deny 8000/tcp',
+          'ufw --force enable',
+          'ufw status verbose'
+        ].join(' && ');
+        ufwOutput = execSync(ufwCommands, { timeout: 15000 }).toString();
+      } catch (uErr) {
+        ufwOutput = 'UFW command error: ' + uErr.message;
+      }
+
+      return reply.send({
+        success: true,
+        whoami,
+        nginxStatus,
+        testOutput,
+        ufwOutput
+      });
+    } catch (err) {
+      return reply.status(500).send({ success: false, error: err.message });
+    }
+  });
 }
 
 module.exports = adminRoutes;
+
