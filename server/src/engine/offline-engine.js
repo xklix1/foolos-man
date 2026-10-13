@@ -144,12 +144,12 @@ function calculateAuthoritativeOfflineProgress(playerState, serverNow = Date.now
   // 4. Bank Interest: Manual Daily Claim Mode (no automatic offline compounding into bank)
   let bankInterestEarned = 0;
 
-  // 5. Always Deplete Supplies by Total Elapsed Time
-  if (playerState.businesses) {
+  // 5. Deplete Supplies only for actual profitable operating time (AFK manager active)
+  if (playerState.businesses && profitableSeconds > 0) {
     Object.keys(playerState.businesses).forEach(bk => {
       const b = playerState.businesses[bk];
       if (b && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
-        b.suppliesTicks = Math.max(0, b.suppliesTicks - totalElapsedSeconds);
+        b.suppliesTicks = Math.max(0, b.suppliesTicks - profitableSeconds);
       }
     });
   }

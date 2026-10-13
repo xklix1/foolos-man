@@ -2732,6 +2732,11 @@ const GameEngine = (() => {
         // No per-business cooldown — global daily cap of 5 is the throttle
       }
 
+      // Decrement operating supplies timer (1 tick per second)
+      if (bizState.suppliesTicks && bizState.suppliesTicks > 0) {
+        bizState.suppliesTicks--;
+      }
+
       const tickProfit = (breakdown.ownerProfit || 0) / 3600;
       if (tickProfit > 0) {
         state.bank += tickProfit;

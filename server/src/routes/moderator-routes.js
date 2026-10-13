@@ -2595,7 +2595,8 @@ async function moderatorRoutes(fastify, options) {
 
     reply.header('Content-Type', mimeType);
     reply.header('X-Content-Type-Options', 'nosniff');
-    reply.header('Content-Security-Policy', "default-src 'none'; style-src 'unsafe-inline'");
+    reply.header('Cross-Origin-Resource-Policy', 'cross-origin');
+    reply.header('Access-Control-Allow-Origin', '*');
     reply.header('Cache-Control', 'public, max-age=31536000, immutable');
 
     const stream = fs.createReadStream(filePath);

@@ -468,6 +468,19 @@ var ServerBridge = (() => {
     });
   }
 
+  async function runBlackMarketDeal(dealId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/black-market/deal', { username: _activeUsername, dealId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.underworldRep !== undefined) s.underworldRep = r.underworldRep;
+      if (r.jailTimer !== undefined) s.jailTimer = r.jailTimer;
+      if (r.heatLevel !== undefined) s.heatLevel = r.heatLevel;
+      if (r.blackMarketCooldowns) s.blackMarketCooldowns = r.blackMarketCooldowns;
+      if (r.inventory) s.inventory = r.inventory;
+      if (typeof UI !== 'undefined' && UI.renderBlackMarketPanel) { try { UI.renderBlackMarketPanel(); } catch (_) {} }
+    });
+  }
+
   async function bribePolice() {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/black-market/bribe', { username: _activeUsername });
@@ -1395,6 +1408,7 @@ var ServerBridge = (() => {
     buyFarmLivestock,
     buyStoreItem,
     buyBlackMarketGear,
+    runBlackMarketDeal,
     bribePolice,
     buySmugglingVehicle,
     launchMarketingCampaign,

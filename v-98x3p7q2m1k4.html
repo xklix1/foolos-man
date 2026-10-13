@@ -576,6 +576,10 @@
                   <i class="fa-solid fa-minus-circle text-xs"></i>
                   <span>خصم</span>
                 </button>
+                <button type="button" onclick="switchInspectTab('activity'); filterPlayerActivity('banking');" class="col-span-2 mt-1 w-full py-1 px-1 rounded-lg bg-teal-600/15 hover:bg-teal-600/30 text-teal-300 text-[10px] font-bold border border-teal-500/30 transition flex items-center justify-center gap-1 cursor-pointer" title="عرض سجل إيداعات وسحوبات البنك">
+                  <i class="fa-solid fa-clock-rotate-left text-[10px] text-teal-400"></i>
+                  <span>كشف حساب البنك (سحب/إيداع)</span>
+                </button>
               </div>
             </div>
             <div class="glass-card p-3.5 rounded-xl">
@@ -718,6 +722,10 @@
                 <button onclick="filterPlayerActivity('admin_grant')" id="actFilter_admin_grant" class="px-2.5 py-1 rounded-lg bg-slate-800 text-amber-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-amber-500/30">
                   <i class="fa-solid fa-crown text-amber-400"></i>
                   <span>شحن ومنح الإدارة </span>
+                </button>
+                <button onclick="filterPlayerActivity('banking')" id="actFilter_banking" class="px-2.5 py-1 rounded-lg bg-slate-800 text-teal-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-teal-500/20">
+                  <i class="fa-solid fa-building-columns text-teal-400"></i>
+                  <span>إيداع وسحب البنك</span>
                 </button>
                 <button onclick="filterPlayerActivity('transfer')" id="actFilter_transfer" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">الحوالات</button>
                 <button onclick="filterPlayerActivity('stocks')" id="actFilter_stocks" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">البورصة</button>
@@ -4172,17 +4180,21 @@
 
     function filterPlayerActivity(category) {
       currentActCategory = category;
-      ['all', 'notes', 'transfer', 'stocks', 'gameplay'].forEach(c => {
+      ['all', 'notes', 'admin_grant', 'banking', 'transfer', 'stocks', 'gameplay'].forEach(c => {
         const b = document.getElementById(`actFilter_${c}`);
         if (b) {
           if (c === category) {
             b.className = (c === 'notes')
               ? 'px-2.5 py-1 rounded-lg bg-yellow-500 text-slate-950 font-black transition flex items-center gap-1 shadow-md shadow-yellow-500/20'
-              : 'px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition';
+              : (c === 'banking'
+                  ? 'px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold transition flex items-center gap-1 shadow-md shadow-teal-600/20'
+                  : 'px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition');
           } else {
             b.className = (c === 'notes')
               ? 'px-2.5 py-1 rounded-lg bg-slate-800 text-yellow-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-yellow-500/20'
-              : 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition';
+              : (c === 'banking'
+                  ? 'px-2.5 py-1 rounded-lg bg-slate-800 text-teal-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-teal-500/20'
+                  : 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition');
           }
         }
       });
@@ -4341,6 +4353,11 @@
           icon = item.gold ? 'fa-coins text-yellow-400' : 'fa-crown text-amber-400';
           cardBg = 'border border-amber-500/50 bg-gradient-to-r from-amber-950/30 via-slate-900 to-yellow-950/20 shadow-md shadow-amber-950/30';
           catBadge = `<span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/40 text-[9px]"><i class="fa-solid fa-crown text-[8px] ml-0.5"></i> ${item.gold ? 'منحة ذهب رسمية ' : 'شحن ومنحة إدارة '}</span>`;
+        } else if (item.category === 'banking' || item.category === 'bank' || (item.title && (item.title.includes('إيداع بنكي') || item.title.includes('سحب بنكي')))) {
+          icon = 'fa-building-columns text-teal-400';
+          cardBg = 'border border-teal-500/40 bg-gradient-to-r from-teal-950/30 via-slate-900 to-emerald-950/20 shadow-sm shadow-teal-950/20';
+          const isDeposit = (item.title && item.title.includes('إيداع')) || (item.desc && item.desc.includes('إيداع'));
+          catBadge = `<span class="px-2 py-0.5 rounded-full ${isDeposit ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border-rose-500/40'} font-bold border text-[9px]"><i class="fa-solid fa-building-columns text-[8px] ml-0.5"></i> ${isDeposit ? 'إيداع بالبنك' : 'سحب من البنك'}</span>`;
         } else if (item.category === 'transfer') {
           icon = 'fa-money-bill-transfer text-emerald-400';
           catBadge = `<span class="px-1.5 py-0.2 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-800/40 font-medium">حوالة مالية</span>`;
@@ -5319,13 +5336,25 @@
       if (previewImg) previewImg.src = '';
     }
 
+    function resolveChatImageUrl(rawUrl) {
+      if (!rawUrl || typeof rawUrl !== 'string') return '';
+      const u = rawUrl.trim();
+      if (u.startsWith('http://') || u.startsWith('https://') || u.startsWith('data:image/')) return u;
+      const base = (typeof window !== 'undefined' && window.location.origin && !window.location.origin.includes('file:'))
+        ? window.location.origin
+        : 'https://rasalmal.online';
+      const cleanPath = u.startsWith('/') ? u : '/' + u;
+      return base + cleanPath;
+    }
+
     function openChatImageViewer(imgUrl) {
       if (!imgUrl) return;
+      const safeUrl = resolveChatImageUrl(imgUrl);
       const modal = document.getElementById('chatImageViewerModal');
       const img = document.getElementById('chatImageViewerImg');
       const dlBtn = document.getElementById('chatImageViewerDownloadBtn');
-      if (img) img.src = imgUrl;
-      if (dlBtn) dlBtn.href = imgUrl;
+      if (img) img.src = safeUrl;
+      if (dlBtn) dlBtn.href = safeUrl;
       if (modal) modal.classList.remove('hidden');
     }
 
@@ -5405,13 +5434,14 @@
           const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
           const isMod = Boolean(p.isMod || m.isMod || m.recipient === targetUser || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
           const text = p.message || m.message || '';
-          const imageUrl = p.imageUrl || m.imageUrl || null;
+          const rawImg = p.imageUrl || m.imageUrl || null;
+          const imageUrl = rawImg ? resolveChatImageUrl(rawImg) : null;
           const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : targetUser);
           const ts = m.created_at || p.timestamp || Date.now();
 
           const imageBlock = imageUrl ? `
             <div class="mt-2">
-              <img src="${escapeHtml(imageUrl)}" onclick="openChatImageViewer('${escapeHtml(imageUrl)}')" class="max-w-[240px] max-h-[190px] rounded-xl border border-slate-700/80 object-cover cursor-pointer hover:opacity-90 hover:scale-[1.02] transition shadow-md bg-black/40 block" alt="صورة مرفقة" loading="lazy" />
+              <img src="${escapeHtml(imageUrl)}" onerror="if(!this.dataset.retried){this.dataset.retried='1';this.src='https://rasalmal.online'+'${escapeHtml(rawImg.startsWith('/') ? rawImg : '/' + rawImg)}';}" onclick="openChatImageViewer('${escapeHtml(imageUrl)}')" class="max-w-[240px] max-h-[190px] rounded-xl border border-slate-700/80 object-cover cursor-pointer hover:opacity-90 hover:scale-[1.02] transition shadow-md bg-black/40 block" alt="صورة مرفقة" loading="lazy" />
             </div>
           ` : '';
 

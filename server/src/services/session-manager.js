@@ -16,6 +16,7 @@ const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-eng
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
 const { AIRCRAFT_MODELS } = require('../engine/airport-engine');
 const { accrueAuthoritativeCashflow } = require('../engine/cashflow-engine');
+const { TRADE_COMMODITIES } = require('../engine/definitions');
 
 class SessionManager {
   constructor() {
@@ -325,6 +326,15 @@ class SessionManager {
             s.bank = (Number(s.bank) || 0) + maxAllowedJump;
           }
         }
+
+        // (c) Dirty Cash deduction reconciliation:
+        // Always accept legitimate dirty cash spending (black market deals, laundering, police confiscation)
+        if (clientState.dirtyCash !== undefined) {
+          const incomingDirty = Math.max(0, Number(clientState.dirtyCash) || 0);
+          if (incomingDirty <= Number(s.dirtyCash || 0)) {
+            s.dirtyCash = incomingDirty;
+          }
+        }
       }
       session.lastSyncTime = Date.now();
 
@@ -551,8 +561,17 @@ class SessionManager {
           const srvMap = new Map((s.tradeCompany.activeImports || []).map(o => [o.id, o]));
           clientState.tradeCompany.activeImports.forEach(cOrder => {
             const sOrder = srvMap.get(cOrder.id);
-            if (sOrder && cOrder.arrived !== undefined) {
-              sOrder.arrived = Boolean(cOrder.arrived);
+            if (sOrder) {
+              if (cOrder.arrived !== undefined) {
+                sOrder.arrived = Boolean(cOrder.arrived);
+              }
+            } else if (cOrder && cOrder.id && cOrder.commodityId && TRADE_COMMODITIES && TRADE_COMMODITIES[cOrder.commodityId]) {
+              // Valid client in-flight order (preserve order with valid arrival time, up to max fleet 2)
+              if ((s.tradeCompany.activeImports || []).length < 2) {
+                if (!Array.isArray(s.tradeCompany.activeImports)) s.tradeCompany.activeImports = [];
+                s.tradeCompany.activeImports.push(cOrder);
+                srvMap.set(cOrder.id, cOrder);
+              }
             }
           });
         }

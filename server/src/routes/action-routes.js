@@ -281,7 +281,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
     s.netWorth = calculateNetWorth(s);
 
-    sessionManager.markDirty(session.username);
+    await sessionManager.forceSaveSession(session.username);
 
     return {
       success: true,
@@ -356,7 +356,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         }
       });
       s.netWorth = calculateNetWorth(s);
-      sessionManager.markDirty(session.username);
+      await sessionManager.forceSaveSession(session.username);
     }
 
     return {
@@ -2085,7 +2085,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const { commodityId, quantity = 1 } = request.body || {};
     try {
       const res = tradeEngine.buyImportCargo(session.state, commodityId, quantity, Date.now());
-      sessionManager.markDirty(session.username);
+      await sessionManager.forceSaveSession(session.username);
       return reply.send({ success: true, ...res });
     } catch (err) {
       return reply.code(400).send({ error: err.message });
@@ -2171,7 +2171,24 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const { gearId } = request.body || {};
     try {
       const res = storeEngine.buyBlackMarketGear(session.state, gearId, Date.now());
-      sessionManager.markDirty(session.username);
+      await sessionManager.forceSaveSession(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/black-market/deal
+  fastify.post('/api/action/black-market/deal', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { dealId } = request.body || {};
+    if (!dealId) {
+      return reply.code(400).send({ error: 'dealId is required' });
+    }
+    try {
+      const res = storeEngine.runBlackMarketDeal(session.state, dealId, Date.now());
+      await sessionManager.forceSaveSession(session.username);
       return reply.send({ success: true, ...res });
     } catch (err) {
       return reply.code(400).send({ error: err.message });

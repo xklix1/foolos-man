@@ -249,18 +249,94 @@ const INDUSTRIAL_SECTORS = {
 };
 
 const TRADE_COMMODITIES = {
-  fashion_brands: { id: 'fashion_brands', name: 'أزياء وملابس ماركات عالمية', unitCost: 5000 },
-  espresso_coffee: { id: 'espresso_coffee', name: 'بن إسبريسو كولومبي فاخر', unitCost: 8000 },
-  auto_spare_parts: { id: 'auto_spare_parts', name: 'قطع غيار سيارات أوروبية أصلية', unitCost: 25000 },
-  solar_panels: { id: 'solar_panels', name: 'ألواح وخلايا طاقة شمسية ألمانية', unitCost: 50000 },
-  luxury_cars: { id: 'luxury_cars', name: 'سيارات فارهة ومدرعة مستوردة', unitCost: 120000 },
-  industrial_turbines: { id: 'industrial_turbines', name: 'توربينات وخطوط إنتاج صناعية ثقيلة', unitCost: 250000 },
-  ai_quantum_chips: { id: 'ai_quantum_chips', name: 'رقائق ومعالجات ذكاء اصطناعي سيليكونية', unitCost: 500000 },
-  luxury_perfumes: { id: 'luxury_perfumes', name: 'عطور فرنسية فاخرة', unitCost: 12000 },
-  medical_devices: { id: 'medical_devices', name: 'أجهزة ومعدات طبية متقدمة', unitCost: 22000 },
-  smart_electronics: { id: 'smart_electronics', name: 'أجهزة وإلكترونيات ذكية', unitCost: 45000 },
-  ev_cars: { id: 'ev_cars', name: 'سيارات كهربائية متطورة', unitCost: 85000 }
+  fashion_brands: {
+    id: 'fashion_brands',
+    name: 'أزياء وملابس ماركات عالمية',
+    tier: 'air_cargo',
+    unitCost: 5000,
+    importDurationSec: 2700,
+    exportDurationSec: 2700,
+    baseSellMin: 5900,
+    baseSellMax: 6250
+  },
+  espresso_coffee: {
+    id: 'espresso_coffee',
+    name: 'بن إسبريسو كولومبي فاخر',
+    tier: 'air_cargo',
+    unitCost: 8000,
+    importDurationSec: 4500,
+    exportDurationSec: 4500,
+    baseSellMin: 9500,
+    baseSellMax: 10200
+  },
+  auto_spare_parts: {
+    id: 'auto_spare_parts',
+    name: 'قطع غيار سيارات أوروبية أصلية',
+    tier: 'regional_freight',
+    unitCost: 25000,
+    importDurationSec: 10800,
+    exportDurationSec: 10800,
+    baseSellMin: 29500,
+    baseSellMax: 32000,
+    dailyExportQuota: 15
+  },
+  solar_panels: {
+    id: 'solar_panels',
+    name: 'ألواح وخلايا طاقة شمسية ألمانية',
+    tier: 'regional_freight',
+    unitCost: 50000,
+    importDurationSec: 18000,
+    exportDurationSec: 18000,
+    baseSellMin: 60000,
+    baseSellMax: 65000,
+    dailyExportQuota: 10
+  },
+  luxury_cars: {
+    id: 'luxury_cars',
+    name: 'سيارات فارهة ومدرعة مستوردة',
+    tier: 'ocean_shipping',
+    unitCost: 120000,
+    importDurationSec: 28800,
+    exportDurationSec: 28800,
+    baseSellMin: 145000,
+    baseSellMax: 156000,
+    dailyExportQuota: 6
+  },
+  industrial_turbines: {
+    id: 'industrial_turbines',
+    name: 'توربينات وخطوط إنتاج صناعية ثقيلة',
+    tier: 'ocean_shipping',
+    unitCost: 250000,
+    importDurationSec: 43200,
+    exportDurationSec: 43200,
+    baseSellMin: 305000,
+    baseSellMax: 335000,
+    dailyExportQuota: 4
+  },
+  ai_quantum_chips: {
+    id: 'ai_quantum_chips',
+    name: 'رقائق ومعالجات ذكاء اصطناعي سيليكونية',
+    tier: 'mega_oceanic',
+    unitCost: 500000,
+    importDurationSec: 64800,
+    exportDurationSec: 64800,
+    baseSellMin: 610000,
+    baseSellMax: 670000,
+    dailyExportQuota: 3
+  },
+  gold_bullion_bars: {
+    id: 'gold_bullion_bars',
+    name: 'سبائك ذهب ومعادن نادرة نقية',
+    tier: 'mega_oceanic',
+    unitCost: 1000000,
+    importDurationSec: 86400,
+    exportDurationSec: 86400,
+    baseSellMin: 1220000,
+    baseSellMax: 1350000,
+    dailyExportQuota: 2
+  }
 };
+
 
 const INVESTMENTS = {
   short: {
@@ -313,6 +389,155 @@ const STORE_ITEMS = {
   market_scanner: { id: 'market_scanner', name: 'ماسح البورصة والتداول الذكي', cost: 200000, durationTicks: 240, cooldownSec: 1200, maxDailyUses: 3 }
 };
 
+const BLACK_MARKET = {
+  contraband_cigars: {
+    id: 'contraband_cigars',
+    name: 'تهريب بضائع وسيجار جمركي فاخر',
+    cost: 6000,
+    payout: 8500,
+    successChance: 0.70,
+    jailDuration: 15,
+    repGain: 5,
+    repLoss: 10,
+    repNeeded: 0,
+    cooldownSec: 90
+  },
+  electronics: {
+    id: 'electronics',
+    name: 'تهريب حاوية أجهزة إلكترونية حديثة',
+    cost: 35000,
+    payout: 48000,
+    successChance: 0.60,
+    jailDuration: 30,
+    repGain: 10,
+    repLoss: 20,
+    repNeeded: 0,
+    cooldownSec: 180
+  },
+  arms_intel: {
+    id: 'arms_intel',
+    name: 'صفقة تسريب سيرفرات وبيانات استخباراتية',
+    cost: 120000,
+    payout: 165000,
+    successChance: 0.50,
+    jailDuration: 50,
+    repGain: 25,
+    repLoss: 50,
+    repNeeded: 0,
+    cooldownSec: 360
+  },
+  swiss_laundry: {
+    id: 'swiss_laundry',
+    name: 'مركز غسيل الأموال السويسري',
+    cost: 1000000,
+    payout: 880000,
+    successChance: 1.0,
+    jailDuration: 0,
+    repGain: 0,
+    repLoss: 0,
+    repNeeded: 250,
+    cooldownSec: 900,
+    cleanPayout: true,
+    requireDirtyCost: true
+  },
+  crypto: {
+    id: 'crypto',
+    name: 'اختراق منصات رقمية وغسيل عملات مشفرة',
+    cost: 400000,
+    payout: 540000,
+    successChance: 0.42,
+    jailDuration: 80,
+    repGain: 50,
+    repLoss: 100,
+    repNeeded: 120,
+    cooldownSec: 600
+  },
+  artifacts: {
+    id: 'artifacts',
+    name: 'تهريب آثار ومخطوطات نادرة لمزادات سرية',
+    cost: 1500000,
+    payout: 2050000,
+    successChance: 0.35,
+    jailDuration: 110,
+    repGain: 100,
+    repLoss: 200,
+    repNeeded: 500,
+    cooldownSec: 1200
+  },
+  diamond_heist: {
+    id: 'diamond_heist',
+    name: 'عملية السطو الكبرى على خزائن الماس الدولية',
+    cost: 5000000,
+    payout: 6750000,
+    successChance: 0.30,
+    jailDuration: 150,
+    repGain: 250,
+    repLoss: 500,
+    repNeeded: 1500,
+    cooldownSec: 1800
+  },
+  defense_tech: {
+    id: 'defense_tech',
+    name: 'صفقة تكنولوجيا دفاعية وشفرات رادار مسربة',
+    cost: 18000000,
+    payout: 24000000,
+    successChance: 0.25,
+    jailDuration: 200,
+    repGain: 500,
+    repLoss: 1000,
+    repNeeded: 4500,
+    cooldownSec: 3000
+  },
+  uranium_smuggling: {
+    id: 'uranium_smuggling',
+    name: 'تهريب اليورانيوم المخصب الدولي',
+    cost: 35000000,
+    payout: 46000000,
+    successChance: 0.22,
+    jailDuration: 220,
+    repGain: 800,
+    repLoss: 1600,
+    repNeeded: 3200,
+    cooldownSec: 4500
+  },
+  satellite_hack: {
+    id: 'satellite_hack',
+    name: 'السيطرة على شبكة أقمار صناعية وتشفيرها',
+    cost: 60000000,
+    payout: 78000000,
+    successChance: 0.20,
+    jailDuration: 260,
+    repGain: 1000,
+    repLoss: 2000,
+    repNeeded: 4500,
+    cooldownSec: 7200
+  },
+  central_bank_hack: {
+    id: 'central_bank_hack',
+    name: 'قرصنة واختراق البنوك المركزية',
+    cost: 80000000,
+    payout: 104000000,
+    successChance: 0.18,
+    jailDuration: 300,
+    repGain: 1500,
+    repLoss: 3000,
+    repNeeded: 6500,
+    cooldownSec: 10800
+  },
+  godfather: {
+    id: 'godfather',
+    name: 'عملية العراب: السيطرة على كارتيل التجارة العالمي',
+    cost: 100000000,
+    payout: 130000000,
+    successChance: 0.16,
+    jailDuration: 360,
+    repGain: 2500,
+    repLoss: 5000,
+    repNeeded: 10000,
+    cooldownSec: 14400
+  }
+};
+
 const BLACK_MARKET_GEAR = {
   radar_jammer: { id: 'radar_jammer', name: 'جهاز تشويش رادارات الشرطة', cost: 80000, durationTicks: 240 },
   fake_passport: { id: 'fake_passport', name: 'جواز سفر دبلوماسي مزور', cost: 600000, durationTicks: 300 },
@@ -336,6 +561,7 @@ module.exports = {
   TRADE_COMMODITIES,
   INVESTMENTS,
   STORE_ITEMS,
+  BLACK_MARKET,
   BLACK_MARKET_GEAR,
   SMUGGLING_VEHICLES
 };

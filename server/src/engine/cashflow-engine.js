@@ -97,6 +97,14 @@ function accrueAuthoritativeCashflow(playerState, serverNow = Date.now()) {
 
   if (accrued > 0) {
     playerState.bank = (Number(playerState.bank) || 0) + accrued;
+    if (playerState.businesses && typeof playerState.businesses === 'object') {
+      Object.keys(playerState.businesses).forEach(bk => {
+        const b = playerState.businesses[bk];
+        if (b && typeof b.suppliesTicks === 'number' && b.suppliesTicks > 0) {
+          b.suppliesTicks = Math.max(0, b.suppliesTicks - elapsedSeconds);
+        }
+      });
+    }
     playerState.netWorth = calculateNetWorth(playerState);
     playerState.title = getAppropriateTitle(playerState.netWorth, playerState.xp || 0);
   }
