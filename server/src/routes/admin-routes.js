@@ -882,7 +882,7 @@ async function adminRoutes(fastify, options) {
         }
       }
 
-      // 4. Apply UFW firewall lockdown
+      // 4. Apply UFW & iptables DOCKER-USER firewall lockdown (blocks direct Docker exposure)
       try {
         const ufwCommands = [
           'ufw default allow outgoing',
@@ -893,9 +893,11 @@ async function adminRoutes(fastify, options) {
           'ufw deny 6543/tcp',
           'ufw deny 8000/tcp',
           'ufw --force enable',
+          'WAN_IFACE=$(ip route show default 2>/dev/null | awk \'{print $5}\' || echo "eth0")',
+          'if [ -n "$WAN_IFACE" ]; then iptables -N DOCKER-USER 2>/dev/null || true; iptables -C DOCKER-USER -i "$WAN_IFACE" -p tcp -m multiport --dports 5432,6543,8000 -j DROP 2>/dev/null || iptables -I DOCKER-USER 1 -i "$WAN_IFACE" -p tcp -m multiport --dports 5432,6543,8000 -j DROP; fi',
           'ufw status verbose'
         ].join(' && ');
-        ufwOutput = execSync(ufwCommands, { timeout: 15000 }).toString();
+        ufwOutput = execSync(ufwCommands, { timeout: 15000, shell: '/bin/bash' }).toString();
       } catch (uErr) {
         ufwOutput = 'UFW command error: ' + uErr.message;
       }
