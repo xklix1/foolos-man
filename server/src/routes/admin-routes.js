@@ -855,6 +855,7 @@ async function adminRoutes(fastify, options) {
         const oldRestRegex = /location \/rest\/v1\/ \{[\s\S]*?proxy_pass http:\/\/127\.0\.0\.1:8000\/rest\/v1\/;[\s\S]*?\}/;
         const newRestBlock = `    location /rest/v1/ {
         limit_except GET HEAD OPTIONS {
+            allow 127.0.0.1;
             deny all;
         }
         proxy_pass http://127.0.0.1:8000/rest/v1/;
