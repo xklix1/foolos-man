@@ -9241,10 +9241,12 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       const st = await AppDB.getMaintenanceStatus();
       const isMaint = Boolean(st && (st.active || st.enabled));
       if (isMaint) {
-        // Clear any stale tester tokens
+        // If tester already verified, bypass maintenance overlay
         try {
-          sessionStorage.removeItem('rasalmal_tester_pass');
-          localStorage.removeItem('rasalmal_tester_pass');
+          if (sessionStorage.getItem('rasalmal_tester_pass')) {
+            hideMaintenanceOverlay();
+            return false;
+          }
         } catch (e) {}
 
         showMaintenancePopup(st.message, st);
@@ -9319,19 +9321,131 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
           <!-- Facebook Button -->
           <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
-            class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline">
+            class="w-full py-3 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline">
             <i class="fa-brands fa-facebook text-lg"></i>
             <span>تواصل معنا ومتابعة آخر الأخبار عبر فيسبوك</span>
           </a>
 
+          <!-- Tester Mode Access Box -->
+          <div class="mt-4 pt-3.5 border-t border-slate-800/80 text-right">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                <i class="fa-solid fa-flask-vial text-amber-400"></i>
+                <span>بوابة وصول المختبرين (QA / Testers)</span>
+              </span>
+              <span class="text-[10px] text-amber-500/80 font-mono font-bold">Authorized Only</span>
+            </div>
+            
+            <div class="flex items-center gap-2">
+              <div class="relative flex-1">
+                <input type="password" id="input-tester-code" placeholder="أدخل كود المرور السري..." autocomplete="off"
+                  class="w-full py-2.5 px-3.5 bg-slate-950/90 border border-slate-700/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-white text-xs rounded-xl transition placeholder:text-slate-500 text-center font-mono tracking-widest outline-none">
+              </div>
+              <button id="btn-submit-tester-code" type="button"
+                class="py-2.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95">
+                <i class="fa-solid fa-unlock-keyhole text-xs"></i>
+                <span>دخول</span>
+              </button>
+            </div>
+            <div id="tester-code-error" class="hidden mt-1.5 text-[11px] text-rose-400 font-medium text-center"></div>
+          </div>
+
           <!-- Reload Button -->
-          <button id="btn-maintenance-recheck" class="w-full mt-2.5 py-3 px-6 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
-            <i class="fa-solid fa-rotate-right text-sm text-amber-400"></i>
+          <button id="btn-maintenance-recheck" class="w-full mt-3 py-2.5 px-6 bg-slate-800/60 hover:bg-slate-700/60 border border-slate-800 text-slate-400 hover:text-slate-200 font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
+            <i class="fa-solid fa-rotate-right text-xs text-amber-400"></i>
             <span>إعادة فحص حالة الخوادم الآن (Reload)</span>
           </button>
         </div>
       `;
       document.body.appendChild(overlay);
+
+      // Tester Code Verification Handler
+      const btnTester = document.getElementById('btn-submit-tester-code');
+      const inputTester = document.getElementById('input-tester-code');
+      const errTester = document.getElementById('tester-code-error');
+
+      const handleTesterSubmit = async () => {
+        if (!inputTester || !btnTester) return;
+        const code = (inputTester.value || '').trim();
+        if (!code) {
+          if (errTester) {
+            errTester.textContent = 'يرجى كتابة كود المرور أولاً.';
+            errTester.classList.remove('hidden');
+          }
+          inputTester.focus();
+          return;
+        }
+
+        if (errTester) errTester.classList.add('hidden');
+        btnTester.disabled = true;
+        const oldHtml = btnTester.innerHTML;
+        btnTester.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-xs"></i> <span>فحص...</span>';
+
+        try {
+          // Dynamic server-side validation against database globals (zero hardcoded secrets)
+          let res = null;
+          if (window.ServerBridge && typeof window.ServerBridge.verifyTesterPass === 'function') {
+            res = await window.ServerBridge.verifyTesterPass(code);
+          } else {
+            const apiRes = await fetch('/api/session/verify-tester-pass', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ pass: code })
+            });
+            res = await apiRes.json();
+          }
+
+          if (res && res.success) {
+            try {
+              sessionStorage.setItem('rasalmal_tester_pass', res.bypassToken || 'active_valid');
+            } catch (e) {}
+
+            btnTester.innerHTML = '<i class="fa-solid fa-check text-xs"></i> <span>مقبول!</span>';
+            btnTester.classList.remove('from-amber-500', 'to-amber-600');
+            btnTester.classList.add('from-emerald-500', 'to-emerald-600', 'text-white');
+
+            if (typeof showToast === 'function') {
+              showToast('مرحباً بك في وضع الاختبار ', 'تم قبول الرمز بنجاح وتخطي واجهة الصيانة.', 'success');
+            }
+
+            setTimeout(() => {
+              hideMaintenanceOverlay();
+              // Add persistent tester badge to top header
+              if (!document.getElementById('tester-mode-badge')) {
+                const badge = document.createElement('div');
+                badge.id = 'tester-mode-badge';
+                badge.className = 'fixed bottom-4 left-4 z-[999999] px-3 py-1.5 bg-amber-500/90 text-slate-950 font-black text-xs rounded-full shadow-lg flex items-center gap-2 backdrop-blur-md border border-amber-300 pointer-events-auto';
+                badge.innerHTML = '<i class="fa-solid fa-flask-vial"></i> <span>وضع الاختبار نشط (QA)</span>';
+                document.body.appendChild(badge);
+              }
+              // Resume game loop if stopped
+              if (!tickIntervalId && typeof startGameTickLoop === 'function') {
+                startGameTickLoop();
+              }
+            }, 600);
+          } else {
+            throw new Error(res?.error || 'رمز وصول المختبرين غير صحيح!');
+          }
+        } catch (err) {
+          btnTester.disabled = false;
+          btnTester.innerHTML = oldHtml;
+          if (errTester) {
+            errTester.textContent = err.message || 'رمز المرور غير صحيح!';
+            errTester.classList.remove('hidden');
+          }
+          inputTester.select();
+        }
+      };
+
+      if (btnTester) btnTester.addEventListener('click', handleTesterSubmit);
+      if (inputTester) {
+        inputTester.addEventListener('keydown', (e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            handleTesterSubmit();
+          }
+        });
+      }
 
       const recheckBtn = document.getElementById('btn-maintenance-recheck');
       if (recheckBtn) {

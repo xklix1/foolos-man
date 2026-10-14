@@ -1404,8 +1404,13 @@ var ServerBridge = (() => {
     return res;
   }
 
+  async function verifyTesterPass(pass) {
+    return await _post('/api/session/verify-tester-pass', { pass });
+  }
+
   return {
     getApiBase,
+    verifyTesterPass,
     formatAvatarUrl,
     uploadAvatar,
     removeAvatar,

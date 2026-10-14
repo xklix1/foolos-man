@@ -37,7 +37,80 @@ function extractBearerToken(request) {
   return (request.body && request.body.token) || null;
 }
 
+const config = require('../config/env');
+
+function safeCompare(a, b) {
+  if (typeof a !== 'string' || typeof b !== 'string') return false;
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return crypto.timingSafeEqual(bufA, bufB);
+}
+
 async function sessionRoutes(fastify, options) {
+
+  // POST /api/session/verify-tester-pass (Dynamic, non-hardcoded Tester Code Verification)
+  fastify.post('/api/session/verify-tester-pass', {
+    config: {
+      rateLimit: {
+        max: 10,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { pass } = request.body || {};
+    const inputPass = String(pass || '').trim();
+
+    if (!inputPass) {
+      return reply.code(400).send({ success: false, error: 'يرجى إدخال رمز وصول المختبرين (Tester Code).' });
+    }
+
+    try {
+      // 1. Fetch current dynamic maintenance configuration from PostgreSQL globals table
+      const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`, {
+        headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` }
+      });
+
+      if (!res.ok) {
+        return reply.code(500).send({ success: false, error: 'تعذر التحقق من رمز الوصول، يرجى المحاولة لاحقاً.' });
+      }
+
+      const rows = await res.json();
+      const maintData = (Array.isArray(rows) && rows.length > 0 && rows[0].data) ? rows[0].data : {};
+
+      const configuredPass = String(maintData.tester_pass || maintData.tester_key || '').trim();
+      const configuredHash = String(maintData.tester_pass_hash || '').trim();
+
+      if (!configuredPass && !configuredHash) {
+        return reply.code(403).send({ success: false, error: 'وضع التستر غير مفعل حالياً أو لم يتم ضبط رمز اختبار.' });
+      }
+
+      const inputHash = crypto.createHash('sha256').update(inputPass).digest('hex');
+
+      const isMatch = (configuredPass && safeCompare(inputPass, configuredPass)) ||
+                      (configuredHash && safeCompare(inputHash, configuredHash)) ||
+                      (configuredPass && safeCompare(inputHash, configuredPass));
+
+      if (!isMatch) {
+        return reply.code(401).send({ success: false, error: 'رمز وصول المختبرين غير صحيح!' });
+      }
+
+      // Generate a signed/temporary bypass token (valid for 12 hours)
+      const bypassToken = crypto.createHmac('sha256', config.ADMIN_KEY_SHA256 || 'rasalmal_secret_key')
+        .update(`tester_bypass_${Date.now().toString().slice(0, 5)}`)
+        .digest('hex');
+
+      return reply.send({
+        success: true,
+        message: 'تم التحقق من رمز المختبرين بنجاح! مرحباً بك في بيئة الاختبار.',
+        bypassToken
+      });
+    } catch (err) {
+      fastify.log.error(err, '[VerifyTesterPass Error]');
+      return reply.code(500).send({ success: false, error: 'حدث خطأ أثناء فحص الرمز على السيرفر.' });
+    }
+  });
 
   // POST /api/session/register (Authoritative Registration Endpoint)
   fastify.post('/api/session/register', {

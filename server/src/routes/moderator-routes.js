@@ -1652,7 +1652,7 @@ async function moderatorRoutes(fastify, options) {
   fastify.post('/maintenance/toggle', {
     preHandler: [requireModAuth]
   }, async (request, reply) => {
-    const { active, message = '' } = request.body || {};
+    const { active, message = '', testerPass } = request.body || {};
     const isActive = Boolean(active);
     const cleanMsg = String(message || '').trim() || 'تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات. يرجى الانتظار والمحاولة لاحقاً.';
     const sKey = serviceKey();
@@ -1666,6 +1666,10 @@ async function moderatorRoutes(fastify, options) {
         timestamp: ts,
         updated_by: request.modSession ? request.modSession.name : 'Master Admin'
       };
+
+      if (testerPass && typeof testerPass === 'string' && testerPass.trim().length > 0) {
+        maintData.tester_pass = testerPass.trim();
+      }
 
       const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
         method: 'POST',
