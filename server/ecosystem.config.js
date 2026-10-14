@@ -18,7 +18,7 @@ module.exports = {
         NODE_ENV: 'production',
         PORT: 3001,
         HOST: '127.0.0.1',
-        SUPABASE_URL: 'https://rasalmal.online',
+        SUPABASE_URL: process.env.SUPABASE_INTERNAL_URL || 'http://127.0.0.1:8000',
         AUTOSAVE_INTERVAL_MS: 30000,
         RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Ras ALmal Tycoon <auth@rasalmal.online>'
       }
