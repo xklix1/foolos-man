@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.12",
-  "build": 1792000000000,
-  "timestamp": 1792000000000,
-  "notes": "Fix Trade Import Ghost Shipments v10.0.12: Authoritative dismissal, bulk dock clearance, and deletion reconciliation.",
-  "releaseNotes": "تحديث v10.0.12: معالجة الشحنات الوهمية في شركة الاستيراد والتصدير وتوفير إخلاء فوري وجماعي للأرصفة ومزامنة الحذف مع السيرفر."
+  "version": "v10.0.13",
+  "build": 1792010000000,
+  "timestamp": 1792010000000,
+  "notes": "Full API Resilience & Zero-Lag Sync Engine v10.0.13: preHandler rate-limiting, 240/min sync capacity, debounced state pipeline, 200 SVG avatar fallback, and eliminated 403 PostgREST fallback.",
+  "releaseNotes": "تحديث v10.0.13: فحص شامل لكافة مسارات الـ API، ترقية قدرة استيعاب مزامنة الحالة إلى 240 طلب/دقيقة مع منع الازدواجية، معالجة أخطاء 404 للصور الرمزية وتقديم بدائل SVG فورية، وإلغاء محاولات الـ PATCH المباشرة المرفوضة."
 }

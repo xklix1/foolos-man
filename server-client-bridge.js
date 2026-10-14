@@ -616,6 +616,11 @@ var ServerBridge = (() => {
     } catch (e) {}
   }
 
+  let _syncStateInFlight = false;
+  let _pendingSyncCall = null;
+  let _lastSyncTimestamp = 0;
+  let _syncDebounceTimer = null;
+
   /**
    * Synchronizes full player state to the authoritative server
    */
@@ -628,6 +633,32 @@ var ServerBridge = (() => {
       console.warn('[ServerBridge] syncState blocked: state.username mismatch with target user:', state.username, 'vs', user);
       return null;
     }
+
+    const now = Date.now();
+    // Non-immediate calls within 500ms are debounced to coalesce rapid events
+    if (!immediate && (now - _lastSyncTimestamp < 500)) {
+      _pendingSyncCall = { state, user, immediate };
+      if (!_syncDebounceTimer) {
+        _syncDebounceTimer = setTimeout(() => {
+          _syncDebounceTimer = null;
+          if (_pendingSyncCall) {
+            const p = _pendingSyncCall;
+            _pendingSyncCall = null;
+            syncState(p.state, p.immediate, p.user).catch(() => {});
+          }
+        }, 500);
+      }
+      return { success: true, coalesced: true };
+    }
+
+    // If a sync is already in flight, queue the latest state
+    if (_syncStateInFlight) {
+      _pendingSyncCall = { state, user, immediate: immediate || (_pendingSyncCall && _pendingSyncCall.immediate) };
+      return { success: true, queued: true };
+    }
+
+    _syncStateInFlight = true;
+    _lastSyncTimestamp = now;
 
     try {
       const res = await _post('/api/session/sync-state', {
@@ -705,6 +736,15 @@ var ServerBridge = (() => {
       // Safe sync warning log without prematurely killing active UI
       console.warn('[ServerBridge] syncState warning:', e.message);
       return null;
+    } finally {
+      _syncStateInFlight = false;
+      if (_pendingSyncCall) {
+        const next = _pendingSyncCall;
+        _pendingSyncCall = null;
+        setTimeout(() => {
+          syncState(next.state, next.immediate, next.user).catch(() => {});
+        }, 150);
+      }
     }
   }
 

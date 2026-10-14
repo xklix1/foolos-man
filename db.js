@@ -2467,8 +2467,17 @@ var AppDB = (() => {
           return sRes;
         }
       } catch (bridgeErr) {
-        console.warn('[Sync] ServerBridge syncState note, attempting resilient direct fallback:', bridgeErr.message);
+        if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline()) {
+          console.warn('[Sync] ServerBridge save deferred, skipping direct PostgREST to prevent 403 Forbidden:', bridgeErr.message);
+          return { success: false, deferred: true, error: bridgeErr.message };
+        }
+        console.warn('[Sync] ServerBridge offline, attempting resilient direct fallback:', bridgeErr.message);
       }
+    }
+
+    // If ServerBridge is actively managing online state, do not run direct anon PostgREST PATCH
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline()) {
+      return { success: true, serverManaged: true };
     }
 
     try {

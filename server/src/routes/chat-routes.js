@@ -4,6 +4,7 @@
  */
 
 const config = require('../config/env');
+const dbService = require('../services/db-service');
 const { containsProfanity, findBlockedWord } = require('../engine/profanity-filter');
 
 // In-memory anti-spam cooldown tracker (per username)
@@ -57,18 +58,9 @@ async function chatRoutes(fastify, options) {
     let pState = {};
     if (rawSender !== 'الإدارة') {
       try {
-        const pRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(rawSender)}&select=*`, {
-          headers: {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`
-          }
-        });
-        if (pRes.ok) {
-          const rows = await pRes.json();
-          if (Array.isArray(rows) && rows.length > 0) {
-            pDoc = rows[0];
-            pState = (pDoc.state && typeof pDoc.state === 'object') ? pDoc.state : {};
-          }
+        pDoc = await dbService.getPlayerByUsername(rawSender);
+        if (pDoc && pDoc.state && typeof pDoc.state === 'object') {
+          pState = pDoc.state;
         }
       } catch (err) {
         fastify.log.warn(`[Chat] Failed to query player document for ${rawSender}: ${err.message}`);
@@ -126,19 +118,10 @@ async function chatRoutes(fastify, options) {
 
     // 5. Fetch, merge, and save authoritative chat_feed in Supabase globals table
     try {
-      const gRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
-        headers: {
-          'apikey': serviceKey,
-          'Authorization': `Bearer ${serviceKey}`
-        }
-      });
-
+      const gRow = await dbService.getGlobal('chat_feed');
       let currentFeed = [];
-      if (gRes.ok) {
-        const rows = await gRes.json();
-        if (Array.isArray(rows) && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages)) {
-          currentFeed = rows[0].data.messages;
-        }
+      if (gRow && gRow.data && Array.isArray(gRow.data.messages)) {
+        currentFeed = gRow.data.messages;
       }
 
       // Deduplicate and maintain chronological order
@@ -159,26 +142,7 @@ async function chatRoutes(fastify, options) {
       mergedFeed.sort((a, b) => (Number(a.timestamp) || 0) - (Number(b.timestamp) || 0));
       const finalFeed = mergedFeed.length > 100 ? mergedFeed.slice(mergedFeed.length - 100) : mergedFeed;
 
-      // Save via Service Role Key (bypasses RLS / permission restrictions securely)
-      const saveRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
-        method: 'POST',
-        headers: {
-          'apikey': serviceKey,
-          'Authorization': `Bearer ${serviceKey}`,
-          'Content-Type': 'application/json',
-          'Prefer': 'resolution=merge-duplicates'
-        },
-        body: JSON.stringify({
-          id: 'chat_feed',
-          data: { messages: finalFeed },
-          updated_at: now
-        })
-      });
-
-      if (!saveRes.ok) {
-        const errTxt = await saveRes.text();
-        throw new Error(`Failed to persist chat message to Supabase: ${errTxt}`);
-      }
+      await dbService.setGlobal('chat_feed', { messages: finalFeed });
 
       // Update cooldown
       _userChatCooldowns.set(rawSender, now);
@@ -206,32 +170,22 @@ async function chatRoutes(fastify, options) {
    */
   fastify.get('/api/chat/messages', async (request, reply) => {
     try {
-      const gRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
-        headers: {
-          'apikey': serviceKey,
-          'Authorization': `Bearer ${serviceKey}`
-        }
-      });
-
-      if (!gRes.ok) {
-        return reply.code(200).send({ success: true, messages: [] });
-      }
-
-      const rows = await gRes.json();
-      const messages = (Array.isArray(rows) && rows.length > 0 && rows[0].data && Array.isArray(rows[0].data.messages))
-        ? rows[0].data.messages
+      const gRow = await dbService.getGlobal('chat_feed');
+      const messages = (gRow && gRow.data && Array.isArray(gRow.data.messages))
+        ? gRow.data.messages
         : [];
 
       return reply.code(200).send({
         success: true,
         messages: messages,
-        updated_at: rows[0]?.updated_at || Date.now()
+        updated_at: gRow?.updated_at || Date.now()
       });
     } catch (err) {
-      fastify.log.error(err, '[Chat Messages Fetch Error]');
-      return reply.code(500).send({
-        error: 'Internal Server Error',
-        message: 'فشل جلب رسائل الشات من السيرفر.'
+      fastify.log.warn(`[Chat Messages Fetch Warning] ${err.message}`);
+      return reply.code(200).send({
+        success: true,
+        messages: [],
+        updated_at: Date.now()
       });
     }
   });

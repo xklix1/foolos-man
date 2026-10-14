@@ -1766,16 +1766,34 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     };
   });
 
-  // 19. GET /api/avatars/:filename (Ultra-secure static avatar stream)
+  const DEFAULT_AVATAR_SVG = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+    <defs>
+      <linearGradient id="avatarBgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#0b1329"/>
+        <stop offset="100%" stop-color="#1e293b"/>
+      </linearGradient>
+    </defs>
+    <rect width="100" height="100" rx="20" fill="url(#avatarBgGrad)"/>
+    <circle cx="50" cy="40" r="18" fill="#38bdf8" opacity="0.85"/>
+    <path d="M 22 84 C 22 64, 36 60, 50 60 C 64 60, 78 64, 78 84 Z" fill="#38bdf8" opacity="0.85"/>
+  </svg>`;
+
+  // 19. GET /api/avatars/* (Ultra-secure static avatar stream with graceful 200 SVG fallback)
   const avatarServeHandler = async (request, reply) => {
-    const filename = request.params.filename;
-    if (!filename || !/^avatar_[a-zA-Z0-9_-]+\.(jpg|png|webp)$/.test(filename)) {
-      return reply.code(400).send('Invalid avatar filename');
+    const rawParam = request.params.filename || request.params['*'] || '';
+    const filename = path.basename(String(rawParam).trim());
+
+    if (!filename || !/^avatar_[a-zA-Z0-9_.-]+\.(jpg|jpeg|png|webp|svg)$/i.test(filename)) {
+      reply.header('Content-Type', 'image/svg+xml');
+      reply.header('Cache-Control', 'public, max-age=86400');
+      return reply.code(200).send(DEFAULT_AVATAR_SVG);
     }
 
-    const filePath = path.join(AVATARS_DIR, path.basename(filename));
+    const filePath = path.join(AVATARS_DIR, filename);
     if (!fs.existsSync(filePath)) {
-      return reply.code(404).send('Avatar not found');
+      reply.header('Content-Type', 'image/svg+xml');
+      reply.header('Cache-Control', 'public, max-age=86400');
+      return reply.code(200).send(DEFAULT_AVATAR_SVG);
     }
 
     const ext = path.extname(filePath).toLowerCase();
@@ -1783,7 +1801,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       '.jpg': 'image/jpeg',
       '.jpeg': 'image/jpeg',
       '.png': 'image/png',
-      '.webp': 'image/webp'
+      '.webp': 'image/webp',
+      '.svg': 'image/svg+xml'
     };
     const mimeType = mimeMap[ext] || 'application/octet-stream';
 
@@ -1796,7 +1815,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     return reply.send(stream);
   };
 
+  fastify.get('/api/avatars/*', avatarServeHandler);
   fastify.get('/api/avatars/:filename', avatarServeHandler);
+  fastify.get('/uploads/avatars/*', avatarServeHandler);
   fastify.get('/uploads/avatars/:filename', avatarServeHandler);
 
   // In-memory set to prevent duplicate telegram claims across memory cycles

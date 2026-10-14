@@ -212,6 +212,54 @@ class DbService {
     const rows = await res.json();
     return Array.isArray(rows) && rows.length > 0 ? rows[0] : playerRow;
   }
+
+  /**
+   * Resiliently fetches a global configuration record from Supabase globals table
+   * @param {string} id 
+   * @returns {Promise<Object|null>}
+   */
+  async getGlobal(id) {
+    if (!id) return null;
+    const pathAndQuery = `/rest/v1/globals?id=eq.${encodeURIComponent(id)}&select=*`;
+    try {
+      const res = await this.resilientFetch(pathAndQuery);
+      if (!res.ok) return null;
+      const rows = await res.json();
+      return Array.isArray(rows) && rows.length > 0 ? rows[0] : null;
+    } catch (err) {
+      console.warn(`[DbService] getGlobal(${id}) note:`, err.message);
+      return null;
+    }
+  }
+
+  /**
+   * Resiliently saves or merges a global configuration record into Supabase globals table
+   * @param {string} id 
+   * @param {Object} data 
+   * @returns {Promise<boolean>}
+   */
+  async setGlobal(id, data) {
+    if (!id) return false;
+    const pathAndQuery = `/rest/v1/globals`;
+    const payload = {
+      id,
+      data,
+      updated_at: Date.now()
+    };
+    try {
+      const res = await this.resilientFetch(pathAndQuery, {
+        method: 'POST',
+        headers: {
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify(payload)
+      });
+      return res.ok;
+    } catch (err) {
+      console.warn(`[DbService] setGlobal(${id}) note:`, err.message);
+      return false;
+    }
+  }
 }
 
 module.exports = new DbService();

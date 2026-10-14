@@ -356,11 +356,11 @@ async function sessionRoutes(fastify, options) {
     };
   });
 
-  // POST /api/session/sync-state (Synchronizes complete client state to authoritative session & DB - Max 30 req/min)
+  // POST /api/session/sync-state (Synchronizes complete client state to authoritative session & DB - Max 240 req/min)
   fastify.post('/api/session/sync-state', {
     config: {
       rateLimit: {
-        max: 30,
+        max: 240,
         timeWindow: 60 * 1000
       }
     }

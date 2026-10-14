@@ -18,7 +18,8 @@ const app = Fastify({
 // Register Global Anti-Lag Dual-Layer Rate Limiting across all endpoints
 app.register(require('@fastify/rate-limit'), {
   global: true,
-  max: 300, // 300 requests per minute per user/IP (generous 5 requests/sec baseline)
+  hook: 'preHandler', // Runs after body parser so request.body.username is available
+  max: 600, // 600 requests per minute per user/IP (generous 10 requests/sec baseline)
   timeWindow: 60 * 1000,
   cache: 20000,
   keyGenerator: (request) => {
