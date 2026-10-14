@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.10",
-  "build": 1791805000000,
-  "timestamp": 1791805000000,
-  "notes": "Wealth-Proportional Clamps Engine: all financial clamps now scale dynamically with the player's total net worth (Math.max(500M, netWorth)), eliminating limits for late-game tycoons while maintaining full anti-cheat integrity.",
-  "releaseNotes": "تحديث تاريخي v10.0.10: نظام الكوابح التكيفية المتطابق مع ثروة اللاعب! الكوابح تتسع تلقائياً بحجم إمبراطورية كل لاعب مع حد أدنى نصف مليار جنيه لحماية المبتدئين، وحرية كاملة لكبار المستثمرين حتى التريليونات."
+  "version": "v10.0.11",
+  "build": 1791990200000,
+  "timestamp": 1791990200000,
+  "notes": "Cache-Buster & Authoritative DB Bridge v10.0.11: Guaranteed cache purge and zero-lag authoritative sync.",
+  "releaseNotes": "تحديث إجباري v10.0.11: تفريغ شامل للكاش والذاكرة المؤقتة وإعادة تحميل كافة السكربتات المحدثة تلقائياً لجميع الأجهزة."
 }

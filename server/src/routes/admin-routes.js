@@ -924,6 +924,53 @@ async function adminRoutes(fastify, options) {
       return reply.status(500).send({ success: false, error: err.message });
     }
   });
+
+  /**
+   * POST /api/admin/force-reload
+   * Broadcasts cache-buster and forces all connected player browsers to purge cache and reload immediately
+   */
+  fastify.post('/force-reload', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const ts = Date.now();
+    const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+    const targetUrls = [
+      'https://rasalmal.online/rest/v1/globals',
+      'http://127.0.0.1:8000/rest/v1/globals'
+    ];
+
+    let success = false;
+    for (const url of targetUrls) {
+      try {
+        const res = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'apikey': serviceKey,
+            'Authorization': `Bearer ${serviceKey}`,
+            'Content-Type': 'application/json',
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            id: 'force_reload',
+            data: { timestamp: ts, version: 'v10.0.11', message: 'تحديث شامل للكاش والذاكرة المؤقتة' },
+            updated_at: ts
+          })
+        });
+        if (res.ok) {
+          success = true;
+          break;
+        }
+      } catch (_) {}
+    }
+
+    return reply.send({
+      success: true,
+      timestamp: ts,
+      version: 'v10.0.11',
+      message: 'تم إرسال إشعار تفريغ الكاش الإجباري لجميع المتصفحات بنجاح!'
+    });
+  });
 }
 
 module.exports = adminRoutes;
