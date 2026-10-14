@@ -1884,12 +1884,10 @@ window.AirportUI = (() => {
             }
           } catch (err) {
             const errMsg = err?.message || '';
-            if (err.status === 400 || err.status === 403 || errMsg.includes('الحد الأدنى') || errMsg.includes('الانتظار') || errMsg.includes('تتراكم') || errMsg.includes('تفعيل') || errMsg.includes('متراكمة')) {
-              showAirportToast(errMsg || 'تعذر تحصيل أرباح السوق الحرة', 'error');
-              updateActiveAirportLiveStats(liveState.airport, liveState);
-              return;
-            }
-            console.warn('[AirportUI] claimDutyFree network failed, evaluating offline fallback:', err);
+            console.warn('[AirportUI] claimDutyFree server bridge error:', err);
+            showAirportToast(errMsg || 'تعذر تحصيل أرباح السوق الحرة حالياً', 'warning');
+            updateActiveAirportLiveStats(liveState.airport, liveState);
+            return;
           }
         }
 
@@ -2653,7 +2651,10 @@ window.AirportUI = (() => {
     renderAirportPanel();
   }
 
+  let _transitClaimInProgress = false;
   async function acceptTransit() {
+    if (_transitClaimInProgress) return;
+
     const liveState = getLiveGameState();
     const ap = liveState.airport;
     if (!ap) return;
@@ -2673,70 +2674,78 @@ window.AirportUI = (() => {
       return;
     }
 
-    // 1. Authoritative Server Transit
-    if (window.ServerBridge && typeof window.ServerBridge.acceptAirportTransit === 'function') {
-      try {
-        const res = await window.ServerBridge.acceptAirportTransit();
-        if (res && res.success) {
-          if (res.airport) liveState.airport = res.airport;
-          if (res.cash !== undefined) liveState.cash = res.cash;
-          if (res.xp !== undefined) liveState.xp = res.xp;
-          if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+    const btnTransit = document.getElementById('btn-airport-transit');
+    if (btnTransit) {
+      btnTransit.disabled = true;
+      btnTransit.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري تحصيل الترانزيت...</span>';
+    }
+    _transitClaimInProgress = true;
 
-          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
-            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+    try {
+      // 1. Authoritative Server Transit
+      if (window.ServerBridge && typeof window.ServerBridge.acceptAirportTransit === 'function') {
+        try {
+          const res = await window.ServerBridge.acceptAirportTransit();
+          if (res && res.success) {
+            if (res.airport) liveState.airport = res.airport;
+            if (res.cash !== undefined) liveState.cash = res.cash;
+            if (res.xp !== undefined) liveState.xp = res.xp;
+            if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+            if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+              window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+            }
+            persistGameState();
+            if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+              window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت ', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${(res.fee || amt).toLocaleString()} ج.م)`, 'business');
+            }
+            showAirportToast(res.message || ` تم تحصيل رسوم الترانزيت المتراكمة بنجاح (+${(res.fee || amt).toLocaleString()} ج.م)!`, 'success');
+            renderAirportPanel();
+            return;
+          } else {
+            showAirportToast(res?.error || 'تعذر تحصيل رسوم الترانزيت', 'error');
+            renderAirportPanel();
+            return;
           }
-          persistGameState();
-          if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-            window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت ', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${(res.fee || amt).toLocaleString()} ج.م)`, 'business');
-          }
-          showAirportToast(res.message || ` تم تحصيل رسوم الترانزيت المتراكمة بنجاح (+${(res.fee || amt).toLocaleString()} ج.م)!`, 'success');
-          renderAirportPanel();
-          return;
-        } else {
-          showAirportToast(res?.error || 'تعذر تحصيل رسوم الترانزيت', 'error');
+        } catch (err) {
+          const errMsg = err?.message || '';
+          console.warn('[AirportUI] acceptAirportTransit server bridge returned error:', err);
+          showAirportToast(errMsg || 'تعذر تحصيل رسوم الترانزيت، يرجى المحاولة لاحقاً', 'warning');
           renderAirportPanel();
           return;
         }
-      } catch (err) {
-        const errMsg = err?.message || '';
-        // CRITICAL: Block offline fallback on server business rejection!
-        if (err?.status === 400 || err?.status === 403 || errMsg.includes('رادار') || errMsg.includes('انتظار') || errMsg.includes('دقيقة') || errMsg.includes('ثانية') || errMsg.includes('أدنى') || errMsg.includes('ترانزيت')) {
-          showAirportToast(errMsg || ' لا توجد رسوم ترانزيت قابلة للتحصيل حالياً', 'warning');
-          renderAirportPanel();
-          return;
-        }
-        console.warn('[AirportUI] acceptAirportTransit server bridge failed, checking offline fallback:', err);
       }
+
+      // 2. Pure offline fallback (strictly for unauthenticated/mock demo mode)
+      if (lastCollect > 0 && elapsed < cooldownMs) {
+        return;
+      }
+
+      const fee = amt;
+      const xp = 50;
+
+      liveState.cash = (Number(liveState.cash) || 0) + fee;
+      liveState.xp = (Number(liveState.xp) || 0) + xp;
+      ap.lastTransitCollectionAt = Date.now();
+      ap.lastTransitPermitAt = Date.now();
+
+      if (!ap.stats) ap.stats = {};
+      ap.stats.transitPermitsAccepted = (Number(ap.stats.transitPermitsAccepted) || 0) + 1;
+      ap.stats.totalTransitFeesCollected = (Number(ap.stats.totalTransitFeesCollected) || 0) + fee;
+
+      if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+        window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
+      }
+
+      persistGameState();
+      if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
+        window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت ', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${fee.toLocaleString()} ج.م) و +${xp} XP`, 'business');
+      }
+      showAirportToast(` تم تحصيل رسوم الترانزيت المتراكمة (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
+      renderAirportPanel();
+    } finally {
+      _transitClaimInProgress = false;
     }
-
-    // 2. Offline Fallback (STRICT: only if server completely unreachable)
-    if (lastCollect > 0 && elapsed < cooldownMs) {
-      return;
-    }
-
-    const fee = amt;
-    const xp = 50;
-
-    liveState.cash = (Number(liveState.cash) || 0) + fee;
-    liveState.xp = (Number(liveState.xp) || 0) + xp;
-    ap.lastTransitCollectionAt = Date.now();
-    ap.lastTransitPermitAt = Date.now();
-
-    if (!ap.stats) ap.stats = {};
-    ap.stats.transitPermitsAccepted = (Number(ap.stats.transitPermitsAccepted) || 0) + 1;
-    ap.stats.totalTransitFeesCollected = (Number(ap.stats.totalTransitFeesCollected) || 0) + fee;
-
-    if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
-      window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
-    }
-
-    persistGameState();
-    if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
-      window.GameEngine.recordPlayerActivity('تحصيل رسوم ترانزيت ', `تحصيل رسوم هبوط الترانزيت المتراكمة بالساعة (+${fee.toLocaleString()} ج.م) و +${xp} XP`, 'business');
-    }
-    showAirportToast(` تم تحصيل رسوم الترانزيت المتراكمة (+${fee.toLocaleString()} ج.م) و +${xp} XP!`, 'success');
-    renderAirportPanel();
   }
 
   async function hireManager(tier = 1) {

@@ -19,8 +19,10 @@ const dbService = require('../services/db-service');
 
 async function airportRoutes(fastify, options) {
 
-  // Global in-memory lock to prevent double claim / concurrent flight collection race conditions
+  // Global in-memory lock to prevent double claim / concurrent collection race conditions
   const _flightClaimLocks = new Set();
+  const _transitClaimLocks = new Set();
+  const _dutyFreeClaimLocks = new Set();
 
   // Helper to authenticate and resolve session
   async function resolveSession(request, reply) {
@@ -577,6 +579,9 @@ async function airportRoutes(fastify, options) {
         airport: s.airport,
         netWorth: s.netWorth
       };
+    } catch (err) {
+      fastify.log.error(`[Airport] Error in claim-flight for ${session.username} (plane ${planeId}): ${err.message}`);
+      return reply.code(400).send({ error: err.message || 'حدث خطأ أثناء تحصيل أرباح الرحلة' });
     } finally {
       _flightClaimLocks.delete(lockKey);
     }
@@ -592,51 +597,65 @@ async function airportRoutes(fastify, options) {
       return reply.code(400).send({ error: 'المطار غير مفعل.' });
     }
 
-    const lvl = Number(s.airport.facilities?.duty_free || 0);
-    if (lvl <= 0) {
-      return reply.code(400).send({ error: 'لم يتم تفعيل أو بناء السوق الحرة بمطارك بعد!' });
+    const lockKey = `${session.username}_duty_free`;
+    if (_dutyFreeClaimLocks.has(lockKey)) {
+      return reply.code(429).send({ error: 'جاري معالجة تحصيل أرباح السوق الحرة بالفعل، يرجى الانتظار...' });
     }
+    _dutyFreeClaimLocks.add(lockKey);
 
-    const now = Date.now();
-    const lastClaim = Number(s.airport.lastDutyFreeCollectionAt || s.airport.unlockedAt || now);
-    const elapsedMs = Math.max(0, now - lastClaim);
-    const minCooldownMs = 60 * 1000; // 60 seconds minimum interval between collections
+    try {
+      if (!s.airport.facilities) s.airport.facilities = { runway: 1, terminal: 1, hangar: 1, fuel_depot: 1, duty_free: 0 };
+      const lvl = Number(s.airport.facilities.duty_free || 0);
+      if (lvl <= 0) {
+        return reply.code(400).send({ error: 'لم يتم تفعيل أو بناء السوق الحرة بمطارك بعد!' });
+      }
 
-    if (s.airport.lastDutyFreeCollectionAt && elapsedMs < minCooldownMs) {
-      const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
-      return reply.code(400).send({
-        error: ` يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`
-      });
+      const now = Date.now();
+      const lastClaim = Number(s.airport.lastDutyFreeCollectionAt || s.airport.unlockedAt || now);
+      const elapsedMs = Math.max(0, now - lastClaim);
+      const minCooldownMs = 60 * 1000; // 60 seconds minimum interval between collections
+
+      if (s.airport.lastDutyFreeCollectionAt && elapsedMs < minCooldownMs) {
+        const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
+        return reply.code(400).send({
+          error: ` يرجى الانتظار ${remSec} ثانية قبل تحصيل أرباح السوق الحرة التالية.`
+        });
+      }
+
+      const dutyFreeEarnings = calculateDutyFreeAccumulated(s.airport, now);
+
+      // Strict minimum collection threshold: at least 1,000 EGP to prevent rapid spamming
+      if (dutyFreeEarnings < 1000) {
+        return reply.code(400).send({
+          error: ` الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${dutyFreeEarnings.toLocaleString()} ج.م).`
+        });
+      }
+
+      s.cash = Math.max(0, Number(s.cash || 0)) + dutyFreeEarnings;
+      s.airport.lastDutyFreeCollectionAt = now;
+      if (!s.airport.stats) s.airport.stats = {};
+      s.airport.stats.totalDutyFreeCollected = (Number(s.airport.stats.totalDutyFreeCollected) || 0) + dutyFreeEarnings;
+
+      s.netWorth = calculateNetWorth(s);
+      s.lastActiveTimestamp = Date.now();
+      s.lastSeen = Date.now();
+
+      await dbService.savePlayerState(session.username, s);
+
+      return {
+        success: true,
+        message: ` تم تحصيل أرباح مبيعات السوق الحرة: +${dutyFreeEarnings.toLocaleString()} ج.م!`,
+        earnings: dutyFreeEarnings,
+        cash: s.cash,
+        airport: s.airport,
+        netWorth: s.netWorth
+      };
+    } catch (err) {
+      fastify.log.error(`[Airport] Error in claim-duty-free for ${session.username}: ${err.message}`);
+      return reply.code(400).send({ error: err.message || 'حدث خطأ أثناء تحصيل أرباح السوق الحرة' });
+    } finally {
+      _dutyFreeClaimLocks.delete(lockKey);
     }
-
-    const dutyFreeEarnings = calculateDutyFreeAccumulated(s.airport, now);
-
-    // Strict minimum collection threshold: at least 1,000 EGP to prevent rapid spamming
-    if (dutyFreeEarnings < 1000) {
-      return reply.code(400).send({
-        error: ` الحد الأدنى لتحصيل أرباح السوق الحرة هو 1,000 ج.م (المتراكم حالياً: ${dutyFreeEarnings.toLocaleString()} ج.م).`
-      });
-    }
-
-    s.cash = Math.max(0, Number(s.cash || 0)) + dutyFreeEarnings;
-    s.airport.lastDutyFreeCollectionAt = now;
-    if (!s.airport.stats) s.airport.stats = {};
-    s.airport.stats.totalDutyFreeCollected = (Number(s.airport.stats.totalDutyFreeCollected) || 0) + dutyFreeEarnings;
-
-    s.netWorth = calculateNetWorth(s);
-    s.lastActiveTimestamp = Date.now();
-    s.lastSeen = Date.now();
-
-    await dbService.savePlayerState(session.username, s);
-
-    return {
-      success: true,
-      message: ` تم تحصيل أرباح مبيعات السوق الحرة: +${dutyFreeEarnings.toLocaleString()} ج.م!`,
-      earnings: dutyFreeEarnings,
-      cash: s.cash,
-      airport: s.airport,
-      netWorth: s.netWorth
-    };
   });
 
   // 9. POST /api/airport/transit (Claim Accumulated Control Tower Transit Fees - 8h Max)
@@ -649,52 +668,66 @@ async function airportRoutes(fastify, options) {
       return reply.code(400).send({ error: 'المطار غير مفعل.' });
     }
 
-    const now = Date.now();
-    const lastCollect = Number(s.airport.lastTransitCollectionAt || s.airport.lastTransitPermitAt || s.airport.unlockedAt || now);
-    const elapsedMs = Math.max(0, now - lastCollect);
-    const minCooldownMs = 60 * 1000; // 60 seconds minimum interval between collections
-
-    if (s.airport.lastTransitCollectionAt && elapsedMs < minCooldownMs) {
-      const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
-      return reply.code(400).send({
-        error: ` يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`
-      });
+    const lockKey = `${session.username}_transit`;
+    if (_transitClaimLocks.has(lockKey)) {
+      return reply.code(429).send({ error: 'جاري معالجة تحصيل رسوم الترانزيت بالفعل، يرجى الانتظار...' });
     }
+    _transitClaimLocks.add(lockKey);
 
-    const accumulatedFee = calculateTransitAccumulated(s.airport, now);
+    try {
+      if (!s.airport.facilities) s.airport.facilities = { runway: 1, terminal: 1, hangar: 1, fuel_depot: 1, duty_free: 0 };
+      const now = Date.now();
+      const lastCollect = Number(s.airport.lastTransitCollectionAt || s.airport.lastTransitPermitAt || s.airport.unlockedAt || now);
+      const elapsedMs = Math.max(0, now - lastCollect);
+      const minCooldownMs = 60 * 1000; // 60 seconds minimum interval between collections
 
-    // Minimum collection threshold: 500 EGP
-    if (accumulatedFee < 500) {
-      return reply.code(400).send({
-        error: ` الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${accumulatedFee.toLocaleString()} ج.م).`
-      });
+      if (s.airport.lastTransitCollectionAt && elapsedMs < minCooldownMs) {
+        const remSec = Math.ceil((minCooldownMs - elapsedMs) / 1000);
+        return reply.code(400).send({
+          error: ` يرجى الانتظار ${remSec} ثانية قبل تحصيل رسوم الترانزيت التالية.`
+        });
+      }
+
+      const accumulatedFee = calculateTransitAccumulated(s.airport, now);
+
+      // Minimum collection threshold: 500 EGP
+      if (accumulatedFee < 500) {
+        return reply.code(400).send({
+          error: ` الحد الأدنى لتحصيل رسوم الترانزيت هو 500 ج.م (المتراكم حالياً: ${accumulatedFee.toLocaleString()} ج.م).`
+        });
+      }
+
+      s.cash = Math.max(0, Number(s.cash || 0)) + accumulatedFee;
+      s.xp = Math.max(0, Number(s.xp || 0)) + 50;
+      s.airport.lastTransitCollectionAt = now;
+      s.airport.lastTransitPermitAt = now;
+
+      if (!s.airport.stats) s.airport.stats = {};
+      s.airport.stats.transitPermitsAccepted = (Number(s.airport.stats.transitPermitsAccepted) || 0) + 1;
+      s.airport.stats.totalTransitFeesCollected = (Number(s.airport.stats.totalTransitFeesCollected) || 0) + accumulatedFee;
+
+      s.netWorth = calculateNetWorth(s);
+      s.lastActiveTimestamp = Date.now();
+      s.lastSeen = Date.now();
+
+      await dbService.savePlayerState(session.username, s);
+
+      return {
+        success: true,
+        message: ` تم تحصيل رسوم هبوط الترانزيت المتراكمة: +${accumulatedFee.toLocaleString()} ج.م!`,
+        fee: accumulatedFee,
+        earnings: accumulatedFee,
+        cash: s.cash,
+        xp: s.xp,
+        airport: s.airport,
+        netWorth: s.netWorth
+      };
+    } catch (err) {
+      fastify.log.error(`[Airport] Error in transit for ${session.username}: ${err.message}`);
+      return reply.code(400).send({ error: err.message || 'حدث خطأ أثناء تحصيل رسوم الترانزيت' });
+    } finally {
+      _transitClaimLocks.delete(lockKey);
     }
-
-    s.cash = Math.max(0, Number(s.cash || 0)) + accumulatedFee;
-    s.xp = Math.max(0, Number(s.xp || 0)) + 50;
-    s.airport.lastTransitCollectionAt = now;
-    s.airport.lastTransitPermitAt = now;
-
-    if (!s.airport.stats) s.airport.stats = {};
-    s.airport.stats.transitPermitsAccepted = (Number(s.airport.stats.transitPermitsAccepted) || 0) + 1;
-    s.airport.stats.totalTransitFeesCollected = (Number(s.airport.stats.totalTransitFeesCollected) || 0) + accumulatedFee;
-
-    s.netWorth = calculateNetWorth(s);
-    s.lastActiveTimestamp = Date.now();
-    s.lastSeen = Date.now();
-
-    await dbService.savePlayerState(session.username, s);
-
-    return {
-      success: true,
-      message: ` تم تحصيل رسوم هبوط الترانزيت المتراكمة: +${accumulatedFee.toLocaleString()} ج.م!`,
-      fee: accumulatedFee,
-      earnings: accumulatedFee,
-      cash: s.cash,
-      xp: s.xp,
-      airport: s.airport,
-      netWorth: s.netWorth
-    };
   });
 
   // 10. POST /api/airport/sell-plane (Sell plane for 50% refund)
