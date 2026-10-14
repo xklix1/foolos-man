@@ -8,6 +8,7 @@ const config = require('../config/env');
 class DbService {
   constructor() {
     this.candidateUrls = [
+      'http://127.0.0.1:8000',
       'https://rasalmal.online',
       config.SUPABASE_URL
     ].filter(Boolean);

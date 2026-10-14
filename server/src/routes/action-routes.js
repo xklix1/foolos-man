@@ -1166,10 +1166,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     if (!isExempt) {
       try {
         const twentyFourHoursAgo = Date.now() - 86400000;
-        const tfEndpoint = `${sUrl}/rest/v1/transfers?sender=ilike.${encodeURIComponent(cleanSender)}&created_at=gt.${twentyFourHoursAgo}&select=amount`;
-        const tfRes = await fetch(tfEndpoint, {
-          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
-        });
+        const tfEndpoint = `/rest/v1/transfers?sender=ilike.${encodeURIComponent(cleanSender)}&created_at=gt.${twentyFourHoursAgo}&select=amount`;
+        const tfRes = await dbService.resilientFetch(tfEndpoint);
         if (tfRes.ok) {
           const pastTransfers = await tfRes.json();
           dailySent = Array.isArray(pastTransfers) ? pastTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0) : 0;
@@ -1187,47 +1185,75 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
 
     try {
-      const rpcRes = await fetch(`${sUrl}/rest/v1/rpc/execute_wire_transfer`, {
-        method: 'POST',
-        headers: {
-          'apikey': sKey,
-          'Authorization': `Bearer ${sKey}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          sender_username: cleanSender,
-          sender_pin: cleanPin,
-          recipient_username: cleanRecipient,
-          transfer_amount: amt
-        })
-      });
+      // 1. Attempt database stored procedure (try local direct PostgREST first, then fallback to public sUrl)
+      const rpcTargets = [
+        'http://127.0.0.1:8000',
+        sUrl
+      ].filter(Boolean);
 
-      if (!rpcRes.ok) {
-        const errText = await rpcRes.text();
-        let errMsg = errText;
+      let rpcHandled = false;
+      let lastRpcError = null;
+
+      for (const targetBase of rpcTargets) {
         try {
-          const parsed = JSON.parse(errText);
-          errMsg = parsed.message || parsed.details || parsed.hint || errText;
-        } catch (_) {}
+          const rpcRes = await fetch(`${targetBase}/rest/v1/rpc/execute_wire_transfer`, {
+            method: 'POST',
+            headers: {
+              'apikey': sKey,
+              'Authorization': `Bearer ${sKey}`,
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              sender_username: cleanSender,
+              sender_pin: cleanPin,
+              recipient_username: cleanRecipient,
+              transfer_amount: amt
+            })
+          });
 
-        // Check if the error is due to the legacy 5,000,000 database limit on outdated PostgreSQL procedure
-        const isLegacy5mLimitError = typeof errMsg === 'string' && (
-          errMsg.includes('5,000,000') ||
-          errMsg.includes('5000000') ||
-          errMsg.includes('5 مليون') ||
-          errMsg.includes('الحد الأقصى اليومي') ||
-          errMsg.includes('الحد الأقصى للتحويل')
-        );
+          if (rpcRes.ok) {
+            rpcHandled = true;
+            break;
+          } else {
+            const errText = await rpcRes.text();
+            let parsedMsg = errText;
+            try {
+              const parsed = JSON.parse(errText);
+              parsedMsg = parsed.message || parsed.details || parsed.hint || errText;
+            } catch (_) {}
+            lastRpcError = parsedMsg;
 
-        if (!isLegacy5mLimitError) {
-          return reply.code(400).send({ success: false, error: errMsg || 'فشلت عملية التحويل المصرفي في قاعدة البيانات.' });
+            // If it's a definitive user-facing rejection from the stored procedure, reject immediately
+            if (typeof parsedMsg === 'string') {
+              if (parsedMsg.includes('رمز الأمان') || parsedMsg.includes('PIN')) {
+                return reply.code(400).send({ success: false, error: '🚫 رمز الأمان (PIN) غير صحيح! فشلت المعاملة المصرفية.' });
+              }
+              if (parsedMsg.includes('قرض بنكي') || parsedMsg.includes('loan')) {
+                return reply.code(400).send({ success: false, error: '🚫 مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط! يرجى سداد القرض أولاً.' });
+              }
+              if (parsedMsg.includes('غير كافٍ') || parsedMsg.includes('insufficient')) {
+                return reply.code(400).send({ success: false, error: 'رصيدك الإجمالي (الكاش والبنك) غير كافٍ لإتمام الحوالة.' });
+              }
+            }
+          }
+        } catch (fetchErr) {
+          lastRpcError = fetchErr.message;
         }
+      }
 
-        fastify.log.warn(`[WireTransfer] Database stored procedure has legacy 5M limit (${errMsg}). Executing authoritative 50M self-healing transfer for ${cleanSender} -> ${cleanRecipient}...`);
+      // If the RPC failed due to network, Nginx 403, or legacy limit, execute the authoritative self-healing transfer!
+      if (!rpcHandled) {
+        fastify.log.warn(`[WireTransfer] Database stored procedure unavailable or failed (${lastRpcError}). Executing authoritative 50M self-healing transfer for ${cleanSender} -> ${cleanRecipient}...`);
 
         // --- AUTHORITATIVE 50M SELF-HEALING TRANSFER EXECUTION ---
-        // 1. Verify PIN
-        if (senderSession.pin && !verifyPinMatch(cleanPin, senderSession.pin)) {
+        // 1. Verify PIN against session or database
+        let effectivePin = senderSession.pin;
+        let dbSender = null;
+        if (!effectivePin) {
+          dbSender = await dbService.getPlayerByUsername(cleanSender);
+          effectivePin = dbSender?.pin;
+        }
+        if (effectivePin && !verifyPinMatch(cleanPin, effectivePin)) {
           return reply.code(400).send({ success: false, error: '🚫 رمز الأمان (PIN) غير صحيح! فشلت المعاملة المصرفية.' });
         }
 
@@ -1289,14 +1315,12 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         await Promise.all([
           dbService.savePlayerState(cleanSender, sState),
           dbService.savePlayerState(cleanRecipient, recipState),
-          fetch(`${sUrl}/rest/v1/transfers`, {
+          dbService.resilientFetch('/rest/v1/transfers', {
             method: 'POST',
-            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ sender: cleanSender, recipient: cleanRecipient, amount: amt, created_at: nowMs })
           }).catch(e => fastify.log.warn(`[WireTransfer] transfers log notice: ${e.message}`)),
-          fetch(`${sUrl}/rest/v1/mailbox`, {
+          dbService.resilientFetch('/rest/v1/mailbox', {
             method: 'POST',
-            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({
               sender: cleanSender,
               recipient: cleanRecipient,
