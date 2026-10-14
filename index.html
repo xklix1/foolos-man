@@ -2964,7 +2964,7 @@
               <div class="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center justify-between text-xs">
                 <div class="flex items-center gap-2">
                   <i class="fa-solid fa-scale-balanced text-amber-400 text-sm"></i>
-                  <span class="text-amber-200 font-bold">الحد اليومي: <strong class="text-white font-black numbers-font">5,000,000</strong> ج.م / 24 ساعة</span>
+                  <span class="text-amber-200 font-bold">الحد اليومي: <strong class="text-white font-black numbers-font">50,000,000</strong> ج.م / 24 ساعة</span>
                 </div>
                 <span class="px-2 py-0.5 rounded-lg bg-rose-500/20 border border-rose-500/40 text-rose-300 text-[10px] font-black">ضريبة تحويل: 5%</span>
               </div>
@@ -2979,9 +2979,17 @@
                 </div>
                 <div>
                   <label class="block text-xs text-slate-400 mb-1.5 font-bold mr-1">مبلغ التحويل (يودع في الحساب البنكي)</label>
-                  <input type="number" id="wire-amount-input" min="1"
+                  <input type="number" id="wire-amount-input" min="1" max="50000000"
                     class="glass-input w-full p-3 rounded-lg text-sm text-center font-bold"
-                    placeholder="أدخل مبلغ الحوالة (الحد الأقصى للاعبين 5,000,000)">
+                    placeholder="أدخل مبلغ الحوالة (الحد الأقصى للاعبين 50,000,000)">
+                  
+                  <!-- Quick Amount Chips for Bank Wire Modal -->
+                  <div class="grid grid-cols-4 gap-1.5 mt-2 text-center">
+                    <button type="button" class="bank-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="1000000">+1,000,000</button>
+                    <button type="button" class="bank-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="5000000">+5,000,000</button>
+                    <button type="button" class="bank-wire-chip py-1.5 px-1 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-300 font-bold numbers-font transition cursor-pointer" data-amount="10000000">+10,000,000</button>
+                    <button type="button" class="bank-wire-chip py-1.5 px-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-[10px] text-amber-300 font-bold numbers-font transition cursor-pointer" data-amount="50000000">50M (الحد الأقصى)</button>
+                  </div>
                   <!-- Live Tax & Net Calculation Preview Box -->
                   <div id="wire-tax-breakdown-box" class="hidden mt-2 p-2.5 rounded-xl bg-slate-900/80 border border-slate-800 text-[11px] space-y-1">
                     <div class="flex justify-between text-slate-400">

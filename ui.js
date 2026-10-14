@@ -5501,6 +5501,16 @@ const UIController = (() => {
           wireTaxBox.classList.add('hidden');
         }
       });
+
+      document.querySelectorAll('.bank-wire-chip').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const amt = parseInt(btn.getAttribute('data-amount'), 10);
+          if (!isNaN(amt) && amt > 0) {
+            wireAmtInput.value = amt;
+            wireAmtInput.dispatchEvent(new Event('input'));
+          }
+        });
+      });
     }
 
     let _wireTransferInProgress = false;
