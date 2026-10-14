@@ -634,7 +634,23 @@ class SessionManager {
       });
     }
     if (clientState.activityLog && Array.isArray(clientState.activityLog)) {
-      s.activityLog = clientState.activityLog.slice(0, 3500);
+      const existing = Array.isArray(s.activityLog) ? s.activityLog : [];
+      const mergedMap = new Map();
+      existing.forEach(item => {
+        if (!item) return;
+        const key = `${Math.floor(Number(item.timestamp || 0) / 1000)}_${String(item.action || '').trim()}_${String(item.category || '').trim()}`;
+        mergedMap.set(key, item);
+      });
+      clientState.activityLog.forEach(item => {
+        if (!item) return;
+        const key = `${Math.floor(Number(item.timestamp || 0) / 1000)}_${String(item.action || '').trim()}_${String(item.category || '').trim()}`;
+        if (!mergedMap.has(key)) {
+          mergedMap.set(key, item);
+        }
+      });
+      s.activityLog = Array.from(mergedMap.values())
+        .sort((a, b) => (Number(b.timestamp || 0) - Number(a.timestamp || 0)))
+        .slice(0, 3500);
     }
     // Never allow client to overwrite secret staff notes; preserve server-authoritative notes
     if (!Array.isArray(s.staffNotes)) {

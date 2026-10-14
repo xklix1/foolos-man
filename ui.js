@@ -5468,16 +5468,31 @@ const UIController = (() => {
           const res = await window.ServerBridge.bankAction('deposit', isExplicitAll ? 'all' : val, isExplicitAll);
           if (res && res.success) {
             const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+            const amtVal = Number(res.amount || val);
             if (s) {
               if (res.cash !== undefined) s.cash = res.cash;
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+
+              // Record player activity in audit log
+              if (typeof GameEngine.recordPlayerActivity === 'function') {
+                GameEngine.recordPlayerActivity(
+                  'إيداع بنكي',
+                  `إيداع نقدي بقيمة ${amtVal.toLocaleString()} ج.م في الحساب المصرفي`,
+                  'banking',
+                  {
+                    amount: amtVal,
+                    cash: s.cash,
+                    bank: s.bank
+                  }
+                );
+              }
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             delete input.dataset.allVal;
             input.value = '';
-            showToast('إيداع بنكي', `تم إيداع ${Number(res.amount || val).toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
+            showToast('إيداع بنكي', `تم إيداع ${amtVal.toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
             renderAll();
             return;
           } else if (res && res.error) {
@@ -5511,16 +5526,31 @@ const UIController = (() => {
           const res = await window.ServerBridge.bankAction('withdraw', isExplicitAll ? 'all' : val, isExplicitAll);
           if (res && res.success) {
             const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+            const amtVal = Number(res.amount || val);
             if (s) {
               if (res.cash !== undefined) s.cash = res.cash;
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+
+              // Record player activity in audit log
+              if (typeof GameEngine.recordPlayerActivity === 'function') {
+                GameEngine.recordPlayerActivity(
+                  'سحب بنكي',
+                  `سحب نقدي بقيمة ${amtVal.toLocaleString()} ج.م من الحساب المصرفي`,
+                  'banking',
+                  {
+                    amount: -amtVal,
+                    cash: s.cash,
+                    bank: s.bank
+                  }
+                );
+              }
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             delete input.dataset.allVal;
             input.value = '';
-            showToast('سحب بنكي', `تم سحب ${Number(res.amount || val).toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
+            showToast('سحب بنكي', `تم سحب ${amtVal.toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
             renderAll();
             return;
           } else if (res && res.error) {
@@ -5546,14 +5576,29 @@ const UIController = (() => {
           const res = await window.ServerBridge.claimBankInterest();
           if (res && res.success) {
             const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+            const interestVal = Number(res.interestClaimed || res.amount || 0);
             if (s) {
               if (res.cash !== undefined) s.cash = res.cash;
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
               if (res.dailyBankInterestClaim) s.dailyBankInterestClaim = res.dailyBankInterestClaim;
+
+              // Record player activity in audit log
+              if (typeof GameEngine.recordPlayerActivity === 'function') {
+                GameEngine.recordPlayerActivity(
+                  'تحصيل عائد وديعة',
+                  `تحصيل العائد اليومي للوديعة المصرفية بقيمة ${interestVal.toLocaleString()} ج.م`,
+                  'banking',
+                  {
+                    amount: interestVal,
+                    cash: s.cash,
+                    bank: s.bank
+                  }
+                );
+              }
             }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
-            showToast('عائد مصرفي', `تم تحصيل ${Number(res.interestClaimed || 0).toLocaleString()} EGP عائد وديعة وإيداعها في رصيدك البنكي بنجاح!`, 'success');
+            showToast('عائد مصرفي', `تم تحصيل ${interestVal.toLocaleString()} EGP عائد وديعة وإيداعها في رصيدك البنكي بنجاح!`, 'success');
             renderAll();
           } else if (res && res.error) {
             throw new Error(res.error);
@@ -11431,6 +11476,23 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           </div>
         ` : '';
 
+        const categoryLabels = {
+          banking: 'معاملة بنكية 🏦',
+          transfers: 'تحويل بنكي 💸',
+          work: 'وظيفة وعمل 💼',
+          business: 'مشروع تجاري 🏢',
+          stock: 'سوق الأسهم 📈',
+          investment: 'عقارات واستثمار 🏛️',
+          assets: 'عقارات وأصول 🏛️',
+          casino: 'كازينو ومراهنات 🎲',
+          trade: 'استيراد وتصدير 🚢',
+          blackmarket: 'سوق سوداء ☠️',
+          dark: 'سوق سوداء ☠️',
+          store: 'المتجر والمعدات 🛍️',
+          admin: 'شحن ومنح الإدارة 👑'
+        };
+        const catLabel = categoryLabels[item.category] || item.category;
+
         div.innerHTML =`
           <div class="flex items-center justify-between gap-2">
             <div class="flex items-center gap-2.5">
@@ -11440,7 +11502,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
               <div>
                 <div class="flex items-center gap-2">
                   <span class="font-bold text-white text-xs">${item.action}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${catLabel}</span>
                 </div>
                 <div class="text-[11px] text-slate-300 mt-0.5">${item.details}</div>
               </div>

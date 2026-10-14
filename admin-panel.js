@@ -3050,6 +3050,24 @@
           </div>
         ` : '';
 
+        const categoryLabels = {
+          banking: 'معاملة بنكية 🏦',
+          transfers: 'تحويل بنكي 💸',
+          work: 'وظيفة وعمل 💼',
+          business: 'مشروع تجاري 🏢',
+          stock: 'سوق الأسهم 📈',
+          investment: 'عقارات واستثمار 🏛️',
+          assets: 'عقارات وأصول 🏛️',
+          casino: 'كازينو ومراهنات 🎲',
+          trade: 'استيراد وتصدير 🚢',
+          blackmarket: 'سوق سوداء ☠️',
+          dark: 'سوق سوداء ☠️',
+          store: 'المتجر والمعدات 🛍️',
+          admin: 'شحن ومنح الإدارة 👑',
+          admin_grant: 'منحة إدارية 👑'
+        };
+        const catLabel = categoryLabels[item.category] || item.category || 'نشاط';
+
         div.innerHTML =`
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2.5 min-w-0">
@@ -3059,7 +3077,7 @@
               <div class="min-w-0">
                 <div class="flex items-center gap-2 flex-wrap">
                   <span class="font-bold text-white text-xs truncate ${item.category === 'admin' ? 'text-amber-200' : ''}">${item.action}</span>
-                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${item.category === 'admin' ? 'شحن ومنح الإدارة ' : item.category}</span>
+                  <span class="text-[9px] px-1.5 py-0.2 rounded border ${badgeColor} font-sans">${catLabel}</span>
                 </div>
                 <div class="text-[11px] text-slate-300 mt-0.5 leading-tight">${item.details}</div>
                 ${goldBadgeHtml}

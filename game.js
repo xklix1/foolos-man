@@ -1387,8 +1387,8 @@ const GameEngine = (() => {
       bank: currentBank,
       ...extra
     });
-    if (state.activityLog.length > 200) {
-      state.activityLog.length = 200; // Cap to 200 entries to prevent payload bloat and mobile quota issues
+    if (state.activityLog.length > 1000) {
+      state.activityLog.length = 1000; // Cap to 1000 entries to provide thorough history without mobile quota issues
     }
   }
 
@@ -3367,9 +3367,9 @@ const GameEngine = (() => {
         _loadedFromCloud: true
       });
 
-      // Cap activityLog to 200 entries on session load to prevent payload bloat
-      if (Array.isArray(state.activityLog) && state.activityLog.length > 200) {
-        state.activityLog = state.activityLog.slice(0, 200);
+      // Cap activityLog to 1000 entries on session load to prevent payload bloat
+      if (Array.isArray(state.activityLog) && state.activityLog.length > 1000) {
+        state.activityLog = state.activityLog.slice(0, 1000);
       }
 
       // Restore AFK Manager Expiry timestamp

@@ -590,7 +590,23 @@ var ServerBridge = (() => {
       amount,
       isAll: isAll || amount === 'all'
     });
-    return _reconcileGenericActionResponse(res);
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r && r.success && typeof GameEngine !== 'undefined' && typeof GameEngine.recordPlayerActivity === 'function') {
+        const amtVal = Number(r.amount || amount || 0);
+        GameEngine.recordPlayerActivity(
+          r.type === 'deposit' ? 'إيداع بنكي' : 'سحب بنكي',
+          r.type === 'deposit'
+            ? `إيداع نقدي بقيمة ${amtVal.toLocaleString()} ج.م في الحساب المصرفي`
+            : `سحب نقدي بقيمة ${amtVal.toLocaleString()} ج.م من الحساب المصرفي`,
+          'banking',
+          {
+            amount: r.type === 'deposit' ? amtVal : -amtVal,
+            cash: s.cash,
+            bank: s.bank
+          }
+        );
+      }
+    });
   }
 
   /**
@@ -602,7 +618,20 @@ var ServerBridge = (() => {
       username: _activeUsername
     });
     return _reconcileGenericActionResponse(res, (s, r) => {
-      if (r.dailyBankInterestClaim) s.dailyBankInterestClaim = r.dailyBankInterestClaim;
+      if (r && r.dailyBankInterestClaim) s.dailyBankInterestClaim = r.dailyBankInterestClaim;
+      if (r && r.success && typeof GameEngine !== 'undefined' && typeof GameEngine.recordPlayerActivity === 'function') {
+        const interestAmt = Number(r.interestClaimed || r.amount || 0);
+        GameEngine.recordPlayerActivity(
+          'تحصيل عائد وديعة',
+          `تحصيل العائد اليومي للوديعة المصرفية بقيمة ${interestAmt.toLocaleString()} ج.م`,
+          'banking',
+          {
+            amount: interestAmt,
+            cash: s.cash,
+            bank: s.bank
+          }
+        );
+      }
     });
   }
 

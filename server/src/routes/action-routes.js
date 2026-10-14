@@ -537,17 +537,18 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     // Log activity
     if (!Array.isArray(s.activityLog)) s.activityLog = [];
-    s.activityLog.unshift({
-      action: type === 'deposit' ? 'إيداع بنكي ' : 'سحب بنكي ',
+    const bankLogEntry = {
+      action: type === 'deposit' ? 'إيداع بنكي' : 'سحب بنكي',
       details: type === 'deposit'
         ? `إيداع نقدي موثق بقيمة ${val.toLocaleString()} ج.م في الحساب المصرفي`
         : `سحب نقدي موثق بقيمة ${val.toLocaleString()} ج.م من الحساب المصرفي`,
       category: 'banking',
       timestamp: Date.now(),
-      amount: type === 'deposit' ? -val : val,
+      amount: type === 'deposit' ? val : -val,
       cash: s.cash,
       bank: s.bank
-    });
+    };
+    s.activityLog.unshift(bankLogEntry);
     if (s.activityLog.length > 3500) s.activityLog.length = 3500;
     session.lastServerBankActionAt = Date.now();
     sessionManager.markDirty(session.username);
@@ -559,7 +560,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       amount: val,
       cash: s.cash,
       bank: s.bank,
-      netWorth: s.netWorth
+      netWorth: s.netWorth,
+      activityLogEntry: bankLogEntry
     };
   });
 
@@ -606,7 +608,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     s.netWorth = calculateNetWorth(s);
 
     if (!Array.isArray(s.activityLog)) s.activityLog = [];
-    s.activityLog.unshift({
+    const interestLogEntry = {
       action: 'تحصيل فائدة بنكية',
       details: `تحصيل العائد اليومي للوديعة المصرفية بقيمة ${interestAmt.toLocaleString()} ج.م`,
       category: 'banking',
@@ -614,7 +616,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       amount: interestAmt,
       cash: s.cash,
       bank: s.bank
-    });
+    };
+    s.activityLog.unshift(interestLogEntry);
     if (s.activityLog.length > 3500) s.activityLog.length = 3500;
 
     sessionManager.markDirty(session.username);
@@ -626,7 +629,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       cash: s.cash,
       bank: s.bank,
       netWorth: s.netWorth,
-      dailyBankInterestClaim: s.dailyBankInterestClaim
+      dailyBankInterestClaim: s.dailyBankInterestClaim,
+      activityLogEntry: interestLogEntry
     };
   });
 

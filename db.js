@@ -1555,8 +1555,8 @@ var AppDB = (() => {
 
       const row = rows[0];
       const stateObj = (typeof row.state === 'object' && row.state) ? { ...row.state } : {};
-      if (Array.isArray(stateObj.activityLog) && stateObj.activityLog.length > 200) {
-        stateObj.activityLog = stateObj.activityLog.slice(-200);
+      if (Array.isArray(stateObj.activityLog) && stateObj.activityLog.length > 1000) {
+        stateObj.activityLog = stateObj.activityLog.slice(0, 1000);
       }
       const resetTs = Number(row.resetTimestamp || (row.state && row.state.resetTimestamp) || 0);
       const isStaleReset = resetTs > 0 && (resetTs > (Date.now() + 60000) || (Date.now() - resetTs) > (24 * 60 * 60 * 1000));

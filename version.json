@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.18",
-  "build": 1792035000000,
-  "timestamp": 1792035000000,
-  "notes": "Wire Transfer Deduplication & Single Delivery Fix v10.0.18: Eliminated duplicate recipient bank crediting by reconciling state from authoritative database rather than blind client-side addition. Removed redundant client push dispatch and unified mailbox notification deduplication to ensure exactly one notification and precise balance update.",
-  "releaseNotes": "تحديث v10.0.18: إصلاح جذري لنظام الحوالات المصرفية (منع التكرار وازدواج الإشعار والرصيد). تم توحيد جهة الإيداع لتعتمد كلياً وبشكل حصري على المعاملة المصرفية الصارمة بقاعدة البيانات والخادم مع إزالة الزيادة اليدوية المزدوجة من واجهة البريد، وتوحيد إشعار الاستلام ليظهر مرة واحدة فقط بدون تكرار."
+  "version": "v10.0.19",
+  "build": 1792036500000,
+  "timestamp": 1792036500000,
+  "notes": "Banking Activity Audit Log Fix v10.0.19: Restored banking transactions (deposits, withdrawals, and interest claims) to player activity audit logs. Fixed state reconciliation to record banking activities on both client and server, merged session activity logs seamlessly without overwriting, and corrected log slicing to preserve recent records for moderator dashboard inspection.",
+  "releaseNotes": "تحديث v10.0.19: ربط وتوثيق حركات السحب والإيداع وعوائد الودائع البنكية في سجل نشاط اللاعب (Activity Log) ليظهر فوراً وتفصيلياً في لوحة المراقبين وفلتر البنوك والقروض، ومنع مسح السجلات أثناء مزامنة الجلسات."
 }
