@@ -21,7 +21,7 @@ EnvironmentFile=-/var/www/rasalmal/server/.env
 Environment=NODE_ENV=production
 Environment=PORT=3001
 Environment=HOST=127.0.0.1
-Environment=SUPABASE_URL=http://127.0.0.1:8000
+Environment=SUPABASE_URL=https://rasalmal.online
 Environment=AUTOSAVE_INTERVAL_MS=30000
 Environment=RESEND_FROM_EMAIL=Ras ALmal Tycoon <auth@rasalmal.online>
 
