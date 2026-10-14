@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.20",
-  "build": 1792038000000,
-  "timestamp": 1792038000000,
-  "notes": "Transfer Request Recipient Balance Sync Fix v10.0.20: Fixed critical bug where recipient of an accepted transfer request received notifications without the funds appearing in their account. Resolved incomplete balance queries in getPlayerSecurityStatus, enabled UI stats bar re-rendering, and guarded authoritative server bank balance from being overwritten by stale client sync.",
-  "releaseNotes": "تحديث v10.0.20: إصلاح مشكلة عدم نزول الأموال في حساب مرسل طلب التحويل بعد قبوله من الطرف الآخر، وتحديث أرصدة الكاش والبنك بدقة في استعلامات الحماية الفورية، وحماية رصيد البنك بالسيرفر من التراجع عند مزامنة الجلسات."
+  "version": "v10.0.21",
+  "build": 1792040000000,
+  "timestamp": 1792040000000,
+  "notes": "Admin Topup Approval & Authoritative Server Settlement v10.0.21: Fixed 403 Forbidden on approving top-up requests in admin panel by routing mutations authoritatively through server backend, added trusted admin key support and moderator topup route, and assigned VIP Airport Manager tiers.",
+  "releaseNotes": "تحديث v10.0.21: إصلاح خطأ (Forbidden 403) عند اعتماد وقبول طلبات الشحن من لوحة الإدارة، وتمرير الاعتمادات عبر خادم اللعبة بشكل موثق، وتفعيل شحن باقات إمبراطور ومدير الطيران العالمي VIP."
 }

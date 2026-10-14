@@ -1734,6 +1734,284 @@ async function moderatorRoutes(fastify, options) {
   });
 
   /**
+   * POST /api/mod/topup/process
+   * Authoritatively approves or rejects a player topup request with full audit logging
+   */
+  fastify.post('/topup/process', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const { requestId, action, reviewerNote = '' } = request.body || {};
+    if (!requestId || !['approved', 'rejected'].includes(action)) {
+      return reply.status(400).send({ error: 'Bad Request', message: 'معرف الطلب والإجراء (approved/rejected) مطلوبان.' });
+    }
+
+    const sKey = serviceKey();
+    const ts = Date.now();
+
+    try {
+      // 1. Fetch topup_requests
+      const gRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.topup_requests`);
+      const gRows = await gRes.json();
+      if (!gRows || !gRows[0] || !gRows[0].data || !Array.isArray(gRows[0].data.requests)) {
+        return reply.status(404).send({ error: 'Not Found', message: 'سجل طلبات الشحن غير موجود.' });
+      }
+
+      const requests = gRows[0].data.requests;
+      const reqIndex = requests.findIndex(r => r.id === requestId);
+      if (reqIndex === -1) {
+        return reply.status(404).send({ error: 'Not Found', message: 'طلب الشحن غير موجود.' });
+      }
+
+      const req = requests[reqIndex];
+      if (req.status !== 'pending') {
+        return reply.status(400).send({ error: 'Already Processed', message: `تمت معالجة هذا الطلب مسبقاً (${req.status === 'approved' ? 'مقبول' : 'مرفوض'}).` });
+      }
+
+      const targetUser = req.username;
+
+      if (action === 'approved') {
+        // 2. Fetch player
+        const pRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(targetUser)}&limit=1`);
+        const pRows = await pRes.json();
+        if (!pRows || pRows.length === 0) {
+          return reply.status(404).send({ error: 'Not Found', message: `حساب اللاعب "${targetUser}" غير موجود.` });
+        }
+
+        const playerDoc = pRows[0];
+        const pState = (typeof playerDoc.state === 'object' && playerDoc.state) ? playerDoc.state : {};
+        const rewards = req.rewards || {};
+
+        const addedCash = Number(rewards.cash) || 0;
+        const addedBank = Number(rewards.bank) || 0;
+        const addedXP = Number(rewards.xp) || 0;
+        const addedGold = Number(rewards.gold) || 0;
+        const customBadge = rewards.customBadge || '';
+        const badgeTitle = rewards.badgeTitle || req.packageName;
+
+        const updatedCash = (Number(playerDoc.cash) || 0) + addedCash;
+        const updatedBank = (Number(playerDoc.bank) || 0) + addedBank;
+        const updatedXP = (Number(playerDoc.xp) || 0) + addedXP;
+        const updatedGold = (Number(playerDoc.gold) || 0) + addedGold;
+        const updatedNetworth = updatedCash + updatedBank;
+
+        pState.cash = updatedCash;
+        pState.bank = updatedBank;
+        pState.xp = updatedXP;
+        pState.gold = updatedGold;
+        pState.netWorth = updatedNetworth;
+
+        if (customBadge) {
+          pState.customBadge = customBadge;
+          pState.badgeTitle = badgeTitle;
+        }
+
+        // Handle VIP glow packages
+        if (req.packageId === 'pkg_vip_chat_glow') {
+          pState.chatGlow = 'gold_neon';
+          pState.hasChatGlow = true;
+          pState.activePackage = 'pkg_vip_chat_glow';
+        } else if (req.packageId === 'pkg_vip_royal_ultimate') {
+          pState.chatGlow = 'cyber_rainbow';
+          pState.hasChatGlow = true;
+          pState.isVerified = true;
+          pState.vipVerified = true;
+          pState.activePackage = 'pkg_vip_royal_ultimate';
+        } else if (req.packageId === 'pkg_vip_crimson_flame') {
+          pState.chatGlow = 'crimson_flame';
+          pState.hasChatGlow = true;
+          pState.activePackage = 'pkg_vip_crimson_flame';
+        } else if (req.packageId === 'pkg_vip_svip_blue_flame') {
+          pState.chatGlow = 'blue_flame';
+          pState.hasChatGlow = true;
+          pState.customBadge = 'SVIP';
+          pState.badgeTitle = 'SVIP';
+          pState.activePackage = 'pkg_vip_svip_blue_flame';
+        } else if (req.packageId === 'pkg_vip_verified') {
+          pState.isVerified = true;
+          pState.vipVerified = true;
+          pState.activePackage = 'pkg_vip_verified';
+        } else if (req.packageId === 'pkg_airport_manager_tier2' || (rewards && rewards.airportManagerTier === 2)) {
+          if (!pState.airport) pState.airport = { unlocked: true, facilities: { runway: 1, terminals: 1, hangar: 1, duty_free: 0 }, fleet: [] };
+          pState.airport.manager = {
+            tier: 2,
+            name: 'كابتن ألفا - مدير عمليات الطيران ',
+            title: 'مدير عمليات الطيران الدولي',
+            profitBonusPct: 10,
+            costDiscountPct: 5,
+            autoPilot: false,
+            hiredAt: ts
+          };
+        } else if (req.packageId === 'pkg_airport_manager_tier3' || (rewards && rewards.airportManagerTier === 3)) {
+          if (!pState.airport) pState.airport = { unlocked: true, facilities: { runway: 1, terminals: 1, hangar: 1, duty_free: 0 }, fleet: [] };
+          pState.airport.manager = {
+            tier: 3,
+            name: 'الرئيس التنفيذي ألكسندر - إمبراطور الطيران ',
+            title: 'المدير التنفيذي العام لشبكة الطيران العالمية',
+            profitBonusPct: 15,
+            costDiscountPct: 10,
+            autoPilot: true,
+            hiredAt: ts
+          };
+        }
+
+        if (rewards && rewards.items && typeof rewards.items === 'object') {
+          pState.inventory = pState.inventory || {};
+          for (const [itemId, qty] of Object.entries(rewards.items)) {
+            pState.inventory[itemId] = (Number(pState.inventory[itemId]) || 0) + Number(qty);
+          }
+        }
+
+        pState.hasPurchasedTopup = true;
+        pState.purchasedTopups = (pState.purchasedTopups || 0) + 1;
+        pState.adminModifiedTimestamp = ts;
+
+        // Record in player adminGrants & activityLog
+        if (!Array.isArray(pState.adminGrants)) pState.adminGrants = [];
+        pState.adminGrants.unshift({
+          id: `topup_${requestId}`,
+          type: 'topup',
+          packageId: req.packageId,
+          packageName: req.packageName,
+          price: req.price,
+          cash: addedCash + addedBank,
+          gold: addedGold || 0,
+          status: 'approved',
+          note: reviewerNote || 'تم الاعتماد والشحن بنجاح بواسطة الإدارة',
+          timestamp: ts,
+          grantedBy: request.modSession ? request.modSession.name : 'الإدارة'
+        });
+
+        // Persist player row in Supabase
+        await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(targetUser)}`, {
+          method: 'PATCH',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            cash: updatedCash,
+            bank: updatedBank,
+            gold: updatedGold,
+            xp: updatedXP,
+            net_worth: updatedNetworth,
+            state: pState,
+            admin_modified_timestamp: ts
+          })
+        });
+
+        // Update in-memory session if player is active
+        if (sessionManager) {
+          const session = sessionManager.getSession(targetUser);
+          if (session) {
+            session.state.cash = updatedCash;
+            session.state.bank = updatedBank;
+            session.state.gold = updatedGold;
+            session.state.xp = updatedXP;
+            session.state.netWorth = updatedNetworth;
+            session.state.adminModifiedTimestamp = ts;
+            if (customBadge) {
+              session.state.customBadge = customBadge;
+              session.state.badgeTitle = badgeTitle;
+            }
+            session.dirty = false;
+          }
+        }
+
+        // Send topup receipt mail
+        await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          method: 'POST',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            sender: 'إدارة اللعبة (Financial Team)',
+            recipient: targetUser,
+            type: 'topup_receipt',
+            payload: {
+              packageId: req.packageId,
+              packageName: req.packageName,
+              price: req.price,
+              cash: addedCash,
+              bank: addedBank,
+              gold: addedGold,
+              xp: addedXP,
+              newCash: updatedCash,
+              newBank: updatedBank,
+              newGold: updatedGold,
+              newXp: updatedXP,
+              newWorth: updatedNetworth,
+              isPreApplied: true,
+              customBadge: customBadge,
+              badgeTitle: badgeTitle,
+              items: rewards.items || {},
+              status: 'approved',
+              date: ts,
+              receiptNumber: req.receiptNumber || '',
+              senderPhoneOrName: req.senderPhoneOrName || '',
+              reviewerNote: reviewerNote || 'تم الاعتماد والشحن بنجاح بواسطة الإدارة'
+            },
+            status: 'unread',
+            created_at: ts
+          })
+        });
+
+        req.status = 'approved';
+        req.reviewedAt = ts;
+        req.reviewerNote = reviewerNote || 'تم الاعتماد والشحن بنجاح بواسطة الإدارة';
+      } else {
+        req.status = 'rejected';
+        req.reviewedAt = ts;
+        req.reviewerNote = reviewerNote || 'تم رفض الطلب لعدم تطابق بيانات التحويل';
+
+        await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          method: 'POST',
+          headers: { 'Prefer': 'return=minimal' },
+          body: JSON.stringify({
+            sender: 'إدارة اللعبة (Financial Team)',
+            recipient: targetUser,
+            type: 'topup_receipt',
+            payload: {
+              packageId: req.packageId,
+              packageName: req.packageName,
+              price: req.price,
+              status: 'rejected',
+              date: ts,
+              receiptNumber: req.receiptNumber || '',
+              senderPhoneOrName: req.senderPhoneOrName || '',
+              reviewerNote: req.reviewerNote
+            },
+            status: 'unread',
+            created_at: ts
+          })
+        });
+      }
+
+      // Update globals.topup_requests
+      await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+        method: 'POST',
+        headers: { 'Prefer': 'resolution=merge-duplicates, return=minimal' },
+        body: JSON.stringify({
+          id: 'topup_requests',
+          data: { requests, updatedAt: ts },
+          updated_at: ts
+        })
+      });
+
+      await logStaffAudit(
+        request.modSession,
+        targetUser,
+        action === 'approved' ? 'approve_topup' : 'reject_topup',
+        `${action === 'approved' ? 'اعتماد وشحن باقة' : 'رفض طلب شحن'}: ${req.packageName} (${req.price} EGP)`,
+        { requestId, packageId: req.packageId, price: req.price, reviewerNote }
+      );
+
+      return reply.send({
+        success: true,
+        message: action === 'approved' ? 'تم الاعتماد والشحن بنجاح.' : 'تم رفض الطلب بنجاح.',
+        request: req
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Mod Process Topup Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
    * POST /api/mod/action
    * Executes a controlled moderation action with mandatory audit logging and reason
    */

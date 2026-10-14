@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.20';
+    window._CLIENT_VERSION = 'v10.0.21';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.20';
+      const CURRENT_APP_BUILD = 'v10.0.21';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.20">
+  <link rel="stylesheet" href="app.css?v=v10.0.21">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -8086,7 +8086,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.20"></script>
+  <script src="core.bundle.js?v=v10.0.21"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
