@@ -891,6 +891,24 @@ var ServerBridge = (() => {
     }
   }
 
+  /**
+   * Authoritatively responds to a peer-to-peer transfer request via server proxy
+   */
+  async function respondTransferRequest(requestId, recipient, action) {
+    if (!_isServerOnline || !requestId || !recipient || !action) return null;
+    try {
+      return await _post('/api/action/transfer-request/respond', {
+        requestId: String(requestId).trim(),
+        recipient: String(recipient).trim(),
+        username: String(recipient).trim(),
+        action: String(action).trim().toLowerCase()
+      });
+    } catch (e) {
+      console.warn('[ServerBridge] respondTransferRequest error:', e.message);
+      return { success: false, error: e.message };
+    }
+  }
+
   async function submitTopupRequest(requestData) {
     if (!_isServerOnline) return null;
     try {
@@ -1553,6 +1571,7 @@ var ServerBridge = (() => {
     executeWireTransfer,
     notifyWireTransfer,
     sendTransferRequest,
+    respondTransferRequest,
     submitTopupRequest,
     syncState,
     notifyLocalSpend,

@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.15",
-  "build": 1792020000000,
-  "timestamp": 1792020000000,
-  "notes": "Transfer Request & Wire Transfer Resilient Architecture v10.0.15: Routed peer-to-peer transfer requests through dbService.resilientFetch, preventing Nginx 403 blocks and ensuring seamless delivery to recipient mailboxes.",
-  "releaseNotes": "تحديث v10.0.15: إصلاح كامل لإرسال طلبات تحويل الأموال بين اللاعبين، وتوجيه عمليات الإرسال عبر الخادم المركزي ومسارات PostgREST الآمنة دون قيود Nginx مع تسليم فوري في بريد المستلم."
+  "version": "v10.0.16",
+  "build": 1792025000000,
+  "timestamp": 1792025000000,
+  "notes": "Transfer Request Accept PIN Modal & Server Proxy v10.0.16: Added dedicated PIN entry modal for accepting transfer requests, authoritatively executing payment and updating request/mailbox status without 403 Forbidden errors.",
+  "releaseNotes": "تحديث v10.0.16: إضافة نافذة مخصصة لإدخال الرقم السري (PIN) عند قبول وسداد طلبات التحويل، ومعالجة السداد والتحديث مباشرة عبر الخادم المركزي لمنع أخطاء 403 وتأكيد التحويل بسلاسة تامة."
 }

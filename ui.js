@@ -13292,6 +13292,94 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
   let cachedSentRequests = [];
   let requestsTabActive ='incoming';
 
+  function promptAcceptTransferRequest({ requestId, sender, amount }) {
+    return new Promise((resolve) => {
+      const modal = document.getElementById('accept-transfer-request-modal');
+      const senderEl = document.getElementById('accept-transfer-sender-name');
+      const amountEl = document.getElementById('accept-transfer-amount-display');
+      const balEl = document.getElementById('accept-transfer-available-balance');
+      const pinInput = document.getElementById('accept-transfer-pin-input');
+      const confirmBtn = document.getElementById('btn-confirm-accept-transfer');
+      const cancelBtn = document.getElementById('btn-cancel-accept-transfer');
+      const closeBtn = document.getElementById('btn-close-accept-transfer-modal');
+      const toggleEyeBtn = document.getElementById('btn-toggle-accept-pin-visibility');
+
+      if (!modal) {
+        const pin = window.prompt(`أدخل الرقم السري (PIN) لتأكيد دفع ${Number(amount).toLocaleString()} ج.م إلى @${sender}:`);
+        return resolve(pin ? pin.trim() : null);
+      }
+
+      if (senderEl) senderEl.textContent = `@${sender}`;
+      if (amountEl) amountEl.textContent = `${Number(amount).toLocaleString()} EGP`;
+      if (balEl && typeof GameEngine !== 'undefined' && GameEngine.state) {
+        const totalAvail = (Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0);
+        balEl.textContent = `${totalAvail.toLocaleString()} EGP`;
+      }
+      if (pinInput) {
+        pinInput.value = '';
+        pinInput.type = 'password';
+      }
+      if (toggleEyeBtn) {
+        toggleEyeBtn.innerHTML = '<i class="fa-solid fa-eye"></i>';
+      }
+
+      function cleanup() {
+        modal.classList.add('hidden');
+        confirmBtn?.removeEventListener('click', onConfirm);
+        cancelBtn?.removeEventListener('click', onCancel);
+        closeBtn?.removeEventListener('click', onCancel);
+        pinInput?.removeEventListener('keydown', onKeyDown);
+        toggleEyeBtn?.removeEventListener('click', onToggleEye);
+      }
+
+      function onConfirm() {
+        const pin = (pinInput?.value || '').trim();
+        if (!pin) {
+          showToast('تنبيه', 'يرجى إدخال الرقم السري (PIN) الخاص بحسابك لتأكيد السداد.', 'warning');
+          if (pinInput) pinInput.focus();
+          return;
+        }
+        cleanup();
+        resolve(pin);
+      }
+
+      function onCancel() {
+        cleanup();
+        resolve(null);
+      }
+
+      function onKeyDown(e) {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          onConfirm();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          onCancel();
+        }
+      }
+
+      function onToggleEye() {
+        if (!pinInput) return;
+        const isPassword = pinInput.type === 'password';
+        pinInput.type = isPassword ? 'text' : 'password';
+        if (toggleEyeBtn) {
+          toggleEyeBtn.innerHTML = isPassword ? '<i class="fa-solid fa-eye-slash"></i>' : '<i class="fa-solid fa-eye"></i>';
+        }
+      }
+
+      confirmBtn?.addEventListener('click', onConfirm);
+      cancelBtn?.addEventListener('click', onCancel);
+      closeBtn?.addEventListener('click', onCancel);
+      pinInput?.addEventListener('keydown', onKeyDown);
+      toggleEyeBtn?.addEventListener('click', onToggleEye);
+
+      modal.classList.remove('hidden');
+      setTimeout(() => {
+        if (pinInput) pinInput.focus();
+      }, 100);
+    });
+  }
+
   async function fetchAndRenderTransferRequests(force = false) {
     const s = GameEngine.state;
     if (!GameEngine.activeUsername || !s) return;
@@ -13364,8 +13452,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
           actionButtons =`
             <div class="flex gap-1.5 mt-2">
-              <button data-id="${r.id}" class="btn-req-accept flex-grow py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded text-[10px] transition">قبول ودفع</button>
-              <button data-id="${r.id}" class="btn-req-reject flex-grow py-1 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded text-[10px] transition">رفض</button>
+              <button data-id="${r.id}" class="btn-req-accept flex-grow py-1 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded text-[10px] transition cursor-pointer">قبول ودفع</button>
+              <button data-id="${r.id}" class="btn-req-reject flex-grow py-1 bg-rose-950/60 hover:bg-rose-900 text-rose-300 border border-rose-500/20 rounded text-[10px] transition cursor-pointer">رفض</button>
             </div>`;
         }
 
@@ -13387,26 +13475,28 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         if (acceptBtn) {
           acceptBtn.addEventListener('click', async () => {
             try {
-              acceptBtn.disabled = true;
-              if (rejectBtn) rejectBtn.disabled = true;
-              acceptBtn.textContent ='جاري المعالجة...';
-
-              // If player has insufficient cash in wallet but enough in bank, auto-withdraw difference
+              // 1. Pre-validate total funds
               const curCash = Number(GameEngine.state.cash) || 0;
               const curBank = Number(GameEngine.state.bank) || 0;
-              if (curCash < r.amount) {
-                const diff = r.amount - curCash;
-                if (curBank >= diff) {
-                  GameEngine.state.bank -= diff;
-                  GameEngine.state.cash += diff;
-                  await AppDB.savePlayerState(username, GameEngine.state, true);
-                } else {
-                  throw new Error(`رصيدك الإجمالي (كاش + بنك) غير كافٍ لسداد هذا الطلب.`);
-                }
+              if ((curCash + curBank) < r.amount) {
+                throw new Error(`رصيدك الإجمالي (كاش + بنك: ${(curCash + curBank).toLocaleString()} ج.م) غير كافٍ لسداد هذا الطلب (${r.amount.toLocaleString()} ج.م).`);
               }
 
-              await AppDB.acceptTransferRequest(r.id, username);
-              showToast('موافقة الطلب',`تم قبول طلب التحويل ودفع ${r.amount.toLocaleString()} EGP بنجاح!`,'success');
+              // 2. Open PIN confirmation modal
+              const pin = await promptAcceptTransferRequest({
+                requestId: r.id,
+                sender: r.sender,
+                amount: r.amount
+              });
+              if (!pin) return; // User cancelled modal
+
+              acceptBtn.disabled = true;
+              if (rejectBtn) rejectBtn.disabled = true;
+              acceptBtn.textContent = 'جاري المعالجة...';
+
+              // 3. Authoritatively accept with PIN
+              await AppDB.acceptTransferRequest(r.id, username, pin);
+              showToast('موافقة الطلب', `تم قبول طلب التحويل ودفع ${r.amount.toLocaleString()} EGP بنجاح!`, 'success');
 
               const updatedState = await AppDB.getPlayerState(username);
               if (updatedState) {
@@ -13415,15 +13505,15 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
                 GameEngine.state.netWorth = updatedState.netWorth;
               }
               await fetchAndRenderTransferRequests(true);
-              if (typeof loadTransferHistory ==='function') {
+              if (typeof loadTransferHistory === 'function') {
                 loadTransferHistory(true);
               }
               renderAll();
             } catch (err) {
-              showToast('خطأ في قبول الطلب', err.message,'error');
+              showToast('خطأ في قبول الطلب', err.message, 'error');
               acceptBtn.disabled = false;
               if (rejectBtn) rejectBtn.disabled = false;
-              acceptBtn.textContent ='قبول ودفع';
+              acceptBtn.textContent = 'قبول ودفع';
             }
           });
         }
@@ -18134,29 +18224,30 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           businessId: mailDoc.payload.businessId,
           sharePct: mailDoc.payload.sharePct
         });
-      } else if (action ==='transfer_request_accept') {
+      } else if (action === 'transfer_request_accept') {
         const reqId = mailDoc.payload && mailDoc.payload.requestId;
         const amt = Number((mailDoc.payload && mailDoc.payload.amount) || 0);
 
-        // Auto top-up cash from bank if needed
+        // Pre-validate total funds
         const curCash = Number(GameEngine.state.cash) || 0;
         const curBank = Number(GameEngine.state.bank) || 0;
-        if (curCash < amt) {
-          const diff = amt - curCash;
-          if (curBank >= diff) {
-            GameEngine.state.bank -= diff;
-            GameEngine.state.cash += diff;
-            await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
-          } else {
-            throw new Error(`رصيدك الإجمالي (كاش + بنك) غير كافٍ لسداد هذا المبلغ.`);
-          }
+        if ((curCash + curBank) < amt) {
+          throw new Error(`رصيدك الإجمالي (كاش + بنك: ${(curCash + curBank).toLocaleString()} ج.م) غير كافٍ لسداد هذا المبلغ (${amt.toLocaleString()} ج.م).`);
         }
 
+        // Open PIN confirmation modal
+        const pin = await promptAcceptTransferRequest({
+          requestId: reqId,
+          sender: mailDoc.sender,
+          amount: amt
+        });
+        if (!pin) return; // User cancelled modal
+
         if (reqId) {
-          await AppDB.acceptTransferRequest(reqId, GameEngine.activeUsername);
+          await AppDB.acceptTransferRequest(reqId, GameEngine.activeUsername, pin);
         }
-        await AppDB.updateMailStatus(mailId,'accepted');
-        showToast('تم السداد',`تم قبول طلب التحويل ودفع مبلغ ${amt.toLocaleString()} EGP بنجاح!`,'success');
+        await AppDB.updateMailStatus(mailId, 'accepted');
+        showToast('تم السداد', `تم قبول طلب التحويل ودفع مبلغ ${amt.toLocaleString()} EGP بنجاح!`, 'success');
 
         const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
         if (updatedState) {
@@ -18164,10 +18255,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           GameEngine.state.bank = updatedState.bank;
           GameEngine.state.netWorth = updatedState.netWorth;
         }
-        if (typeof fetchAndRenderTransferRequests ==='function') {
+        if (typeof fetchAndRenderTransferRequests === 'function') {
           fetchAndRenderTransferRequests(true);
         }
-        if (typeof loadTransferHistory ==='function') {
+        if (typeof loadTransferHistory === 'function') {
           loadTransferHistory(true);
         }
       } else if (action ==='transfer_request_reject') {

@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.15';
+    window._CLIENT_VERSION = 'v10.0.16';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.15';
+      const CURRENT_APP_BUILD = 'v10.0.16';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.15">
+  <link rel="stylesheet" href="app.css?v=v10.0.16">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -6599,6 +6599,95 @@
     </div>
   </div>
 
+  <!-- ==================== ACCEPT TRANSFER REQUEST MODAL ==================== -->
+  <div id="accept-transfer-request-modal" dir="rtl"
+    class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in select-none">
+    <div
+      class="glass-panel w-full max-w-sm rounded-3xl border border-emerald-500/40 bg-slate-950/95 overflow-hidden shadow-2xl flex flex-col relative text-right">
+      
+      <!-- Modal Header -->
+      <div class="p-4 border-b border-slate-800/80 bg-slate-900/60 flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-sm font-black shadow-inner">
+            <i class="fa-solid fa-money-bill-transfer"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-black text-white">قبول وسداد طلب التحويل</h3>
+            <p class="text-[10px] text-slate-400">تأكيد سداد المبلغ المطلوب عبر رمز PIN</p>
+          </div>
+        </div>
+        <button id="btn-close-accept-transfer-modal"
+          class="w-8 h-8 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center transition border border-slate-800 cursor-pointer">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="p-4 space-y-4">
+        <!-- Target Requester Info -->
+        <div class="p-3 rounded-2xl bg-slate-900/80 border border-slate-800 flex items-center justify-between">
+          <div class="flex items-center gap-2.5">
+            <div class="w-10 h-10 rounded-xl bg-slate-800 border border-slate-700 flex items-center justify-center text-emerald-400 text-base font-black">
+              <i class="fa-solid fa-user-tag"></i>
+            </div>
+            <div>
+              <span id="accept-transfer-sender-name" class="font-black text-sm text-white block">@لاعب</span>
+              <span class="text-[10px] text-slate-400">مُرسل طلب التحويل</span>
+            </div>
+          </div>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500/30 text-emerald-400 font-bold">المستفيد</span>
+        </div>
+
+        <!-- Amount Box -->
+        <div class="p-3 rounded-2xl bg-slate-900/90 border border-emerald-500/30 flex flex-col items-center justify-center gap-1 text-center">
+          <span class="text-[11px] text-slate-400 font-bold">المبلغ المطلوب سداده:</span>
+          <span id="accept-transfer-amount-display" class="text-xl font-black text-emerald-400 numbers-font">0 EGP</span>
+        </div>
+
+        <!-- Available Balance Indicator -->
+        <div class="p-2.5 rounded-xl bg-slate-900/40 border border-slate-800/80 flex items-center justify-between text-xs">
+          <span class="text-slate-400 text-[11px] font-medium">رصيدك المتاح (كاش + بنك):</span>
+          <span id="accept-transfer-available-balance" class="font-black text-amber-400 numbers-font text-xs">0 EGP</span>
+        </div>
+
+        <!-- PIN Confirmation Input -->
+        <div class="space-y-1.5">
+          <label class="block text-xs font-bold text-amber-400 flex items-center justify-between">
+            <span class="flex items-center gap-1.5">
+              <i class="fa-solid fa-lock text-xs"></i>
+              <span>الرقم السري لحسابك (PIN):</span>
+            </span>
+            <span class="text-[10px] text-slate-400 font-normal">مطلوب لتأكيد الدفع</span>
+          </label>
+          <div class="relative">
+            <input type="password" id="accept-transfer-pin-input" maxlength="16" autocomplete="current-password"
+              class="w-full p-2.5 pl-10 pr-3 bg-slate-900/90 border border-slate-700/80 rounded-xl text-center text-sm font-black text-white focus:outline-none focus:border-emerald-500/70 tracking-widest"
+              placeholder="أدخل رمز PIN لتأكيد التحويل">
+            <button type="button" id="btn-toggle-accept-pin-visibility"
+              class="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-white transition text-xs p-1 cursor-pointer">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 border-t border-slate-800/80 bg-slate-900/60 flex items-center gap-2">
+        <button id="btn-confirm-accept-transfer"
+          class="flex-1 py-3 bg-gradient-to-r from-emerald-500 via-teal-400 to-emerald-500 hover:from-emerald-400 hover:to-teal-300 text-slate-950 rounded-xl text-xs font-black transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 cursor-pointer">
+          <i class="fa-solid fa-check text-xs"></i>
+          <span>تأكيد وسداد</span>
+        </button>
+        <button id="btn-cancel-accept-transfer"
+          class="px-4 py-3 bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl text-xs font-bold transition border border-slate-800 cursor-pointer">
+          إلغاء
+        </button>
+      </div>
+
+    </div>
+  </div>
+
   <!-- ==================== MONEY DROP (رمي نُقطة) MODAL ==================== -->
   <div id="money-drop-modal" dir="rtl"
     class="hidden fixed inset-0 z-[150] flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-4 animate-fade-in select-none">
@@ -7997,7 +8086,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.15"></script>
+  <script src="core.bundle.js?v=v10.0.16"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

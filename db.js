@@ -2868,46 +2868,73 @@ var AppDB = (() => {
     }
   }
 
-  async function acceptTransferRequest(requestId, recipientUsername) {
+  async function acceptTransferRequest(requestId, recipientUsername, pin) {
     const rows = await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`);
     if (!rows || rows.length === 0) throw new Error('طلب التحويل غير موجود.');
     const req = rows[0];
     if (req.recipient !== recipientUsername) throw new Error('غير مصرح لك بقبول هذا الطلب.');
-    if (req.status !=='pending') throw new Error('هذا الطلب تم الرد عليه مسبقاً.');
+    if (req.status !== 'pending') throw new Error('هذا الطلب تم الرد عليه مسبقاً.');
 
-    // Execute transfer from recipient to sender
-    await executeWireTransfer(recipientUsername, req.sender, req.amount);
+    const cleanPin = String(pin || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.pin) || '').trim();
+    if (!cleanPin) {
+      throw new Error('مطلوب إدخال الرقم السري (PIN) الخاص بحسابك لتأكيد التحويل.');
+    }
 
-    // Update status in transfer_requests
-    await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`, {
-      method:'PATCH',
-      body: JSON.stringify({ status:'accepted' })
-    });
+    // Execute transfer from recipient to sender authoritatively
+    await executeWireTransfer(recipientUsername, req.sender, req.amount, cleanPin);
 
-    // Also update any matching mail notification in mailbox
-    try {
-      await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
-        method:'PATCH',
-        body: JSON.stringify({ status:'accepted' })
-      });
-    } catch (e) {}
+    // Update status in transfer_requests & mailbox via ServerBridge to prevent client 403
+    let serverUpdated = false;
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.respondTransferRequest === 'function') {
+      try {
+        const resp = await window.ServerBridge.respondTransferRequest(requestId, recipientUsername, 'accepted');
+        if (resp && resp.success) serverUpdated = true;
+      } catch (e) {
+        console.warn('[DB] ServerBridge respondTransferRequest fallback:', e.message);
+      }
+    }
+
+    if (!serverUpdated) {
+      await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'accepted' })
+      }).catch(() => {});
+
+      try {
+        await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'accepted' })
+        }).catch(() => {});
+      } catch (e) {}
+    }
 
     return true;
   }
 
   async function rejectTransferRequest(requestId, recipientUsername) {
-    await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`, {
-      method:'PATCH',
-      body: JSON.stringify({ status:'rejected' })
-    });
+    let serverUpdated = false;
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.respondTransferRequest === 'function') {
+      try {
+        const resp = await window.ServerBridge.respondTransferRequest(requestId, recipientUsername, 'rejected');
+        if (resp && resp.success) serverUpdated = true;
+      } catch (e) {
+        console.warn('[DB] ServerBridge respondTransferRequest fallback:', e.message);
+      }
+    }
 
-    // Also update any matching mail notification in mailbox
-    try {
-      await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
-        method:'PATCH',
-        body: JSON.stringify({ status:'rejected' })
-      });
-    } catch (e) {}
+    if (!serverUpdated) {
+      await _api(`transfer_requests?id=eq.${encodeURIComponent(requestId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'rejected' })
+      }).catch(() => {});
+
+      try {
+        await _api(`mailbox?recipient=eq.${encodeURIComponent(recipientUsername.trim())}&type=eq.transfer_request`, {
+          method: 'PATCH',
+          body: JSON.stringify({ status: 'rejected' })
+        }).catch(() => {});
+      } catch (e) {}
+    }
 
     return true;
   }

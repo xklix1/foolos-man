@@ -1523,6 +1523,71 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
+  // 15.5 POST /api/action/transfer-request/respond (Authoritative response to peer transfer request - Max 20/min)
+  fastify.post('/api/action/transfer-request/respond', {
+    config: {
+      rateLimit: {
+        max: 20,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { requestId, recipient, action } = request.body || {};
+    if (!requestId || !recipient || !action) {
+      return reply.code(400).send({ success: false, error: 'requestId, recipient and action are required' });
+    }
+
+    const cleanReqId = String(requestId).trim();
+    const cleanRecipient = String(recipient).trim();
+    const cleanAction = String(action).trim().toLowerCase(); // 'accepted' or 'rejected'
+
+    if (cleanAction !== 'accepted' && cleanAction !== 'rejected') {
+      return reply.code(400).send({ success: false, error: 'action must be accepted or rejected' });
+    }
+
+    try {
+      // 1. Fetch the request authoritatively
+      const getRes = await dbService.resilientFetch(`/rest/v1/transfer_requests?id=eq.${encodeURIComponent(cleanReqId)}`);
+      if (!getRes.ok) {
+        return reply.code(400).send({ success: false, error: 'تعذر العثور على طلب التحويل.' });
+      }
+      const rows = await getRes.json();
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return reply.code(404).send({ success: false, error: 'طلب التحويل غير موجود أو تم حذفه.' });
+      }
+      const req = rows[0];
+
+      if (req.recipient.toLowerCase() !== cleanRecipient.toLowerCase()) {
+        return reply.code(403).send({ success: false, error: 'غير مصرح لك بالرد على هذا الطلب.' });
+      }
+
+      if (req.status !== 'pending') {
+        return reply.code(400).send({ success: false, error: 'هذا الطلب تم الرد عليه مسبقاً.' });
+      }
+
+      // 2. Update transfer_requests record status
+      await dbService.resilientFetch(`/rest/v1/transfer_requests?id=eq.${encodeURIComponent(cleanReqId)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: cleanAction })
+      }).catch(e => fastify.log.warn(`[TransferRequestRespond] update notice: ${e.message}`));
+
+      // 3. Update matching notification in mailbox
+      await dbService.resilientFetch(`/rest/v1/mailbox?recipient=eq.${encodeURIComponent(cleanRecipient)}&type=eq.transfer_request`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: cleanAction })
+      }).catch(() => {});
+
+      return {
+        success: true,
+        action: cleanAction,
+        requestId: cleanReqId
+      };
+    } catch (err) {
+      fastify.log.error(err);
+      return reply.code(500).send({ success: false, error: 'فشل معالجة طلب التحويل: ' + err.message });
+    }
+  });
+
   // 12. POST /api/action/submit-topup (Authoritative Topup Submission)
   fastify.post('/api/action/submit-topup', async (request, reply) => {
     const { username, packageId, packageName, price, rewards, senderPhoneOrName, receiptNumber } = request.body || {};
