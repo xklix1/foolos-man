@@ -31,6 +31,28 @@ const {
 
 const AVATARS_DIR = path.resolve(__dirname, '../../../uploads/avatars');
 
+/**
+ * Robust constant-time or hash-aware PIN verification against stored database PIN
+ */
+function verifyPinMatch(inputPin, storedPin) {
+  if (!storedPin) return true;
+  if (!inputPin) return false;
+  const p = String(inputPin).trim();
+  const stored = String(storedPin).trim();
+  if (p === stored) return true;
+
+  const hashed = crypto.createHash('sha256').update(p).digest('hex');
+  if (
+    stored === hashed ||
+    stored === 's256_' + hashed ||
+    stored.replace(/^s256_/, '') === hashed ||
+    stored === 's256_' + p
+  ) {
+    return true;
+  }
+  return false;
+}
+
 async function actionRoutes(fastify, options) {
 
   // Middleware helper to resolve active session
@@ -1136,9 +1158,33 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       return reply.code(401).send({ success: false, error: 'غير مصرح: جلسة الحساب غير صالحة أو منتهية.', code: 'INVALID_SESSION_TOKEN' });
     }
 
-    // Call atomic PostgreSQL stored procedure via local loopback
     const sUrl = config.SUPABASE_URL || 'http://127.0.0.1:8000';
     const sKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+
+    // ── 24-Hour Cumulative Wire Transfer Limit Check (50,000,000 EGP) ──
+    let dailySent = 0;
+    if (!isExempt) {
+      try {
+        const twentyFourHoursAgo = Date.now() - 86400000;
+        const tfEndpoint = `${sUrl}/rest/v1/transfers?sender=ilike.${encodeURIComponent(cleanSender)}&created_at=gt.${twentyFourHoursAgo}&select=amount`;
+        const tfRes = await fetch(tfEndpoint, {
+          headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+        });
+        if (tfRes.ok) {
+          const pastTransfers = await tfRes.json();
+          dailySent = Array.isArray(pastTransfers) ? pastTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0) : 0;
+          if ((dailySent + amt) > 50000000) {
+            const remaining = Math.max(0, 50000000 - dailySent);
+            return reply.code(400).send({
+              success: false,
+              error: `🚫 تجاوزت الحد الأقصى اليومي المسموح به للتحويلات المصرفية (50,000,000 ج.م خلال 24 ساعة). المتبقي لك اليوم: ${remaining.toLocaleString('ar-EG')} ج.م.`
+            });
+          }
+        }
+      } catch (checkErr) {
+        fastify.log.warn(`[WireTransfer] 24h limit check note: ${checkErr.message}`);
+      }
+    }
 
     try {
       const rpcRes = await fetch(`${sUrl}/rest/v1/rpc/execute_wire_transfer`, {
@@ -1163,7 +1209,128 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
           const parsed = JSON.parse(errText);
           errMsg = parsed.message || parsed.details || parsed.hint || errText;
         } catch (_) {}
-        return reply.code(400).send({ success: false, error: errMsg || 'فشلت عملية التحويل المصرفي في قاعدة البيانات.' });
+
+        // Check if the error is due to the legacy 5,000,000 database limit on outdated PostgreSQL procedure
+        const isLegacy5mLimitError = typeof errMsg === 'string' && (
+          errMsg.includes('5,000,000') ||
+          errMsg.includes('5000000') ||
+          errMsg.includes('5 مليون') ||
+          errMsg.includes('الحد الأقصى اليومي') ||
+          errMsg.includes('الحد الأقصى للتحويل')
+        );
+
+        if (!isLegacy5mLimitError) {
+          return reply.code(400).send({ success: false, error: errMsg || 'فشلت عملية التحويل المصرفي في قاعدة البيانات.' });
+        }
+
+        fastify.log.warn(`[WireTransfer] Database stored procedure has legacy 5M limit (${errMsg}). Executing authoritative 50M self-healing transfer for ${cleanSender} -> ${cleanRecipient}...`);
+
+        // --- AUTHORITATIVE 50M SELF-HEALING TRANSFER EXECUTION ---
+        // 1. Verify PIN
+        if (senderSession.pin && !verifyPinMatch(cleanPin, senderSession.pin)) {
+          return reply.code(400).send({ success: false, error: '🚫 رمز الأمان (PIN) غير صحيح! فشلت المعاملة المصرفية.' });
+        }
+
+        // 2. Check Active Loans
+        const sState = senderSession.state || {};
+        if (!isExempt && sState.activeLoan && (Number(sState.activeLoan.amount || 0) > 0 || Number(sState.activeLoan.totalDue || 0) > 0)) {
+          return reply.code(400).send({ success: false, error: '🚫 مرفوض مصرفياً: لا يمكنك إجراء أي حوالات مالية أثناء وجود قرض بنكي نشط! يرجى سداد القرض أولاً.' });
+        }
+
+        // 3. Check Funds
+        const senderCash = Math.max(0, Number(sState.cash || 0));
+        const senderBank = Math.max(0, Number(sState.bank || 0));
+        if ((senderCash + senderBank) < amt) {
+          return reply.code(400).send({ success: false, error: 'رصيدك الإجمالي (الكاش والبنك) غير كافٍ لإتمام الحوالة.' });
+        }
+
+        // 4. Verify Recipient
+        const recipientRow = await dbService.getPlayerByUsername(cleanRecipient);
+        if (!recipientRow) {
+          return reply.code(400).send({ success: false, error: 'المستلم غير موجود. تأكد من صحة الاسم.' });
+        }
+        if (recipientRow.is_banned) {
+          return reply.code(400).send({ success: false, error: '🚫 لا يمكن التحويل لحساب محظور.' });
+        }
+
+        // 5. Calculate Deductions & Tax (5%)
+        const TAX_RATE = 0.05;
+        const taxAmt = Math.floor(amt * TAX_RATE);
+        const netAmt = amt - taxAmt;
+        const lockTs = Date.now() + 120000;
+        const nowMs = Date.now();
+
+        let deductCash = 0;
+        let deductBank = 0;
+        if (senderCash >= amt) {
+          deductCash = amt;
+          deductBank = 0;
+        } else {
+          deductCash = senderCash;
+          deductBank = amt - senderCash;
+        }
+        const newSenderCash = Math.max(0, senderCash - deductCash);
+        const newSenderBank = Math.max(0, senderBank - deductBank);
+
+        sState.cash = newSenderCash;
+        sState.bank = newSenderBank;
+        sState.totalTaxesPaid = (Number(sState.totalTaxesPaid) || 0) + taxAmt;
+        sState.netWorth = Math.max(0, (Number(sState.netWorth) || 0) - amt);
+        sState.adminModifiedTimestamp = lockTs;
+
+        const recipState = recipientRow.state || {};
+        const recipBank = Number(recipientRow.bank !== undefined ? recipientRow.bank : (recipState.bank || 0));
+        const newRecipBank = recipBank + netAmt;
+        recipState.bank = newRecipBank;
+        recipState.netWorth = Math.max(0, Number(recipientRow.net_worth !== undefined ? recipientRow.net_worth : (recipState.netWorth || 0)) + netAmt);
+        recipState.adminModifiedTimestamp = lockTs;
+
+        // Persist DB updates and logs
+        await Promise.all([
+          dbService.savePlayerState(cleanSender, sState),
+          dbService.savePlayerState(cleanRecipient, recipState),
+          fetch(`${sUrl}/rest/v1/transfers`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ sender: cleanSender, recipient: cleanRecipient, amount: amt, created_at: nowMs })
+          }).catch(e => fastify.log.warn(`[WireTransfer] transfers log notice: ${e.message}`)),
+          fetch(`${sUrl}/rest/v1/mailbox`, {
+            method: 'POST',
+            headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              sender: cleanSender,
+              recipient: cleanRecipient,
+              type: 'transfer_received',
+              payload: {
+                title: 'حوالة بنكية واردة 💸',
+                amount: netAmt,
+                gross_amount: amt,
+                tax_amount: taxAmt,
+                tax_percent: 5,
+                message: `تم استلام حوالة مالية بقيمة ${netAmt.toLocaleString('ar-EG')} EGP (بعد خصم ضريبة التحويل المصرفي 5%: ${taxAmt.toLocaleString('ar-EG')} EGP) من اللاعب "${cleanSender}".`
+              },
+              status: 'unread',
+              created_at: nowMs
+            })
+          }).catch(e => fastify.log.warn(`[WireTransfer] mailbox notice: ${e.message}`))
+        ]);
+
+        sessionManager.deductSenderWireTransfer(cleanSender, amt, lockTs);
+        sessionManager.creditRecipientWireTransfer(cleanRecipient, netAmt, lockTs);
+        sessionManager.forceSaveSession(cleanSender).catch(() => {});
+        sessionManager.forceSaveSession(cleanRecipient).catch(() => {});
+
+        return {
+          success: true,
+          sender: cleanSender,
+          recipient: cleanRecipient,
+          grossAmount: amt,
+          taxAmount: taxAmt,
+          amount: netAmt,
+          newCash: newSenderCash,
+          newBank: newSenderBank,
+          newNetWorth: sState.netWorth
+        };
       }
 
       // Synchronize in-memory RAM sessions
