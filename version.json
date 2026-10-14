@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.14",
-  "build": 1792015000000,
-  "timestamp": 1792015000000,
-  "notes": "Wire Transfer Authoritative Resilience v10.0.14: Direct PostgREST loopback, self-healing transfer execution bypass on Nginx 403, and automated DB PIN fallback.",
-  "releaseNotes": "تحديث v10.0.14: إصلاح شامل للتحويلات البنكية، تفعيل الربط المباشر الداخلي لـ PostgREST، تجاوز قيود Nginx عبر آلية المعالجة الحصيفة المعتمدة (Self-Healing Authoritative Transfer) بنجاح 100%، وتأكيد التحقق من رمز PIN بدقة."
+  "version": "v10.0.15",
+  "build": 1792020000000,
+  "timestamp": 1792020000000,
+  "notes": "Transfer Request & Wire Transfer Resilient Architecture v10.0.15: Routed peer-to-peer transfer requests through dbService.resilientFetch, preventing Nginx 403 blocks and ensuring seamless delivery to recipient mailboxes.",
+  "releaseNotes": "تحديث v10.0.15: إصلاح كامل لإرسال طلبات تحويل الأموال بين اللاعبين، وتوجيه عمليات الإرسال عبر الخادم المركزي ومسارات PostgREST الآمنة دون قيود Nginx مع تسليم فوري في بريد المستلم."
 }

@@ -880,13 +880,14 @@ var ServerBridge = (() => {
     if (!_isServerOnline || !sender || !recipient || !amount) return null;
     try {
       return await _post('/api/action/transfer-request', {
-        sender,
-        recipient,
+        sender: String(sender).trim(),
+        recipient: String(recipient).trim(),
+        username: String(sender).trim(),
         amount: Number(amount)
       });
     } catch (e) {
       console.warn('[ServerBridge] sendTransferRequest error:', e.message);
-      return null;
+      return { success: false, error: e.message };
     }
   }
 

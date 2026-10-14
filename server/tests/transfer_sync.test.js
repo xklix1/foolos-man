@@ -242,3 +242,31 @@ test('Spend Deduction Anti-Rollback: Stale client spending cash is accepted', as
   // Clean up
   sessionManager.sessions.delete(uKey);
 });
+
+test('Transfer Request API Route — Validation and Creation', async (t) => {
+  const app = require('../src/server');
+
+  // Test missing fields
+  const resBad = await app.inject({
+    method: 'POST',
+    url: '/api/action/transfer-request',
+    payload: {
+      sender: '',
+      recipient: 'NewU',
+      amount: 1000
+    }
+  });
+  assert.equal(resBad.statusCode, 400, 'Should reject missing sender');
+
+  // Test negative amount
+  const resNeg = await app.inject({
+    method: 'POST',
+    url: '/api/action/transfer-request',
+    payload: {
+      sender: 'Bursival',
+      recipient: 'NewU',
+      amount: -500
+    }
+  });
+  assert.equal(resNeg.statusCode, 400, 'Should reject negative amount');
+});

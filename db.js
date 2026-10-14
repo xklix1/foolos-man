@@ -2791,15 +2791,14 @@ var AppDB = (() => {
 
     let createdReq = null;
 
-    // Use authoritative ServerBridge if online to bypass client RLS permission limits
+    // Use authoritative ServerBridge if online to bypass client RLS permission limits and Nginx restrictions
     if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline() && typeof window.ServerBridge.sendTransferRequest === 'function') {
-      try {
-        const sRes = await window.ServerBridge.sendTransferRequest(senderUsername.trim(), recipientUsername.trim(), amt);
-        if (sRes && sRes.success) {
-          return true;
-        }
-      } catch (bridgeErr) {
-        console.warn('[DB] ServerBridge transfer request failed, falling back to direct API:', bridgeErr.message);
+      const sRes = await window.ServerBridge.sendTransferRequest(senderUsername.trim(), recipientUsername.trim(), amt);
+      if (sRes && sRes.success) {
+        return true;
+      }
+      if (sRes && sRes.error) {
+        throw new Error(sRes.error);
       }
     }
 
@@ -2822,6 +2821,9 @@ var AppDB = (() => {
         const sRes = await window.ServerBridge.sendTransferRequest(senderUsername.trim(), recipientUsername.trim(), amt);
         if (sRes && sRes.success) {
           return true;
+        }
+        if (sRes && sRes.error) {
+          throw new Error(sRes.error);
         }
       }
       throw apiErr;

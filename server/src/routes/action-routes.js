@@ -1474,12 +1474,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     try {
       const now = Date.now();
-      const insertRes = await fetch(`${sUrl}/rest/v1/transfer_requests`, {
+      const insertRes = await dbService.resilientFetch('/rest/v1/transfer_requests', {
         method: 'POST',
         headers: {
-          'apikey': sKey,
-          'Authorization': `Bearer ${sKey}`,
-          'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({
@@ -1499,13 +1496,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       const createdReq = rows && rows[0];
 
       // Send interactive mail notification to recipient
-      await fetch(`${sUrl}/rest/v1/mailbox`, {
+      await dbService.resilientFetch('/rest/v1/mailbox', {
         method: 'POST',
-        headers: {
-          'apikey': sKey,
-          'Authorization': `Bearer ${sKey}`,
-          'Content-Type': 'application/json'
-        },
         body: JSON.stringify({
           sender: String(sender).trim(),
           recipient: String(recipient).trim(),
@@ -1559,12 +1551,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     try {
       // 1. Fetch current topup requests via service_role
-      const getRes = await fetch(`${sUrl}/rest/v1/globals?id=eq.topup_requests`, {
-        headers: {
-          'apikey': sKey,
-          'Authorization': `Bearer ${sKey}`
-        }
-      });
+      const getRes = await dbService.resilientFetch('/rest/v1/globals?id=eq.topup_requests');
       let currentRequests = [];
       if (getRes.ok) {
         const rows = await getRes.json();
@@ -1578,12 +1565,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         currentRequests = currentRequests.slice(0, 300);
       }
 
-      const saveRes = await fetch(`${sUrl}/rest/v1/globals`, {
+      const saveRes = await dbService.resilientFetch('/rest/v1/globals', {
         method: 'POST',
         headers: {
-          'apikey': sKey,
-          'Authorization': `Bearer ${sKey}`,
-          'Content-Type': 'application/json',
           'Prefer': 'resolution=merge-duplicates'
         },
         body: JSON.stringify({
