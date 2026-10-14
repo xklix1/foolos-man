@@ -33,8 +33,8 @@ const config = {
   HOST: process.env.HOST || '0.0.0.0',
   NODE_ENV: process.env.NODE_ENV || 'development',
   
-  // Supabase connection (Local loopback on Linux VPS bypasses Nginx external restrictions with 0ms latency)
-  SUPABASE_URL: process.env.SUPABASE_INTERNAL_URL || (process.platform === 'linux' ? 'http://127.0.0.1:8000' : (process.env.SUPABASE_URL || 'https://rasalmal.online')),
+  // Supabase connection (Direct HTTPS to production eliminates PostgREST local loopback 401/timeout issues)
+  SUPABASE_URL: process.env.SUPABASE_INTERNAL_URL || process.env.SUPABASE_URL || 'https://rasalmal.online',
   SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTc1ODc3LCJleHAiOjIyNjQwMTU4Nzd9.f21_aqY88akkuTp0OGf0VHnxKNjot1Xg9RTr6MITodg',
   SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NzU4NzcsImV4cCI6MjI2NDAxNTg3N30.yihpgeW-aXfKQiTYxsZRzP2AvOGvaI4UmF_3tmvNMBU',
   ADMIN_KEY_SHA256: process.env.ADMIN_KEY_SHA256 || 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99',
