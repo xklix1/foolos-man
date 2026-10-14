@@ -270,3 +270,44 @@ test('Transfer Request API Route — Validation and Creation', async (t) => {
   });
   assert.equal(resNeg.statusCode, 400, 'Should reject negative amount');
 });
+
+test('Recipient Bank Balance Anti-Downgrade Protection: Stale client sync cannot overwrite credited wire transfer', async (t) => {
+  const recipientUser = 'recipient_stale_sync_' + Date.now();
+  const uKey = recipientUser.toLowerCase();
+
+  // 1. Recipient session is credited on server with 10M EGP (e.g. from an accepted transfer request)
+  sessionManager.sessions.set(uKey, {
+    username: recipientUser,
+    pin: '1234',
+    sessionId: 'sess_' + recipientUser,
+    sessionToken: 'tok_' + recipientUser,
+    state: {
+      username: recipientUser,
+      cash: 500000,
+      bank: 10000000,
+      netWorth: 10500000,
+      adminModifiedTimestamp: Date.now() + 120000
+    },
+    dirty: false,
+    lastActivity: Date.now()
+  });
+
+  // 2. Client is stale and sends its old bank balance of 1,000,000 EGP (without an internal cash increase or server debit)
+  const staleClientState = {
+    username: recipientUser,
+    cash: 500000,
+    bank: 1000000,
+    netWorth: 1500000,
+    adminModifiedTimestamp: Date.now() + 120000
+  };
+
+  const updated = await sessionManager.updateSessionState(recipientUser, staleClientState, false);
+  assert.equal(updated, true, 'updateSessionState should succeed');
+
+  const session = sessionManager.sessions.get(uKey);
+  assert.equal(session.state.bank, 10000000, 'Authoritative server bank balance MUST be preserved and not downgraded to stale client bank');
+
+  // Clean up
+  sessionManager.sessions.delete(uKey);
+});
+

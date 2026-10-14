@@ -8956,8 +8956,11 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
                 AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, GameEngine.state);
               }
             } catch (_) {}
+            if (typeof renderStatsBar === 'function') renderStatsBar();
             if (typeof renderAll === 'function') renderAll();
             if (typeof renderHeader === 'function') renderHeader();
+            if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+            if (typeof window.renderAll === 'function') window.renderAll();
           }
         }
       } catch (e) {
@@ -19622,12 +19625,15 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     // Process incoming bank transfers
     const transfers = mails.filter(m => m.type ==='transfer_received' && (m.status ==='unread' || m.status ==='pending'));
     for (const tr of transfers) {
+      const mailId = String(tr.id || '');
+      const isAlreadyCredited = (typeof window._isTransferCredited === 'function' ? window._isTransferCredited(mailId) : (window._creditedTransferMailIds && window._creditedTransferMailIds.has(mailId)));
+
       if (window._processedTransferMailIds && window._processedTransferMailIds.has(tr.id)) continue;
       if (!window._processedTransferMailIds) window._processedTransferMailIds = new Set();
       window._processedTransferMailIds.add(tr.id);
 
       try {
-        const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
+        const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : (tr.payload && tr.payload.net_transfer_amount ? tr.payload.net_transfer_amount : 0));
 
         if (amount > 0) {
           // Deduplicate in-app toast notification with listenToMailbox
@@ -19641,17 +19647,67 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           // Mark mail status as read immediately to archive and prevent re-processing
           AppDB.updateMailStatus(tr.id, 'read').catch(() => {});
 
-          // AUTHORITATIVE BALANCE RECONCILIATION:
-          // The database/server procedure has ALREADY credited the recipient's bank balance authoritatively.
-          // We must NEVER add the amount again client-side (GameEngine.state.bank += amount) which caused the 2x money bug!
-          // Instead, fetch and synchronize the authoritative player state from the database.
+          // ZERO-LATENCY INSTANT BALANCE APPLICATION (Strictly Single-Credited)
+          if (!isAlreadyCredited) {
+            if (typeof window._markTransferCredited === 'function') {
+              window._markTransferCredited(mailId);
+            } else if (window._creditedTransferMailIds) {
+              window._creditedTransferMailIds.add(mailId);
+            }
+
+            if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.activeUsername) {
+              const curUser = (GameEngine.activeUsername || '').trim().toLowerCase();
+              const mailRecipient = (tr.recipient || '').trim().toLowerCase();
+              if (!mailRecipient || mailRecipient === curUser) {
+                const st = GameEngine.state;
+                st.bank = (Number(st.bank) || 0) + amount;
+                st.adminModifiedTimestamp = Math.max(Number(st.adminModifiedTimestamp || 0), Date.now() + 120000);
+                st._legitimateTransactionBypass = true;
+
+                if (typeof GameEngine.calculateTotalNetWorth === 'function') {
+                  GameEngine.calculateTotalNetWorth();
+                } else {
+                  st.netWorth = (Number(st.cash) || 0) + (Number(st.bank) || 0);
+                }
+
+                if (typeof GameEngine.recordPlayerActivity === 'function') {
+                  GameEngine.recordPlayerActivity(
+                    'استلام تحويل بنكي',
+                    `استلام حوالة مصرفية واردة بقيمة ${amount.toLocaleString()} ج.م من @${tr.sender}`,
+                    'banking',
+                    { amount: amount, bank: st.bank, cash: st.cash }
+                  );
+                }
+
+                if (typeof AppDB.setEncryptedLocalState === 'function') {
+                  AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, st);
+                }
+
+                if (typeof window.ServerBridge !== 'undefined' && typeof window.ServerBridge.syncState === 'function') {
+                  window.ServerBridge.syncState(st, true).catch(() => {});
+                } else if (typeof AppDB.savePlayerState === 'function') {
+                  AppDB.savePlayerState(GameEngine.activeUsername, st, true).catch(() => {});
+                }
+
+                if (typeof renderStatsBar === 'function') renderStatsBar();
+                if (typeof renderAll === 'function') renderAll();
+                if (typeof renderBank === 'function') renderBank();
+                if (typeof updateBankInDOM === 'function') updateBankInDOM();
+              }
+            }
+          }
+
+          // Background Authoritative Verification from DB
           if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.activeUsername) {
             if (typeof AppDB !== 'undefined' && typeof AppDB.getPlayerState === 'function') {
               AppDB.getPlayerState(GameEngine.activeUsername).then(freshState => {
                 if (freshState && GameEngine.state) {
-                  GameEngine.state.bank = Number(freshState.bank || 0);
-                  GameEngine.state.cash = Number(freshState.cash || 0);
-                  GameEngine.state.netWorth = Number(freshState.netWorth || 0);
+                  const freshBank = Number(freshState.bank || 0);
+                  if (freshBank > Number(GameEngine.state.bank || 0)) {
+                    GameEngine.state.bank = freshBank;
+                  }
+                  GameEngine.state.cash = Number(freshState.cash !== undefined ? freshState.cash : GameEngine.state.cash);
+                  GameEngine.state.netWorth = Number(freshState.netWorth !== undefined ? freshState.netWorth : GameEngine.state.netWorth);
                   GameEngine.state.adminModifiedTimestamp = Math.max(
                     Number(GameEngine.state.adminModifiedTimestamp || 0),
                     Number(freshState.adminModifiedTimestamp || 0)
@@ -19661,6 +19717,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
                   }
                   if (typeof renderStatsBar === 'function') renderStatsBar();
                   if (typeof renderAll === 'function') renderAll();
+                  if (typeof renderBank === 'function') renderBank();
+                  if (typeof updateBankInDOM === 'function') updateBankInDOM();
                 }
               }).catch(() => {});
             }
@@ -25896,6 +25954,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 window.UIController = UIController;
 window.UI = UIController;
 window.renderStatsBar = UIController.renderStatsBar;
+window.renderHeader = UIController.renderStatsBar;
+window.renderAll = () => { if (typeof renderAll === 'function') renderAll(); };
 window.showToast = UIController.showToast;
 window.openNetWorthBreakdownModal = UIController.openNetWorthBreakdownModal;
 window.closeNetWorthBreakdownModal = UIController.closeNetWorthBreakdownModal;

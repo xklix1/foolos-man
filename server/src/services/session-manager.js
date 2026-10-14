@@ -323,8 +323,15 @@ class SessionManager {
         // (b) Bank reconciliation:
         // Accept legitimate bank growth (farm contracts, investments, dividends, passive profits)
         if (incomingBank <= Number(s.bank || 0)) {
-          // Accept bank expenditures (transfers, real estate debits)
-          s.bank = incomingBank;
+          const bankDrop = Number(s.bank || 0) - incomingBank;
+          const hasRecentServerBankAction = Boolean(
+            session.lastServerBankActionAt && (Date.now() - session.lastServerBankActionAt < 15000)
+          );
+          if (bankDrop === 0 || hasRecentServerBankAction) {
+            s.bank = incomingBank;
+          } else {
+            console.log(`[SessionManager] Preserved authoritative server bank for "${username}": Server=${s.bank.toLocaleString()} vs StaleClient=${incomingBank.toLocaleString()} (+${bankDrop.toLocaleString()})`);
+          }
         } else {
           // Bank increased: validate against velocity jump
           if (bankDiff <= maxAllowedJump) {

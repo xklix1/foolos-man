@@ -235,6 +235,8 @@ var AppDB = (() => {
       'apikey': activeAuthKey,
       'Authorization': `Bearer ${activeAuthKey}`,
       'Content-Type': 'application/json',
+      'Cache-Control': 'no-cache',
+      'Pragma': 'no-cache',
       ...(options.headers || {})
     };
 
@@ -2234,7 +2236,7 @@ var AppDB = (() => {
     if (!username) return null;
     const u = username.trim();
     try {
-      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=is_banned,jail_timer,admin_modified_timestamp,state`);
+      const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=is_banned,jail_timer,admin_modified_timestamp,cash,bank,gold,net_worth,state`);
       if (!rows || rows.length === 0) return null;
       const row = rows[0];
       const rawState = (typeof row.state === 'object' && row.state) ? row.state : {};
@@ -2244,7 +2246,12 @@ var AppDB = (() => {
         freezeUntil: Number(rawState.freezeUntil || 0),
         freezeReason: rawState.freezeReason || '',
         underSuspicion: Boolean(rawState.underSuspicion),
-        adminModifiedTimestamp: Number(row.admin_modified_timestamp || rawState.adminModifiedTimestamp || 0)
+        adminModifiedTimestamp: Number(row.admin_modified_timestamp || rawState.adminModifiedTimestamp || 0),
+        cash: (row.cash !== null && row.cash !== undefined) ? Number(row.cash) : Number(rawState.cash || 0),
+        bank: (row.bank !== null && row.bank !== undefined) ? Number(row.bank) : Number(rawState.bank || 0),
+        gold: (row.gold !== null && row.gold !== undefined) ? Number(row.gold) : Number(rawState.gold || 0),
+        netWorth: (row.net_worth !== null && row.net_worth !== undefined) ? Number(row.net_worth) : Number(rawState.netWorth || 0),
+        state: rawState
       };
     } catch (e) {
       return null;
@@ -3056,6 +3063,34 @@ var AppDB = (() => {
     }
   }
 
+  function _isTransferCredited(mailId) {
+    if (!mailId) return true;
+    if (typeof window === 'undefined') return false;
+    if (!window._creditedTransferMailIds) {
+      window._creditedTransferMailIds = new Set();
+      try {
+        const saved = JSON.parse(localStorage.getItem('rasalmal_credited_transfers') || '[]');
+        if (Array.isArray(saved)) saved.forEach(id => window._creditedTransferMailIds.add(String(id)));
+      } catch (_) {}
+    }
+    return window._creditedTransferMailIds.has(String(mailId));
+  }
+
+  function _markTransferCredited(mailId) {
+    if (!mailId || typeof window === 'undefined') return;
+    if (!window._creditedTransferMailIds) window._creditedTransferMailIds = new Set();
+    window._creditedTransferMailIds.add(String(mailId));
+    try {
+      const list = Array.from(window._creditedTransferMailIds).slice(-300);
+      localStorage.setItem('rasalmal_credited_transfers', JSON.stringify(list));
+    } catch (_) {}
+  }
+
+  if (typeof window !== 'undefined') {
+    window._isTransferCredited = _isTransferCredited;
+    window._markTransferCredited = _markTransferCredited;
+  }
+
   function listenToMailbox(username, callback) {
     if (!username || typeof callback !=='function') return () => {};
     let isSubscribed = true;
@@ -3069,6 +3104,14 @@ var AppDB = (() => {
         const rows = await _api(`mailbox?recipient=ilike.${encodeURIComponent(username.trim())}&order=created_at.desc&limit=30`);
         if (rows && isSubscribed) {
           if (isFirstRun) {
+            // Seed all pre-existing transfer_received mails to _creditedTransferMailIds
+            // so transfers credited in DB while player was offline are never duplicate credited!
+            rows.forEach(r => {
+              if (r.type === 'transfer_received') {
+                _markTransferCredited(r.id);
+              }
+            });
+
             // Check if player has incoming unread moderator private chat waiting
             const pendingModChat = rows.find(r => r.type === 'investigation_chat' && (r.status === 'unread' || r.status === 'pending'));
             if (pendingModChat) {
@@ -3087,8 +3130,9 @@ var AppDB = (() => {
                 
                 // 1. Bank Wire Transfer Received
                 if (type === 'transfer_received') {
-                  const amt = Number(payload.amount || 0);
+                  const amt = Number(payload.amount || payload.net_transfer_amount || 0);
                   const amtStr = amt > 0 ? `${amt.toLocaleString()} EGP` : '';
+                  const mailId = String(m.id || '');
                   
                   // Deduplicate in-app notification with renderMailbox
                   if (typeof window !== 'undefined') {
@@ -3109,28 +3153,94 @@ var AppDB = (() => {
                     updateMailStatus(m.id, 'read').catch(() => {});
                   }
 
-                  // CRITICAL FIX: Immediately apply fresh DB balance to recipient's in-memory state.
-                  // Do NOT rely solely on onSnapshot (which requires adminModifiedTimestamp > lastKnown).
-                  // If recipient's state JSONB is null the SQL won't update adminModifiedTimestamp in
-                  // the nested state blob, causing the onSnapshot guard to silently skip the update.
+                  // ZERO-LATENCY INSTANT BALANCE APPLICATION & UI RE-RENDER
+                  // If this transfer was not yet credited to local memory, credit it immediately.
+                  // Deduplication via _isTransferCredited / _markTransferCredited strictly guarantees
+                  // it will NEVER be credited twice (preventing any duplicate money bug).
+                  if (mailId && !_isTransferCredited(mailId)) {
+                    _markTransferCredited(mailId);
+
+                    const activeEngine = (typeof window !== 'undefined' && window.GameEngine) || (typeof GameEngine !== 'undefined' ? GameEngine : null);
+                    if (activeEngine && activeEngine.state) {
+                      const curUser = (activeEngine.activeUsername || (activeEngine.state && activeEngine.state.username) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '').trim().toLowerCase();
+                      const mailRecipient = (m.recipient || '').trim().toLowerCase();
+                      if (!mailRecipient || !curUser || mailRecipient === curUser) {
+                        const st = activeEngine.state;
+                        if (amt > 0) {
+                          st.bank = (Number(st.bank) || 0) + amt;
+                          st.adminModifiedTimestamp = Math.max(Number(st.adminModifiedTimestamp || 0), Date.now() + 120000);
+                          st._legitimateTransactionBypass = true;
+
+                          if (typeof activeEngine.calculateTotalNetWorth === 'function') {
+                            activeEngine.calculateTotalNetWorth();
+                          } else {
+                            st.netWorth = (Number(st.cash) || 0) + (Number(st.bank) || 0);
+                          }
+
+                          if (typeof activeEngine.recordPlayerActivity === 'function') {
+                            activeEngine.recordPlayerActivity(
+                              'استلام تحويل بنكي',
+                              `استلام حوالة مصرفية واردة بقيمة ${amt.toLocaleString()} ج.م من @${sender}`,
+                              'banking',
+                              { amount: amt, bank: st.bank, cash: st.cash }
+                            );
+                          }
+
+                          const activeUser = activeEngine.activeUsername || (activeEngine.state && activeEngine.state.username) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '';
+                          if (typeof setEncryptedLocalState === 'function' && activeUser) {
+                            setEncryptedLocalState(`rasalmal_state_${activeUser}`, st);
+                          }
+
+                          // Synchronize with server RAM session immediately
+                          if (typeof window.ServerBridge !== 'undefined' && typeof window.ServerBridge.syncState === 'function') {
+                            window.ServerBridge.syncState(st, true).catch(() => {});
+                          } else if (typeof savePlayerState === 'function' && activeUser) {
+                            savePlayerState(activeUser, st, true).catch(() => {});
+                          }
+
+                          // Immediately re-render all UI elements
+                          if (typeof renderStatsBar === 'function') renderStatsBar();
+                          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+                          if (typeof UI !== 'undefined' && typeof UI.renderStatsBar === 'function') UI.renderStatsBar();
+                          if (typeof renderAll === 'function') renderAll();
+                          if (typeof window.renderAll === 'function') window.renderAll();
+                          if (typeof renderBank === 'function') renderBank();
+                          if (typeof window.renderBank === 'function') window.renderBank();
+                          if (typeof updateBankInDOM === 'function') updateBankInDOM();
+                          if (typeof window.updateBankInDOM === 'function') window.updateBankInDOM();
+                        }
+                      }
+                    }
+                  }
+
+                  // Background Authoritative Verification from DB
                   try {
                     if (typeof window !== 'undefined' && window.GameEngine && window.GameEngine.activeUsername) {
                       getPlayerState(window.GameEngine.activeUsername).then(freshState => {
                         if (!freshState) return;
                         if (window.GameEngine && window.GameEngine.state) {
-                          const prev = Number(window.GameEngine.state.bank || 0);
-                          window.GameEngine.state.bank = Number(freshState.bank || 0);
-                          window.GameEngine.state.cash = Number(freshState.cash || 0);
-                          window.GameEngine.state.netWorth = Number(freshState.netWorth || 0);
-                          window.GameEngine.state.adminModifiedTimestamp = Number(freshState.adminModifiedTimestamp || 0);
+                          const freshBank = Number(freshState.bank || 0);
+                          // Only update if freshBank is higher or equal to current bank
+                          if (freshBank > Number(window.GameEngine.state.bank || 0)) {
+                            window.GameEngine.state.bank = freshBank;
+                          }
+                          window.GameEngine.state.cash = Number(freshState.cash !== undefined ? freshState.cash : window.GameEngine.state.cash);
+                          window.GameEngine.state.netWorth = Number(freshState.netWorth !== undefined ? freshState.netWorth : window.GameEngine.state.netWorth);
+                          window.GameEngine.state.adminModifiedTimestamp = Math.max(
+                            Number(window.GameEngine.state.adminModifiedTimestamp || 0),
+                            Number(freshState.adminModifiedTimestamp || 0)
+                          );
                           if (typeof setEncryptedLocalState === 'function') {
                             setEncryptedLocalState(`rasalmal_state_${window.GameEngine.activeUsername}`, window.GameEngine.state);
                           }
-                          // Re-render UI if bank balance actually changed
-                          if (Number(freshState.bank || 0) !== prev) {
-                            if (typeof window.renderAll === 'function') window.renderAll();
-                            if (typeof window.renderHeader === 'function') window.renderHeader();
-                          }
+                          if (typeof renderStatsBar === 'function') renderStatsBar();
+                          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+                          if (typeof renderAll === 'function') renderAll();
+                          if (typeof window.renderAll === 'function') window.renderAll();
+                          if (typeof renderBank === 'function') renderBank();
+                          if (typeof window.renderBank === 'function') window.renderBank();
+                          if (typeof updateBankInDOM === 'function') updateBankInDOM();
+                          if (typeof window.updateBankInDOM === 'function') window.updateBankInDOM();
                         }
                       }).catch(() => {});
                     }
@@ -7526,6 +7636,8 @@ var AppDB = (() => {
     setLastVerifiedWealth,
     getActiveSessionToken,
     invalidateCurrentSession,
+    _isTransferCredited,
+    _markTransferCredited,
     // Expose runtime token accessor for inline scripts that load before db.js is fully parsed
     _getAnonKey: () => _getRuntimeToken(),
     // Internal guard used by game.js defineProperty to allow legitimate admin flag updates

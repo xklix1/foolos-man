@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.19",
-  "build": 1792036500000,
-  "timestamp": 1792036500000,
-  "notes": "Banking Activity Audit Log Fix v10.0.19: Restored banking transactions (deposits, withdrawals, and interest claims) to player activity audit logs. Fixed state reconciliation to record banking activities on both client and server, merged session activity logs seamlessly without overwriting, and corrected log slicing to preserve recent records for moderator dashboard inspection.",
-  "releaseNotes": "تحديث v10.0.19: ربط وتوثيق حركات السحب والإيداع وعوائد الودائع البنكية في سجل نشاط اللاعب (Activity Log) ليظهر فوراً وتفصيلياً في لوحة المراقبين وفلتر البنوك والقروض، ومنع مسح السجلات أثناء مزامنة الجلسات."
+  "version": "v10.0.20",
+  "build": 1792038000000,
+  "timestamp": 1792038000000,
+  "notes": "Transfer Request Recipient Balance Sync Fix v10.0.20: Fixed critical bug where recipient of an accepted transfer request received notifications without the funds appearing in their account. Resolved incomplete balance queries in getPlayerSecurityStatus, enabled UI stats bar re-rendering, and guarded authoritative server bank balance from being overwritten by stale client sync.",
+  "releaseNotes": "تحديث v10.0.20: إصلاح مشكلة عدم نزول الأموال في حساب مرسل طلب التحويل بعد قبوله من الطرف الآخر، وتحديث أرصدة الكاش والبنك بدقة في استعلامات الحماية الفورية، وحماية رصيد البنك بالسيرفر من التراجع عند مزامنة الجلسات."
 }
