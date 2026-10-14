@@ -8896,51 +8896,166 @@
           const isMaint = Boolean(maintData && (maintData.active || maintData.enabled));
           const maintOverlay = document.getElementById('maintenance-overlay');
           if (isMaint && !isStagingEnv()) {
-            try {
-              sessionStorage.removeItem('rasalmal_tester_pass');
-              localStorage.removeItem('rasalmal_tester_pass');
-            } catch (e) {}
-            const tb = document.getElementById('tester-mode-badge');
-            if (tb) tb.remove();
+            // Check if tester has active bypass token in this session
+            const hasTesterToken = (() => {
+              try { return Boolean(sessionStorage.getItem('rasalmal_tester_pass')); } catch (e) { return false; }
+            })();
 
-            if (!maintOverlay) {
-              const overlay = document.createElement('div');
-              overlay.id = 'maintenance-overlay';
-              overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none';
-              overlay.style.pointerEvents = 'auto';
-              overlay.innerHTML = `
-                <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border-2 border-amber-500/70 rounded-3xl p-6 sm:p-7 text-center shadow-2xl shadow-amber-500/20">
-                  <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-500/20 to-yellow-500/30 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 text-3xl shadow-inner">
-                    <i class="fa-solid fa-rocket animate-bounce" style="animation-duration: 2.5s;"></i>
-                  </div>
-                  <div class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/30 mb-2">
-                    SEASON 2 • الموسم الثاني
-                  </div>
-                  <h3 class="text-xl sm:text-2xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
-                    <span>الخوادم رهن التجهيز للموسم الجديد</span>
-                  </h3>
-                  <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4 font-medium">
-                    ${maintData.message || 'يجري العمل حالياً على تجهيز البنية التحتية والموازنة الاقتصادية لضمان انطلاقة خالية من الأخطاء وتجربة عادلة وممتعة للجميع.'}
-                  </p>
-                  <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
-                    class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline">
-                    <i class="fa-brands fa-facebook text-lg"></i>
-                    <span>تواصل معنا ومتابعة آخر الأخبار عبر فيسبوك</span>
-                  </a>
-                  <button id="btn-maintenance-recheck" class="w-full mt-2.5 py-3 px-6 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
-                    <i class="fa-solid fa-rotate-right text-sm text-amber-400"></i>
-                    <span>إعادة فحص حالة الخوادم الآن (Reload)</span>
-                  </button>
-                </div>
-              `;
-              document.body.appendChild(overlay);
-              const recheckBtn = document.getElementById('btn-maintenance-recheck');
-              if (recheckBtn) {
-                recheckBtn.onclick = () => window.location.reload();
+            if (hasTesterToken) {
+              if (maintOverlay) {
+                maintOverlay.classList.add('hidden');
+                maintOverlay.style.display = 'none';
               }
             } else {
-              maintOverlay.classList.remove('hidden');
-              maintOverlay.style.display = 'flex';
+              if (!maintOverlay) {
+                const overlay = document.createElement('div');
+                overlay.id = 'maintenance-overlay';
+                overlay.className = 'fixed inset-0 z-[9999998] flex items-center justify-center bg-slate-950/95 backdrop-blur-2xl p-4 select-none';
+                overlay.style.pointerEvents = 'auto';
+                overlay.innerHTML = `
+                  <div class="relative w-full max-w-md bg-gradient-to-b from-slate-900 via-slate-900/95 to-slate-950 border-2 border-amber-500/70 rounded-3xl p-6 sm:p-7 text-center shadow-2xl shadow-amber-500/20">
+                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-gradient-to-tr from-amber-500/20 to-yellow-500/30 border-2 border-amber-500/50 flex items-center justify-center text-amber-400 text-3xl shadow-inner">
+                      <i class="fa-solid fa-rocket animate-bounce" style="animation-duration: 2.5s;"></i>
+                    </div>
+                    <div class="inline-block px-3 py-1 bg-amber-500/20 text-amber-300 text-xs font-black rounded-full border border-amber-500/30 mb-2">
+                      SEASON 2 • الموسم الثاني
+                    </div>
+                    <h3 class="text-xl sm:text-2xl font-black text-white mb-1.5 flex items-center justify-center gap-2">
+                      <span>الخوادم رهن التجهيز للموسم الجديد</span>
+                    </h3>
+                    <p id="maintenance-overlay-reason" class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4 font-medium">
+                      ${maintData.message || 'يجري العمل حالياً على تجهيز البنية التحتية والموازنة الاقتصادية لضمان انطلاقة خالية من الأخطاء وتجربة عادلة وممتعة للجميع.'}
+                    </p>
+                    <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+                      class="w-full py-3.5 px-6 bg-gradient-to-r from-[#1877F2] to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white font-black text-xs sm:text-sm rounded-xl shadow-lg shadow-blue-500/25 transition transform hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-2 cursor-pointer no-underline">
+                      <i class="fa-brands fa-facebook text-lg"></i>
+                      <span>تواصل معنا ومتابعة آخر الأخبار عبر فيسبوك</span>
+                    </a>
+
+                    <!-- Tester Access Box -->
+                    <div class="mt-4 pt-3.5 border-t border-slate-800/80 text-right">
+                      <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold text-slate-400 flex items-center gap-1.5">
+                          <i class="fa-solid fa-flask-vial text-amber-400"></i>
+                          <span>بوابة وصول المختبرين (QA / Testers)</span>
+                        </span>
+                        <span class="text-[10px] text-amber-500/80 font-mono font-bold">Authorized Only</span>
+                      </div>
+                      <div class="flex items-center gap-2">
+                        <div class="relative flex-1">
+                          <input type="password" id="input-tester-code" placeholder="أدخل كود المرور السري..." autocomplete="off"
+                            class="w-full py-2.5 px-3.5 bg-slate-950/90 border border-slate-700/80 focus:border-amber-500 focus:ring-1 focus:ring-amber-500 text-white text-xs rounded-xl transition placeholder:text-slate-500 text-center font-mono tracking-widest outline-none">
+                        </div>
+                        <button id="btn-submit-tester-code" type="button"
+                          class="py-2.5 px-4 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-md transition flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap active:scale-95">
+                          <i class="fa-solid fa-unlock-keyhole text-xs"></i>
+                          <span>دخول</span>
+                        </button>
+                      </div>
+                      <div id="tester-code-error" class="hidden mt-1.5 text-[11px] text-rose-400 font-medium text-center"></div>
+                    </div>
+
+                    <button id="btn-maintenance-recheck" class="w-full mt-2.5 py-3 px-6 bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700 text-slate-300 hover:text-white font-bold text-xs rounded-xl shadow transition flex items-center justify-center gap-2 cursor-pointer">
+                      <i class="fa-solid fa-rotate-right text-sm text-amber-400"></i>
+                      <span>إعادة فحص حالة الخوادم الآن (Reload)</span>
+                    </button>
+                  </div>
+                `;
+                document.body.appendChild(overlay);
+
+                // Setup Tester submit handlers
+                const btnTester = document.getElementById('btn-submit-tester-code');
+                const inputTester = document.getElementById('input-tester-code');
+                const errTester = document.getElementById('tester-code-error');
+
+                const handleTesterSubmit = async () => {
+                  if (!inputTester || !btnTester) return;
+                  const code = (inputTester.value || '').trim();
+                  if (!code) {
+                    if (errTester) {
+                      errTester.textContent = 'يرجى كتابة كود المرور أولاً.';
+                      errTester.classList.remove('hidden');
+                    }
+                    inputTester.focus();
+                    return;
+                  }
+                  if (errTester) errTester.classList.add('hidden');
+                  btnTester.disabled = true;
+                  btnTester.innerHTML = '<i class="fa-solid fa-spinner animate-spin text-xs"></i> <span>فحص...</span>';
+
+                  try {
+                    let res = null;
+                    if (window.ServerBridge && typeof window.ServerBridge.verifyTesterPass === 'function') {
+                      res = await window.ServerBridge.verifyTesterPass(code);
+                    } else {
+                      const apiRes = await fetch('/api/session/verify-tester-pass', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ pass: code })
+                      });
+                      res = await apiRes.json();
+                    }
+
+                    if (res && res.success) {
+                      try {
+                        sessionStorage.setItem('rasalmal_tester_pass', res.bypassToken || 'active_valid');
+                      } catch (e) {}
+
+                      btnTester.innerHTML = '<i class="fa-solid fa-check text-xs"></i> <span>مقبول!</span>';
+                      btnTester.classList.remove('from-amber-500', 'to-amber-600');
+                      btnTester.classList.add('from-emerald-500', 'to-emerald-600', 'text-white');
+
+                      setTimeout(() => {
+                        const ov = document.getElementById('maintenance-overlay');
+                        if (ov) {
+                          ov.classList.add('hidden');
+                          ov.style.display = 'none';
+                        }
+                        if (!document.getElementById('tester-mode-badge')) {
+                          const badge = document.createElement('div');
+                          badge.id = 'tester-mode-badge';
+                          badge.className = 'fixed bottom-4 left-4 z-[999999] px-3 py-1.5 bg-amber-500/90 text-slate-950 font-black text-xs rounded-full shadow-lg flex items-center gap-2 backdrop-blur-md border border-amber-300 pointer-events-auto';
+                          badge.innerHTML = '<i class="fa-solid fa-flask-vial"></i> <span>وضع الاختبار نشط (QA)</span>';
+                          document.body.appendChild(badge);
+                        }
+                      }, 500);
+                    } else {
+                      btnTester.disabled = false;
+                      btnTester.innerHTML = '<i class="fa-solid fa-unlock-keyhole text-xs"></i> <span>دخول</span>';
+                      if (errTester) {
+                        errTester.textContent = (res && res.error) || 'كود المرور غير صحيح.';
+                        errTester.classList.remove('hidden');
+                      }
+                      inputTester.focus();
+                    }
+                  } catch (e) {
+                    btnTester.disabled = false;
+                    btnTester.innerHTML = '<i class="fa-solid fa-unlock-keyhole text-xs"></i> <span>دخول</span>';
+                    if (errTester) {
+                      errTester.textContent = 'تعذر الاتصال بالخادم للفحص.';
+                      errTester.classList.remove('hidden');
+                    }
+                  }
+                };
+
+                if (btnTester) btnTester.onclick = handleTesterSubmit;
+                if (inputTester) {
+                  inputTester.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleTesterSubmit();
+                    }
+                  };
+                }
+
+                const recheckBtn = document.getElementById('btn-maintenance-recheck');
+                if (recheckBtn) {
+                  recheckBtn.onclick = () => window.location.reload();
+                }
+              } else {
+                maintOverlay.classList.remove('hidden');
+                maintOverlay.style.display = 'flex';
+              }
             }
           } else if (maintOverlay) {
             maintOverlay.classList.add('hidden');
