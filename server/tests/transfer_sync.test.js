@@ -99,3 +99,105 @@ test('Wire Transfer In-Memory Sender Deduction & Anti-Restoration Protection', a
   // Clean up
   sessionManager.sessions.delete(sKey);
 });
+
+test('Wire Transfer API Route — 50M Ceiling, Self-Transfer, and Auth Validation', async (t) => {
+  const app = require('../src/server');
+
+  // 1. Mock a valid session
+  const testUser = 'user_wire_val_' + Date.now();
+  const testToken = 'tok_wire_val_' + Date.now();
+  sessionManager.sessions.set(testUser.toLowerCase(), {
+    username: testUser,
+    pin: '1234',
+    sessionId: 'sess_' + testUser,
+    sessionToken: testToken,
+    state: { username: testUser, cash: 100000000, bank: 100000000, netWorth: 200000000 },
+    dirty: false,
+    lastActivity: Date.now()
+  });
+
+  // 2. Missing / Invalid session token
+  const resNoAuth = await app.inject({
+    method: 'POST',
+    url: '/api/action/wire-transfer',
+    headers: {
+      'authorization': 'Bearer bad_token_xyz'
+    },
+    payload: {
+      sender: testUser,
+      recipient: 'ahmed',
+      amount: 1000,
+      pin: '1234'
+    }
+  });
+  assert.equal(resNoAuth.statusCode, 401, 'Should reject invalid session token');
+
+  // 3. Amount exceeding 50M limit
+  const resExceed = await app.inject({
+    method: 'POST',
+    url: '/api/action/wire-transfer',
+    headers: {
+      'authorization': `Bearer ${testToken}`
+    },
+    payload: {
+      sender: testUser,
+      recipient: 'ahmed',
+      amount: 50000001,
+      pin: '1234'
+    }
+  });
+  assert.equal(resExceed.statusCode, 400, 'Should reject amount > 50,000,000');
+  const exceedData = JSON.parse(resExceed.payload);
+  assert.match(exceedData.error, /50,000,000/, 'Error should mention 50M ceiling');
+
+  // 4. Amount <= 0
+  const resZero = await app.inject({
+    method: 'POST',
+    url: '/api/action/wire-transfer',
+    headers: {
+      'authorization': `Bearer ${testToken}`
+    },
+    payload: {
+      sender: testUser,
+      recipient: 'ahmed',
+      amount: 0,
+      pin: '1234'
+    }
+  });
+  assert.equal(resZero.statusCode, 400, 'Should reject amount <= 0');
+
+  // 5. Transfer to self
+  const resSelf = await app.inject({
+    method: 'POST',
+    url: '/api/action/wire-transfer',
+    headers: {
+      'authorization': `Bearer ${testToken}`
+    },
+    payload: {
+      sender: testUser,
+      recipient: testUser,
+      amount: 100000,
+      pin: '1234'
+    }
+  });
+  assert.equal(resSelf.statusCode, 400, 'Should reject self transfer');
+
+  // 6. Missing PIN
+  const resNoPin = await app.inject({
+    method: 'POST',
+    url: '/api/action/wire-transfer',
+    headers: {
+      'authorization': `Bearer ${testToken}`
+    },
+    payload: {
+      sender: testUser,
+      recipient: 'ahmed',
+      amount: 100000,
+      pin: ''
+    }
+  });
+  assert.equal(resNoPin.statusCode, 400, 'Should reject empty PIN');
+
+  // Clean up
+  sessionManager.sessions.delete(testUser.toLowerCase());
+});

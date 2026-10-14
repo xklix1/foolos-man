@@ -2639,50 +2639,86 @@ var AppDB = (() => {
     const cleanSender = senderUsername.trim();
     const cleanRecipient = recipientUsername.trim();
 
-    // Execute the atomic SQL Stored Procedure (handles row locking, pin verification, balance deduction & bank deposit atomically)
-    await _api('rpc/execute_wire_transfer', {
-      method:'POST',
-      body: JSON.stringify({
-        sender_username: cleanSender,
-        sender_pin: pin,
-        recipient_username: cleanRecipient,
-        transfer_amount: amt
-      })
-    });
+    // 1. Authoritative Server-First Pipeline (Bypasses Nginx restrictions, updates RAM sessions with 0ms latency)
+    let serverHandled = false;
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.executeWireTransfer === 'function') {
+      try {
+        const srvRes = await window.ServerBridge.executeWireTransfer(cleanSender, cleanRecipient, amt, pin);
+        if (srvRes && srvRes.success) {
+          serverHandled = true;
+          const lockTs = Date.now() + 120000;
 
-    const lockTs = Date.now() + 120000;
-
-    // Immediately deduct sender in GameEngine.state and localStorage to match SQL execution
-    if (typeof GameEngine !== 'undefined' && GameEngine.state) {
-      const curUser = (GameEngine.activeUsername || GameEngine.state.username || '').trim();
-      if (curUser.toLowerCase() === cleanSender.toLowerCase()) {
-        let sCash = Math.max(0, Number(GameEngine.state.cash) || 0);
-        let sBank = Math.max(0, Number(GameEngine.state.bank) || 0);
-        let deductCash = 0;
-        let deductBank = 0;
-        if (sCash >= amt) {
-          deductCash = amt;
-          deductBank = 0;
-        } else {
-          deductCash = sCash;
-          deductBank = amt - sCash;
+          if (typeof GameEngine !== 'undefined' && GameEngine.state) {
+            const curUser = (GameEngine.activeUsername || GameEngine.state.username || '').trim();
+            if (curUser.toLowerCase() === cleanSender.toLowerCase()) {
+              if (srvRes.newCash !== null && srvRes.newCash !== undefined) GameEngine.state.cash = Number(srvRes.newCash);
+              if (srvRes.newBank !== null && srvRes.newBank !== undefined) GameEngine.state.bank = Number(srvRes.newBank);
+              if (srvRes.newNetWorth !== null && srvRes.newNetWorth !== undefined) GameEngine.state.netWorth = Number(srvRes.newNetWorth);
+              GameEngine.state.adminModifiedTimestamp = lockTs;
+              if (typeof GameEngine.recordPlayerActivity === 'function') {
+                GameEngine.recordPlayerActivity('إرسال تحويل بنكي', `تحويل مبلغ ${amt.toLocaleString()} ج.م إلى @${cleanRecipient}`, 'banking');
+              }
+              setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
+            }
+          }
+        } else if (srvRes && srvRes.error) {
+          throw new Error(srvRes.error);
         }
-        GameEngine.state.cash = Math.max(0, sCash - deductCash);
-        GameEngine.state.bank = Math.max(0, sBank - deductBank);
-        GameEngine.state.netWorth = Math.max(0, (Number(GameEngine.state.netWorth) || 0) - amt);
-        GameEngine.state.adminModifiedTimestamp = lockTs;
-        if (typeof GameEngine.recordPlayerActivity === 'function') {
-          GameEngine.recordPlayerActivity('إرسال تحويل بنكي', `تحويل مبلغ ${amt.toLocaleString()} ج.م إلى @${cleanRecipient}`, 'banking');
+      } catch (bridgeErr) {
+        if (bridgeErr && bridgeErr.message && !bridgeErr.message.includes('HTTP 502') && !bridgeErr.message.includes('Failed to fetch')) {
+          throw bridgeErr; // Legitimate validation/PIN/limit error from authoritative server
         }
-        setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
+        console.warn('[DB] ServerBridge transfer fallback to direct RPC:', bridgeErr && bridgeErr.message);
       }
     }
 
-    // Immediately notify authoritative server so BOTH sender and recipient sessions in RAM are updated
-    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.notifyWireTransfer === 'function') {
-      try {
-        await window.ServerBridge.notifyWireTransfer(cleanSender, cleanRecipient, amt);
-      } catch (_) {}
+    // 2. Direct RPC Fallback (if server bridge was offline)
+    if (!serverHandled) {
+      // Execute the atomic SQL Stored Procedure
+      await _api('rpc/execute_wire_transfer', {
+        method:'POST',
+        body: JSON.stringify({
+          sender_username: cleanSender,
+          sender_pin: pin,
+          recipient_username: cleanRecipient,
+          transfer_amount: amt
+        })
+      });
+
+      const lockTs = Date.now() + 120000;
+
+      // Deduct sender in GameEngine.state
+      if (typeof GameEngine !== 'undefined' && GameEngine.state) {
+        const curUser = (GameEngine.activeUsername || GameEngine.state.username || '').trim();
+        if (curUser.toLowerCase() === cleanSender.toLowerCase()) {
+          let sCash = Math.max(0, Number(GameEngine.state.cash) || 0);
+          let sBank = Math.max(0, Number(GameEngine.state.bank) || 0);
+          let deductCash = 0;
+          let deductBank = 0;
+          if (sCash >= amt) {
+            deductCash = amt;
+            deductBank = 0;
+          } else {
+            deductCash = sCash;
+            deductBank = amt - sCash;
+          }
+          GameEngine.state.cash = Math.max(0, sCash - deductCash);
+          GameEngine.state.bank = Math.max(0, sBank - deductBank);
+          GameEngine.state.netWorth = Math.max(0, (Number(GameEngine.state.netWorth) || 0) - amt);
+          GameEngine.state.adminModifiedTimestamp = lockTs;
+          if (typeof GameEngine.recordPlayerActivity === 'function') {
+            GameEngine.recordPlayerActivity('إرسال تحويل بنكي', `تحويل مبلغ ${amt.toLocaleString()} ج.م إلى @${cleanRecipient}`, 'banking');
+          }
+          setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
+        }
+      }
+
+      // Notify authoritative server
+      if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.notifyWireTransfer === 'function') {
+        try {
+          await window.ServerBridge.notifyWireTransfer(cleanSender, cleanRecipient, amt);
+        } catch (_) {}
+      }
     }
 
     // Authoritative Immediate Sync: fetch authoritative fresh balance from DB
@@ -2692,16 +2728,14 @@ var AppDB = (() => {
         GameEngine.state.cash = Number(fresh.cash !== undefined ? fresh.cash : GameEngine.state.cash);
         GameEngine.state.bank = Number(fresh.bank !== undefined ? fresh.bank : GameEngine.state.bank);
         GameEngine.state.netWorth = Number(fresh.netWorth !== undefined ? fresh.netWorth : GameEngine.state.netWorth);
-        GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || lockTs);
+        GameEngine.state.adminModifiedTimestamp = Number(fresh.adminModifiedTimestamp || (Date.now() + 120000));
         setEncryptedLocalState(`rasalmal_state_${cleanSender}`, GameEngine.state);
       }
     } catch (_) {}
 
     // Immediately trigger the player doc check so the polling cycle reflects the new balance
-    // This also forces the recipient's session (if online) to pick up the incoming transfer faster
     try {
       if (typeof window !== 'undefined' && typeof window._triggerPlayerDocCheck === 'function') {
-        // Short delay to allow the DB write to propagate before we read it back
         setTimeout(() => {
           if (typeof window._triggerPlayerDocCheck === 'function') window._triggerPlayerDocCheck();
         }, 500);

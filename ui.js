@@ -5522,8 +5522,8 @@ const UIController = (() => {
           ? GameEngine.state.username 
           : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
         const isOwnerKhaled = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-        if (!isOwnerKhaled && amount > 5000000) {
-          throw new Error(" الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
+        if (!isOwnerKhaled && amount > 50000000) {
+          throw new Error(" الحد الأقصى للتحويل البنكي الواحد هو 50,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
         }
 
         if (!pin) {
@@ -5549,32 +5549,47 @@ const UIController = (() => {
         btnText.classList.add('hidden');
         btnSpinner.classList.remove('hidden');
 
-        await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount, pin);
+        // Safety timeout to prevent permanent button hang under any network condition
+        const safetyTimer = setTimeout(() => {
+          if (_wireTransferInProgress) {
+            _wireTransferInProgress = false;
+            wireSubmitBtn.disabled = false;
+            btnText.classList.remove('hidden');
+            btnSpinner.classList.add('hidden');
+            showToast('مهلة التحويل', 'استغرقت عملية التحويل وقتاً طويلاً. يرجى مراجعة الرصيد وسجل التحويلات.', 'warning');
+          }
+        }, 15000);
 
-        // Fetch latest authoritative state from database to ensure 100% synchronization
-        const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
-        const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
-        if (updatedState && s) {
-          s.cash = Number(updatedState.cash || 0);
-          s.bank = Number(updatedState.bank || 0);
-          s.netWorth = Number(updatedState.netWorth || 0);
-          s.adminModifiedTimestamp = Number(updatedState.adminModifiedTimestamp || 0);
+        try {
+          await AppDB.executeWireTransfer(GameEngine.activeUsername, recipient, amount, pin);
+
+          // Fetch latest authoritative state from database to ensure 100% synchronization
+          const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
+          const s = GameEngine.getState ? GameEngine.getState() : GameEngine.state;
+          if (updatedState && s) {
+            s.cash = Number(updatedState.cash || 0);
+            s.bank = Number(updatedState.bank || 0);
+            s.netWorth = Number(updatedState.netWorth || 0);
+            s.adminModifiedTimestamp = Number(updatedState.adminModifiedTimestamp || 0);
+          }
+
+          // Reset fields
+          document.getElementById('wire-recipient-input').value ='';
+          document.getElementById('wire-amount-input').value ='';
+          if (document.getElementById('wire-pin-input')) document.getElementById('wire-pin-input').value ='';
+          if (wireTaxBox) wireTaxBox.classList.add('hidden');
+
+          const taxAmt = Math.floor(amount * 0.05);
+          const netAmt = amount - taxAmt;
+          showToast('حوالة صادرة بنجاح ', `تم تحويل ${amount.toLocaleString()} EGP إلى "${recipient}". (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة البنك المركزي 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
+
+          // Log transaction locally
+          addTransferHistoryRow(recipient, amount);
+
+          renderAll();
+        } finally {
+          clearTimeout(safetyTimer);
         }
-
-        // Reset fields
-        document.getElementById('wire-recipient-input').value ='';
-        document.getElementById('wire-amount-input').value ='';
-        if (document.getElementById('wire-pin-input')) document.getElementById('wire-pin-input').value ='';
-        if (wireTaxBox) wireTaxBox.classList.add('hidden');
-
-        const taxAmt = Math.floor(amount * 0.05);
-        const netAmt = amount - taxAmt;
-        showToast('حوالة صادرة بنجاح ', `تم تحويل ${amount.toLocaleString()} EGP إلى "${recipient}". (الصافي المستلم: ${netAmt.toLocaleString()} EGP بعد خصم ضريبة البنك المركزي 5%: ${taxAmt.toLocaleString()} EGP)`, 'success');
-
-        // Log transaction locally
-        addTransferHistoryRow(recipient, amount);
-
-        renderAll();
       } catch (err) {
         showToast('فشل التحويل', err.message,'error');
       } finally {
@@ -13956,7 +13971,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           const curCash = Number(GameEngine.state.cash) || 0;
           const curBank = Number(GameEngine.state.bank) || 0;
           const totalAvail = curCash + curBank;
-          inputEl.value = isOwnerKhaled ? Math.max(0, Math.floor(totalAvail)) : Math.min(5000000, Math.max(0, Math.floor(totalAvail)));
+          inputEl.value = isOwnerKhaled ? Math.max(0, Math.floor(totalAvail)) : Math.min(50000000, Math.max(0, Math.floor(totalAvail)));
         } else {
           inputEl.value = parseInt(amtType, 10);
         }
@@ -16490,8 +16505,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       ? GameEngine.state.username 
       : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
     const isOwnerKhaled = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-    if (!isOwnerKhaled && amt > 5000000) {
-      showToast('سقف التحويل اليومي', ' الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
+    if (!isOwnerKhaled && amt > 50000000) {
+      showToast('سقف التحويل اليومي', ' الحد الأقصى للتحويل البنكي الواحد هو 50,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
       return;
     }
 
@@ -16516,6 +16531,16 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       return;
     }
 
+    // Safety timeout to prevent permanent button hang
+    let isWireCompleted = false;
+    const directSafetyTimer = setTimeout(() => {
+      if (!isWireCompleted && confirmBtn) {
+        confirmBtn.disabled = false;
+        confirmBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i> <span>تأكيد التحويل الآن</span>';
+        showToast('مهلة التحويل', 'استغرقت عملية التحويل وقتاً طويلاً. يرجى مراجعة الرصيد وسجل التحويلات.', 'warning');
+      }
+    }, 15000);
+
     try {
       if (confirmBtn) {
         confirmBtn.disabled = true;
@@ -16523,6 +16548,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       }
 
       await AppDB.executeWireTransfer(GameEngine.activeUsername, target, amt, pin);
+      isWireCompleted = true;
 
       // Notify offline recipient via server web push immediately
       try {
@@ -16559,6 +16585,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     } catch (err) {
       showToast('فشل التحويل', err.message, 'error');
     } finally {
+      clearTimeout(directSafetyTimer);
       if (confirmBtn) {
         confirmBtn.disabled = false;
         confirmBtn.innerHTML = '<i class="fa-solid fa-paper-plane text-xs"></i> <span>تأكيد التحويل الآن</span>';

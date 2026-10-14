@@ -851,9 +851,19 @@ async function adminRoutes(fastify, options) {
           content = content.replace('location / {', newShield + '\n\n    location / {');
         }
 
-        // 3. PostgREST mutation lockdown (limit_except GET HEAD OPTIONS)
+        // 3. PostgREST mutation lockdown with RPC allowed
         const oldRestRegex = /location \/rest\/v1\/ \{[\s\S]*?proxy_pass http:\/\/127\.0\.0\.1:8000\/rest\/v1\/;[\s\S]*?\}/;
-        const newRestBlock = `    location /rest/v1/ {
+        const newRestBlock = `    location /rest/v1/rpc/ {
+        proxy_pass http://127.0.0.1:8000/rest/v1/rpc/;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_hide_header x-app-version;
+    }
+
+    location /rest/v1/ {
         limit_except GET HEAD OPTIONS {
             allow 127.0.0.1;
             deny all;

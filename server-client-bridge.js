@@ -734,6 +734,27 @@ var ServerBridge = (() => {
   }
 
   /**
+   * Executes an authoritative server-mediated wire transfer between players
+   */
+  async function executeWireTransfer(sender, recipient, amount, pin) {
+    if (!sender || !recipient || !amount || !pin) {
+      throw new Error('بيانات التحويل غير مكتملة.');
+    }
+    const cleanSender = String(sender).trim();
+    const cleanRecipient = String(recipient).trim();
+    const cleanPin = String(pin).trim();
+    const amt = Number(amount);
+
+    return await _post('/api/action/wire-transfer', {
+      sender: cleanSender,
+      recipient: cleanRecipient,
+      amount: amt,
+      pin: cleanPin,
+      username: cleanSender
+    });
+  }
+
+  /**
    * Notifies the server of a completed atomic wire transfer so recipient session in RAM is updated immediately
    */
   async function notifyWireTransfer(sender, recipient, amount) {
@@ -1419,6 +1440,7 @@ var ServerBridge = (() => {
     bankAction,
     claimBankInterest,
     changePin,
+    executeWireTransfer,
     notifyWireTransfer,
     sendTransferRequest,
     submitTopupRequest,

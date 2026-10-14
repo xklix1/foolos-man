@@ -187,28 +187,30 @@ BEGIN
     RAISE EXCEPTION '🚫 مطلوب إدخال الرقم السري (PIN) الخاص بك لتأكيد التحويل المصرفي.';
   END IF;
 
-  IF transfer_amount > 5000000 THEN
-    RAISE EXCEPTION '🚫 الحد الأقصى للتحويل البنكي الواحد هو 5,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.';
+  IF NOT (lower(trim(sender_username)) = 'khaled') AND transfer_amount > 50000000 THEN
+    RAISE EXCEPTION '🚫 الحد الأقصى للتحويل البنكي الواحد هو 50,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.';
   END IF;
 
   v_now_ms := (extract(epoch from now()) * 1000)::bigint;
   v_lock_ts := v_now_ms + 120000;
 
-  -- ── 2. حماية التكرار السريع (Rate-limiting): مهلة 15 ثانية ──
-  IF EXISTS (
+  -- ── 2. حماية التكرار السريع (Rate-limiting): مهلة 10 ثوانٍ ──
+  IF NOT (lower(trim(sender_username)) = 'khaled') AND EXISTS (
     SELECT 1 FROM public.transfers 
-    WHERE sender ILIKE sender_username AND created_at > (v_now_ms - 15000)
+    WHERE sender ILIKE sender_username AND created_at > (v_now_ms - 10000)
   ) THEN
-    RAISE EXCEPTION 'يرجى الانتظار 15 ثانية بين كل عملية تحويل مصرفي وأخرى لمنع التكرار السريع.';
+    RAISE EXCEPTION 'يرجى الانتظار 10 ثوانٍ بين كل عملية تحويل مصرفي وأخرى لمنع التكرار السريع.';
   END IF;
 
-  -- ── 3. سقف التحويلات اليومية التراكمي (Max 5,000,000 EGP per 24 hours) ──
-  SELECT COALESCE(SUM(amount), 0) INTO v_daily_sent 
-  FROM public.transfers 
-  WHERE sender ILIKE sender_username AND created_at > (v_now_ms - 86400000);
+  -- ── 3. سقف التحويلات اليومية التراكمي (Max 50,000,000 EGP per 24 hours) ──
+  IF NOT (lower(trim(sender_username)) = 'khaled') THEN
+    SELECT COALESCE(SUM(amount), 0) INTO v_daily_sent 
+    FROM public.transfers 
+    WHERE sender ILIKE sender_username AND created_at > (v_now_ms - 86400000);
 
-  IF (v_daily_sent + transfer_amount) > 5000000 THEN
-    RAISE EXCEPTION '🚫 تجاوزت الحد الأقصى اليومي المسموح به للتحويلات المصرفية (5,000,000 ج.م خلال 24 ساعة). المتبقي لك اليوم: % ج.م.', GREATEST(0, 5000000 - v_daily_sent);
+    IF (v_daily_sent + transfer_amount) > 50000000 THEN
+      RAISE EXCEPTION '🚫 تجاوزت الحد الأقصى اليومي المسموح به للتحويلات المصرفية (50,000,000 ج.م خلال 24 ساعة). المتبقي لك اليوم: % ج.م.', GREATEST(0, 50000000 - v_daily_sent);
+    END IF;
   END IF;
 
   -- ── 4. إغلاق صف المرسل والتحقق من كلمة المرور والرصيد والحظر ──

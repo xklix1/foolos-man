@@ -1077,6 +1077,128 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     };
   });
 
+  // 13.5 POST /api/action/wire-transfer (Authoritative Server-Mediated Wire Transfer - Max 20/min)
+  fastify.post('/api/action/wire-transfer', {
+    config: {
+      rateLimit: {
+        max: 20,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { sender, recipient, amount, pin } = request.body || {};
+    const cleanSender = String(sender || '').trim();
+    const cleanRecipient = String(recipient || '').trim();
+    const cleanPin = String(pin || '').trim();
+    const amt = Number(amount);
+
+    if (!cleanSender || !cleanRecipient) {
+      return reply.code(400).send({ success: false, error: 'بيانات التحويل غير مكتملة (اسم المرسل والمستلم مطلوبان).' });
+    }
+
+    if (cleanSender.toLowerCase() === cleanRecipient.toLowerCase()) {
+      return reply.code(400).send({ success: false, error: 'لا يمكنك التحويل لنفسك!' });
+    }
+
+    if (isNaN(amt) || amt <= 0 || !Number.isFinite(amt)) {
+      return reply.code(400).send({ success: false, error: 'مبلغ التحويل يجب أن يكون رقماً صحيحاً موجباً.' });
+    }
+
+    const isExempt = cleanSender.toLowerCase() === 'khaled';
+    if (!isExempt && amt > 50000000) {
+      return reply.code(400).send({ success: false, error: ' الحد الأقصى للتحويل البنكي الواحد هو 50,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.' });
+    }
+
+    if (!cleanPin) {
+      return reply.code(400).send({ success: false, error: ' مطلوب إدخال الرقم السري (PIN) الخاص بحسابك لتأكيد التحويل المصرفي.' });
+    }
+
+    // Authenticate caller identity
+    const authHeader = request.headers['authorization'] || '';
+    const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
+    const bodyToken = request.body && request.body.token;
+    const callerToken = bearerToken || bodyToken;
+
+    const { session: senderSession } = await sessionManager.getOrCreateSession(cleanSender, true);
+    if (!senderSession) {
+      return reply.code(404).send({ success: false, error: 'تعذر العثور على جلسة المرسل في الخادم.' });
+    }
+
+    const stateToken = senderSession.state && senderSession.state.sessionToken;
+    const activeSessId = senderSession.sessionId || (senderSession.state && senderSession.state.activeSessionId);
+    const isTokenMatch = callerToken && (
+      (senderSession.sessionToken && callerToken === senderSession.sessionToken) ||
+      (stateToken && callerToken === stateToken) ||
+      (activeSessId && callerToken === activeSessId)
+    );
+
+    if ((senderSession.sessionToken || stateToken) && !isTokenMatch && !isExempt) {
+      return reply.code(401).send({ success: false, error: 'غير مصرح: جلسة الحساب غير صالحة أو منتهية.', code: 'INVALID_SESSION_TOKEN' });
+    }
+
+    // Call atomic PostgreSQL stored procedure via local loopback
+    const sUrl = config.SUPABASE_URL || 'http://127.0.0.1:8000';
+    const sKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+
+    try {
+      const rpcRes = await fetch(`${sUrl}/rest/v1/rpc/execute_wire_transfer`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          sender_username: cleanSender,
+          sender_pin: cleanPin,
+          recipient_username: cleanRecipient,
+          transfer_amount: amt
+        })
+      });
+
+      if (!rpcRes.ok) {
+        const errText = await rpcRes.text();
+        let errMsg = errText;
+        try {
+          const parsed = JSON.parse(errText);
+          errMsg = parsed.message || parsed.details || parsed.hint || errText;
+        } catch (_) {}
+        return reply.code(400).send({ success: false, error: errMsg || 'فشلت عملية التحويل المصرفي في قاعدة البيانات.' });
+      }
+
+      // Synchronize in-memory RAM sessions
+      const TAX_RATE = 0.05;
+      const taxAmt = Math.floor(amt * TAX_RATE);
+      const netAmt = amt - taxAmt;
+      const lockTs = Date.now() + 120000;
+
+      sessionManager.deductSenderWireTransfer(cleanSender, amt, lockTs);
+      sessionManager.creditRecipientWireTransfer(cleanRecipient, netAmt, lockTs);
+
+      // Force save state for both participants
+      sessionManager.forceSaveSession(cleanSender).catch(() => {});
+      sessionManager.forceSaveSession(cleanRecipient).catch(() => {});
+
+      // Retrieve fresh sender state for client response
+      const updatedSenderState = senderSession.state || {};
+
+      return {
+        success: true,
+        sender: cleanSender,
+        recipient: cleanRecipient,
+        grossAmount: amt,
+        taxAmount: taxAmt,
+        amount: netAmt,
+        newCash: updatedSenderState.cash !== undefined ? updatedSenderState.cash : null,
+        newBank: updatedSenderState.bank !== undefined ? updatedSenderState.bank : null,
+        newNetWorth: updatedSenderState.netWorth !== undefined ? updatedSenderState.netWorth : null
+      };
+    } catch (err) {
+      console.error('[Action wire-transfer Error]', err);
+      return reply.code(500).send({ success: false, error: 'حدث خطأ غير متوقع أثناء إتمام التحويل: ' + err.message });
+    }
+  });
+
   // 14. POST /api/action/transfer-notify (Wire Transfer Notification to in-memory active session - Max 15/min)
   fastify.post('/api/action/transfer-notify', {
     config: {

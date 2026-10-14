@@ -2509,8 +2509,8 @@
 
       const transferLimitEl = document.getElementById('p_limitTransfers');
       if (transferLimitEl) {
-        transferLimitEl.textContent = `${fmtMoney(outgoing24h)} / 5M`;
-        transferLimitEl.className = outgoing24h >= 5000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-purple-300';
+        transferLimitEl.textContent = `${fmtMoney(outgoing24h)} / 50M`;
+        transferLimitEl.className = outgoing24h >= 50000000 ? 'text-sm font-black numbers-font text-rose-400' : 'text-sm font-black numbers-font text-purple-300';
       }
       
       // Real-time Cashflow Stream Metrics
