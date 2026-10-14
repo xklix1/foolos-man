@@ -4917,6 +4917,13 @@ const GameEngine = (() => {
       state.cash -= remainingCost;
     }
 
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.notifyLocalSpend === 'function') {
+      ServerBridge.notifyLocalSpend(state.cash, state.bank, state.dirtyCash);
+    }
+    if (typeof renderStatsBar === 'function') {
+      try { renderStatsBar(); } catch (_) {}
+    }
+
     // Count this deal towards today's daily limit
     state.dailyBlackMarket.count = (state.dailyBlackMarket.count || 0) + 1;
 
@@ -5008,11 +5015,31 @@ const GameEngine = (() => {
       // 3. Arrest & Confiscation (Diplomatic bag protects 18% of dirty cash, rebalanced 50%)
       const hasDiplomaticBag = Boolean(state.inventory && state.inventory.diplomatic_bag > 0);
       const confiscatedDirty = hasDiplomaticBag ? Math.floor((state.dirtyCash || 0) * 0.82) : (state.dirtyCash || 0);
-      const confiscatedClean = Math.floor((state.cash || 0) * 0.15);
-      const totalConfiscation = confiscatedDirty + confiscatedClean;
+
+      // Guaranteed minimum fine of at least 20% of deal cost, so exact-cost players never escape with 0 penalty
+      const minFine = Math.floor(deal.cost * 0.20);
+      const fineAmount = Math.max(Math.floor((state.cash || 0) * 0.15), minFine);
+
+      let deductedFromCash = 0;
+      let deductedFromBank = 0;
+      const currentCleanCash = Number(state.cash) || 0;
+      if (currentCleanCash >= fineAmount) {
+        state.cash = currentCleanCash - fineAmount;
+        deductedFromCash = fineAmount;
+      } else {
+        deductedFromCash = Math.max(0, currentCleanCash);
+        const remainder = fineAmount - deductedFromCash;
+        state.cash = 0;
+        const currentBank = Number(state.bank) || 0;
+        if (currentBank > 0) {
+          deductedFromBank = Math.min(remainder, currentBank);
+          state.bank = Math.max(0, currentBank - deductedFromBank);
+        }
+      }
 
       state.dirtyCash = Math.max(0, (state.dirtyCash || 0) - confiscatedDirty);
-      state.cash = Math.max(0, (state.cash || 0) - confiscatedClean);
+      const totalConfiscation = confiscatedDirty + deductedFromCash + deductedFromBank;
+
       state.jailTimer = deal.jailDuration;
       state.heatLevel = Math.min(5, (state.heatLevel || 0) + 1);
 
@@ -5020,14 +5047,22 @@ const GameEngine = (() => {
       const repLoss = deal.repLoss || Math.floor((deal.repGain || 20) * 1.2);
       state.underworldRep = Math.max(0, (state.underworldRep || 0) - repLoss);
 
-      recordPlayerActivity('مداهمة وسجن',`فشل صفقة"${deal.name}" ومصادرة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث وفقدان -${repLoss} سمعة (كول داون مخفض 50%)`,'blackmarket');
+      if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.notifyLocalSpend === 'function') {
+        ServerBridge.notifyLocalSpend(state.cash, state.bank, state.dirtyCash);
+      }
+      if (typeof renderStatsBar === 'function') {
+        try { renderStatsBar(); } catch (_) {}
+      }
+
+      recordPlayerActivity('مداهمة وسجن',`فشل صفقة"${deal.name}" ومصادرة وغرامة ${totalConfiscation.toLocaleString()} ج.م وسجن ${deal.jailDuration}ث وفقدان -${repLoss} سمعة (كول داون مخفض 50%)`,'blackmarket');
       forceSaveState(true);
       return {
         success: false,
         escaped: false,
         confiscation: totalConfiscation,
         confiscatedDirty,
-        confiscatedClean,
+        confiscatedClean: deductedFromCash,
+        deductedFromBank,
         jailDuration: deal.jailDuration,
         repLoss: repLoss,
         cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),

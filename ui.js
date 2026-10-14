@@ -7780,8 +7780,11 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
                 playMenuSound('click');
               } else {
                 const repLossText = res.repLoss > 0 ?` وفقدان -${res.repLoss} سمعة` :'';
-                showToast('مداهمة الشرطة!',`تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration} ثانية${repLossText}. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د - المتبقي اليوم: ${res.dailyRemaining})`,'error');
+                showToast('مداهمة الشرطة!',`تم ضبط عمليتك! مصادرة كافة الأموال المشبوهة وغرامة أمنية ${res.confiscation.toLocaleString()} EGP وسجن ${res.jailDuration} ثانية${repLossText}. (كول داون مخفض 50%: ${Math.round((res.cooldownSec || 30) / 60)}د - المتبقي اليوم: ${res.dailyRemaining})`,'error');
                 playMenuSound('error');
+              }
+              if (typeof renderStatsBar === 'function') {
+                try { renderStatsBar(); } catch (_) {}
               }
               renderAll();
             } catch (err) {

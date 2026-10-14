@@ -32,11 +32,13 @@ var ServerBridge = (() => {
   let _lastLocalSpendTimestamp = 0;
   let _lastLocalSpendCash = null;
   let _lastLocalSpendBank = null;
+  let _lastLocalSpendDirtyCash = null;
 
-  function notifyLocalSpend(newCash = null, newBank = null) {
+  function notifyLocalSpend(newCash = null, newBank = null, newDirtyCash = null) {
     _lastLocalSpendTimestamp = Date.now();
     if (newCash !== null && newCash !== undefined) _lastLocalSpendCash = Number(newCash);
     if (newBank !== null && newBank !== undefined) _lastLocalSpendBank = Number(newBank);
+    if (newDirtyCash !== null && newDirtyCash !== undefined) _lastLocalSpendDirtyCash = Number(newDirtyCash);
   }
 
   function resolveEffectiveToken(targetUser = null) {
@@ -372,7 +374,9 @@ var ServerBridge = (() => {
   }
 
   function _reconcileGenericActionResponse(res, updateFn) {
-    if (!res || !res.success) return res;
+    if (!res) return res;
+    // Allow reconciling state even on action failures (e.g. black market raid/arrest, casino loss)
+    // as long as authoritative balances or state are returned.
     if (typeof GameEngine !== 'undefined') {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {
@@ -647,7 +651,17 @@ var ServerBridge = (() => {
             }
           }
 
-          if (res.authoritativeState.dirtyCash !== undefined) s.dirtyCash = res.authoritativeState.dirtyCash;
+          if (res.authoritativeState.dirtyCash !== undefined) {
+            const localDirty = Number(s.dirtyCash || 0);
+            const serverDirty = Number(res.authoritativeState.dirtyCash || 0);
+            if (isRecentSpend && localDirty < serverDirty) {
+              // Retain legitimate local dirtyCash deduction
+            } else if (localDirty > serverDirty && (localDirty - serverDirty) <= playerWealthTolerance) {
+              // Retain newer client dirtyCash
+            } else {
+              s.dirtyCash = serverDirty;
+            }
+          }
           if (res.authoritativeState.netWorth !== undefined) s.netWorth = res.authoritativeState.netWorth;
           if (res.authoritativeState.title !== undefined) s.title = res.authoritativeState.title;
           if (res.authoritativeState.assets !== undefined) s.assets = res.authoritativeState.assets;

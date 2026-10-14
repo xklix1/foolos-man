@@ -270,9 +270,12 @@ class SessionManager {
       // The client's snapshot has an older adminModifiedTimestamp than the active session
       // (e.g. an in-flight background sync queued before a bank withdrawal, wire transfer, or server reward).
       // Under no circumstances should stale client monetary balances overwrite authoritative server balances!
-      // However, if the client SPENT cash (incomingCash < s.cash), accept the legitimate expenditure!
+      // However, if the client SPENT cash/dirtyCash, accept the legitimate expenditure!
       if (incomingCash < Number(s.cash || 0)) {
         s.cash = incomingCash;
+      }
+      if (clientState.dirtyCash !== undefined && (Number(clientState.dirtyCash) || 0) < Number(s.dirtyCash || 0)) {
+        s.dirtyCash = Math.max(0, Number(clientState.dirtyCash) || 0);
       }
       session.lastSyncTime = Date.now();
     } else {

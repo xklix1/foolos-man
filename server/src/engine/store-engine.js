@@ -292,11 +292,31 @@ function runBlackMarketDeal(state, dealId, serverNow = Date.now()) {
     // 3. Arrest & Confiscation
     const hasDiplomaticBag = Boolean(state.inventory && state.inventory.diplomatic_bag > 0);
     const confiscatedDirty = hasDiplomaticBag ? Math.floor((Number(state.dirtyCash) || 0) * 0.82) : (Number(state.dirtyCash) || 0);
-    const confiscatedClean = Math.floor((Number(state.cash) || 0) * 0.15);
-    const totalConfiscation = confiscatedDirty + confiscatedClean;
+
+    // Guaranteed minimum fine of at least 20% of deal cost, so exact-cost players never escape with 0 penalty
+    const minFine = Math.floor(deal.cost * 0.20);
+    const fineAmount = Math.max(Math.floor((Number(state.cash) || 0) * 0.15), minFine);
+
+    let deductedFromCash = 0;
+    let deductedFromBank = 0;
+    const currentCleanCash = Number(state.cash) || 0;
+    if (currentCleanCash >= fineAmount) {
+      state.cash = currentCleanCash - fineAmount;
+      deductedFromCash = fineAmount;
+    } else {
+      deductedFromCash = Math.max(0, currentCleanCash);
+      const remainder = fineAmount - deductedFromCash;
+      state.cash = 0;
+      const currentBank = Number(state.bank) || 0;
+      if (currentBank > 0) {
+        deductedFromBank = Math.min(remainder, currentBank);
+        state.bank = Math.max(0, currentBank - deductedFromBank);
+      }
+    }
 
     state.dirtyCash = Math.max(0, (Number(state.dirtyCash) || 0) - confiscatedDirty);
-    state.cash = Math.max(0, (Number(state.cash) || 0) - confiscatedClean);
+    const totalConfiscation = confiscatedDirty + deductedFromCash + deductedFromBank;
+
     state.jailTimer = deal.jailDuration || 30;
     state.heatLevel = Math.min(5, (Number(state.heatLevel) || 0) + 1);
 
@@ -311,11 +331,13 @@ function runBlackMarketDeal(state, dealId, serverNow = Date.now()) {
       escaped: false,
       confiscation: totalConfiscation,
       confiscatedDirty,
-      confiscatedClean,
+      confiscatedClean: deductedFromCash,
+      deductedFromBank,
       jailDuration: deal.jailDuration,
       repLoss,
       cooldownSec: Math.floor((deal.cooldownSec || 120) / 2 * cdMultiplier),
       cash: state.cash,
+      bank: state.bank,
       dirtyCash: state.dirtyCash,
       netWorth: state.netWorth,
       jailTimer: state.jailTimer,

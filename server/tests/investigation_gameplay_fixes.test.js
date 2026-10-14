@@ -87,8 +87,35 @@ test('storeEngine.runBlackMarketDeal deducts cost and handles outcomes', (t) => 
   if (res.success) {
     assert.strictEqual(res.dealId, 'contraband_cigars');
     assert.ok(res.payout > 0);
-  } else {
-    // Failure must have resulted in dirtyCash being reduced
-    assert.ok(state.dirtyCash < 50000, 'Dirty cash was deducted on failure');
+  }
+});
+
+test('storeEngine.runBlackMarketDeal guarantees minimum fine and bank fallback when clean cash is zero', (t) => {
+  const state = {
+    cash: 6000, // Exact cost for contraband_cigars
+    bank: 100000,
+    dirtyCash: 0,
+    underworldRep: 50,
+    jailTimer: 0,
+    inventory: {}
+  };
+
+  // Mock Math.random to force police arrest / failure (roll = 0.99 > successChance)
+  const origRandom = Math.random;
+  Math.random = () => 0.99;
+
+  try {
+    const res = storeEngine.runBlackMarketDeal(state, 'contraband_cigars', 1000000);
+    assert.strictEqual(res.success, false, 'Deal should fail');
+    assert.strictEqual(res.escaped, false, 'Player should be arrested');
+    assert.ok(res.jailDuration > 0, 'Player should have a jail duration');
+    assert.strictEqual(state.jailTimer, 15, 'Jail timer should be 15 seconds');
+    assert.strictEqual(state.cash, 0, 'Clean cash was 6000, used for cost');
+    // Minimum fine = 20% of 6000 = 1200 EGP. Since cash was 0, deducted from bank!
+    assert.strictEqual(res.confiscation, 1200, 'Confiscation must be at least 1200 EGP (min fine)');
+    assert.strictEqual(state.bank, 98800, 'Bank should be 100,000 - 1,200 = 98,800 EGP');
+    assert.strictEqual(res.deductedFromBank, 1200, '1200 EGP was deducted from bank');
+  } finally {
+    Math.random = origRandom;
   }
 });
