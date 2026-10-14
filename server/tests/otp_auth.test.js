@@ -32,5 +32,20 @@ test('Resend Auth OTP — Fastify Route Registration', async (t) => {
   assert.strictEqual(data.success, false);
   assert.strictEqual(data.error, 'يرجى إدخال بريد إلكتروني صحيح.');
   
+  // Test reset-pin route input validation
+  const resetValRes = await app.inject({
+    method: 'POST',
+    url: '/api/auth/reset-pin',
+    payload: {
+      email: 'test@example.com',
+      code: '123456',
+      newPin: '12' // Too short
+    }
+  });
+  assert.strictEqual(resetValRes.statusCode, 400);
+  const resetValData = JSON.parse(resetValRes.payload);
+  assert.strictEqual(resetValData.success, false);
+  assert.strictEqual(resetValData.error, 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات.');
+
   await app.close();
 });

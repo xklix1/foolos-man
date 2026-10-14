@@ -1593,20 +1593,66 @@ const UIController = (() => {
     if (regenerateSecurityCodesBtn) regenerateSecurityCodesBtn.addEventListener('click', regenerateSecurityCodes);
 
     // ─────────────────────────────────────────────
-    // Forgot PIN Recovery Modal Handlers
+    // Forgot PIN Recovery Modal Handlers (Email OTP & New PIN Flow)
     // ─────────────────────────────────────────────
+    let _forgotTargetEmail = '';
+    let _forgotOtpCountdownTimer = null;
+    let _isSendingForgotOtp = false;
+    let _isSubmittingForgotPin = false;
+
+    const startForgotResendCountdown = () => {
+      let countdown = 60;
+      const timerSpan = document.getElementById('forgot-resend-timer');
+      const resendBtn = document.getElementById('btn-resend-forgot-otp');
+      if (timerSpan) timerSpan.textContent = String(countdown);
+      if (resendBtn) resendBtn.disabled = true;
+
+      if (_forgotOtpCountdownTimer) clearInterval(_forgotOtpCountdownTimer);
+      _forgotOtpCountdownTimer = setInterval(() => {
+        countdown -= 1;
+        if (timerSpan) timerSpan.textContent = String(countdown);
+        if (countdown <= 0) {
+          clearInterval(_forgotOtpCountdownTimer);
+          _forgotOtpCountdownTimer = null;
+          if (resendBtn) {
+            resendBtn.disabled = false;
+            resendBtn.innerHTML = 'إعادة إرسال رمز جديد';
+          }
+        }
+      }, 1000);
+    };
+
     openForgotPinModal = () => {
       playMenuSound('modal_open');
-      const authUserVal = document.getElementById('auth-username') ? document.getElementById('auth-username').value.trim() : '';
-      const forgotUserInput = document.getElementById('input-forgot-username');
-      const forgotCodeInput = document.getElementById('input-forgot-security-code');
-      const forgotNewPinInput = document.getElementById('input-forgot-new-pin');
-      const forgotConfirmPinInput = document.getElementById('input-forgot-confirm-pin');
+      _forgotTargetEmail = '';
+      if (_forgotOtpCountdownTimer) {
+        clearInterval(_forgotOtpCountdownTimer);
+        _forgotOtpCountdownTimer = null;
+      }
 
-      if (forgotUserInput) forgotUserInput.value = authUserVal || getActiveUsernameSafe();
-      if (forgotCodeInput) forgotCodeInput.value = '';
-      if (forgotNewPinInput) forgotNewPinInput.value = '';
-      if (forgotConfirmPinInput) forgotConfirmPinInput.value = '';
+      // Reset to Step 1
+      const step1 = document.getElementById('forgot-pin-step-1');
+      const step2 = document.getElementById('forgot-pin-step-2');
+      if (step1) step1.classList.remove('hidden');
+      if (step2) step2.classList.add('hidden');
+
+      const emailInput = document.getElementById('input-forgot-email');
+      const otpInput = document.getElementById('input-forgot-otp-code');
+      const newPinInput = document.getElementById('input-forgot-new-pin');
+      const confirmPinInput = document.getElementById('input-forgot-confirm-pin');
+
+      if (otpInput) otpInput.value = '';
+      if (newPinInput) newPinInput.value = '';
+      if (confirmPinInput) confirmPinInput.value = '';
+
+      // Try pre-filling email from active login input or localStorage
+      const authUserVal = document.getElementById('auth-username') ? document.getElementById('auth-username').value.trim() : '';
+      const cachedEmail = authUserVal ? localStorage.getItem('rasalmal_player_email_' + authUserVal) : '';
+      const authEmailVal = document.getElementById('auth-email') ? document.getElementById('auth-email').value.trim() : '';
+      if (emailInput) {
+        emailInput.value = cachedEmail || authEmailVal || '';
+        setTimeout(() => emailInput.focus(), 150);
+      }
 
       const modal = document.getElementById('modal-forgot-pin');
       if (modal) {
@@ -1617,6 +1663,10 @@ const UIController = (() => {
 
     closeForgotPinModal = () => {
       playMenuSound('modal_close');
+      if (_forgotOtpCountdownTimer) {
+        clearInterval(_forgotOtpCountdownTimer);
+        _forgotOtpCountdownTimer = null;
+      }
       const modal = document.getElementById('modal-forgot-pin');
       if (modal) {
         modal.classList.add('hidden');
@@ -1624,66 +1674,172 @@ const UIController = (() => {
       }
     };
 
-    submitForgotPinForm = async () => {
-      const u = document.getElementById('input-forgot-username') ? document.getElementById('input-forgot-username').value.trim() : '';
-      const code = document.getElementById('input-forgot-security-code') ? document.getElementById('input-forgot-security-code').value.trim() : '';
-      const newPin = document.getElementById('input-forgot-new-pin') ? document.getElementById('input-forgot-new-pin').value.trim() : '';
-      const confirmPin = document.getElementById('input-forgot-confirm-pin') ? document.getElementById('input-forgot-confirm-pin').value.trim() : '';
-      const submitForgotPinBtn = document.getElementById('btn-submit-forgot-pin');
-      const textSubmitForgotPin = document.getElementById('text-submit-forgot-pin');
-      const spinnerSubmitForgotPin = document.getElementById('spinner-submit-forgot-pin');
+    const sendForgotPinOtp = async () => {
+      if (_isSendingForgotOtp) return;
+      const emailInput = document.getElementById('input-forgot-email');
+      const emailVal = emailInput ? emailInput.value.trim().toLowerCase() : '';
+      const sendBtn = document.getElementById('btn-send-forgot-otp');
+      const sendText = document.getElementById('text-send-forgot-otp');
+      const sendSpinner = document.getElementById('spinner-send-forgot-otp');
+      const resendBtn = document.getElementById('btn-resend-forgot-otp');
 
-      if (!u) {
-        showToast('خطأ', 'يرجى إدخال اسم المستخدم.', 'error');
-        return;
-      }
-      if (!code) {
-        showToast('خطأ', 'يرجى إدخال أحد رموز الأمان الستة المسجلة لحسابك.', 'error');
-        return;
-      }
-      if (!newPin || newPin.length < 4) {
-        showToast('خطأ', 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات.', 'error');
-        return;
-      }
-      if (newPin !== confirmPin) {
-        showToast('خطأ', 'تأكيد كلمة السر غير متطابق مع الرمز الجديد.', 'error');
+      if (!emailVal || !emailVal.includes('@') || !emailVal.includes('.') || emailVal.length < 5) {
+        showToast('خطأ', 'يرجى إدخال بريد إلكتروني صحيح ومعتمد.', 'error');
+        if (emailInput) emailInput.focus();
         return;
       }
 
       try {
-        if (submitForgotPinBtn) submitForgotPinBtn.disabled = true;
-        if (textSubmitForgotPin) textSubmitForgotPin.textContent = 'جارٍ التحقق والاستعادة...';
-        if (spinnerSubmitForgotPin) spinnerSubmitForgotPin.classList.remove('hidden');
+        _isSendingForgotOtp = true;
+        if (sendBtn) sendBtn.disabled = true;
+        if (resendBtn) resendBtn.disabled = true;
+        if (sendText) sendText.textContent = 'جارٍ إرسال الرمز...';
+        if (sendSpinner) sendSpinner.classList.remove('hidden');
 
-        const res = await AppDB.recoverAccountWithSecurityCode(u, code, newPin);
+        const apiBase = getApiBase();
+        const res = await fetch(`${apiBase}/api/auth/send-otp`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailVal,
+            type: 'reset_pin'
+          })
+        });
 
-        showToast('نجاح الاستعادة ', res.message || 'تم تعيين كلمة السر الجديدة بنجاح! يمكنك تسجيل الدخول الآن.', 'success', 4000);
+        const data = await parseResponseJsonSafe(res, 'فشل إرسال رمز التحقق إلى بريدك الإلكتروني.');
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'فشل إرسال رمز التحقق.');
+        }
+
+        _forgotTargetEmail = emailVal;
+        showToast('تم الإرسال ', 'تم إرسال رمز التحقق المكون من 6 أرقام إلى بريدك الإلكتروني.', 'success', 4000);
         playMenuSound('success');
 
-        // Pre-fill login screen inputs so the player can log in immediately
+        // Transition to Step 2
+        const step1 = document.getElementById('forgot-pin-step-1');
+        const step2 = document.getElementById('forgot-pin-step-2');
+        const targetDisplay = document.getElementById('forgot-otp-target-display');
+        const otpInput = document.getElementById('input-forgot-otp-code');
+
+        if (targetDisplay) targetDisplay.textContent = emailVal;
+        if (step1) step1.classList.add('hidden');
+        if (step2) step2.classList.remove('hidden');
+        if (otpInput) {
+          otpInput.value = '';
+          setTimeout(() => otpInput.focus(), 150);
+        }
+
+        startForgotResendCountdown();
+
+      } catch (err) {
+        showToast('خطأ في الإرسال', err.message || 'تعذر إرسال رمز التحقق.', 'error');
+        playMenuSound('back');
+      } finally {
+        _isSendingForgotOtp = false;
+        if (sendBtn) sendBtn.disabled = false;
+        if (sendText) sendText.textContent = 'إرسال رمز التحقق (OTP)';
+        if (sendSpinner) sendSpinner.classList.add('hidden');
+      }
+    };
+
+    submitForgotPinForm = async () => {
+      if (_isSubmittingForgotPin) return;
+
+      const emailVal = _forgotTargetEmail || (document.getElementById('input-forgot-email')?.value || '').trim().toLowerCase();
+      const otpInput = document.getElementById('input-forgot-otp-code');
+      const otpVal = otpInput ? otpInput.value.trim() : '';
+      const newPinInput = document.getElementById('input-forgot-new-pin');
+      const newPin = newPinInput ? newPinInput.value.trim() : '';
+      const confirmPinInput = document.getElementById('input-forgot-confirm-pin');
+      const confirmPin = confirmPinInput ? confirmPinInput.value.trim() : '';
+
+      const submitBtn = document.getElementById('btn-submit-forgot-pin');
+      const submitText = document.getElementById('text-submit-forgot-pin');
+      const submitSpinner = document.getElementById('spinner-submit-forgot-pin');
+
+      if (!emailVal) {
+        showToast('خطأ', 'يرجى إدخال البريد الإلكتروني.', 'error');
+        return;
+      }
+      if (!otpVal || otpVal.length !== 6 || !/^\d{6}$/.test(otpVal)) {
+        showToast('خطأ', 'يرجى إدخال رمز التحقق المكون من 6 أرقام بدقة.', 'error');
+        if (otpInput) otpInput.focus();
+        return;
+      }
+      if (!newPin || newPin.length < 4) {
+        showToast('خطأ', 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات.', 'error');
+        if (newPinInput) newPinInput.focus();
+        return;
+      }
+      if (newPin !== confirmPin) {
+        showToast('خطأ', 'تأكيد كلمة السر غير متطابق مع الرمز الجديد.', 'error');
+        if (confirmPinInput) confirmPinInput.focus();
+        return;
+      }
+
+      try {
+        _isSubmittingForgotPin = true;
+        if (submitBtn) submitBtn.disabled = true;
+        if (submitText) submitText.textContent = 'جارٍ التحقق وتعيين الرمز...';
+        if (submitSpinner) submitSpinner.classList.remove('hidden');
+
+        const apiBase = getApiBase();
+        const res = await fetch(`${apiBase}/api/auth/reset-pin`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailVal,
+            code: otpVal,
+            newPin: newPin
+          })
+        });
+
+        const data = await parseResponseJsonSafe(res, 'فشل تعيين كلمة السر الجديدة.');
+        if (!res.ok || !data.success) {
+          throw new Error(data.error || 'فشل تعيين كلمة السر الجديدة.');
+        }
+
+        showToast('تم بنجاح ', data.message || 'تم تعيين كلمة السر الجديدة بنجاح! يمكنك تسجيل الدخول الآن.', 'success', 5000);
+        playMenuSound('success');
+
+        // Pre-fill login screen credentials
         const authUser = document.getElementById('auth-username');
         const authPin = document.getElementById('auth-pin');
-        if (authUser) authUser.value = u;
+        if (authUser && data.username) authUser.value = data.username;
         if (authPin) authPin.value = newPin;
 
         closeForgotPinModal();
+
       } catch (err) {
         showToast('فشل الاستعادة', err.message || 'تعذر استعادة الحساب. تأكد من صحة البيانات.', 'error');
+        playMenuSound('back');
       } finally {
-        if (submitForgotPinBtn) submitForgotPinBtn.disabled = false;
-        if (textSubmitForgotPin) textSubmitForgotPin.textContent = 'استعادة الحساب وتعيين الرمز';
-        if (spinnerSubmitForgotPin) spinnerSubmitForgotPin.classList.add('hidden');
+        _isSubmittingForgotPin = false;
+        if (submitBtn) submitBtn.disabled = false;
+        if (submitText) submitText.textContent = 'تأكيد وتعيين كلمة السر الجديدة';
+        if (submitSpinner) submitSpinner.classList.add('hidden');
       }
     };
 
     const openForgotPinBtn = document.getElementById('btn-open-forgot-pin-modal');
     const closeForgotPinBtn = document.getElementById('btn-close-forgot-pin-modal');
     const cancelForgotPinBtn = document.getElementById('btn-cancel-forgot-pin');
+    const sendForgotOtpBtn = document.getElementById('btn-send-forgot-otp');
+    const resendForgotOtpBtn = document.getElementById('btn-resend-forgot-otp');
+    const backToForgotStep1Btn = document.getElementById('btn-back-to-forgot-step1');
     const submitForgotPinBtn = document.getElementById('btn-submit-forgot-pin');
 
     if (openForgotPinBtn) openForgotPinBtn.addEventListener('click', openForgotPinModal);
     if (closeForgotPinBtn) closeForgotPinBtn.addEventListener('click', closeForgotPinModal);
     if (cancelForgotPinBtn) cancelForgotPinBtn.addEventListener('click', closeForgotPinModal);
+    if (sendForgotOtpBtn) sendForgotOtpBtn.addEventListener('click', sendForgotPinOtp);
+    if (resendForgotOtpBtn) resendForgotOtpBtn.addEventListener('click', sendForgotPinOtp);
+    if (backToForgotStep1Btn) backToForgotStep1Btn.addEventListener('click', () => {
+      const step1 = document.getElementById('forgot-pin-step-1');
+      const step2 = document.getElementById('forgot-pin-step-2');
+      if (step1) step1.classList.remove('hidden');
+      if (step2) step2.classList.add('hidden');
+    });
     if (submitForgotPinBtn) submitForgotPinBtn.addEventListener('click', submitForgotPinForm);
 
     // ─────────────────────────────────────────────

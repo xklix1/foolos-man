@@ -248,7 +248,23 @@ module.exports = async function authOtpRoutes(fastify, opts) {
     }
 
     const cleanEmail = email.trim().toLowerCase();
-    const cleanUsername = String(username || '').trim();
+    let cleanUsername = String(username || '').trim();
+
+    if (type === 'reset_pin') {
+      try {
+        const dbService = require('../services/db-service');
+        const existingPlayer = await dbService.getPlayerByEmail(cleanEmail);
+        if (!existingPlayer) {
+          return reply.status(404).send({
+            success: false,
+            error: 'لا يوجد حساب مسجل بهذا البريد الإلكتروني في اللعبة.'
+          });
+        }
+        cleanUsername = existingPlayer.username || cleanUsername;
+      } catch (checkErr) {
+        request.log.warn({ checkErr }, 'Failed checking email in reset-pin send-otp');
+      }
+    }
 
     // Rate Limiting: Max 1 email per 60 seconds
     const existing = otpStore.get(cleanEmail);
@@ -375,5 +391,124 @@ module.exports = async function authOtpRoutes(fastify, opts) {
       email: cleanEmail,
       message: 'تم التحقق من الرمز بنجاح!'
     });
+  });
+
+  /**
+   * POST /api/auth/reset-pin
+   * Validates OTP and updates player PIN authoritatively
+   */
+  fastify.post('/api/auth/reset-pin', {
+    config: {
+      rateLimit: {
+        max: 5,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { email, code, newPin } = request.body || {};
+
+    if (!email || !code || !newPin) {
+      return reply.status(400).send({
+        success: false,
+        error: 'يرجى إدخال البريد الإلكتروني، رمز التحقق، وكلمة السر الجديدة.'
+      });
+    }
+
+    const cleanEmail = String(email).trim().toLowerCase();
+    const cleanCode = String(code).trim();
+    const cleanPin = String(newPin).trim();
+
+    if (cleanPin.length < 4) {
+      return reply.status(400).send({
+        success: false,
+        error: 'كلمة السر الجديدة يجب ألا تقل عن 4 خانات.'
+      });
+    }
+
+    const record = otpStore.get(cleanEmail);
+    if (!record) {
+      return reply.status(400).send({
+        success: false,
+        error: 'رمز التحقق غير موجود أو منتهي الصلاحية. يرجى طلب رمز جديد.'
+      });
+    }
+
+    if (Date.now() > record.expiresAt) {
+      otpStore.delete(cleanEmail);
+      return reply.status(400).send({
+        success: false,
+        error: 'انتهت صلاحية رمز التحقق (أكثر من 5 دقائق). يرجى طلب رمز جديد.'
+      });
+    }
+
+    record.attempts = (record.attempts || 0) + 1;
+    if (record.attempts > 5) {
+      otpStore.delete(cleanEmail);
+      return reply.status(429).send({
+        success: false,
+        error: 'تجاوزت الحد الأقصى للمحاولات الخاطئة. تم إلغاء الرمز، يرجى طلب رمز جديد.'
+      });
+    }
+
+    if (record.code !== cleanCode) {
+      const remaining = 5 - record.attempts;
+      return reply.status(400).send({
+        success: false,
+        error: `رمز التحقق غير صحيح. متبقي لك ${remaining} محاولات.`
+      });
+    }
+
+    // OTP is valid! Remove immediately to prevent replay
+    otpStore.delete(cleanEmail);
+
+    try {
+      const dbService = require('../services/db-service');
+      const sessionManager = require('../services/session-manager');
+
+      const playerRow = await dbService.getPlayerByEmail(cleanEmail);
+      if (!playerRow) {
+        return reply.status(404).send({
+          success: false,
+          error: 'لم يتم العثور على الحساب المرتبط بهذا البريد الإلكتروني.'
+        });
+      }
+
+      const hashedNew = crypto.createHash('sha256').update(cleanPin).digest('hex');
+      const s = (playerRow.state && typeof playerRow.state === 'object') ? { ...playerRow.state } : {};
+      s.pin = hashedNew;
+
+      // Update in-memory active session if player is currently logged in
+      const activeSession = sessionManager.sessions.get(playerRow.username.toLowerCase());
+      if (activeSession) {
+        activeSession.pin = hashedNew;
+        if (activeSession.state) activeSession.state.pin = hashedNew;
+      }
+
+      await dbService.savePlayerState(playerRow.username, s);
+
+      // Direct patch to ensure column `pin` is also updated
+      try {
+        const patchEndpoint = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(playerRow.username)}`;
+        await fetch(patchEndpoint, {
+          method: 'PATCH',
+          headers: dbService.getHeaders(),
+          body: JSON.stringify({ pin: hashedNew, state: s })
+        });
+      } catch (patchErr) {
+        request.log.warn({ patchErr }, 'Direct PIN patch warning');
+      }
+
+      return reply.send({
+        success: true,
+        username: playerRow.username,
+        message: 'تم تعيين كلمة السر الجديدة بنجاح! يمكنك تسجيل الدخول الآن.'
+      });
+    } catch (err) {
+      request.log.error({ err }, 'Failed to reset PIN via OTP');
+      return reply.status(500).send({
+        success: false,
+        error: 'حدث خطأ أثناء حفظ كلمة السر الجديدة. يرجى المحاولة لاحقاً.'
+      });
+    }
   });
 };

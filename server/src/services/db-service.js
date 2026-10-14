@@ -45,6 +45,31 @@ class DbService {
   }
 
   /**
+   * Fetches a single player by registered email
+   * @param {string} email
+   * @returns {Promise<Object|null>}
+   */
+  async getPlayerByEmail(email) {
+    if (!email) return null;
+    const cleanEmail = email.trim().toLowerCase();
+    const endpoint = `${this.url}/rest/v1/players?state->>email=eq.${encodeURIComponent(cleanEmail)}&select=*`;
+    
+    try {
+      const res = await fetch(endpoint, {
+        headers: this.getHeaders()
+      });
+      if (!res.ok) {
+        throw new Error(`Supabase error (${res.status}): ${await res.text()}`);
+      }
+      const rows = await res.json();
+      return (Array.isArray(rows) && rows.length > 0) ? rows[0] : null;
+    } catch (err) {
+      console.error('[DbService] getPlayerByEmail error:', err.message);
+      throw err;
+    }
+  }
+
+  /**
    * Authoritatively persists a player's state back to Supabase
    * @param {string} username 
    * @param {Object} state - Full sanitized state object

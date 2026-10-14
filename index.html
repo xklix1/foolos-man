@@ -1841,7 +1841,7 @@
   <!-- ==================== FORGOT PIN / RECOVERY MODAL ==================== -->
   <div id="modal-forgot-pin"
     class="hidden fixed inset-0 z-[360] flex items-center justify-center bg-black/85 backdrop-blur-md p-4 animate-fade-in">
-    <div class="glass-panel w-full max-w-md flex flex-col rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden">
+    <div class="glass-panel w-full max-w-md flex flex-col rounded-3xl border border-yellow-500/40 p-6 shadow-2xl bg-slate-950/95 overflow-hidden text-right">
       <!-- Header -->
       <div class="flex items-center justify-between pb-4 border-b border-slate-800">
         <div class="flex items-center gap-3">
@@ -1849,8 +1849,8 @@
             <i class="fa-solid fa-key text-lg"></i>
           </div>
           <div>
-            <h2 class="text-lg font-black text-white">استعادة كلمة السر (PIN) </h2>
-            <p class="text-xs text-slate-400">باستخدام أحد رموز الأمان الاحتياطية الستة</p>
+            <h2 class="text-lg font-black text-white">استعادة كلمة السر (PIN)</h2>
+            <p class="text-xs text-slate-400">عبر رمز التحقق (OTP) المرسل لبريدك الإلكتروني</p>
           </div>
         </div>
         <button id="btn-close-forgot-pin-modal" onclick="window.UI?.closeForgotPinModal?.()"
@@ -1859,44 +1859,78 @@
         </button>
       </div>
 
-      <!-- Recovery Form -->
-      <div class="space-y-3.5 my-4 text-xs text-slate-300">
+      <!-- Step 1: Enter Email -->
+      <div id="forgot-pin-step-1" class="space-y-4 my-4 text-xs text-slate-300">
+        <p class="text-xs text-slate-400 leading-relaxed">
+          أدخل البريد الإلكتروني المسجل في حسابك لإرسال رمز تحقق مؤقت مكون من 6 أرقام.
+        </p>
         <div>
-          <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">اسم المستخدم</label>
-          <input type="text" id="input-forgot-username" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold"
-            placeholder="اسم حسابك في اللعبة">
+          <label class="block text-xs text-yellow-400 mb-1.5 font-bold mr-1">البريد الإلكتروني</label>
+          <input type="email" id="input-forgot-email"
+            class="glass-input w-full p-3 rounded-xl text-sm text-center font-bold text-white placeholder-slate-500 border-yellow-500/30 focus:border-yellow-400"
+            placeholder="مثال: player@example.com" autocomplete="email">
         </div>
+        <button id="btn-send-forgot-otp" type="button"
+          class="w-full py-3.5 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-yellow-500/20 text-sm">
+          <i class="fa-solid fa-paper-plane"></i>
+          <span id="text-send-forgot-otp">إرسال رمز التحقق (OTP)</span>
+          <i id="spinner-send-forgot-otp" class="hidden fa-solid fa-spinner animate-spin text-slate-950 text-base"></i>
+        </button>
+      </div>
+
+      <!-- Step 2: OTP Verification & New Password -->
+      <div id="forgot-pin-step-2" class="hidden space-y-3.5 my-4 text-xs text-slate-300">
+        <div class="p-3 bg-yellow-950/30 border border-yellow-500/30 rounded-xl text-center">
+          <span class="text-xs text-slate-400 block mb-0.5">تم إرسال رمز التحقق إلى بريدك:</span>
+          <span id="forgot-otp-target-display" class="text-xs font-bold text-yellow-400 font-mono dir-ltr inline-block"></span>
+        </div>
+
         <div>
-          <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">أحد رموز الأمان الاحتياطية</label>
-          <input type="text" id="input-forgot-security-code" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-mono font-bold uppercase tracking-wider text-yellow-400 border-yellow-500/30 placeholder-slate-600"
-            placeholder="مثال: A8X2-9K4M">
-          <span class="text-[10px] text-slate-500 mt-1 block mr-1">أدخل أي رمز غير مستخدم من رموز الأمان الستة المسجلة لحسابك.</span>
+          <label class="block text-xs text-slate-300 mb-1 font-bold text-center">أدخل رمز التحقق (OTP)</label>
+          <input type="text" id="input-forgot-otp-code" maxlength="6"
+            class="glass-input w-full p-2.5 rounded-xl text-lg text-center font-mono font-black tracking-widest text-yellow-400 border-yellow-500/40 placeholder-slate-600 focus:border-yellow-400"
+            placeholder="••••••" autocomplete="one-time-code">
+          <div class="flex justify-between items-center mt-1.5 px-1 text-[11px] text-slate-400">
+            <span>صلاحية الرمز 5 دقائق</span>
+            <button id="btn-resend-forgot-otp" type="button" class="text-yellow-400 hover:underline font-bold" disabled>
+              إعادة الإرسال (<span id="forgot-resend-timer">60</span>s)
+            </button>
+          </div>
         </div>
-        <div class="grid grid-cols-2 gap-2">
+
+        <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800">
           <div>
             <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">كلمة السر الجديدة</label>
-            <input type="password" id="input-forgot-new-pin" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold tracking-widest font-numbers"
-              placeholder="الرمز الجديد (4+ خانات)">
+            <input type="password" id="input-forgot-new-pin"
+              class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold tracking-widest font-numbers"
+              placeholder="4 خانات أو أكثر">
           </div>
           <div>
-            <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">تأكيد الرمز</label>
-            <input type="password" id="input-forgot-confirm-pin" class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold tracking-widest font-numbers"
+            <label class="block text-xs text-slate-400 mb-1 font-bold mr-1">تأكيد كلمة السر</label>
+            <input type="password" id="input-forgot-confirm-pin"
+              class="glass-input w-full p-2.5 rounded-lg text-xs text-center font-bold tracking-widest font-numbers"
               placeholder="أعد إدخال الرمز">
           </div>
         </div>
+
+        <button id="btn-submit-forgot-pin" type="button"
+          class="w-full py-3 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl transition duration-300 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 text-sm mt-3">
+          <i class="fa-solid fa-check-double"></i>
+          <span id="text-submit-forgot-pin">تأكيد وتعيين كلمة السر الجديدة</span>
+          <i id="spinner-submit-forgot-pin" class="hidden fa-solid fa-spinner animate-spin text-slate-950 text-base"></i>
+        </button>
+
+        <button id="btn-back-to-forgot-step1" type="button" class="w-full text-center text-[11px] text-slate-400 hover:text-white transition pt-1">
+          ← تعديل البريد الإلكتروني
+        </button>
       </div>
 
       <!-- Footer Buttons -->
-      <div class="pt-4 border-t border-slate-800 flex justify-between items-center gap-2">
-        <button id="btn-cancel-forgot-pin" type="button" onclick="window.UI?.closeForgotPinModal?.()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition">
+      <div class="pt-3 border-t border-slate-800 flex justify-between items-center text-xs">
+        <button id="btn-cancel-forgot-pin" type="button" onclick="window.UI?.closeForgotPinModal?.()" class="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition">
           إلغاء
         </button>
-        <button id="btn-submit-forgot-pin" type="button" onclick="window.UI?.submitForgotPinForm?.()"
-          class="px-5 py-2.5 rounded-xl bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-black text-xs transition flex items-center gap-1.5 shadow-lg shadow-yellow-500/20">
-          <i class="fa-solid fa-check"></i>
-          <span id="text-submit-forgot-pin">استعادة الحساب وتعيين الرمز</span>
-          <i id="spinner-submit-forgot-pin" class="fa-solid fa-spinner fa-spin hidden"></i>
-        </button>
+        <span class="text-[10px] text-slate-500">رأس المال • حماية الحسابات</span>
       </div>
     </div>
   </div>
