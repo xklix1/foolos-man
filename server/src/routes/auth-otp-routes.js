@@ -191,7 +191,8 @@ function buildOtpEmailHtml(otpCode, username, typeText) {
 async function sendEmailViaResend(toEmail, subject, htmlContent, textContent = '') {
   const apiKey = (process.env.RESEND_API_KEY || config.RESEND_API_KEY || '').trim();
   if (!apiKey) {
-    throw new Error('مفتاح RESEND_API_KEY غير موجود في إعدادات الخادم.');
+    console.error('[Resend Config Error] Missing RESEND_API_KEY in server environment.');
+    throw new Error('خدمة إرسال البريد الإلكتروني غير متوفرة حالياً، يرجى المحاولة لاحقاً أو التواصل مع الدعم الفني.');
   }
 
   // Use verified sender auth@rasalmal.online
