@@ -68,12 +68,30 @@ async function sessionRoutes(fastify, options) {
     try {
       // 1. Fetch current dynamic maintenance configuration from PostgreSQL globals table
       const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`, {
-        headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` }
-      });
+      const targetUrls = [
+        `${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`,
+        'https://rasalmal.online/rest/v1/globals?id=eq.maintenance&select=*'
+      ];
 
-      if (!res.ok) {
-        return reply.code(500).send({ success: false, error: 'تعذر التحقق من رمز الوصول، يرجى المحاولة لاحقاً.' });
+      let res = null;
+      let lastFetchErr = null;
+      for (const u of targetUrls) {
+        try {
+          res = await fetch(u, {
+            headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` }
+          });
+          if (res.ok) break;
+        } catch (fErr) {
+          lastFetchErr = fErr;
+        }
+      }
+
+      if (!res || !res.ok) {
+        fastify.log.error({ lastFetchErr, status: res ? res.status : null }, '[VerifyTesterPass DB Fetch Failed]');
+        return reply.code(500).send({ 
+          success: false, 
+          error: 'تعذر الاتصال بقاعدة البيانات للتحقق من رمز المرور (' + (res ? res.status : (lastFetchErr ? lastFetchErr.message : 'Network Error')) + ')'
+        });
       }
 
       const rows = await res.json();
