@@ -2381,6 +2381,42 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
+  // POST /api/action/trade/dismiss-import
+  fastify.post('/api/action/trade/dismiss-import', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { orderId } = request.body || {};
+    if (!orderId) {
+      return reply.code(400).send({ error: 'orderId is required' });
+    }
+    const tc = session.state.tradeCompany;
+    if (tc && Array.isArray(tc.activeImports)) {
+      const idx = tc.activeImports.findIndex(imp => String(imp.id) === String(orderId));
+      if (idx !== -1) {
+        tc.activeImports.splice(idx, 1);
+        sessionManager.markDirty(session.username);
+        await sessionManager.forceSaveSession(session.username).catch(() => {});
+        return reply.send({ success: true, orderId, remainingCount: tc.activeImports.length });
+      }
+    }
+    return reply.send({ success: true, orderId, remainingCount: (tc && tc.activeImports) ? tc.activeImports.length : 0 });
+  });
+
+  // POST /api/action/trade/dismiss-all-arrived
+  fastify.post('/api/action/trade/dismiss-all-arrived', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const tc = session.state.tradeCompany;
+    if (tc && Array.isArray(tc.activeImports)) {
+      const now = Date.now();
+      tc.activeImports = tc.activeImports.filter(imp => !imp.arrived && now < Number(imp.arrivalTime || 0));
+      sessionManager.markDirty(session.username);
+      await sessionManager.forceSaveSession(session.username).catch(() => {});
+      return reply.send({ success: true, remainingCount: tc.activeImports.length, activeImports: tc.activeImports });
+    }
+    return reply.send({ success: true, remainingCount: 0, activeImports: [] });
+  });
+
   // POST /api/action/trade/upgrade-warehouse
   fastify.post('/api/action/trade/upgrade-warehouse', async (request, reply) => {
     const session = await resolveSession(request, reply);

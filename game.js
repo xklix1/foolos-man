@@ -6193,6 +6193,19 @@ const GameEngine = (() => {
         state.tradeCompany.warehouse[imp.commodityId] = (state.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
       }
     });
+
+    // Auto-prune arrived imports older than 30 minutes to prevent visual clutter and phantom states
+    if (Array.isArray(state.tradeCompany.activeImports) && state.tradeCompany.activeImports.length > 0) {
+      const initialLen = state.tradeCompany.activeImports.length;
+      state.tradeCompany.activeImports = state.tradeCompany.activeImports.filter(imp => {
+        if (!imp.arrived) return true;
+        return (nowMs - Number(imp.arrivalTime || 0)) < 1800000; // 30 minutes
+      });
+      if (state.tradeCompany.activeImports.length !== initialLen) {
+        forceSaveState(true);
+      }
+    }
+
     state.tradeCompany.activeExports.forEach(exp => {
       if (!exp.delivered && nowMs >= exp.deliveryTime) {
         exp.delivered = true;
@@ -6527,15 +6540,34 @@ const GameEngine = (() => {
     };
   }
 
-  function dismissTradeImport(orderId) {
+  async function dismissTradeImport(orderId) {
     if (!state.tradeCompany || !state.tradeCompany.activeImports) return false;
-    const idx = state.tradeCompany.activeImports.findIndex(imp => imp.id === orderId);
+    const strId = String(orderId);
+    const idx = state.tradeCompany.activeImports.findIndex(imp => String(imp.id) === strId);
     if (idx !== -1) {
       state.tradeCompany.activeImports.splice(idx, 1);
       forceSaveState(true);
+      if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.dismissTradeImport === 'function') {
+        try {
+          await ServerBridge.dismissTradeImport(strId);
+        } catch (_) {}
+      }
       return true;
     }
     return false;
+  }
+
+  async function dismissAllArrivedTradeImports() {
+    if (!state.tradeCompany || !state.tradeCompany.activeImports) return false;
+    const now = getTrustedNow();
+    state.tradeCompany.activeImports = state.tradeCompany.activeImports.filter(imp => !imp.arrived && now < Number(imp.arrivalTime || 0));
+    forceSaveState(true);
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.dismissAllArrivedTradeImports === 'function') {
+      try {
+        await ServerBridge.dismissAllArrivedTradeImports();
+      } catch (_) {}
+    }
+    return true;
   }
 
   function speedUpTradeShipment(shipmentType, orderId) {
@@ -9144,6 +9176,7 @@ const GameEngine = (() => {
     claimExportProfit,
     upgradeWarehouse,
     dismissTradeImport,
+    dismissAllArrivedTradeImports,
     speedUpTradeShipment,
 
     // Industrial Supply Chain Empire Exports

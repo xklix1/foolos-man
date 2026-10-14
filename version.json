@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.11",
-  "build": 1791990200000,
-  "timestamp": 1791990200000,
-  "notes": "Cache-Buster & Authoritative DB Bridge v10.0.11: Guaranteed cache purge and zero-lag authoritative sync.",
-  "releaseNotes": "تحديث إجباري v10.0.11: تفريغ شامل للكاش والذاكرة المؤقتة وإعادة تحميل كافة السكربتات المحدثة تلقائياً لجميع الأجهزة."
+  "version": "v10.0.12",
+  "build": 1792000000000,
+  "timestamp": 1792000000000,
+  "notes": "Fix Trade Import Ghost Shipments v10.0.12: Authoritative dismissal, bulk dock clearance, and deletion reconciliation.",
+  "releaseNotes": "تحديث v10.0.12: معالجة الشحنات الوهمية في شركة الاستيراد والتصدير وتوفير إخلاء فوري وجماعي للأرصفة ومزامنة الحذف مع السيرفر."
 }

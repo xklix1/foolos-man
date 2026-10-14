@@ -444,6 +444,29 @@ var ServerBridge = (() => {
     });
   }
 
+  async function dismissTradeImport(orderId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/trade/dismiss-import', { username: _activeUsername, orderId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (s.tradeCompany && Array.isArray(s.tradeCompany.activeImports)) {
+        s.tradeCompany.activeImports = s.tradeCompany.activeImports.filter(imp => String(imp.id) !== String(orderId));
+      }
+      if (typeof UI !== 'undefined' && UI.renderTradePanel) { try { UI.renderTradePanel(); } catch (_) {} }
+    });
+  }
+
+  async function dismissAllArrivedTradeImports() {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/trade/dismiss-all-arrived', { username: _activeUsername });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (s.tradeCompany && Array.isArray(s.tradeCompany.activeImports)) {
+        const now = Date.now();
+        s.tradeCompany.activeImports = s.tradeCompany.activeImports.filter(imp => !imp.arrived && now < Number(imp.arrivalTime || 0));
+      }
+      if (typeof UI !== 'undefined' && UI.renderTradePanel) { try { UI.renderTradePanel(); } catch (_) {} }
+    });
+  }
+
   async function startInvestment(planId, amount) {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/investment/start', { username: _activeUsername, planId, amount });
@@ -1469,6 +1492,8 @@ var ServerBridge = (() => {
     buyImportCargo,
     upgradeWarehouse,
     claimExportProfit,
+    dismissTradeImport,
+    dismissAllArrivedTradeImports,
     startInvestment,
     buyFarmLivestock,
     buyStoreItem,

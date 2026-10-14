@@ -21706,6 +21706,29 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       return;
     }
 
+    // Check for multiple arrived imports to offer bulk clearance
+    const arrivedImports = imports.filter(order => order.arrived || (getTrustedNowUI() >= order.arrivalTime));
+    if (arrivedImports.length >= 2) {
+      const bulkBar = document.createElement('div');
+      bulkBar.className = 'glass-panel p-3.5 rounded-2xl border border-cyan-500/30 bg-cyan-950/40 flex items-center justify-between gap-3 mb-3 shadow-md';
+      bulkBar.innerHTML = `
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-xl bg-cyan-500/20 text-cyan-300 flex items-center justify-center text-base font-bold shrink-0">
+            <i class="fa-solid fa-boxes-packing"></i>
+          </div>
+          <div>
+            <span class="text-xs font-bold text-white">تراكم الشحنات الواصلة (${arrivedImports.length} شحنات)</span>
+            <p class="text-[10px] text-slate-400">تم تفريغ البضائع بالمستودع ويمكنك إخلاء كافة الأرصفة دفعة واحدة.</p>
+          </div>
+        </div>
+        <button id="btn-dismiss-all-trade-imports" class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-black text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-cyan-600/30 active:scale-95 shrink-0">
+          <i class="fa-solid fa-broom"></i>
+          <span>إخلاء جميع الأرصفة</span>
+        </button>
+      `;
+      list.appendChild(bulkBar);
+    }
+
     // Render Active Imports
     imports.forEach(order => {
       const comm = commodities[order.commodityId] || { name:'بضاعة استيراد', icon:'' };
@@ -21830,12 +21853,29 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       });
     });
 
+    // Bind bulk dismiss imports button
+    const bulkDismissBtn = document.getElementById('btn-dismiss-all-trade-imports');
+    if (bulkDismissBtn) {
+      bulkDismissBtn.addEventListener('click', async () => {
+        bulkDismissBtn.disabled = true;
+        bulkDismissBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري الإخلاء...</span>`;
+        if (GameEngine && typeof GameEngine.dismissAllArrivedTradeImports === 'function') {
+          await GameEngine.dismissAllArrivedTradeImports();
+          playMenuSound('success');
+          showToast('إخلاء الأرصفة', 'تم إخلاء جميع أرصفة الشحنات الواصلة بنجاح.', 'success');
+          renderTradePanel();
+        }
+      });
+    }
+
     // Bind dismiss import buttons
     list.querySelectorAll('.btn-dismiss-trade-import').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const orderId = btn.getAttribute('data-id');
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-xs"></i> <span>جاري إخلاء الرصيف...</span>`;
         if (GameEngine && typeof GameEngine.dismissTradeImport === 'function') {
-          GameEngine.dismissTradeImport(orderId);
+          await GameEngine.dismissTradeImport(orderId);
           playMenuSound('click');
           renderTradePanel();
         }

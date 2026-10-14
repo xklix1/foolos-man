@@ -565,6 +565,16 @@ class SessionManager {
           s.tradeCompany.activeExports = clientState.tradeCompany.activeExports;
         }
         if (Array.isArray(clientState.tradeCompany.activeImports)) {
+          // If client dismissed arrived imports, synchronize the deletion to server
+          const clientImportIds = new Set(clientState.tradeCompany.activeImports.map(o => o.id));
+          if (Array.isArray(s.tradeCompany.activeImports)) {
+            s.tradeCompany.activeImports = s.tradeCompany.activeImports.filter(sOrder => {
+              // Keep if client still has it, OR if it's still in-flight
+              if (clientImportIds.has(sOrder.id)) return true;
+              return !sOrder.arrived && Date.now() < Number(sOrder.arrivalTime || 0);
+            });
+          }
+
           const srvMap = new Map((s.tradeCompany.activeImports || []).map(o => [o.id, o]));
           clientState.tradeCompany.activeImports.forEach(cOrder => {
             const sOrder = srvMap.get(cOrder.id);
