@@ -3090,12 +3090,24 @@ var AppDB = (() => {
                   const amt = Number(payload.amount || 0);
                   const amtStr = amt > 0 ? `${amt.toLocaleString()} EGP` : '';
                   
-                  _notifyUser(
-                    ' حوالة بنكية واردة!',
-                    `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي!`,
-                    'success',
-                    'cash'
-                  );
+                  // Deduplicate in-app notification with renderMailbox
+                  if (typeof window !== 'undefined') {
+                    if (!window._notifiedTransferMailIds) window._notifiedTransferMailIds = new Set();
+                    if (!window._notifiedTransferMailIds.has(m.id)) {
+                      window._notifiedTransferMailIds.add(m.id);
+                      _notifyUser(
+                        ' حوالة بنكية واردة!',
+                        `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي!`,
+                        'success',
+                        'cash'
+                      );
+                    }
+                  }
+
+                  // Mark mail as read immediately to archive and prevent duplicate processing
+                  if (typeof updateMailStatus === 'function') {
+                    updateMailStatus(m.id, 'read').catch(() => {});
+                  }
 
                   // CRITICAL FIX: Immediately apply fresh DB balance to recipient's in-memory state.
                   // Do NOT rely solely on onSnapshot (which requires adminModifiedTimestamp > lastKnown).
@@ -3124,12 +3136,14 @@ var AppDB = (() => {
                     }
                   } catch (_) {}
 
-                  // Native OS / Browser Push Notification
+                  // Native OS / Browser Push Notification (only if document is hidden to avoid duplicate popup)
                   if (typeof window !== 'undefined' && window.PWAManager && typeof window.PWAManager.sendNotification === 'function') {
-                    window.PWAManager.sendNotification(` استلام حوالة بنكية (${amtStr})`, {
-                      body: `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي الآن!`,
-                      tag: `transfer_${m.id || Date.now()}`
-                    });
+                    if (typeof document !== 'undefined' && document.hidden) {
+                      window.PWAManager.sendNotification(` استلام حوالة بنكية (${amtStr})`, {
+                        body: `قام اللاعب "${sender}" بتحويل ${amtStr} إلى حسابك البنكي الآن!`,
+                        tag: `transfer_${m.id || Date.now()}`
+                      });
+                    }
                   }
                 }
                 // 2. Private Direct Message (DM) Received

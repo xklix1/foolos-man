@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.17",
-  "build": 1792030000000,
-  "timestamp": 1792030000000,
-  "notes": "Sentinel Moderator Dashboard Resilient Architecture v10.0.17: Migrated moderator database queries to dbService.resilientFetch with internal PostgREST port routing and optimized overview/search queries, restoring live accounts counts and player search results.",
-  "releaseNotes": "تحديث v10.0.17: إصلاح شامل لغرفة الرقابة وتدقيق اللاعبين (لوحة المحقق Sentinel)، وربط استعلاماتها بالمحرك المقاوم للأخطاء dbService، وتخفيف حمولة استعلامات الحسابات والبحث لتعمل اللوحة بسرعة فائقة وتظهر كافة اللاعبين وإحصائيات الحسابات فوراً."
+  "version": "v10.0.18",
+  "build": 1792035000000,
+  "timestamp": 1792035000000,
+  "notes": "Wire Transfer Deduplication & Single Delivery Fix v10.0.18: Eliminated duplicate recipient bank crediting by reconciling state from authoritative database rather than blind client-side addition. Removed redundant client push dispatch and unified mailbox notification deduplication to ensure exactly one notification and precise balance update.",
+  "releaseNotes": "تحديث v10.0.18: إصلاح جذري لنظام الحوالات المصرفية (منع التكرار وازدواج الإشعار والرصيد). تم توحيد جهة الإيداع لتعتمد كلياً وبشكل حصري على المعاملة المصرفية الصارمة بقاعدة البيانات والخادم مع إزالة الزيادة اليدوية المزدوجة من واجهة البريد، وتوحيد إشعار الاستلام ليظهر مرة واحدة فقط بدون تكرار."
 }

@@ -16923,19 +16923,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       await AppDB.executeWireTransfer(GameEngine.activeUsername, target, amt, pin);
       isWireCompleted = true;
 
-      // Notify offline recipient via server web push immediately
-      try {
-        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
-        fetch(`${apiBase}/api/push/notify-player`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            recipient: target,
-            title: ' حوالة بنكية واردة!',
-            body: `قام اللاعب "${GameEngine.activeUsername}" بتحويل ${amt.toLocaleString()} EGP إلى حسابك البنكي الآن!`
-          })
-        }).catch(() => {});
-      } catch (_) {}
+      // Wire transfer executed successfully. Recipient is notified via database mailbox and authoritative push service.
 
       // Fetch latest authoritative state from database to ensure 100% synchronization
       const updatedState = await AppDB.getPlayerState(GameEngine.activeUsername);
@@ -19580,49 +19568,45 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         const amount = Number(tr.payload && tr.payload.amount ? tr.payload.amount : 0);
 
         if (amount > 0) {
-          showToast('حوالة بنكية واردة', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" في حسابك البنكي.`, 'success');
-          playMenuSound('cash');
+          // Deduplicate in-app toast notification with listenToMailbox
+          if (!window._notifiedTransferMailIds) window._notifiedTransferMailIds = new Set();
+          if (!window._notifiedTransferMailIds.has(tr.id)) {
+            window._notifiedTransferMailIds.add(tr.id);
+            showToast('حوالة بنكية واردة', `وصلتك حوالة مالية بقيمة ${amount.toLocaleString()} EGP من اللاعب "${tr.sender}" في حسابك البنكي.`, 'success');
+            if (typeof playMenuSound === 'function') playMenuSound('cash');
+          }
 
+          // Mark mail status as read immediately to archive and prevent re-processing
           AppDB.updateMailStatus(tr.id, 'read').catch(() => {});
 
-          // Authoritative transfer crediting:
-          // Add the net transfer amount directly to the player's bank balance and update net worth
+          // AUTHORITATIVE BALANCE RECONCILIATION:
+          // The database/server procedure has ALREADY credited the recipient's bank balance authoritatively.
+          // We must NEVER add the amount again client-side (GameEngine.state.bank += amount) which caused the 2x money bug!
+          // Instead, fetch and synchronize the authoritative player state from the database.
           if (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.activeUsername) {
-            const transferTs = Number(tr.created_at || Date.now());
-            GameEngine.state.bank = (Number(GameEngine.state.bank) || 0) + amount;
-            GameEngine.state.netWorth = (Number(GameEngine.state.netWorth) || 0) + amount;
-            GameEngine.state.adminModifiedTimestamp = Math.max(
-              Number(GameEngine.state.adminModifiedTimestamp || 0),
-              transferTs + 120000,
-              Date.now() + 120000
-            );
-
-            GameEngine.state._legitimateTransactionBypass = true;
-            if (typeof AppDB !== 'undefined' && typeof AppDB.notifyLegitimateWealthGain === 'function') {
-              AppDB.notifyLegitimateWealthGain((Number(GameEngine.state.cash) || 0) + (Number(GameEngine.state.bank) || 0));
-            }
-
-            try {
-              if (typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
-                AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
-              }
-            } catch (_) {}
-
-            if (typeof renderStatsBar === 'function') renderStatsBar();
-
-            // Push updated state immediately to server session & cache
-            if (typeof window.ServerBridge !== 'undefined' && typeof window.ServerBridge.syncState === 'function') {
-              window.ServerBridge.syncState(GameEngine.state, true).catch(() => {});
-            }
-            if (typeof AppDB !== 'undefined' && typeof AppDB.savePlayerState === 'function') {
-              AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true).catch(() => {});
+            if (typeof AppDB !== 'undefined' && typeof AppDB.getPlayerState === 'function') {
+              AppDB.getPlayerState(GameEngine.activeUsername).then(freshState => {
+                if (freshState && GameEngine.state) {
+                  GameEngine.state.bank = Number(freshState.bank || 0);
+                  GameEngine.state.cash = Number(freshState.cash || 0);
+                  GameEngine.state.netWorth = Number(freshState.netWorth || 0);
+                  GameEngine.state.adminModifiedTimestamp = Math.max(
+                    Number(GameEngine.state.adminModifiedTimestamp || 0),
+                    Number(freshState.adminModifiedTimestamp || 0)
+                  );
+                  if (typeof AppDB.setEncryptedLocalState === 'function') {
+                    AppDB.setEncryptedLocalState(`rasalmal_state_${GameEngine.activeUsername}`, GameEngine.state);
+                  }
+                  if (typeof renderStatsBar === 'function') renderStatsBar();
+                  if (typeof renderAll === 'function') renderAll();
+                }
+              }).catch(() => {});
             }
           }
 
           if (typeof loadTransferHistory === 'function') {
             loadTransferHistory(true);
           }
-          renderAll();
         }
       } catch (err) {
         console.error('[Mailbox System] Failed to process transfer_received:', err);
