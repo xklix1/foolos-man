@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.16",
-  "build": 1792025000000,
-  "timestamp": 1792025000000,
-  "notes": "Transfer Request Accept PIN Modal & Server Proxy v10.0.16: Added dedicated PIN entry modal for accepting transfer requests, authoritatively executing payment and updating request/mailbox status without 403 Forbidden errors.",
-  "releaseNotes": "تحديث v10.0.16: إضافة نافذة مخصصة لإدخال الرقم السري (PIN) عند قبول وسداد طلبات التحويل، ومعالجة السداد والتحديث مباشرة عبر الخادم المركزي لمنع أخطاء 403 وتأكيد التحويل بسلاسة تامة."
+  "version": "v10.0.17",
+  "build": 1792030000000,
+  "timestamp": 1792030000000,
+  "notes": "Sentinel Moderator Dashboard Resilient Architecture v10.0.17: Migrated moderator database queries to dbService.resilientFetch with internal PostgREST port routing and optimized overview/search queries, restoring live accounts counts and player search results.",
+  "releaseNotes": "تحديث v10.0.17: إصلاح شامل لغرفة الرقابة وتدقيق اللاعبين (لوحة المحقق Sentinel)، وربط استعلاماتها بالمحرك المقاوم للأخطاء dbService، وتخفيف حمولة استعلامات الحسابات والبحث لتعمل اللوحة بسرعة فائقة وتظهر كافة اللاعبين وإحصائيات الحسابات فوراً."
 }

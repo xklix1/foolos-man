@@ -151,6 +151,30 @@ function generateStandardModToken(modInfo) {
 
 async function moderatorRoutes(fastify, options) {
   const sessionManager = options.sessionManager;
+  const dbService = require('../services/db-service');
+
+  /**
+   * Resilient fetch proxy for moderator routes that guarantees connection
+   * to internal PostgREST (127.0.0.1:8000) or public URL with fallback
+   */
+  async function modDbFetch(pathAndQuery, options = {}) {
+    let cleanPath = String(pathAndQuery || '').trim();
+    if (cleanPath.startsWith('http://') || cleanPath.startsWith('https://')) {
+      try {
+        const u = new URL(cleanPath);
+        cleanPath = u.pathname + u.search;
+      } catch (_) {}
+    }
+    const cleanOptions = { ...options };
+    if (cleanOptions.headers) {
+      const cleanHeaders = { ...cleanOptions.headers };
+      delete cleanHeaders['apikey'];
+      delete cleanHeaders['Authorization'];
+      delete cleanHeaders['authorization'];
+      cleanOptions.headers = cleanHeaders;
+    }
+    return await dbService.resilientFetch(cleanPath, cleanOptions);
+  }
 
   const serviceKey = () => config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
 
@@ -160,7 +184,7 @@ async function moderatorRoutes(fastify, options) {
   async function getDynamicModKeys() {
     try {
       const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.moderator_keys&select=*`;
-      const res = await fetch(gUrl, {
+      const res = await modDbFetch(gUrl, {
         headers: { 'apikey': serviceKey(), 'Authorization': `Bearer ${serviceKey()}` }
       });
       if (res.ok) {
@@ -192,7 +216,7 @@ async function moderatorRoutes(fastify, options) {
     try {
       // 1. Fetch current audit logs
       const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.staff_audit_logs&select=*`;
-      const res = await fetch(gUrl, {
+      const res = await modDbFetch(gUrl, {
         headers: { 'apikey': serviceKey(), 'Authorization': `Bearer ${serviceKey()}` }
       });
       
@@ -209,7 +233,7 @@ async function moderatorRoutes(fastify, options) {
       if (logs.length > 500) logs = logs.slice(0, 500);
 
       // Save back
-      await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+      await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
         method: 'POST',
         headers: {
           'apikey': serviceKey(),
@@ -464,13 +488,13 @@ async function moderatorRoutes(fastify, options) {
       const now = Date.now();
 
       // 1. Fetch exact count of total players
-      const countRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username`, {
+      const countRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?select=username`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Range': '0-0', 'Prefer': 'count=exact' }
       });
       const totalPlayersCount = parseInt(countRes.headers.get('content-range')?.split('/')[1] || '0', 10);
 
       // 1B. Fetch players to compute exact counts of Flagged, Frozen, and Muted players across the whole database
-      const allPlayersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,title,net_worth,jail_timer,state,last_seen&limit=1000`, {
+      const allPlayersRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,title,net_worth,jail_timer,is_banned,last_seen&limit=1000`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const allPlayersRows = allPlayersRes.ok ? await allPlayersRes.json() : [];
@@ -514,7 +538,7 @@ async function moderatorRoutes(fastify, options) {
       });
 
       // 2. Fetch top 30 wealthiest players for wealth analysis
-      const topWealthRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,gold,title,is_banned,jail_timer,last_seen,state&order=net_worth.desc&limit=30`, {
+      const topWealthRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,gold,title,is_banned,jail_timer,last_seen,state&order=net_worth.desc&limit=30`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const topRows = topWealthRes.ok ? await topWealthRes.json() : [];
@@ -575,7 +599,7 @@ async function moderatorRoutes(fastify, options) {
       }
 
       // 5. Fetch recent 15 transfers for rapid movement monitoring
-      const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?order=created_at.desc&limit=15`, {
+      const transfersRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/transfers?order=created_at.desc&limit=15`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const recentTransfers = transfersRes.ok ? await transfersRes.json() : [];
@@ -615,7 +639,7 @@ async function moderatorRoutes(fastify, options) {
 
       if (filter === 'flagged' || filter === 'frozen' || filter === 'muted') {
         // Retrieve full dataset to ensure zero false-negatives across complex JSON subkeys
-        const res = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=1000`, {
+        const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=1000`, {
           headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
         });
         if (res.ok) {
@@ -623,14 +647,14 @@ async function moderatorRoutes(fastify, options) {
         }
       } else {
         // Standard search / All filter
-        let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=${Math.min(200, Number(limit) || 100)}`;
+        let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen&limit=${Math.min(200, Number(limit) || 100)}`;
         if (cleanQ) {
           queryParams += `&username=ilike.*${encodeURIComponent(cleanQ)}*`;
         } else {
           queryParams += `&order=net_worth.desc`;
         }
 
-        const res = await fetch(`${config.SUPABASE_URL}/rest/v1/players?${queryParams}`, {
+        const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?${queryParams}`, {
           headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
         });
         if (res.ok) {
@@ -739,7 +763,7 @@ async function moderatorRoutes(fastify, options) {
 
     try {
       // 1. Fetch player record
-      const pRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&select=*`, {
+      const pRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&select=*`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
 
@@ -772,7 +796,7 @@ async function moderatorRoutes(fastify, options) {
         calculateAuthoritativeOfflineProgress(liveState, now);
 
         // Immediately update Supabase with fresh authoritative numbers so the database remains 100% current
-        fetch(`${config.SUPABASE_URL}/rest/v1/players?username=eq.${encodeURIComponent(pDoc.username)}`, {
+        modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=eq.${encodeURIComponent(pDoc.username)}`, {
           method: 'PATCH',
           headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
           body: JSON.stringify({
@@ -796,7 +820,7 @@ async function moderatorRoutes(fastify, options) {
 
       // 2. Fetch P2P transfers related to this player (sent & received)
       const cleanU = encodeURIComponent(u);
-      const transfersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=250`, {
+      const transfersRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/transfers?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=250`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const playerTransfers = transfersRes.ok ? await transfersRes.json() : [];
@@ -804,7 +828,7 @@ async function moderatorRoutes(fastify, options) {
       // 3. Fetch recent Mailbox & DM interactions
       let playerMailbox = [];
       try {
-        const mbRes = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=250`, {
+        const mbRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox?or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.desc&limit=250`, {
           headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
         });
         if (mbRes.ok) playerMailbox = await mbRes.json();
@@ -813,7 +837,7 @@ async function moderatorRoutes(fastify, options) {
       // 3B. Fetch Official Top-Up Requests & Admin Injections for this Player
       let playerTopups = [];
       try {
-        const topupRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.topup_requests&select=data`, {
+        const topupRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.topup_requests&select=data`, {
           headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
         });
         if (topupRes.ok) {
@@ -1443,7 +1467,7 @@ async function moderatorRoutes(fastify, options) {
     const ts = Date.now();
 
     try {
-      const pRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}&select=*`, {
+      const pRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}&select=*`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const rows = await pRes.json();
@@ -1480,7 +1504,7 @@ async function moderatorRoutes(fastify, options) {
 
       // Persist to Database
       const patchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}`;
-      await fetch(patchUrl, {
+      await modDbFetch(patchUrl, {
         method: 'PATCH',
         headers: {
           'apikey': sKey,
@@ -1536,7 +1560,7 @@ async function moderatorRoutes(fastify, options) {
   }, async (request, reply) => {
     try {
       const sKey = serviceKey();
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.standby_mode&select=*`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.standby_mode&select=*`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       if (res.ok) {
@@ -1579,7 +1603,7 @@ async function moderatorRoutes(fastify, options) {
         updated_by: request.modSession.name
       };
 
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
         method: 'POST',
         headers: {
           'apikey': sKey,
@@ -1626,7 +1650,7 @@ async function moderatorRoutes(fastify, options) {
   }, async (request, reply) => {
     try {
       const sKey = serviceKey();
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       if (res.ok) {
@@ -1671,7 +1695,7 @@ async function moderatorRoutes(fastify, options) {
         maintData.tester_pass = testerPass.trim();
       }
 
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
         method: 'POST',
         headers: {
           'apikey': sKey,
@@ -1744,7 +1768,7 @@ async function moderatorRoutes(fastify, options) {
 
     try {
       // 1. Fetch player
-      const pRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}&select=*`, {
+      const pRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}&select=*`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       const rows = await pRes.json();
@@ -1779,7 +1803,7 @@ async function moderatorRoutes(fastify, options) {
           });
 
           // Send notification mail to player
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -1817,7 +1841,7 @@ async function moderatorRoutes(fastify, options) {
           });
 
           // Send notification mail to player
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -1851,7 +1875,7 @@ async function moderatorRoutes(fastify, options) {
           });
 
           // Send warning mail
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -1928,7 +1952,7 @@ async function moderatorRoutes(fastify, options) {
           });
 
           // Send official warning mail
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -1962,7 +1986,7 @@ async function moderatorRoutes(fastify, options) {
           });
 
           // Send official mailbox notification
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -1995,7 +2019,7 @@ async function moderatorRoutes(fastify, options) {
           });
 
           // Send official mailbox notification
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -2034,7 +2058,7 @@ async function moderatorRoutes(fastify, options) {
 
           // Age outgoing wire transfers so rolling 24h limit is completely cleared (reset to 0)
           const twentyFiveHoursAgo = ts - (25 * 3600 * 1000);
-          await fetch(`${config.SUPABASE_URL}/rest/v1/transfers?sender=ilike.${encodeURIComponent(target)}&created_at=gt.${ts - 86400000}`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/transfers?sender=ilike.${encodeURIComponent(target)}&created_at=gt.${ts - 86400000}`, {
             method: 'PATCH',
             headers: {
               'apikey': sKey,
@@ -2059,7 +2083,7 @@ async function moderatorRoutes(fastify, options) {
           });
 
           // Send notification mailbox message
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -2123,7 +2147,7 @@ async function moderatorRoutes(fastify, options) {
           if (pState.adminGrants.length > 30) pState.adminGrants = pState.adminGrants.slice(0, 30);
 
           // Send notification mailbox message
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -2210,7 +2234,7 @@ async function moderatorRoutes(fastify, options) {
           if (pState.adminGrants.length > 30) pState.adminGrants = pState.adminGrants.slice(0, 30);
 
           // Send notification mailbox message
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
             method: 'POST',
             headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}`, 'Content-Type': 'application/json', 'Prefer': 'return=minimal' },
             body: JSON.stringify({
@@ -2269,7 +2293,7 @@ async function moderatorRoutes(fastify, options) {
         patchBody.net_worth = pState.netWorth;
       }
 
-      await fetch(patchUrl, {
+      await modDbFetch(patchUrl, {
         method: 'PATCH',
         headers: {
           'apikey': sKey,
@@ -2359,7 +2383,7 @@ async function moderatorRoutes(fastify, options) {
     try {
       const sKey = serviceKey();
       const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.staff_audit_logs&select=*`;
-      const res = await fetch(gUrl, {
+      const res = await modDbFetch(gUrl, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
 
@@ -2387,7 +2411,7 @@ async function moderatorRoutes(fastify, options) {
     try {
       const sKey = serviceKey();
       const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.resolved_chat_threads&select=*`;
-      const res = await fetch(gUrl, {
+      const res = await modDbFetch(gUrl, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       if (res.ok) {
@@ -2405,7 +2429,7 @@ async function moderatorRoutes(fastify, options) {
   async function saveResolvedChatThreads(threadsMapObj) {
     const sKey = serviceKey();
     const ts = Date.now();
-    const saveRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+    const saveRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
       method: 'POST',
       headers: {
         'apikey': sKey,
@@ -2435,7 +2459,7 @@ async function moderatorRoutes(fastify, options) {
     try {
       const sKey = serviceKey();
       const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&select=*&order=created_at.desc&limit=150`;
-      const res = await fetch(qUrl, {
+      const res = await modDbFetch(qUrl, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       if (!res.ok) throw new Error('Failed to fetch chat threads');
@@ -2548,7 +2572,7 @@ async function moderatorRoutes(fastify, options) {
       const sKey = serviceKey();
       const cleanU = encodeURIComponent(username.trim());
       const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.asc&limit=150`;
-      const res = await fetch(qUrl, {
+      const res = await modDbFetch(qUrl, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       if (!res.ok) throw new Error('Failed to fetch messages');
@@ -2719,7 +2743,7 @@ async function moderatorRoutes(fastify, options) {
       const sKey = serviceKey();
       const ts = Date.now();
 
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
         method: 'POST',
         headers: {
           'apikey': sKey,
@@ -2787,7 +2811,7 @@ async function moderatorRoutes(fastify, options) {
       const sKey = serviceKey();
       const ts = Date.now();
 
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
         method: 'POST',
         headers: {
           'apikey': sKey,
@@ -2866,7 +2890,7 @@ async function moderatorRoutes(fastify, options) {
         for (const k of candidateKeys) {
           try {
             const qUrl = `${base}/rest/v1/mailbox?type=eq.investigation_chat&recipient=ilike.${cleanU}&status=eq.unread&select=id,sender,payload,created_at&order=created_at.desc&limit=5`;
-            const res = await fetch(qUrl, {
+            const res = await modDbFetch(qUrl, {
               headers: { 'apikey': k, 'Authorization': `Bearer ${k}` }
             });
             if (res.ok) {
@@ -2900,7 +2924,7 @@ async function moderatorRoutes(fastify, options) {
       const sKey = serviceKey();
       const cleanU = encodeURIComponent(username.trim());
       const qUrl = `${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.asc&limit=100`;
-      const res = await fetch(qUrl, {
+      const res = await modDbFetch(qUrl, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       if (!res.ok) throw new Error('Failed to fetch player messages');
@@ -2908,7 +2932,7 @@ async function moderatorRoutes(fastify, options) {
 
       // Mark unread messages sent to this player as read
       try {
-        await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&recipient=ilike.${cleanU}&status=eq.unread`, {
+        await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&recipient=ilike.${cleanU}&status=eq.unread`, {
           method: 'PATCH',
           headers: {
             'apikey': sKey,
@@ -2938,7 +2962,7 @@ async function moderatorRoutes(fastify, options) {
   fastify.get('/global-chat', { preHandler: [requireModAuth] }, async (request, reply) => {
     try {
       const sKey = serviceKey();
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       let messages = [];
@@ -2974,7 +2998,7 @@ async function moderatorRoutes(fastify, options) {
 
     try {
       // 1. Fetch current chat_feed
-      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
+      const res = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.chat_feed&select=data,updated_at`, {
         headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
       });
       let currentFeed = [];
@@ -3004,7 +3028,7 @@ async function moderatorRoutes(fastify, options) {
       const finalFeed = currentFeed.length > 100 ? currentFeed.slice(currentFeed.length - 100) : currentFeed;
 
       // 3. Upsert into globals table
-      const saveRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+      const saveRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
         method: 'POST',
         headers: {
           'apikey': sKey,
@@ -3052,7 +3076,7 @@ async function moderatorRoutes(fastify, options) {
   async function getSharedStaffTasks() {
     const sKey = serviceKey();
     const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.staff_shared_tasks&select=*`;
-    const res = await fetch(gUrl, {
+    const res = await modDbFetch(gUrl, {
       headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
     });
     if (res.ok) {
@@ -3070,7 +3094,7 @@ async function moderatorRoutes(fastify, options) {
   async function saveSharedStaffTasks(tasks) {
     const sKey = serviceKey();
     const ts = Date.now();
-    const saveRes = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+    const saveRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
       method: 'POST',
       headers: {
         'apikey': sKey,
