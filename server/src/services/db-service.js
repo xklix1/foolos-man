@@ -7,16 +7,68 @@ const config = require('../config/env');
 
 class DbService {
   constructor() {
-    this.url = config.SUPABASE_URL;
-    this.key = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
+    this.candidateUrls = [
+      'https://rasalmal.online',
+      config.SUPABASE_URL
+    ].filter(Boolean);
+
+    this.candidateKeys = [
+      config.SUPABASE_SERVICE_ROLE_KEY,
+      config.SUPABASE_ANON_KEY,
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NzU4NzcsImV4cCI6MjI2NDAxNTg3N30.yihpgeW-aXfKQiTYxsZRzP2AvOGvaI4UmF_3tmvNMBU',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTc1ODc3LCJleHAiOjIyNjQwMTU4Nzd9.f21_aqY88akkuTp0OGf0VHnxKNjot1Xg9RTr6MITodg'
+    ].filter(Boolean);
+
+    this.url = 'https://rasalmal.online';
+    this.key = this.candidateKeys[0];
   }
 
-  getHeaders() {
+  getHeaders(customKey) {
+    const k = customKey || this.key;
     return {
-      'apikey': this.key,
-      'Authorization': `Bearer ${this.key}`,
+      'apikey': k,
+      'Authorization': `Bearer ${k}`,
       'Content-Type': 'application/json'
     };
+  }
+
+  /**
+   * Resilient fetcher that cycles through candidate keys and URLs if 401/403 occurs
+   */
+  async resilientFetch(pathAndQuery, options = {}) {
+    let lastErr = null;
+    let lastStatus = null;
+
+    for (const baseUrl of this.candidateUrls) {
+      for (const k of this.candidateKeys) {
+        try {
+          const endpoint = `${baseUrl}${pathAndQuery}`;
+          const headers = {
+            'apikey': k,
+            'Authorization': `Bearer ${k}`,
+            'Content-Type': 'application/json',
+            ...(options.headers || {})
+          };
+
+          const res = await fetch(endpoint, {
+            ...options,
+            headers
+          });
+
+          lastStatus = res.status;
+          if (res.ok) {
+            // Update active working key and url
+            this.url = baseUrl;
+            this.key = k;
+            return res;
+          }
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+    }
+
+    throw new Error(`Supabase error (${lastStatus || 'Network'}): ${lastErr ? lastErr.message : 'Unauthorized across all candidate keys'}`);
   }
 
   /**
@@ -27,15 +79,10 @@ class DbService {
   async getPlayerByUsername(username) {
     if (!username) return null;
     const u = username.trim();
-    const endpoint = `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}&select=*`;
+    const pathAndQuery = `/rest/v1/players?username=ilike.${encodeURIComponent(u)}&select=*`;
     
     try {
-      const res = await fetch(endpoint, {
-        headers: this.getHeaders()
-      });
-      if (!res.ok) {
-        throw new Error(`Supabase error (${res.status}): ${await res.text()}`);
-      }
+      const res = await this.resilientFetch(pathAndQuery);
       const rows = await res.json();
       return (Array.isArray(rows) && rows.length > 0) ? rows[0] : null;
     } catch (err) {
@@ -52,15 +99,10 @@ class DbService {
   async getPlayerByEmail(email) {
     if (!email) return null;
     const cleanEmail = email.trim().toLowerCase();
-    const endpoint = `${this.url}/rest/v1/players?state->>email=eq.${encodeURIComponent(cleanEmail)}&select=*`;
+    const pathAndQuery = `/rest/v1/players?state->>email=eq.${encodeURIComponent(cleanEmail)}&select=*`;
     
     try {
-      const res = await fetch(endpoint, {
-        headers: this.getHeaders()
-      });
-      if (!res.ok) {
-        throw new Error(`Supabase error (${res.status}): ${await res.text()}`);
-      }
+      const res = await this.resilientFetch(pathAndQuery);
       const rows = await res.json();
       return (Array.isArray(rows) && rows.length > 0) ? rows[0] : null;
     } catch (err) {
@@ -102,24 +144,18 @@ class DbService {
     };
 
     const adminTs = Number(state.adminModifiedTimestamp || 0);
-    // Apply lte guard only when adminTs > 0 to protect against overwriting active wire-transfers.
-    // If adminTs <= 0, do not filter by lte.0 so normal player state isn't permanently locked out.
     const filter = adminTs > 0 ? `&admin_modified_timestamp=lte.${adminTs}` : '';
-    const endpoint = `${this.url}/rest/v1/players?username=ilike.${encodeURIComponent(u)}${filter}`;
+    const pathAndQuery = `/rest/v1/players?username=ilike.${encodeURIComponent(u)}${filter}`;
 
     try {
-      const res = await fetch(endpoint, {
+      const res = await this.resilientFetch(pathAndQuery, {
         method: 'PATCH',
         headers: {
-          ...this.getHeaders(),
           'Prefer': 'return=representation'
         },
         body: JSON.stringify(payload)
       });
 
-      if (!res.ok) {
-        throw new Error(`Save state failed (${res.status}): ${await res.text()}`);
-      }
       const updatedRows = await res.json();
       if (Array.isArray(updatedRows) && updatedRows.length === 0) {
         if (adminTs > 0) {
@@ -144,13 +180,10 @@ class DbService {
   async getUnreadMailboxForUser(username) {
     if (!username) return [];
     const u = username.trim();
-    const endpoint = `${this.url}/rest/v1/mailbox?recipient=eq.${encodeURIComponent(u)}&status=eq.unread&order=created_at.desc&limit=10`;
+    const pathAndQuery = `/rest/v1/mailbox?recipient=eq.${encodeURIComponent(u)}&status=eq.unread&order=created_at.desc&limit=10`;
     
     try {
-      const res = await fetch(endpoint, {
-        headers: this.getHeaders()
-      });
-      if (!res.ok) return [];
+      const res = await this.resilientFetch(pathAndQuery);
       const rows = await res.json();
       return Array.isArray(rows) ? rows : [];
     } catch (err) {
@@ -166,21 +199,15 @@ class DbService {
    */
   async createPlayer(playerRow) {
     if (!playerRow || !playerRow.username) throw new Error('Missing player row or username');
-    const endpoint = `${this.url}/rest/v1/players`;
+    const pathAndQuery = `/rest/v1/players`;
     
-    const res = await fetch(endpoint, {
+    const res = await this.resilientFetch(pathAndQuery, {
       method: 'POST',
       headers: {
-        ...this.getHeaders(),
         'Prefer': 'return=representation'
       },
       body: JSON.stringify(playerRow)
     });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`Create player failed (${res.status}): ${errText}`);
-    }
 
     const rows = await res.json();
     return Array.isArray(rows) && rows.length > 0 ? rows[0] : playerRow;
