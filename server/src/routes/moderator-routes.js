@@ -1619,6 +1619,93 @@ async function moderatorRoutes(fastify, options) {
   });
 
   /**
+   * GET /api/mod/maintenance/status
+   */
+  fastify.get('/maintenance/status', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    try {
+      const sKey = serviceKey();
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      if (res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+          return reply.send({ success: true, maintenance: rows[0].data });
+        }
+      }
+      return reply.send({
+        success: true,
+        maintenance: { active: false, enabled: false, message: '' }
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Maintenance Status Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/mod/maintenance/toggle
+   * Toggles game-wide Maintenance Mode
+   */
+  fastify.post('/maintenance/toggle', {
+    preHandler: [requireModAuth]
+  }, async (request, reply) => {
+    const { active, message = '' } = request.body || {};
+    const isActive = Boolean(active);
+    const cleanMsg = String(message || '').trim() || 'تخضع اللعبة حالياً لأعمال تحديث وصيانة طارئة من قبل الإدارة لتحسين الأداء وتأمين الحسابات. يرجى الانتظار والمحاولة لاحقاً.';
+    const sKey = serviceKey();
+    const ts = Date.now();
+
+    try {
+      const maintData = {
+        active: isActive,
+        enabled: isActive,
+        message: cleanMsg,
+        timestamp: ts,
+        updated_by: request.modSession ? request.modSession.name : 'Master Admin'
+      };
+
+      const res = await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+        method: 'POST',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'resolution=merge-duplicates, return=minimal'
+        },
+        body: JSON.stringify({
+          id: 'maintenance',
+          data: maintData,
+          updated_at: ts
+        })
+      });
+
+      if (!res.ok) {
+        throw new Error('Failed to update maintenance in globals table: ' + (await res.text()));
+      }
+
+      await logStaffAudit(
+        request.modSession,
+        'SYSTEM',
+        isActive ? 'enable_maintenance' : 'disable_maintenance',
+        isActive ? `تفعيل وضع الصيانة الشامل للعبة - رسالة: ${cleanMsg}` : 'إنهاء وضع الصيانة وإعادة فتح اللعبة للجميع',
+        { message: cleanMsg }
+      );
+
+      return reply.send({
+        success: true,
+        message: isActive ? 'تم تفعيل وضع الصيانة وإغلاق اللعبة بنجاح.' : 'تم إنهاء وضع الصيانة وإعادة فتح اللعبة للجميع.',
+        maintenance: maintData
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Maintenance Toggle Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
    * POST /api/mod/action
    * Executes a controlled moderation action with mandatory audit logging and reason
    */
