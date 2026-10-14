@@ -2010,6 +2010,45 @@ const GameEngine = (() => {
     return'عامل مبتدئ';
   }
 
+  // Unified Instant Local Monetary Spend with Anti-Rollback Notification & Immediate DOM Refresh
+  function deductFunds(totalCost, reason = 'spend') {
+    const cost = Math.max(0, Number(totalCost) || 0);
+    if (cost === 0) return { cashDeducted: 0, bankDeducted: 0, totalDeducted: 0 };
+    const curCash = Number(state.cash || 0);
+    const curBank = Number(state.bank || 0);
+    if ((curCash + curBank) < cost) {
+      throw new Error(`رصيدك غير كافٍ. تحتاج: ${cost.toLocaleString()} EGP — لديك: ${(curCash + curBank).toLocaleString()} EGP`);
+    }
+    let cashDed = 0;
+    let bankDed = 0;
+    if (curCash >= cost) {
+      state.cash = curCash - cost;
+      cashDed = cost;
+    } else {
+      cashDed = curCash;
+      bankDed = cost - curCash;
+      state.cash = 0;
+      state.bank = Math.max(0, curBank - bankDed);
+    }
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+
+    // Notify Bridge of local spend to activate Anti-Rollback Shield
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.notifyLocalSpend === 'function') {
+      ServerBridge.notifyLocalSpend(state.cash, state.bank);
+    }
+
+    // Immediately refresh stats bar in DOM
+    if (typeof UI !== 'undefined' && typeof UI.renderStatsBar === 'function') {
+      try { UI.renderStatsBar(); } catch (_) {}
+    }
+    if (typeof window !== 'undefined' && typeof window.renderStatsBar === 'function') {
+      try { window.renderStatsBar(); } catch (_) {}
+    }
+
+    return { cashDeducted: cashDed, bankDeducted: bankDed, totalDeducted: cost };
+  }
+
   // --- Unified Engine Mathematical Helpers for Instant & Continuous Cashflow ---
 
   // Calculate detailed financial breakdown and owner profit for a single business
@@ -4136,11 +4175,7 @@ const GameEngine = (() => {
       throw new Error("تم شراء هذا المشروع بالفعل! يمكنك ترقيته لزيادة الأرباح.");
     }
 
-    if (state.cash < biz.cost) {
-      throw new Error(`رصيدك غير كافٍ. تحتاج: ${biz.cost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
-    }
-
-    state.cash -= biz.cost;
+    deductFunds(biz.cost, 'purchase_business');
     bizState.level = 1;
     bizState.suppliesTicks = 3600; // 1 hour initial operating supplies included with purchase
 
@@ -4169,11 +4204,7 @@ const GameEngine = (() => {
     const hasTaxShield = (state.inventory && state.inventory.tax_shield > 0);
     const upgradeCost = hasTaxShield ? Math.floor(baseCost * 0.875) : baseCost;
 
-    if (state.cash < upgradeCost) {
-      throw new Error(`رصيدك غير كافٍ للترقية. تحتاج: ${upgradeCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
-    }
-
-    state.cash -= upgradeCost;
+    deductFunds(upgradeCost, 'upgrade_business');
     bizState.level++;
 
     recordPlayerActivity('ترقية مشروع',`ترقية مشروع"${biz.name}" إلى المستوى ${bizState.level}`,'business');
@@ -6215,19 +6246,8 @@ const GameEngine = (() => {
     const customsAndFreightFee = Math.floor(baseCost * 0.05); // 5% Port customs & freight handling fee
     const totalCost = baseCost + customsAndFreightFee;
 
-    const totalLiquid = (state.cash || 0) + (state.bank || 0);
-    if (totalLiquid < totalCost) {
-      throw new Error(`سيولتك غير كافية لتمويل استيراد هذه الشحنة ورسوم الشحن والجمارك (5%). التكلفة الكلية: ${totalCost.toLocaleString()} EGP — المتاح لديك: ${totalLiquid.toLocaleString()} EGP.`);
-    }
-
-    // Deduct cost: try cash first, then bank
-    if ((state.cash || 0) >= totalCost) {
-      state.cash -= totalCost;
-    } else {
-      const rem = totalCost - (state.cash || 0);
-      state.cash = 0;
-      state.bank -= rem;
-    }
+    // Deduct cost optimistically with anti-rollback protection & instant DOM update
+    deductFunds(totalCost, 'trade_import');
 
     const nowTrusted = getTrustedNow();
     const orderId ='imp_' + nowTrusted +'_' + Math.random().toString(36).substring(2, 6);
@@ -7171,18 +7191,7 @@ const GameEngine = (() => {
     if (!crop) throw new Error("نوع المحصول أو البذرة غير صالح.");
 
     const cost = crop.seedCost;
-    const totalFunds = (state.cash || 0) + (state.bank || 0);
-    if (totalFunds < cost) {
-      throw new Error(`كلفة بذور "${crop.name}" هي ${cost.toLocaleString()} EGP. رصيدك لا يكفي.`);
-    }
-
-    if ((state.cash || 0) >= cost) {
-      state.cash -= cost;
-    } else {
-      const rem = cost - (state.cash || 0);
-      state.cash = 0;
-      state.bank -= rem;
-    }
+    deductFunds(cost, 'farm_plant');
 
     const irrigationDef = FARM_CONFIG.irrigation[f.waterLevel] || FARM_CONFIG.irrigation[1];
     const speedBonus = irrigationDef ? (irrigationDef.speedBonus || 0) : 0;
@@ -7269,6 +7278,18 @@ const GameEngine = (() => {
     }
 
     state.netWorth = calculateNetWorth();
+
+    if (totalSpent > 0) {
+      if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.notifyLocalSpend === 'function') {
+        ServerBridge.notifyLocalSpend(state.cash, state.bank);
+      }
+      if (typeof UI !== 'undefined' && typeof UI.renderStatsBar === 'function') {
+        try { UI.renderStatsBar(); } catch (_) {}
+      }
+      if (typeof window !== 'undefined' && typeof window.renderStatsBar === 'function') {
+        try { window.renderStatsBar(); } catch (_) {}
+      }
+    }
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
       ServerBridge.plantAllFarmPlots(cropId).catch(e => console.warn('[FarmEngine] Server plant-all sync warning:', e.message));
@@ -9151,6 +9172,7 @@ const GameEngine = (() => {
     setCharacterAvatar,
 
     // State Reader and Accessors
+    deductFunds,
     // getState returns the live state reference (used internally by UI)
     getState: () => state,
     get activeUsername() { return activeUsername; },

@@ -1946,11 +1946,37 @@ window.AirportUI = (() => {
     const eco = getEconomicsForDisplay(model, dest, ap);
     const curCash = Number(liveState.cash || 0);
     const curBank = Number(liveState.bank || 0);
+    const operatingCost = Number(eco.totalOperatingCost) || 0;
 
-    if ((curCash + curBank) < eco.totalOperatingCost) {
-      showAirportToast(` رصيدك غير كافٍ لتغطية تكاليف تجهيز الرحلة (${eco.totalOperatingCost.toLocaleString()} ج.م)`, 'error');
+    if ((curCash + curBank) < operatingCost) {
+      showAirportToast(` رصيدك غير كافٍ لتغطية تكاليف تجهيز الرحلة (${operatingCost.toLocaleString()} ج.م)`, 'error');
       return;
     }
+
+    // Instant Optimistic Deduction & Anti-Rollback Guard
+    if (typeof window.GameEngine?.deductFunds === 'function') {
+      window.GameEngine.deductFunds(operatingCost, 'airport_flight_dispatch');
+    } else {
+      if (curCash >= operatingCost) {
+        liveState.cash = curCash - operatingCost;
+      } else {
+        const rem = operatingCost - curCash;
+        liveState.cash = 0;
+        liveState.bank = Math.max(0, curBank - rem);
+      }
+      if (typeof window.ServerBridge?.notifyLocalSpend === 'function') {
+        window.ServerBridge.notifyLocalSpend(liveState.cash, liveState.bank);
+      }
+      if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+      if (typeof window.UI?.renderStatsBar === 'function') window.UI.renderStatsBar();
+    }
+
+    const rollbackOptimisticSpend = () => {
+      liveState.cash = curCash;
+      liveState.bank = curBank;
+      if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+      if (typeof window.UI?.renderStatsBar === 'function') window.UI.renderStatsBar();
+    };
 
     // 1. Authoritative Server Dispatch
     if (window.ServerBridge && typeof window.ServerBridge.launchAirportFlight === 'function') {
@@ -1961,6 +1987,12 @@ window.AirportUI = (() => {
           if (res.cash !== undefined) liveState.cash = res.cash;
           if (res.bank !== undefined) liveState.bank = res.bank;
           if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          if (typeof window.ServerBridge?.notifyLocalSpend === 'function') {
+            window.ServerBridge.notifyLocalSpend(liveState.cash, liveState.bank);
+          }
+          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+          if (typeof window.UI?.renderStatsBar === 'function') window.UI.renderStatsBar();
 
           const updatedPlane = liveState.airport?.fleet?.find(p => p.id === planeId);
           if (updatedPlane && res.plane) {
@@ -1983,12 +2015,14 @@ window.AirportUI = (() => {
           }
           return;
         } else {
+          rollbackOptimisticSpend();
           showAirportToast(res?.error || 'تعذر إقلاع الرحلة من السيرفر', 'error');
           return;
         }
       } catch (err) {
         const errMsg = err?.message || '';
         if (err.status === 400 || errMsg.includes('رصيدك غير كافٍ') || errMsg.includes('الحد الأقصى') || errMsg.includes('بالفعل')) {
+          rollbackOptimisticSpend();
           showAirportToast(errMsg || 'تعذر إقلاع الرحلة', 'error');
           return;
         }
@@ -1996,14 +2030,7 @@ window.AirportUI = (() => {
       }
     }
 
-    // 2. Offline Fallback
-    if (curCash >= eco.totalOperatingCost) {
-      liveState.cash = curCash - eco.totalOperatingCost;
-    } else {
-      const rem = eco.totalOperatingCost - curCash;
-      liveState.cash = 0;
-      liveState.bank = Math.max(0, curBank - rem);
-    }
+    // 2. Offline Fallback (deduction already happened optimistically above)
 
     const now = Date.now();
     const durationMs = eco.durationSec * 1000;
@@ -2466,6 +2493,12 @@ window.AirportUI = (() => {
           if (res.bank !== undefined) liveState.bank = res.bank;
           if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
 
+          if (typeof window.ServerBridge?.notifyLocalSpend === 'function') {
+            window.ServerBridge.notifyLocalSpend(liveState.cash, liveState.bank);
+          }
+          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+          if (typeof window.UI?.renderStatsBar === 'function') window.UI.renderStatsBar();
+
           if (!Array.isArray(liveState.airport.fleet)) liveState.airport.fleet = [];
           if (res.plane && !liveState.airport.fleet.some(p => p.id === res.plane.id)) {
             liveState.airport.fleet.push(res.plane);
@@ -2567,6 +2600,12 @@ window.AirportUI = (() => {
           if (res.cash !== undefined) liveState.cash = res.cash;
           if (res.bank !== undefined) liveState.bank = res.bank;
           if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+
+          if (typeof window.ServerBridge?.notifyLocalSpend === 'function') {
+            window.ServerBridge.notifyLocalSpend(liveState.cash, liveState.bank);
+          }
+          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+          if (typeof window.UI?.renderStatsBar === 'function') window.UI.renderStatsBar();
 
           if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
             window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);

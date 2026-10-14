@@ -29,6 +29,15 @@ var ServerBridge = (() => {
   let _clickBatchQueue = 0;
   let _clickBatchTimer = null;
   let _batchStartTime = 0;
+  let _lastLocalSpendTimestamp = 0;
+  let _lastLocalSpendCash = null;
+  let _lastLocalSpendBank = null;
+
+  function notifyLocalSpend(newCash = null, newBank = null) {
+    _lastLocalSpendTimestamp = Date.now();
+    if (newCash !== null && newCash !== undefined) _lastLocalSpendCash = Number(newCash);
+    if (newBank !== null && newBank !== undefined) _lastLocalSpendBank = Number(newBank);
+  }
 
   function resolveEffectiveToken(targetUser = null) {
     if (_sessionToken) return _sessionToken;
@@ -609,26 +618,35 @@ var ServerBridge = (() => {
         const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
         if (s) {
           const playerWealthTolerance = Math.max(500000000, Number(s.netWorth || 0));
+          const nowMs = Date.now();
+          const isRecentSpend = (nowMs - _lastLocalSpendTimestamp) < 15000;
+
           if (res.authoritativeState.cash !== undefined) {
             const localCash = Number(s.cash || 0);
             const serverCash = Number(res.authoritativeState.cash || 0);
-            // If local cash is higher within wealth-proportional ceiling, retain newer client state
-            // to eliminate visual jump/oscillation caused by in-flight sync races
-            if (localCash > serverCash && (localCash - serverCash) <= playerWealthTolerance) {
-              // Keep local cash
+            // Anti-Rollback Shield: If player recently spent money locally and localCash is lower,
+            // strictly protect local spend from being rolled back upward by an in-flight stale server response!
+            if (isRecentSpend && localCash < serverCash) {
+              // Retain legitimate local cash deduction
+            } else if (localCash > serverCash && (localCash - serverCash) <= playerWealthTolerance) {
+              // Retain newer client state within wealth velocity ceiling
             } else {
               s.cash = serverCash;
             }
           }
+
           if (res.authoritativeState.bank !== undefined) {
             const localBank = Number(s.bank || 0);
             const serverBank = Number(res.authoritativeState.bank || 0);
-            if (localBank > serverBank && (localBank - serverBank) <= playerWealthTolerance) {
-              // Keep local bank
+            if (isRecentSpend && localBank < serverBank) {
+              // Retain legitimate local bank deduction
+            } else if (localBank > serverBank && (localBank - serverBank) <= playerWealthTolerance) {
+              // Retain newer client bank
             } else {
               s.bank = serverBank;
             }
           }
+
           if (res.authoritativeState.dirtyCash !== undefined) s.dirtyCash = res.authoritativeState.dirtyCash;
           if (res.authoritativeState.netWorth !== undefined) s.netWorth = res.authoritativeState.netWorth;
           if (res.authoritativeState.title !== undefined) s.title = res.authoritativeState.title;
@@ -636,6 +654,13 @@ var ServerBridge = (() => {
           if (res.authoritativeState.ownedCars !== undefined) s.ownedCars = res.authoritativeState.ownedCars;
           if (res.authoritativeState.stocks !== undefined) s.stocks = res.authoritativeState.stocks;
           if (res.authoritativeState.incomeVault !== undefined) s.incomeVault = res.authoritativeState.incomeVault;
+
+          if (typeof UI !== 'undefined' && typeof UI.renderStatsBar === 'function') {
+            try { UI.renderStatsBar(); } catch (_) {}
+          }
+          if (typeof window !== 'undefined' && typeof window.renderStatsBar === 'function') {
+            try { window.renderStatsBar(); } catch (_) {}
+          }
         }
       }
       return res;
@@ -1445,6 +1470,7 @@ var ServerBridge = (() => {
     sendTransferRequest,
     submitTopupRequest,
     syncState,
+    notifyLocalSpend,
     sendHeartbeat,
     sendExit,
     clearSession,

@@ -201,3 +201,44 @@ test('Wire Transfer API Route — 50M Ceiling, Self-Transfer, and Auth Validatio
   // Clean up
   sessionManager.sessions.delete(testUser.toLowerCase());
 });
+
+test('Spend Deduction Anti-Rollback: Stale client spending cash is accepted', async (t) => {
+  const username = 'test_spend_stale_' + Date.now();
+  const uKey = username.toLowerCase();
+
+  const initialCash = 1000000;
+  const initialBank = 500000;
+
+  sessionManager.sessions.set(uKey, {
+    username: username,
+    pin: '1234',
+    sessionId: 'sess_test_spend_1',
+    sessionToken: 'tok_test_spend_1',
+    state: {
+      username: username,
+      cash: initialCash,
+      bank: initialBank,
+      adminModifiedTimestamp: 5000
+    },
+    dirty: false,
+    lastActivity: Date.now()
+  });
+
+  // Client spent 250,000 cash on cargo/flight (cash: 750,000) but has older adminModifiedTimestamp (stale)
+  const clientSpendState = {
+    username: username,
+    activeSessionId: 'sess_test_spend_1',
+    cash: 750000,
+    bank: initialBank,
+    adminModifiedTimestamp: 2000 // < 5000 (marks isClientStale = true)
+  };
+
+  await sessionManager.updateSessionState(username, clientSpendState, false);
+
+  const session = sessionManager.sessions.get(uKey);
+  assert.equal(session.state.cash, 750000, 'Server session MUST accept lower cash spend even when isClientStale is true');
+  assert.equal(session.dirty, true, 'Session MUST be marked dirty when cash spend is accepted');
+
+  // Clean up
+  sessionManager.sessions.delete(uKey);
+});
