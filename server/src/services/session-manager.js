@@ -226,15 +226,18 @@ class SessionManager {
     // with a timestamp newer than incoming client state, DO NOT allow stale client balances to overwrite!
     const sessionAdminTs = Number(s.adminModifiedTimestamp || 0);
     const clientAdminTs = Number(clientState.adminModifiedTimestamp || 0);
-    // Bank action race condition guard:
-    // Strictly detect stale pre-transfer client snapshots (where one balance is higher while the other is lower)
-    // without freezing legitimate gameplay earnings.
+    // Bank action & server cash spend race condition guards:
     const hasRecentBankAction = Boolean(
       session.lastServerBankActionAt &&
       (Date.now() - session.lastServerBankActionAt < 15000) &&
       ((incomingCash > s.cash && incomingBank < s.bank) || (incomingBank > s.bank && incomingCash < s.cash))
     );
-    const isClientStale = (sessionAdminTs > 0 && clientAdminTs < sessionAdminTs) || hasRecentBankAction;
+    const hasRecentServerCashSpend = Boolean(
+      session.lastServerCashSpendAt &&
+      (Date.now() - session.lastServerCashSpendAt < 15000) &&
+      (incomingCash > s.cash)
+    );
+    const isClientStale = (sessionAdminTs > 0 && clientAdminTs < sessionAdminTs) || hasRecentBankAction || hasRecentServerCashSpend;
     // CRITICAL SECURITY ENFORCEMENT:
     // Client sync payloads CANNOT grant themselves admin authority via timestamps or spoofed flags.
     // isAdminGrant is ONLY valid when explicitly invoked from an authenticated server admin context.
@@ -313,7 +316,9 @@ class SessionManager {
           s.cash = incomingCash;
         } else {
           // Cash increased without bank deduction: check against max allowed velocity jump
-          if (cashDiff <= maxAllowedJump) {
+          if (hasRecentServerCashSpend) {
+            console.log(`[SessionManager] Preserved authoritative server cash after server spend for "${username}": Server=${Number(s.cash || 0).toLocaleString()} vs StaleClient=${incomingCash.toLocaleString()}`);
+          } else if (cashDiff <= maxAllowedJump) {
             s.cash = incomingCash;
           } else {
             s.cash = (Number(s.cash) || 0) + maxAllowedJump;
@@ -374,6 +379,29 @@ class SessionManager {
     delete s.password;
 
 
+
+    // Synchronize Businesses (Preserve suppliesTicks and upgrades, never allowing stale zero to wipe supplies)
+    if (clientState.businesses && typeof clientState.businesses === 'object') {
+      s.businesses = s.businesses || {};
+      Object.keys(clientState.businesses).forEach(bk => {
+        const cBiz = clientState.businesses[bk];
+        if (cBiz && typeof cBiz === 'object') {
+          const sBiz = s.businesses[bk] || { level: 0, workers: 0, suppliesTicks: 0 };
+          const lvl = Math.max(Number(sBiz.level || 0), Number(cBiz.level || 0));
+          const cTicks = Math.max(0, Number(cBiz.suppliesTicks || 0));
+          const sTicks = Math.max(0, Number(sBiz.suppliesTicks || 0));
+          const mergedTicks = Math.min(43200, Math.max(sTicks, cTicks));
+
+          s.businesses[bk] = {
+            ...sBiz,
+            ...cBiz,
+            level: lvl,
+            workers: Math.max(Number(sBiz.workers || 0), Number(cBiz.workers || 0)),
+            suppliesTicks: mergedTicks
+          };
+        }
+      });
+    }
 
     // Agro Farm Tycoon (Officially open to all players)
     if (clientState.farm && typeof clientState.farm === 'object') {
@@ -734,6 +762,9 @@ class SessionManager {
       s.workCooldownUntil = 0;
       s.overtimeCooldownUntil = 0;
       s.stockTradeCooldownUntil = 0;
+      // Authoritative reset applied: acknowledge and clear server trigger to avoid endless reset loop
+      s.lastLimitsResetAck = sLimitsResetAt;
+      s.limitsResetAt = 0;
     } else {
       if (clientState.dailyStockProfit && typeof clientState.dailyStockProfit === 'object') {
         const sDate = s.dailyStockProfit ? String(s.dailyStockProfit.date || '') : '';
@@ -795,27 +826,28 @@ class SessionManager {
         s.dailyWork = { date: serverToday, shifts: 0, overtimeShifts: 0 };
       }
 
-      // Synchronize Daily Farm Liquidation Cap (20,000,000 EGP per day)
+      // Synchronize Daily Farm Liquidation Cap (20,000,000 EGP per day, unlimited for Khaled)
       if (!s.farm) s.farm = {};
       const sFarmLiq = (s.farm && s.farm.dailyLiquidation && typeof s.farm.dailyLiquidation === 'object') ? s.farm.dailyLiquidation : null;
       const cFarmLiq = (clientState.farm && clientState.farm.dailyLiquidation && typeof clientState.farm.dailyLiquidation === 'object') ? clientState.farm.dailyLiquidation : null;
       const sFarmDate = sFarmLiq ? String(sFarmLiq.date || '') : '';
       const cFarmDate = cFarmLiq ? String(cFarmLiq.date || '') : '';
+      const farmCap = isLiteralKhaled ? 999999999999 : 20000000;
 
       if (sFarmDate === serverToday && cFarmDate === serverToday) {
         s.farm.dailyLiquidation = {
           date: serverToday,
-          totalLiquidated: Math.min(20000000, Math.max(Number(sFarmLiq.totalLiquidated || 0), Number(cFarmLiq.totalLiquidated || 0)))
+          totalLiquidated: Math.min(farmCap, Math.max(Number(sFarmLiq.totalLiquidated || 0), Number(cFarmLiq.totalLiquidated || 0)))
         };
       } else if (cFarmDate === serverToday) {
         s.farm.dailyLiquidation = {
           date: serverToday,
-          totalLiquidated: Math.min(20000000, Math.max(0, Number(cFarmLiq.totalLiquidated || 0)))
+          totalLiquidated: Math.min(farmCap, Math.max(0, Number(cFarmLiq.totalLiquidated || 0)))
         };
       } else if (sFarmDate === serverToday) {
         s.farm.dailyLiquidation = {
           date: serverToday,
-          totalLiquidated: Math.min(20000000, Math.max(0, Number(sFarmLiq.totalLiquidated || 0)))
+          totalLiquidated: Math.min(farmCap, Math.max(0, Number(sFarmLiq.totalLiquidated || 0)))
         };
       } else {
         s.farm.dailyLiquidation = {

@@ -408,7 +408,10 @@ async function sessionRoutes(fastify, options) {
           tradeCompany: activeSession.state.tradeCompany,
           inventory: activeSession.state.inventory,
           smugglingFleet: activeSession.state.smugglingFleet,
-          businesses: activeSession.state.businesses
+          businesses: activeSession.state.businesses,
+          dailyStockProfit: activeSession.state.dailyStockProfit,
+          farm: activeSession.state.farm,
+          lastLimitsResetAck: activeSession.state.lastLimitsResetAck || 0
         } : null,
         serverTime: Date.now()
       };

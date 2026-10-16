@@ -751,9 +751,36 @@ var ServerBridge = (() => {
           if (res.authoritativeState.ownedCars !== undefined) s.ownedCars = res.authoritativeState.ownedCars;
           if (res.authoritativeState.stocks !== undefined) s.stocks = res.authoritativeState.stocks;
           if (res.authoritativeState.incomeVault !== undefined) s.incomeVault = res.authoritativeState.incomeVault;
+          if (res.authoritativeState.dailyStockProfit !== undefined) {
+            s.dailyStockProfit = res.authoritativeState.dailyStockProfit;
+          }
+          if (res.authoritativeState.farm !== undefined && typeof res.authoritativeState.farm === 'object') {
+            s.farm = s.farm || {};
+            if (res.authoritativeState.farm.dailyLiquidation) {
+              s.farm.dailyLiquidation = res.authoritativeState.farm.dailyLiquidation;
+            }
+          }
+          if (res.authoritativeState.businesses !== undefined && typeof res.authoritativeState.businesses === 'object') {
+            s.businesses = s.businesses || {};
+            Object.keys(res.authoritativeState.businesses).forEach(bk => {
+              const sBiz = res.authoritativeState.businesses[bk];
+              if (sBiz && s.businesses[bk]) {
+                s.businesses[bk].level = Math.max(Number(s.businesses[bk].level || 0), Number(sBiz.level || 0));
+                s.businesses[bk].suppliesTicks = Math.max(Number(s.businesses[bk].suppliesTicks || 0), Number(sBiz.suppliesTicks || 0));
+              } else if (sBiz) {
+                s.businesses[bk] = sBiz;
+              }
+            });
+          }
+          if (res.authoritativeState.lastLimitsResetAck !== undefined) {
+            s.lastLimitsResetAck = Number(res.authoritativeState.lastLimitsResetAck || 0);
+          }
 
           if (typeof UI !== 'undefined' && typeof UI.renderStatsBar === 'function') {
             try { UI.renderStatsBar(); } catch (_) {}
+          }
+          if (typeof UI !== 'undefined' && typeof UI.updateDailyStockProfitBadge === 'function') {
+            try { UI.updateDailyStockProfitBadge(); } catch (_) {}
           }
           if (typeof window !== 'undefined' && typeof window.renderStatsBar === 'function') {
             try { window.renderStatsBar(); } catch (_) {}
@@ -1474,8 +1501,14 @@ var ServerBridge = (() => {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {
         if (res.stocks) s.stocks = res.stocks;
-        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.cash !== undefined) {
+          s.cash = res.cash;
+          notifyLocalSpend(s.cash, s.bank, s.dirtyCash);
+        }
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.dailyStockProfit) {
+          s.dailyStockProfit = res.dailyStockProfit;
+        }
         if (res.result && res.result.holdingCooldownUntil && s.stockCooldowns) {
           s.stockCooldowns[symbol] = res.result.holdingCooldownUntil;
         }
@@ -1501,10 +1534,19 @@ var ServerBridge = (() => {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {
         if (res.stocks) s.stocks = res.stocks;
-        if (res.cash !== undefined) s.cash = res.cash;
+        if (res.cash !== undefined) {
+          s.cash = res.cash;
+          notifyLocalSpend(s.cash, s.bank, s.dirtyCash);
+        }
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
-        if (res.result && res.result.dailyRealizedProfit !== undefined && s.dailyStockProfit) {
-          s.dailyStockProfit.realizedProfit = res.result.dailyRealizedProfit;
+        if (res.dailyStockProfit) {
+          s.dailyStockProfit = res.dailyStockProfit;
+        } else if (res.result && res.result.dailyRealizedProfit !== undefined) {
+          const today = (typeof GameEngine !== 'undefined' && GameEngine.getTodayDateString) ? GameEngine.getTodayDateString() : new Date().toISOString().slice(0, 10);
+          s.dailyStockProfit = {
+            date: today,
+            realizedProfit: res.result.dailyRealizedProfit
+          };
         }
       }
       if (typeof UI !== 'undefined') {

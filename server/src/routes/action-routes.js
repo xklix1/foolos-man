@@ -302,6 +302,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     s.cash = (Number(s.cash) || 0) - supplyCost;
     b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
     s.netWorth = calculateNetWorth(s);
+    session.lastServerCashSpendAt = Date.now();
+    session.lastServerBankActionAt = Date.now();
 
     await sessionManager.forceSaveSession(session.username);
 
@@ -346,6 +348,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       s.cash = (Number(s.cash) || 0) - supplyCost;
       b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + 3600);
       s.netWorth = calculateNetWorth(s);
+      session.lastServerCashSpendAt = Date.now();
+      session.lastServerBankActionAt = Date.now();
       sessionManager.markDirty(session.username);
       return {
         success: true,
@@ -2396,13 +2400,16 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const { symbol, shares, price } = request.body || {};
     try {
       const res = stockEngine.buyStock(session.state, symbol, parseInt(shares, 10), Date.now(), price);
+      session.lastServerBankActionAt = Date.now();
+      session.lastServerCashSpendAt = Date.now();
       sessionManager.markDirty(session.username);
       return reply.send({
         success: true,
         result: res,
         stocks: session.state.stocks,
         cash: session.state.cash,
-        netWorth: session.state.netWorth
+        netWorth: session.state.netWorth,
+        dailyStockProfit: session.state.dailyStockProfit
       });
     } catch (err) {
       return reply.code(400).send({ error: err.message });
@@ -2424,13 +2431,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const { symbol, shares, price } = request.body || {};
     try {
       const res = stockEngine.sellStock(session.state, symbol, parseInt(shares, 10), Date.now(), price);
+      session.lastServerBankActionAt = Date.now();
       sessionManager.markDirty(session.username);
       return reply.send({
         success: true,
         result: res,
         stocks: session.state.stocks,
         cash: session.state.cash,
-        netWorth: session.state.netWorth
+        netWorth: session.state.netWorth,
+        dailyStockProfit: session.state.dailyStockProfit
       });
     } catch (err) {
       return reply.code(400).send({ error: err.message });

@@ -3617,6 +3617,7 @@ const GameEngine = (() => {
               localS.workCooldownUntil = 0;
               localS.stockTradeCooldownUntil = 0;
               localS.lastLimitsResetAck = Math.max(srvLimitsResetAt, Date.now());
+              state.lastLimitsResetAck = localS.lastLimitsResetAck;
               if (typeof AppDB !== 'undefined' && AppDB.setEncryptedLocalState) {
                 AppDB.setEncryptedLocalState(`rasalmal_state_${username}`, localS);
               }
@@ -4560,7 +4561,15 @@ const GameEngine = (() => {
       const serverRes = await ServerBridge.buyStock(sym, shares, currentPrice);
       if (serverRes && serverRes.success) {
         if (serverRes.stocks) state.stocks = serverRes.stocks;
-        if (serverRes.cash !== undefined) state.cash = serverRes.cash;
+        if (serverRes.cash !== undefined) {
+          state.cash = serverRes.cash;
+          if (typeof ServerBridge !== 'undefined' && ServerBridge.notifyLocalSpend) {
+            ServerBridge.notifyLocalSpend(state.cash, state.bank, state.dirtyCash);
+          }
+        }
+        if (serverRes.dailyStockProfit) {
+          state.dailyStockProfit = serverRes.dailyStockProfit;
+        }
         if (serverRes.netWorth !== undefined) state.netWorth = serverRes.netWorth;
         state.stockCooldowns = state.stockCooldowns || {};
         state.stockCooldowns[sym] = (serverRes.result && serverRes.result.holdingCooldownUntil) || (getTrustedNow() + 45000);
@@ -4568,6 +4577,12 @@ const GameEngine = (() => {
         state.title = getAppropriateTitle(state.netWorth, state.xp);
         recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بسعر ${currentPrice.toLocaleString()} ج.م للسهم بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
         trackDailyQuestProgress('stock_trade', 1);
+        if (typeof updateBalances === 'function') updateBalances();
+        if (typeof UI !== 'undefined') {
+          if (UI.renderStatsBar) try { UI.renderStatsBar(); } catch (_) {}
+          if (UI.renderStocks) try { UI.renderStocks(true); } catch (_) {}
+          if (UI.updateDailyStockProfitBadge) try { UI.updateDailyStockProfitBadge(); } catch (_) {}
+        }
         await forceSaveState(true);
         return { shares, price: currentPrice, grossCost, fee, totalCost };
       }
@@ -6056,7 +6071,15 @@ const GameEngine = (() => {
 
     // Dispatch to Authoritative Server
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
-      ServerBridge.supplyBusiness(key).catch(() => {});
+      if (ServerBridge.notifyLocalSpend) {
+        ServerBridge.notifyLocalSpend(state.cash, state.bank, state.dirtyCash);
+      }
+      ServerBridge.supplyBusiness(key).then(res => {
+        if (res && res.success && res.businesses && res.businesses[key]) {
+          const sTicks = Number(res.businesses[key].suppliesTicks || 0);
+          bizState.suppliesTicks = Math.max(bizState.suppliesTicks, sTicks);
+        }
+      }).catch(() => {});
     }
 
     forceSaveState(true);
@@ -7128,28 +7151,20 @@ const GameEngine = (() => {
           ? String(state.username).trim() 
           : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || ''));
     const isOwnerKhaled = curUser.toLowerCase() === 'khaled';
-    if (isOwnerKhaled) {
-      return {
-        date: getFarmTodayDateStr(),
-        totalLiquidated: 0,
-        cap: 999999999999,
-        remaining: 999999999999,
-        isUnlimited: true
-      };
-    }
-    if (!f) return { date: '', totalLiquidated: 0, cap: DAILY_FARM_LIQUIDATION_CAP, remaining: DAILY_FARM_LIQUIDATION_CAP, isUnlimited: false };
+    const cap = isOwnerKhaled ? 999999999999 : DAILY_FARM_LIQUIDATION_CAP;
+    if (!f) return { date: '', totalLiquidated: 0, cap, remaining: cap, isUnlimited: isOwnerKhaled };
     const today = getFarmTodayDateStr();
     if (!f.dailyLiquidation || f.dailyLiquidation.date !== today) {
       f.dailyLiquidation = { date: today, totalLiquidated: 0 };
     }
     const totalLiquidated = Math.max(0, Number(f.dailyLiquidation.totalLiquidated || 0));
-    const remaining = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - totalLiquidated);
+    const remaining = Math.max(0, cap - totalLiquidated);
     return {
       date: today,
       totalLiquidated,
-      cap: DAILY_FARM_LIQUIDATION_CAP,
+      cap,
       remaining,
-      isUnlimited: false
+      isUnlimited: isOwnerKhaled
     };
   }
 
@@ -7160,11 +7175,9 @@ const GameEngine = (() => {
       : ((typeof state !== 'undefined' && state && state.username) 
           ? String(state.username).trim() 
           : ((typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || ''));
-    if (curUser.toLowerCase() === 'khaled') {
-      return; // Khaled (Owner/Admin) has unlimited farm liquidation & contract payouts
-    }
+    const isOwnerKhaled = curUser.toLowerCase() === 'khaled';
     const info = getFarmDailyLiquidationInfo(f);
-    if (info.totalLiquidated + amount > DAILY_FARM_LIQUIDATION_CAP) {
+    if (!isOwnerKhaled && (info.totalLiquidated + amount > DAILY_FARM_LIQUIDATION_CAP)) {
       throw new Error(`بلغت سقف الأرباح والتسييل اليومي للمزرعة والعقود (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP يومياً). المتبقي لك اليوم: ${info.remaining.toLocaleString()} EGP. يمكنك استئناف التوريد والتسييل غداً!`);
     }
     f.dailyLiquidation.totalLiquidated = info.totalLiquidated + amount;
