@@ -1249,10 +1249,17 @@ var AppDB = (() => {
     }
 
     if (!backendRegistered) {
-      await _api('players', {
-        method:'POST',
-        body: JSON.stringify(newPlayerRow)
-      });
+      try {
+        await _api('players', {
+          method:'POST',
+          body: JSON.stringify(newPlayerRow)
+        });
+      } catch (postErr) {
+        if (postErr.message && (postErr.message.includes('403') || postErr.message.includes('Forbidden'))) {
+          throw new Error('تعذر إكمال التسجيل المباشر من المتصفح (مرفوض من جدار الحماية). يرجى التأكد من تشغيل خادم اللعبة.');
+        }
+        throw postErr;
+      }
     }
 
     // Bind device in cloud registry & locally for device history

@@ -39,6 +39,7 @@ class DbService {
   async resilientFetch(pathAndQuery, options = {}) {
     let lastErr = null;
     let lastStatus = null;
+    let lastResponseBody = '';
 
     for (const baseUrl of this.candidateUrls) {
       for (const k of this.candidateKeys) {
@@ -62,6 +63,10 @@ class DbService {
             this.url = baseUrl;
             this.key = k;
             return res;
+          } else {
+            try {
+              lastResponseBody = await res.text();
+            } catch (_) {}
           }
         } catch (e) {
           lastErr = e;
@@ -69,7 +74,7 @@ class DbService {
       }
     }
 
-    throw new Error(`Supabase error (${lastStatus || 'Network'}): ${lastErr ? lastErr.message : 'Unauthorized across all candidate keys'}`);
+    throw new Error(`Supabase error (${lastStatus || 'Network'}): ${lastResponseBody || (lastErr ? lastErr.message : 'Unauthorized across all candidate keys')}`);
   }
 
   /**

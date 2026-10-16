@@ -919,6 +919,8 @@ async function adminRoutes(fastify, options) {
     location /rest/v1/ {
         limit_except GET HEAD OPTIONS {
             allow 127.0.0.1;
+            allow 77.37.122.34;
+            allow ::1;
             deny all;
         }
         proxy_pass http://127.0.0.1:8000/rest/v1/;

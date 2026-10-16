@@ -2770,7 +2770,10 @@ const UIController = (() => {
             body: JSON.stringify({
               email: _stagedRegEmail,
               code: otpVal,
-              username: _stagedRegUsername
+              username: _stagedRegUsername,
+              pin: _stagedRegPin,
+              referralCode: _stagedRegRefCode,
+              type: 'register'
             })
           });
 
@@ -2779,8 +2782,21 @@ const UIController = (() => {
             throw new Error(data.error || 'رمز التحقق غير صحيح أو منتهي الصلاحية.');
           }
 
-          // Register player in Supabase / AppDB
-          await AppDB.registerPlayer(_stagedRegUsername, _stagedRegPin, _stagedRegRefCode, _stagedRegEmail);
+          // If the server registered the player authoritatively, adopt state and token
+          if (data.registered && data.player) {
+            if (data.sessionToken && typeof localStorage !== 'undefined') {
+              try {
+                localStorage.setItem('rasalmal_auth_token_' + _stagedRegUsername, data.sessionToken);
+              } catch (_) {}
+            }
+            if (data.player.state && typeof AppDB !== 'undefined' && typeof AppDB.setEncryptedLocalState === 'function') {
+              AppDB.setEncryptedLocalState('rasalmal_state_' + _stagedRegUsername, data.player.state);
+            }
+          } else {
+            // Backward compatibility fallback
+            await AppDB.registerPlayer(_stagedRegUsername, _stagedRegPin, _stagedRegRefCode, _stagedRegEmail);
+          }
+
           const playerState = await GameEngine.loadUserSession(_stagedRegUsername, null, _stagedRegPin);
           localStorage.setItem('rasalmal_active_session_user', _stagedRegUsername);
 
@@ -2811,7 +2827,8 @@ const UIController = (() => {
           }
 
         } catch (err) {
-          showToast('فشل التحقق', err.message || 'تعذر تأكيد رمز التحقق.', 'error');
+          const isRegError = err.message && (err.message.includes('قاعدة البيانات') || err.message.includes('حفظ الحساب') || err.message.includes('403') || err.message.includes('مسجل بالفعل'));
+          showToast(isRegError ? 'فشل إنشاء الحساب' : 'فشل التحقق', err.message || 'تعذر تأكيد رمز التحقق.', 'error');
           playMenuSound('back');
         } finally {
           btnAuthVerifyOtp.disabled = false;

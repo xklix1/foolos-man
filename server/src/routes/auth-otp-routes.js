@@ -370,7 +370,110 @@ module.exports = async function authOtpRoutes(fastify, opts) {
     // Success! Consume and remove OTP
     otpStore.delete(cleanEmail);
 
-    const { username } = request.body || {};
+    const { username, pin, referralCode, type, playerRow } = request.body || {};
+
+    // If this is a registration request with credentials, authoritatively create the account on the server
+    if ((type === 'register' || pin) && username) {
+      const cleanUsername = String(username).trim();
+      const dbService = require('../services/db-service');
+      const sessionManager = opts.sessionManager || fastify.sessionManager;
+
+      // 1. Check if username already exists
+      const existing = await dbService.getPlayerByUsername(cleanUsername);
+      if (existing) {
+        return reply.status(409).send({
+          success: false,
+          error: 'اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.'
+        });
+      }
+
+      // 2. Check if email already registered
+      const emailExisting = await dbService.getPlayerByEmail(cleanEmail);
+      if (emailExisting) {
+        return reply.status(409).send({
+          success: false,
+          error: 'هذا البريد الإلكتروني مسجل بالفعل مع حساب آخر.'
+        });
+      }
+
+      // 3. Build authoritative new player row
+      const now = Date.now();
+      const rawPin = String(pin || (playerRow && playerRow.pin) || '').trim();
+      const hashedPin = crypto.createHash('sha256').update(rawPin).digest('hex');
+
+      const incomingState = (playerRow && playerRow.state && typeof playerRow.state === 'object') ? playerRow.state : {};
+      const cleanState = {
+        ...incomingState,
+        username: cleanUsername,
+        pin: hashedPin,
+        email: cleanEmail,
+        cash: Number(incomingState.cash || 500000),
+        bank: Number(incomingState.bank || 500000),
+        dirtyCash: 0,
+        netWorth: Number(incomingState.netWorth || 1000000),
+        xp: 0,
+        title: incomingState.title || 'عامل مبتدئ',
+        jobId: incomingState.jobId || 'worker',
+        referralCode: incomingState.referralCode || `REF-${cleanUsername.substring(0, 3).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        referredBy: incomingState.referredBy || '',
+        referredByCode: incomingState.referredByCode || (typeof referralCode === 'string' ? referralCode.trim() : ''),
+        createdAt: now,
+        lastSeen: now
+      };
+
+      const safeRow = {
+        username: cleanUsername,
+        pin: hashedPin,
+        cash: cleanState.cash,
+        bank: cleanState.bank,
+        dirty_cash: 0,
+        net_worth: cleanState.netWorth,
+        xp: 0,
+        title: cleanState.title,
+        job_id: cleanState.jobId,
+        is_admin: false,
+        is_banned: false,
+        jail_timer: 0,
+        afk_manager_expires_at: now + (12 * 60 * 60 * 1000),
+        total_taxes_paid: 0,
+        state: cleanState,
+        last_seen: now,
+        created_at: now
+      };
+
+      try {
+        const created = await dbService.createPlayer(safeRow);
+
+        let sessionToken = 'tok_' + crypto.randomBytes(24).toString('hex');
+        if (sessionManager && typeof sessionManager.getOrCreateSession === 'function') {
+          try {
+            const { session } = await sessionManager.getOrCreateSession(cleanUsername, false);
+            if (session) {
+              session.sessionToken = sessionToken;
+              if (session.state) session.state.sessionToken = sessionToken;
+            }
+          } catch (_) {}
+        }
+
+        return reply.send({
+          success: true,
+          verified: true,
+          registered: true,
+          email: cleanEmail,
+          username: cleanUsername,
+          sessionToken,
+          player: created,
+          message: 'تم تأكيد بريدك الإلكتروني وإنشاء حسابك بنجاح!'
+        });
+      } catch (regErr) {
+        request.log.error({ regErr }, 'Failed to create player record on DB during OTP verification');
+        return reply.status(500).send({
+          success: false,
+          error: 'تم تأكيد الرمز بنجاح لكن حدث خطأ أثناء حفظ الحساب في قاعدة البيانات (' + (regErr.message || 'Database error') + ').'
+        });
+      }
+    }
+
     if (username && typeof username === 'string') {
       try {
         const dbService = require('../services/db-service');
