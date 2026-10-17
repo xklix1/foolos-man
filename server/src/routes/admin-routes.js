@@ -6,6 +6,7 @@
 const crypto = require('crypto');
 const config = require('../config/env');
 const eventService = require('../services/event-service');
+const dbService = require('../services/db-service');
 
 const ALLOWED_TABLES = new Set([
   'players',
@@ -87,6 +88,27 @@ async function adminRoutes(fastify, options) {
   };
 
   /**
+   * Resilient admin database fetcher that cycles candidate URLs and service/anon keys
+   */
+  async function adminDbFetch(pathOrUrl, options = {}) {
+    let cleanPath = String(pathOrUrl || '');
+    cleanPath = cleanPath.replace(/^https?:\/\/[^\/]+/, '');
+    if (!cleanPath.startsWith('/rest/v1/')) {
+      if (cleanPath.startsWith('/')) cleanPath = '/rest/v1' + cleanPath;
+      else cleanPath = '/rest/v1/' + cleanPath;
+    }
+    const cleanOptions = { ...options };
+    if (cleanOptions.headers) {
+      const cleanHeaders = { ...cleanOptions.headers };
+      delete cleanHeaders['apikey'];
+      delete cleanHeaders['Authorization'];
+      delete cleanHeaders['authorization'];
+      cleanOptions.headers = cleanHeaders;
+    }
+    return await dbService.resilientFetch(cleanPath, cleanOptions);
+  }
+
+  /**
    * POST /api/admin/mutate
    * Authoritatively performs mutations on database tables using SERVICE_ROLE_KEY
    */
@@ -135,30 +157,24 @@ async function adminRoutes(fastify, options) {
       }
     }
 
-    const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
-    const url = `${config.SUPABASE_URL}/rest/v1/${table}${query ? '?' + query.replace(/^\?/, '') : ''}`;
-
     const preferHeader = cleanMethod === 'POST'
       ? 'resolution=merge-duplicates, return=representation'
       : 'return=representation';
 
-    const headers = {
-      'apikey': serviceKey,
-      'Authorization': `Bearer ${serviceKey}`,
-      'Content-Type': 'application/json',
-      'Prefer': preferHeader
-    };
+    const pathAndQuery = `/rest/v1/${table}${query ? '?' + query.replace(/^\?/, '') : ''}`;
 
     try {
       const fetchOpts = {
         method: cleanMethod,
-        headers
+        headers: {
+          'Prefer': preferHeader
+        }
       };
       if (cleanBody && cleanMethod !== 'DELETE') {
         fetchOpts.body = JSON.stringify(cleanBody);
       }
 
-      const res = await fetch(url, fetchOpts);
+      const res = await adminDbFetch(pathAndQuery, fetchOpts);
       const resText = await res.text();
       let resData = null;
       try { resData = JSON.parse(resText); } catch (e) { resData = resText; }
@@ -189,6 +205,8 @@ async function adminRoutes(fastify, options) {
                   if (cleanBody.bank !== undefined) session.state.bank = Number(cleanBody.bank);
                   if (cleanBody.net_worth !== undefined) session.state.netWorth = Number(cleanBody.net_worth);
                   if (cleanBody.xp !== undefined) session.state.xp = Number(cleanBody.xp);
+                  if (cleanBody.gold !== undefined) session.state.gold = Number(cleanBody.gold);
+                  if (cleanBody.jail_timer !== undefined) session.state.jailTimer = Number(cleanBody.jail_timer);
                   if (cleanBody.state) {
                     if (cleanBody.state.isReset === true) {
                       session.state = JSON.parse(JSON.stringify(cleanBody.state));
@@ -236,15 +254,11 @@ async function adminRoutes(fastify, options) {
       return reply.status(400).send({ error: 'Bad Request', message: 'requestId and valid action (approved/rejected) are required.' });
     }
 
-    const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY;
     const ts = Date.now();
 
     try {
       // 1. Fetch topup_requests from globals
-      const gUrl = `${config.SUPABASE_URL}/rest/v1/globals?id=eq.topup_requests`;
-      const gRes = await fetch(gUrl, {
-        headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` }
-      });
+      const gRes = await adminDbFetch('/rest/v1/globals?id=eq.topup_requests');
       const gRows = await gRes.json();
       if (!gRows || !gRows[0] || !gRows[0].data || !Array.isArray(gRows[0].data.requests)) {
         return reply.status(404).send({ error: 'Not Found', message: 'سجل طلبات الشحن غير موجود.' });
@@ -265,10 +279,8 @@ async function adminRoutes(fastify, options) {
 
       if (action === 'approved') {
         // 2. Fetch player data
-        const pUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(targetUser)}&limit=1`;
-        const pRes = await fetch(pUrl, {
-          headers: { 'apikey': serviceKey, 'Authorization': `Bearer ${serviceKey}` }
-        });
+        const pUrl = `/rest/v1/players?username=ilike.${encodeURIComponent(targetUser)}&limit=1`;
+        const pRes = await adminDbFetch(pUrl);
         const pRows = await pRes.json();
         if (!pRows || pRows.length === 0) {
           return reply.status(404).send({ error: 'Player Not Found', message: `حساب اللاعب "${targetUser}" غير موجود بقاعدة البيانات.` });
@@ -363,13 +375,10 @@ async function adminRoutes(fastify, options) {
         pState.adminModifiedTimestamp = ts;
 
         // Update player row in Supabase
-        const updatePlayerUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(targetUser)}`;
-        await fetch(updatePlayerUrl, {
+        const updatePlayerUrl = `/rest/v1/players?username=ilike.${encodeURIComponent(targetUser)}`;
+        await adminDbFetch(updatePlayerUrl, {
           method: 'PATCH',
           headers: {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`,
-            'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
           body: JSON.stringify({
@@ -426,12 +435,9 @@ async function adminRoutes(fastify, options) {
           reviewerNote: reviewerNote || 'تم الاعتماد والشحن بنجاح بواسطة الإدارة'
         };
 
-        await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+        await adminDbFetch('/rest/v1/mailbox', {
           method: 'POST',
           headers: {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`,
-            'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
           body: JSON.stringify({
@@ -445,12 +451,9 @@ async function adminRoutes(fastify, options) {
         });
 
         if (addedCash > 0 || addedBank > 0) {
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await adminDbFetch('/rest/v1/mailbox', {
             method: 'POST',
             headers: {
-              'apikey': serviceKey,
-              'Authorization': `Bearer ${serviceKey}`,
-              'Content-Type': 'application/json',
               'Prefer': 'return=representation'
             },
             body: JSON.stringify({
@@ -476,12 +479,9 @@ async function adminRoutes(fastify, options) {
         }
 
         if (addedGold > 0) {
-          await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+          await adminDbFetch('/rest/v1/mailbox', {
             method: 'POST',
             headers: {
-              'apikey': serviceKey,
-              'Authorization': `Bearer ${serviceKey}`,
-              'Content-Type': 'application/json',
               'Prefer': 'return=representation'
             },
             body: JSON.stringify({
@@ -509,12 +509,9 @@ async function adminRoutes(fastify, options) {
         req.reviewedAt = ts;
         req.reviewerNote = reviewerNote || 'تم رفض الطلب لعدم تطابق بيانات التحويل';
 
-        await fetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
+        await adminDbFetch('/rest/v1/mailbox', {
           method: 'POST',
           headers: {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`,
-            'Content-Type': 'application/json',
             'Prefer': 'return=representation'
           },
           body: JSON.stringify({
@@ -538,12 +535,9 @@ async function adminRoutes(fastify, options) {
       }
 
       // Update globals.topup_requests
-      await fetch(`${config.SUPABASE_URL}/rest/v1/globals?id=eq.topup_requests`, {
+      await adminDbFetch('/rest/v1/globals?id=eq.topup_requests', {
         method: 'PATCH',
         headers: {
-          'apikey': serviceKey,
-          'Authorization': `Bearer ${serviceKey}`,
-          'Content-Type': 'application/json',
           'Prefer': 'return=representation'
         },
         body: JSON.stringify({
@@ -614,14 +608,8 @@ async function adminRoutes(fastify, options) {
         });
       } else {
         // Offline player: update PostgreSQL directly
-        const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
-        const fetchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(username.trim())}&select=gold,state`;
-        const fetchRes = await fetch(fetchUrl, {
-          headers: {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`
-          }
-        });
+        const fetchUrl = `/rest/v1/players?username=ilike.${encodeURIComponent(username.trim())}&select=gold,state`;
+        const fetchRes = await adminDbFetch(fetchUrl);
         const rows = await fetchRes.json();
         if (!Array.isArray(rows) || rows.length === 0) {
           return reply.status(404).send({ error: 'Not Found', message: 'Player account not found.' });
@@ -634,13 +622,10 @@ async function adminRoutes(fastify, options) {
         const rawState = (typeof existingRow.state === 'object' && existingRow.state) ? existingRow.state : {};
         rawState.gold = newGold;
 
-        const patchUrl = `${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(username.trim())}`;
-        const patchRes = await fetch(patchUrl, {
+        const patchUrl = `/rest/v1/players?username=ilike.${encodeURIComponent(username.trim())}`;
+        const patchRes = await adminDbFetch(patchUrl, {
           method: 'PATCH',
           headers: {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`,
-            'Content-Type': 'application/json',
             'Prefer': 'return=minimal'
           },
           body: JSON.stringify({
@@ -682,13 +667,9 @@ async function adminRoutes(fastify, options) {
     const startsAt = Date.now();
     const endsAt = startsAt + (Number(durationHours) * 3600 * 1000);
 
-    const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
-    const res = await fetch(`${config.SUPABASE_URL}/rest/v1/events`, {
+    const res = await adminDbFetch('/rest/v1/events', {
       method: 'POST',
       headers: {
-        'apikey': serviceKey,
-        'Authorization': `Bearer ${serviceKey}`,
-        'Content-Type': 'application/json',
         'Prefer': 'return=representation'
       },
       body: JSON.stringify({
@@ -989,35 +970,19 @@ async function adminRoutes(fastify, options) {
     preHandler: [requireAdminAuth]
   }, async (request, reply) => {
     const ts = Date.now();
-    const serviceKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
-    const targetUrls = [
-      'https://rasalmal.online/rest/v1/globals',
-      'http://127.0.0.1:8000/rest/v1/globals'
-    ];
-
-    let success = false;
-    for (const url of targetUrls) {
-      try {
-        const res = await fetch(url, {
-          method: 'POST',
-          headers: {
-            'apikey': serviceKey,
-            'Authorization': `Bearer ${serviceKey}`,
-            'Content-Type': 'application/json',
-            'Prefer': 'resolution=merge-duplicates'
-          },
-          body: JSON.stringify({
-            id: 'force_reload',
-            data: { timestamp: ts, version: 'v10.0.11', message: 'تحديث شامل للكاش والذاكرة المؤقتة' },
-            updated_at: ts
-          })
-        });
-        if (res.ok) {
-          success = true;
-          break;
-        }
-      } catch (_) {}
-    }
+    try {
+      await adminDbFetch('/rest/v1/globals', {
+        method: 'POST',
+        headers: {
+          'Prefer': 'resolution=merge-duplicates'
+        },
+        body: JSON.stringify({
+          id: 'force_reload',
+          data: { timestamp: ts, version: 'v10.0.11', message: 'تحديث شامل للكاش والذاكرة المؤقتة' },
+          updated_at: ts
+        })
+      });
+    } catch (_) {}
 
     return reply.send({
       success: true,

@@ -112,9 +112,9 @@ class EventService {
         const rawState = (typeof row.state === 'object' && row.state) ? row.state : {};
         rawState.gold = newGoldBalance;
 
-        await fetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(targetUsername)}`, {
+        await dbService.resilientFetch(`/rest/v1/players?username=ilike.${encodeURIComponent(targetUsername)}`, {
           method: 'PATCH',
-          headers: dbService.getHeaders(),
+          headers: { 'Prefer': 'return=minimal' },
           body: JSON.stringify({ gold: newGoldBalance, state: rawState })
         });
         credited = true;

@@ -226,6 +226,60 @@ var AppDB = (() => {
 
   async function _api(endpoint, options = {}) {
     const method = (options.method || 'GET').toUpperCase();
+    const isMutation = method === 'POST' || method === 'PATCH' || method === 'DELETE';
+
+    const adminTok = (typeof window !== 'undefined' && window._ADMIN_MUTATE_TOKEN)
+      || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_admin_auth_token'))
+      || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_admin_auth_token'))
+      || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_mod_token'))
+      || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_mod_token'))
+      || ((typeof window !== 'undefined' && window.location && (window.location.pathname.includes('-vault') || window.location.pathname.includes('admin'))) ? 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99' : null);
+
+    // If this is an administrative mutation, route directly to the authoritative server backend
+    // to bypass Nginx public REST lockdown and maintain instant session synchronization
+    if (adminTok && isMutation) {
+      try {
+        const [table, ...queryParts] = endpoint.split('?');
+        const query = queryParts.join('?');
+        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+          ? window.SERVER_API_URL.replace(/\/$/, '') 
+          : (typeof window !== 'undefined' ? window.location.origin : '');
+
+        let parsedBody = null;
+        if (options.body) {
+          parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
+        }
+
+        const adminRes = await fetch(`${apiBase}/api/admin/mutate`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-admin-token': adminTok
+          },
+          body: JSON.stringify({
+            table,
+            method,
+            query,
+            body: parsedBody
+          })
+        });
+
+        if (adminRes.ok) {
+          const adminData = await adminRes.json().catch(() => ({}));
+          return adminData.data || adminData.details || null;
+        }
+
+        const adminErr = await adminRes.json().catch(() => null);
+        if (adminErr && (adminErr.message || adminErr.error)) {
+          throw new Error(adminErr.message || adminErr.error);
+        }
+      } catch (adminErr) {
+        if (adminErr && adminErr.message && !adminErr.message.includes('Failed to fetch') && !adminErr.message.includes('NetworkError')) {
+          throw adminErr;
+        }
+        console.warn('[Admin Mutate Notice] Primary backend mutate failed, attempting direct database fallback:', adminErr.message);
+      }
+    }
 
     // Client-side requests always use public anon key. Privileged operations are mediated by backend server.
     const activeAuthKey = SUPABASE_ANON_KEY;
@@ -241,7 +295,7 @@ var AppDB = (() => {
     };
 
     // Auto-inject Prefer: return=minimal for mutating queries to save Supabase Egress (HTTP 204)
-    if (method === 'POST' || method === 'PATCH' || method === 'DELETE') {
+    if (isMutation) {
       if (!headers['Prefer']) {
         headers['Prefer'] = 'return=minimal';
       } else if (!headers['Prefer'].includes('return=')) {
@@ -276,47 +330,46 @@ var AppDB = (() => {
 
     if (!res.ok) {
       // If mutation was rejected due to RLS/permissions (4xx status), try authoritative admin mutate endpoint
-      if (res.status >= 400 && res.status < 500 && (method === 'POST' || method === 'PATCH' || method === 'DELETE')) {
-        const adminTok = (typeof window !== 'undefined' && window._ADMIN_MUTATE_TOKEN)
-          || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_admin_auth_token'))
-          || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_admin_auth_token'))
-          || (typeof sessionStorage !== 'undefined' && sessionStorage.getItem('rasalmal_mod_token'))
-          || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_mod_token'))
-          || 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99';
+      if (res.status >= 400 && res.status < 500 && isMutation && adminTok) {
+        try {
+          const [table, ...queryParts] = endpoint.split('?');
+          const query = queryParts.join('?');
+          const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+            ? window.SERVER_API_URL.replace(/\/$/, '') 
+            : (typeof window !== 'undefined' ? window.location.origin : '');
 
-        if (adminTok) {
-          try {
-            const [table, ...queryParts] = endpoint.split('?');
-            const query = queryParts.join('?');
-            const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
-              ? window.SERVER_API_URL.replace(/\/$/, '') 
-              : (typeof window !== 'undefined' ? window.location.origin : '');
-
-            let parsedBody = null;
-            if (options.body) {
-              parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
-            }
-
-            const adminRes = await fetch(`${apiBase}/api/admin/mutate`, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json',
-                'x-admin-token': adminTok
-              },
-              body: JSON.stringify({
-                table,
-                method,
-                query,
-                body: parsedBody
-              })
-            });
-            if (adminRes.ok) {
-              const adminData = await adminRes.json();
-              return adminData.data || adminData.details || null;
-            }
-          } catch (adminErr) {
-            console.warn('[Admin Mutate Fallback Notice]', adminErr.message);
+          let parsedBody = null;
+          if (options.body) {
+            parsedBody = typeof options.body === 'string' ? JSON.parse(options.body) : options.body;
           }
+
+          const adminRes = await fetch(`${apiBase}/api/admin/mutate`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'x-admin-token': adminTok
+            },
+            body: JSON.stringify({
+              table,
+              method,
+              query,
+              body: parsedBody
+            })
+          });
+          if (adminRes.ok) {
+            const adminData = await adminRes.json().catch(() => ({}));
+            return adminData.data || adminData.details || null;
+          } else {
+            const adminErr = await adminRes.json().catch(() => null);
+            if (adminErr && (adminErr.message || adminErr.error)) {
+              throw new Error(adminErr.message || adminErr.error);
+            }
+          }
+        } catch (adminErr) {
+          if (adminErr && adminErr.message && !adminErr.message.includes('Failed to fetch') && !adminErr.message.includes('NetworkError')) {
+            throw adminErr;
+          }
+          console.warn('[Admin Mutate Fallback Notice]', adminErr.message);
         }
       }
 

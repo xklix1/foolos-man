@@ -5467,32 +5467,14 @@
           if (!_sfx) _sfx = Date.now().toString(36).slice(-4).toUpperCase();
           const newPass = 'S2_Test_' + _sfx;
           const SUPABASE_URL = 'https://rasalmal.online';
-          const _tok = (typeof AppDB !== 'undefined' && AppDB._getAnonKey ? AppDB._getAnonKey() : '');
-
           let currentSt = {};
           if (typeof AppDB !== 'undefined' && typeof AppDB.getMaintenanceStatus === 'function') {
             currentSt = await AppDB.getMaintenanceStatus();
           }
 
-          await fetch(`${SUPABASE_URL}/rest/v1/globals`, {
-            method: 'POST',
-            headers: {
-              'apikey': _tok,
-              'Authorization': `Bearer ${_tok}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify({
-              id: 'maintenance',
-              data: {
-                ...currentSt,
-                tester_pass: newPass,
-                tester_key: newPass,
-                timestamp: Date.now()
-              },
-              updated_at: Date.now()
-            })
-          });
+          if (typeof AppDB !== 'undefined' && typeof AppDB.setMaintenanceMode === 'function') {
+            await AppDB.setMaintenanceMode(Boolean(currentSt.active || currentSt.enabled), currentSt.message || '', newPass);
+          }
 
           currentTesterPasscode = newPass;
           updateMaintenanceUIState(Boolean(currentSt.active || currentSt.enabled), newPass);
@@ -5531,28 +5513,10 @@
 
           maintToggleBtn.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> <span>جاري تطبيق حالة الخادم...</span>';
 
-          const SUPABASE_URL = 'https://rasalmal.online';
-          const _tok = (typeof AppDB !== 'undefined' && AppDB._getAnonKey ? AppDB._getAnonKey() : '');
-          await fetch(`${SUPABASE_URL}/rest/v1/globals`, {
-            method: 'POST',
-            headers: {
-              'apikey': _tok,
-              'Authorization': `Bearer ${_tok}`,
-              'Content-Type': 'application/json',
-              'Prefer': 'resolution=merge-duplicates'
-            },
-            body: JSON.stringify({
-              id: 'maintenance',
-              data: {
-                active: Boolean(nextState),
-                message: nextState ? 'الخوادم رهن التجهيز لانطلاق الموسم الثاني وضبط الموازنة الاقتصادية لضمان تجربة مستقرة وعادلة.' : '',
-                tester_pass: currentTesterPasscode,
-                tester_key: currentTesterPasscode,
-                timestamp: Date.now()
-              },
-              updated_at: Date.now()
-            })
-          });
+          const maintMsg = nextState ? 'الخوادم رهن التجهيز لانطلاق الموسم الثاني وضبط الموازنة الاقتصادية لضمان تجربة مستقرة وعادلة.' : '';
+          if (typeof AppDB !== 'undefined' && typeof AppDB.setMaintenanceMode === 'function') {
+            await AppDB.setMaintenanceMode(Boolean(nextState), maintMsg, currentTesterPasscode);
+          }
 
           updateMaintenanceUIState(nextState, currentTesterPasscode);
 

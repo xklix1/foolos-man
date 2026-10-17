@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.21",
-  "build": 1792040000000,
-  "timestamp": 1792040000000,
-  "notes": "Admin Topup Approval & Authoritative Server Settlement v10.0.21: Fixed 403 Forbidden on approving top-up requests in admin panel by routing mutations authoritatively through server backend, added trusted admin key support and moderator topup route, and assigned VIP Airport Manager tiers.",
-  "releaseNotes": "تحديث v10.0.21: إصلاح خطأ (Forbidden 403) عند اعتماد وقبول طلبات الشحن من لوحة الإدارة، وتمرير الاعتمادات عبر خادم اللعبة بشكل موثق، وتفعيل شحن باقات إمبراطور ومدير الطيران العالمي VIP."
+  "version": "v10.0.22",
+  "build": 1792245600000,
+  "timestamp": 1792245600000,
+  "notes": "Admin Authoritative Resilient Mutate v10.0.22: Fixed 403 Forbidden across all administrative operations (grant/deduct gold & cash, bans, maintenance, etc.) by routing mutations directly via authoritative server backend with internal loopback and key cycling.",
+  "releaseNotes": "تحديث v10.0.22: حل نهائي لمشكلة (Forbidden 403) في كافة عمليات لوحة التحكم (إضافة وخصم الذهب والفلوس، الحظر، تفعيل الصيانة، إلخ) وتوجيه كافة العمليات عبر الخادم الموثق مباشرة."
 }
