@@ -647,7 +647,7 @@ async function moderatorRoutes(fastify, options) {
         }
       } else {
         // Standard search / All filter
-        let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen&limit=${Math.min(200, Number(limit) || 100)}`;
+        let queryParams = `select=username,cash,bank,net_worth,gold,title,job_id,is_banned,jail_timer,last_seen,state&limit=${Math.min(200, Number(limit) || 100)}`;
         if (cleanQ) {
           queryParams += `&username=ilike.*${encodeURIComponent(cleanQ)}*`;
         } else {
@@ -704,7 +704,7 @@ async function moderatorRoutes(fastify, options) {
           jobId: state.jobId || r.job_id || 'worker',
           cash: Number(state.cash !== undefined ? state.cash : (r.cash || 0)),
           bank: Number(state.bank !== undefined ? state.bank : (r.bank || 0)),
-          netWorth: Number(state.netWorth !== undefined ? state.netWorth : (r.net_worth || 0)),
+          netWorth: Number(state.netWorth !== undefined && state.netWorth > 0 ? state.netWorth : (r.net_worth || 0)),
           gold: Number(state.gold !== undefined ? state.gold : (r.gold || 0)),
           lastSeen: Number(state.lastSeen || r.last_seen || 0),
           isOnline,
@@ -1394,6 +1394,9 @@ async function moderatorRoutes(fastify, options) {
 
         // Farm & Agriculture
         farm: state.farm || null,
+
+        // Trade & Customs (الاستيراد والتصدير والمستودع الجمركي)
+        tradeCompany: state.tradeCompany || null,
 
         // Casino & Gambling Stats
         casinoStats: state.casinoStats || { totalWins: 0, totalLosses: 0, totalSpins: 0 },

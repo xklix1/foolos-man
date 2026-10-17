@@ -152,7 +152,7 @@
     const resultCard = document.getElementById('admin-player-result');
 
     function switchPlayerSubTab(subtabId) {
-      const tabs = ['finances', 'assets', 'security', 'logins', 'logs'];
+      const tabs = ['finances', 'assets', 'trade', 'security', 'logins', 'logs'];
       tabs.forEach(t => {
         const btn = document.getElementById(`btn-player-subtab-${t}`);
         const panel = document.getElementById(`player-subtab-panel-${t}`);
@@ -727,6 +727,7 @@
 
         renderPlayersTable();
         renderPlayerPossessions(state);
+        renderPlayerTradeDetails(state);
         loadAdminPlayerWorkspace(state);
         logAdminAction(`تم فتح ملف الحساب للاعب: ${username}`);
       } catch (err) {
@@ -757,6 +758,494 @@
         listSelect.innerHTML ='<option value="">فشل جلب النسخ الاحتياطية</option>';
       }
     }
+
+
+    // ==================== TRADE & CUSTOMS MODERATOR INSPECTION ENGINE ====================
+
+    const ADMIN_TRADE_COMMODITIES = {
+      fashion_brands: { name: 'أزياء وملابس ماركات عالمية', unitCost: 5000, icon: 'fa-shirt', color: 'sky' },
+      espresso_coffee: { name: 'بن إسبريسو كولومبي فاخر', unitCost: 8000, icon: 'fa-mug-hot', color: 'amber' },
+      auto_spare_parts: { name: 'قطع غيار سيارات أوروبية أصلية', unitCost: 25000, icon: 'fa-gears', color: 'slate' },
+      solar_panels: { name: 'ألواح وخلايا طاقة شمسية متطورة', unitCost: 50000, icon: 'fa-solar-panel', color: 'yellow' },
+      luxury_cars: { name: 'سيارات فارهة وسوبر كار مستوردة', unitCost: 120000, icon: 'fa-car-side', color: 'emerald' },
+      industrial_turbines: { name: 'توربينات ومولدات صناعية عملاقة', unitCost: 250000, icon: 'fa-fan', color: 'cyan' },
+      ai_quantum_chips: { name: 'رقائق ومعالجات الذكاء الاصطناعي الكمية', unitCost: 500000, icon: 'fa-microchip', color: 'purple' },
+      luxury_perfumes: { name: 'عطور وبخور ملكي فاخر', unitCost: 12000, icon: 'fa-spray-can-sparkles', color: 'pink' },
+      medical_devices: { name: 'أجهزة ومعدات طبية متقدمة', unitCost: 22000, icon: 'fa-heart-pulse', color: 'rose' },
+      smart_electronics: { name: 'أجهزة وهواتف ذكية حديثة', unitCost: 45000, icon: 'fa-mobile-screen', color: 'blue' },
+      ev_cars: { name: 'سيارات كهربائية ذكية', unitCost: 85000, icon: 'fa-bolt', color: 'teal' }
+    };
+
+    function getCommodityMeta(cId) {
+      if (typeof GameEngine !== 'undefined' && GameEngine.TRADE_COMMODITIES && GameEngine.TRADE_COMMODITIES[cId]) {
+        return GameEngine.TRADE_COMMODITIES[cId];
+      }
+      return ADMIN_TRADE_COMMODITIES[cId] || { name: cId, unitCost: 5000, icon: 'fa-box', color: 'slate' };
+    }
+
+    function formatTimeRemainingSec(timestamp) {
+      if (!timestamp) return 'غير محدد';
+      const now = Date.now();
+      const diffMs = timestamp - now;
+      if (diffMs <= 0) return 'جاهزة الآن';
+      const sec = Math.ceil(diffMs / 1000);
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      if (m > 60) {
+        const h = Math.floor(m / 60);
+        const remM = m % 60;
+        return `${h} ساعة و ${remM} دقيقة`;
+      }
+      return `${m} دقيقة و ${s} ثانية`;
+    }
+
+    function renderPlayerTradeDetails(state) {
+      const panel = document.getElementById('player-subtab-panel-trade');
+      if (!panel) return;
+
+      const tc = state.tradeCompany;
+      const statusBadge = document.getElementById('admin-trade-status-badge');
+      const warehouseCountEl = document.getElementById('admin-trade-warehouse-count');
+      const warehousePctEl = document.getElementById('admin-trade-warehouse-pct');
+      const warehouseBarEl = document.getElementById('admin-trade-warehouse-bar');
+      const storedValEl = document.getElementById('admin-trade-stored-value');
+      const totalProfitEl = document.getElementById('admin-trade-total-profit');
+      const shipmentsCountEl = document.getElementById('admin-trade-shipments-count');
+      const warehouseListEl = document.getElementById('admin-trade-warehouse-list');
+      const importsListEl = document.getElementById('admin-trade-imports-list');
+      const exportsListEl = document.getElementById('admin-trade-exports-list');
+      const importsBadge = document.getElementById('admin-trade-imports-count-badge');
+      const exportsBadge = document.getElementById('admin-trade-exports-count-badge');
+
+      // Uninitialized / No Company
+      if (!tc || typeof tc !== 'object') {
+        if (statusBadge) {
+          statusBadge.textContent = 'غير مفعلة';
+          statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-slate-800 text-slate-400 border border-slate-700';
+        }
+        if (warehouseCountEl) warehouseCountEl.textContent = '0 / 10';
+        if (warehousePctEl) warehousePctEl.textContent = '0%';
+        if (warehouseBarEl) { warehouseBarEl.style.width = '0%'; warehouseBarEl.className = 'h-full bg-slate-700'; }
+        if (storedValEl) storedValEl.textContent = '0 EGP';
+        if (totalProfitEl) totalProfitEl.textContent = '0 EGP';
+        if (shipmentsCountEl) shipmentsCountEl.textContent = '0 شحنة';
+        if (importsBadge) importsBadge.textContent = '0 شحنة';
+        if (exportsBadge) exportsBadge.textContent = '0 عقد';
+
+        if (warehouseListEl) {
+          warehouseListEl.innerHTML = `
+            <div class="p-4 bg-slate-900/60 rounded-xl border border-dashed border-slate-800 text-center space-y-2.5">
+              <i class="fa-solid fa-ship text-2xl text-slate-600 block"></i>
+              <div class="text-xs font-bold text-slate-300">لم يقم هذا اللاعب بتأسيس شركة استيراد وتصدير ومستودع جمركي بعد.</div>
+              <p class="text-[10px] text-slate-500">يمكنك تفعيل وتأسيس الشركة له فوراً بضغطة زر وتجهيز المستودع.</p>
+              <button onclick="window.adminInitPlayerTradeCompany && window.adminInitPlayerTradeCompany()" class="px-4 py-2 bg-gradient-to-r from-cyan-600 to-teal-600 hover:from-cyan-500 hover:to-teal-500 text-white rounded-lg text-xs font-bold transition inline-flex items-center gap-1.5 shadow-lg shadow-cyan-600/20 cursor-pointer">
+                <i class="fa-solid fa-rocket text-xs"></i>
+                <span>تأسيس وتفعيل شركة الاستيراد والتصدير لللاعب الآن</span>
+              </button>
+            </div>`;
+        }
+        if (importsListEl) importsListEl.innerHTML = '<p class="text-slate-500 text-[10px] text-center py-3">لا توجد شركة استيراد مفعلة.</p>';
+        if (exportsListEl) exportsListEl.innerHTML = '<p class="text-slate-500 text-[10px] text-center py-3">لا توجد شركة تصدير مفعلة.</p>';
+        return;
+      }
+
+      // Active Trade Company
+      if (statusBadge) {
+        statusBadge.textContent = 'نشطة (مفعلة)';
+        statusBadge.className = 'px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30';
+      }
+
+      // Warehouse Capacity & Inventory
+      const cap = Math.min(50, Math.max(10, Number(tc.warehouseCapacity || 10)));
+      const warehouse = (tc.warehouse && typeof tc.warehouse === 'object') ? tc.warehouse : {};
+      let totalStoredContainers = 0;
+      let totalStoredValue = 0;
+
+      Object.keys(warehouse).forEach(cId => {
+        const qty = Number(warehouse[cId] || 0);
+        if (qty > 0) {
+          totalStoredContainers += qty;
+          const meta = getCommodityMeta(cId);
+          totalStoredValue += qty * (meta.unitCost || 5000);
+        }
+      });
+
+      const pct = Math.min(100, Math.round((totalStoredContainers / cap) * 100));
+      if (warehouseCountEl) warehouseCountEl.textContent = `${totalStoredContainers} / ${cap} حاوية`;
+      if (warehousePctEl) warehousePctEl.textContent = `${pct}%`;
+      if (warehouseBarEl) {
+        warehouseBarEl.style.width = `${pct}%`;
+        warehouseBarEl.className = pct >= 100 ? 'h-full bg-rose-500' : (pct >= 80 ? 'h-full bg-amber-500' : 'h-full bg-cyan-500');
+      }
+      if (storedValEl) storedValEl.textContent = `${totalStoredValue.toLocaleString()} EGP`;
+      if (totalProfitEl) totalProfitEl.textContent = `${Number(tc.totalProfitEarned || 0).toLocaleString()} EGP`;
+      if (shipmentsCountEl) shipmentsCountEl.textContent = `${Number(tc.totalShipmentsCompleted || 0).toLocaleString()} شحنة`;
+
+      // 1. Render Warehouse Items
+      if (warehouseListEl) {
+        const storedKeys = Object.keys(warehouse).filter(k => Number(warehouse[k] || 0) > 0);
+        if (storedKeys.length === 0) {
+          warehouseListEl.innerHTML = '<p class="text-slate-500 text-[10px] text-center py-3">المستودع الجمركي فارغ حالياً (لا توجد بضائع مخزنة).</p>';
+        } else {
+          warehouseListEl.innerHTML = '';
+          storedKeys.forEach(cId => {
+            const qty = Number(warehouse[cId]);
+            const meta = getCommodityMeta(cId);
+            const val = qty * (meta.unitCost || 5000);
+
+            const div = document.createElement('div');
+            div.className = 'flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900/60 rounded-lg border border-slate-800/80 hover:border-cyan-500/30 transition';
+            div.innerHTML = `
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-slate-800 text-cyan-400 flex items-center justify-center text-xs">
+                  <i class="fa-solid ${meta.icon || 'fa-box'}"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-white text-xs">${meta.name || cId}</div>
+                  <div class="text-[10px] text-slate-400">سعر الوحدة: <span class="text-slate-300 font-mono">${(meta.unitCost || 5000).toLocaleString()} EGP</span></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                <div class="text-left">
+                  <div class="text-xs font-bold text-cyan-400 font-mono">${qty} حاوية</div>
+                  <div class="text-[10px] font-bold text-emerald-400 font-mono">${val.toLocaleString()} EGP</div>
+                </div>
+                <div class="flex items-center gap-1">
+                  <button class="btn-trade-dec-comm px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[10px] font-bold" title="إنقاص حاوية">-1</button>
+                  <button class="btn-trade-inc-comm px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded text-[10px] font-bold" title="زيادة حاوية">+1</button>
+                  <button class="btn-trade-edit-comm px-2 py-1 bg-slate-800 hover:bg-slate-700 text-yellow-400 rounded text-[10px] font-bold" title="تعديل الكمية"><i class="fa-solid fa-pen"></i></button>
+                  <button class="btn-trade-del-comm p-1.5 text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition" title="حذف البضاعة بالكامل"><i class="fa-solid fa-trash-can"></i></button>
+                </div>
+              </div>`;
+
+            // Dec
+            div.querySelector('.btn-trade-dec-comm').addEventListener('click', async () => {
+              warehouse[cId] = Math.max(0, qty - 1);
+              if (warehouse[cId] === 0) delete warehouse[cId];
+              await saveAndSyncPlayerPossessions();
+              renderPlayerTradeDetails(selectedPlayerState);
+            });
+
+            // Inc
+            div.querySelector('.btn-trade-inc-comm').addEventListener('click', async () => {
+              if (totalStoredContainers >= cap) {
+                showToast('المستودع ممتلئ', `سعة المستودع القصوى هي ${cap} حاوية. قم بترقية السعة أولاً.`, 'warning');
+                return;
+              }
+              warehouse[cId] = qty + 1;
+              await saveAndSyncPlayerPossessions();
+              renderPlayerTradeDetails(selectedPlayerState);
+            });
+
+            // Edit
+            div.querySelector('.btn-trade-edit-comm').addEventListener('click', async () => {
+              const input = prompt(`أدخل عدد الحاويات الجديد لبضاعة (${meta.name}):`, qty);
+              if (input === null) return;
+              const newQ = parseInt(input, 10);
+              if (isNaN(newQ) || newQ < 0) {
+                showToast('خطأ إدخال', 'يرجى إدخال رقم صحيح.', 'error');
+                return;
+              }
+              const spaceAvailable = cap - (totalStoredContainers - qty);
+              if (newQ > spaceAvailable) {
+                showToast('تجاوز السعة', `أقصى سعة متاحة في المستودع حالياً هي ${spaceAvailable} حاوية.`, 'warning');
+                return;
+              }
+              if (newQ === 0) delete warehouse[cId];
+              else warehouse[cId] = newQ;
+              await saveAndSyncPlayerPossessions();
+              renderPlayerTradeDetails(selectedPlayerState);
+            });
+
+            // Delete
+            div.querySelector('.btn-trade-del-comm').addEventListener('click', async () => {
+              if (confirm(`هل أنت متأكد من حذف بضاعة "${meta.name}" بالكامل من المستودع؟`)) {
+                delete warehouse[cId];
+                await saveAndSyncPlayerPossessions();
+                renderPlayerTradeDetails(selectedPlayerState);
+              }
+            });
+
+            warehouseListEl.appendChild(div);
+          });
+        }
+      }
+
+      // 2. Render Active Imports
+      const activeImports = Array.isArray(tc.activeImports) ? tc.activeImports : [];
+      if (importsBadge) importsBadge.textContent = `${activeImports.length} شحنة`;
+      if (importsListEl) {
+        if (activeImports.length === 0) {
+          importsListEl.innerHTML = '<p class="text-slate-500 text-[10px] text-center py-3">لا توجد شحنات استيراد دولية قيد النقل حالياً.</p>';
+        } else {
+          importsListEl.innerHTML = '';
+          const now = Date.now();
+          activeImports.forEach((imp, idx) => {
+            const meta = getCommodityMeta(imp.commodityId);
+            const isArrived = Boolean(imp.arrived || now >= Number(imp.arrivalTime || 0));
+            const cost = Number(imp.totalCost || ((imp.quantity || 1) * (meta.unitCost || 5000)));
+
+            const div = document.createElement('div');
+            div.className = 'flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900/60 rounded-lg border border-slate-800/80 hover:border-amber-500/30 transition';
+            div.innerHTML = `
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-xs">
+                  <i class="fa-solid ${imp.transportType === 'air' ? 'fa-plane-arrival' : 'fa-ship'}"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-white text-xs flex items-center gap-1.5">
+                    <span>${meta.name || imp.commodityId}</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">${imp.transportType === 'air' ? 'شحن جوي' : 'شحن بحري'}</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400">الكمية: <strong class="text-amber-400 font-mono">${imp.quantity || 1} حاوية</strong> | التكلفة: <strong class="text-emerald-400 font-mono">${cost.toLocaleString()} EGP</strong></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="text-left text-[10px]">
+                  ${isArrived 
+                    ? '<span class="px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">وصلت المستودع </span>'
+                    : `<span class="px-2 py-0.5 rounded font-bold bg-amber-500/20 text-amber-300 font-mono"><i class="fa-solid fa-clock"></i> ${formatTimeRemainingSec(imp.arrivalTime)}</span>`
+                  }
+                </div>
+                <button class="btn-trade-speed-imp px-2.5 py-1 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 text-slate-950 font-bold rounded text-[10px] transition cursor-pointer flex items-center gap-1 shadow-sm" title="تسريع وصول الشحنة وإيداعها في المستودع فوراً">
+                  <i class="fa-solid fa-bolt text-[10px]"></i>
+                  <span>توصيل فوري</span>
+                </button>
+                <button class="btn-trade-cancel-imp p-1.5 text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition" title="إلغاء الشحنة"><i class="fa-solid fa-trash-can"></i></button>
+              </div>`;
+
+            // Speed up / deliver immediately
+            div.querySelector('.btn-trade-speed-imp').addEventListener('click', async () => {
+              const q = Number(imp.quantity || 1);
+              if (!tc.warehouse) tc.warehouse = {};
+              tc.warehouse[imp.commodityId] = (tc.warehouse[imp.commodityId] || 0) + q;
+              tc.totalShipmentsCompleted = (Number(tc.totalShipmentsCompleted) || 0) + 1;
+              activeImports.splice(idx, 1);
+              await saveAndSyncPlayerPossessions();
+              renderPlayerTradeDetails(selectedPlayerState);
+              showToast('توصيل فوري', `تم تسريع شحنة (${meta.name}) وإيداع ${q} حاوية في مستودع اللاعب فوراً!`, 'success');
+            });
+
+            // Cancel
+            div.querySelector('.btn-trade-cancel-imp').addEventListener('click', async () => {
+              if (confirm(`هل أنت متأكد من إلغاء شحنة استيراد "${meta.name}"؟`)) {
+                activeImports.splice(idx, 1);
+                await saveAndSyncPlayerPossessions();
+                renderPlayerTradeDetails(selectedPlayerState);
+              }
+            });
+
+            importsListEl.appendChild(div);
+          });
+        }
+      }
+
+      // 3. Render Active Exports
+      const activeExports = Array.isArray(tc.activeExports) ? tc.activeExports : [];
+      if (exportsBadge) exportsBadge.textContent = `${activeExports.length} عقد`;
+      if (exportsListEl) {
+        if (activeExports.length === 0) {
+          exportsListEl.innerHTML = '<p class="text-slate-500 text-[10px] text-center py-3">لا توجد عقود تصدير دولية جارية حالياً.</p>';
+        } else {
+          exportsListEl.innerHTML = '';
+          const now = Date.now();
+          activeExports.forEach((exp, idx) => {
+            const meta = getCommodityMeta(exp.commodityId);
+            const isDelivered = Boolean(exp.delivered || now >= Number(exp.deliveryTime || 0));
+            const rev = Number(exp.totalRevenue || 0);
+            const profit = Number(exp.totalProfit || Math.max(0, rev - ((exp.quantity || 1) * (meta.unitCost || 5000))));
+
+            const div = document.createElement('div');
+            div.className = 'flex flex-wrap items-center justify-between gap-2 p-2.5 bg-slate-900/60 rounded-lg border border-slate-800/80 hover:border-emerald-500/30 transition';
+            div.innerHTML = `
+              <div class="flex items-center gap-2.5">
+                <div class="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-xs">
+                  <i class="fa-solid fa-truck-fast"></i>
+                </div>
+                <div>
+                  <div class="font-bold text-white text-xs flex items-center gap-1.5">
+                    <span>${meta.name || exp.commodityId}</span>
+                    <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">${exp.buyerCountry || 'دولي'}</span>
+                  </div>
+                  <div class="text-[10px] text-slate-400">العميل: <strong class="text-slate-200">${exp.buyerName || 'مستورد خارجي'}</strong> | الكمية: <strong class="text-cyan-400 font-mono">${exp.quantity || 1} حاوية</strong></div>
+                </div>
+              </div>
+              <div class="flex items-center gap-2">
+                <div class="text-left text-[10px]">
+                  <div class="text-emerald-400 font-bold font-mono">+${profit.toLocaleString()} EGP ربح</div>
+                  ${isDelivered 
+                    ? '<span class="px-2 py-0.5 rounded font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">تم التسليم </span>'
+                    : `<span class="px-2 py-0.5 rounded font-bold bg-sky-500/20 text-sky-300 font-mono"><i class="fa-solid fa-clock"></i> ${formatTimeRemainingSec(exp.deliveryTime)}</span>`
+                  }
+                </div>
+                <button class="btn-trade-deliver-exp px-2.5 py-1 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded text-[10px] transition cursor-pointer flex items-center gap-1 shadow-sm" title="تسليم فوري للعقد وتحصيل الأرباح في بنك اللاعب">
+                  <i class="fa-solid fa-hand-holding-dollar text-[10px]"></i>
+                  <span>تسليم وتحصيل</span>
+                </button>
+                <button class="btn-trade-cancel-exp p-1.5 text-rose-500 hover:text-rose-400 hover:bg-rose-500/10 rounded transition" title="إلغاء عقد التصدير"><i class="fa-solid fa-trash-can"></i></button>
+              </div>`;
+
+            // Deliver immediately & credit bank
+            div.querySelector('.btn-trade-deliver-exp').addEventListener('click', async () => {
+              selectedPlayerState.bank = (Number(selectedPlayerState.bank) || 0) + profit;
+              tc.totalProfitEarned = (Number(tc.totalProfitEarned) || 0) + profit;
+              tc.totalShipmentsCompleted = (Number(tc.totalShipmentsCompleted) || 0) + 1;
+              activeExports.splice(idx, 1);
+              await saveAndSyncPlayerPossessions();
+              renderPlayerTradeDetails(selectedPlayerState);
+              const bankEl = document.getElementById('admin-p-bank');
+              if (bankEl) bankEl.textContent = Number(selectedPlayerState.bank).toLocaleString();
+              showToast('تسليم وأرباح', `تم تسليم عقد التصدير فوراً وإيداع أرباح +${profit.toLocaleString()} EGP في الحساب البنكي لللاعب!`, 'success');
+            });
+
+            // Cancel
+            div.querySelector('.btn-trade-cancel-exp').addEventListener('click', async () => {
+              if (confirm(`هل أنت متأكد من إلغاء عقد تصدير "${meta.name}"؟`)) {
+                activeExports.splice(idx, 1);
+                await saveAndSyncPlayerPossessions();
+                renderPlayerTradeDetails(selectedPlayerState);
+              }
+            });
+
+            exportsListEl.appendChild(div);
+          });
+        }
+      }
+    }
+
+    // Global Window Moderator Handlers for Trade Tab
+    window.renderPlayerTradeDetails = renderPlayerTradeDetails;
+
+    window.refreshAdminPlayerTrade = function() {
+      if (selectedPlayerState) {
+        renderPlayerTradeDetails(selectedPlayerState);
+        showToast('تحديث', 'تم تحديث بيانات التجارة والمستودع.', 'info');
+      }
+    };
+
+    window.adminInitPlayerTradeCompany = async function() {
+      if (!selectedPlayerState) return;
+      selectedPlayerState.tradeCompany = {
+        warehouseCapacity: 10,
+        warehouse: {},
+        activeImports: [],
+        activeExports: [],
+        totalProfitEarned: 0,
+        totalShipmentsCompleted: 0
+      };
+      await saveAndSyncPlayerPossessions();
+      renderPlayerTradeDetails(selectedPlayerState);
+      showToast('تم التفعيل', 'تم تأسيس وتفعيل شركة الاستيراد والتصدير لللاعب بنجاح.', 'success');
+    };
+
+    window.adminClearWarehouseAction = async function() {
+      if (!selectedPlayerState || !selectedPlayerState.tradeCompany) return;
+      if (confirm('هل أنت متأكد من تفريغ كافة الحاويات المخزنة في المستودع الجمركي لللاعب؟')) {
+        selectedPlayerState.tradeCompany.warehouse = {};
+        await saveAndSyncPlayerPossessions();
+        renderPlayerTradeDetails(selectedPlayerState);
+        showToast('تفريغ المستودع', 'تم تفريغ كافة الحاويات من المستودع بنجاح.', 'success');
+      }
+    };
+
+    window.adminUpgradeWarehouseCapacity = async function() {
+      if (!selectedPlayerState || !selectedPlayerState.tradeCompany) return;
+      const current = Number(selectedPlayerState.tradeCompany.warehouseCapacity || 10);
+      if (current >= 50) {
+        showToast('الحد الأقصى', 'المستودع عند السعة القصوى المسموحة (50 حاوية).', 'warning');
+        return;
+      }
+      const nextCap = Math.min(50, current + 10);
+      selectedPlayerState.tradeCompany.warehouseCapacity = nextCap;
+      await saveAndSyncPlayerPossessions();
+      renderPlayerTradeDetails(selectedPlayerState);
+      showToast('ترقية السعة', `تمت ترقية سعة المستودع لللاعب إلى ${nextCap} حاوية بنجاح.`, 'success');
+    };
+
+    window.adminOpenAddCommodityModal = async function() {
+      if (!selectedPlayerState || !selectedPlayerState.tradeCompany) return;
+      const tc = selectedPlayerState.tradeCompany;
+      if (!tc.warehouse) tc.warehouse = {};
+
+      const optionsStr = Object.keys(ADMIN_TRADE_COMMODITIES).map((k, idx) => `${idx + 1}- ${ADMIN_TRADE_COMMODITIES[k].name}`).join('\n');
+      const pick = prompt(`اختر البضاعة المراد إضافتها للمستودع عبر إدخال رقمها (1-11):\n${optionsStr}`, '1');
+      if (!pick) return;
+      const pickIdx = parseInt(pick, 10) - 1;
+      const keys = Object.keys(ADMIN_TRADE_COMMODITIES);
+      const chosenKey = keys[pickIdx];
+      if (!chosenKey) {
+        showToast('اختيار غير صالح', 'الرقم المدخل غير موجود في القائمة.', 'error');
+        return;
+      }
+
+      const qtyStr = prompt(`أدخل عدد الحاويات المراد إضافتها من "${ADMIN_TRADE_COMMODITIES[chosenKey].name}":`, '5');
+      if (!qtyStr) return;
+      const qty = parseInt(qtyStr, 10);
+      if (isNaN(qty) || qty <= 0) {
+        showToast('خطأ إدخال', 'يرجى إدخال كمية صحيحة أكبر من الصفر.', 'error');
+        return;
+      }
+
+      const currentCap = Number(tc.warehouseCapacity || 10);
+      let totalCurrent = 0;
+      Object.keys(tc.warehouse).forEach(k => { totalCurrent += Number(tc.warehouse[k] || 0); });
+      if (totalCurrent + qty > currentCap) {
+        if (!confirm(`هذه الكمية ستتجاوز سعة المستودع الحالية (${totalCurrent + qty} > ${currentCap}). هل ترغب في توسيع سعة المستودع تلقائياً لتستوعب البضاعة؟`)) {
+          return;
+        }
+        tc.warehouseCapacity = Math.min(50, totalCurrent + qty);
+      }
+
+      tc.warehouse[chosenKey] = (Number(tc.warehouse[chosenKey]) || 0) + qty;
+      await saveAndSyncPlayerPossessions();
+      renderPlayerTradeDetails(selectedPlayerState);
+      showToast('إضافة بضاعة', `تمت إضافة ${qty} حاوية من "${ADMIN_TRADE_COMMODITIES[chosenKey].name}" إلى مستودع اللاعب بنجاح!`, 'success');
+    };
+
+    window.adminCompleteAllTradeAction = async function() {
+      if (!selectedPlayerState || !selectedPlayerState.tradeCompany) return;
+      const tc = selectedPlayerState.tradeCompany;
+      let totalCompleted = 0;
+      let profitCredited = 0;
+
+      // Imports
+      if (Array.isArray(tc.activeImports) && tc.activeImports.length > 0) {
+        if (!tc.warehouse) tc.warehouse = {};
+        tc.activeImports.forEach(imp => {
+          const q = Number(imp.quantity || 1);
+          tc.warehouse[imp.commodityId] = (Number(tc.warehouse[imp.commodityId]) || 0) + q;
+          totalCompleted++;
+        });
+        tc.activeImports = [];
+      }
+
+      // Exports
+      if (Array.isArray(tc.activeExports) && tc.activeExports.length > 0) {
+        tc.activeExports.forEach(exp => {
+          const meta = getCommodityMeta(exp.commodityId);
+          const rev = Number(exp.totalRevenue || 0);
+          const profit = Number(exp.totalProfit || Math.max(0, rev - ((exp.quantity || 1) * (meta.unitCost || 5000))));
+          profitCredited += profit;
+          totalCompleted++;
+        });
+        tc.activeExports = [];
+      }
+
+      if (totalCompleted === 0) {
+        showToast('تنبيه', 'لا توجد شحنات أو عقود استيراد وتصدير جارية لإنهائها.', 'info');
+        return;
+      }
+
+      selectedPlayerState.bank = (Number(selectedPlayerState.bank) || 0) + profitCredited;
+      tc.totalProfitEarned = (Number(tc.totalProfitEarned) || 0) + profitCredited;
+      tc.totalShipmentsCompleted = (Number(tc.totalShipmentsCompleted) || 0) + totalCompleted;
+
+      await saveAndSyncPlayerPossessions();
+      renderPlayerTradeDetails(selectedPlayerState);
+      const bankEl = document.getElementById('admin-p-bank');
+      if (bankEl) bankEl.textContent = Number(selectedPlayerState.bank).toLocaleString();
+      showToast('إنهاء فوري لكافة الشحنات', `تم تسريع وإنجاز ${totalCompleted} شحنة فوراً، وإيداع أرباح +${profitCredited.toLocaleString()} EGP في الحساب البنكي!`, 'success');
+    };
 
     // ==================== PLAYER POSSESSIONS & BACKUP EXPORT & GRANT ACTIONS ====================
 
@@ -995,30 +1484,21 @@
     async function saveAndSyncPlayerPossessions() {
       if (!selectedPlayer || !selectedPlayerState) return;
       try {
-        // Re-calculate Net Worth of selected player state
-        let worth = (selectedPlayerState.cash || 0) + (selectedPlayerState.bank || 0) + (selectedPlayerState.dirtyCash || 0);
-
-        if (selectedPlayerState.assets) {
-          Object.keys(selectedPlayerState.assets).forEach(k => {
-            if (GameEngine.ASSETS && GameEngine.ASSETS[k]) worth += (selectedPlayerState.assets[k] || 0) * GameEngine.ASSETS[k].cost;
-          });
+        // Re-calculate Net Worth of selected player state using Comprehensive Model
+        let worth = 0;
+        if (typeof GameEngine !== 'undefined' && typeof GameEngine.calculateNetWorth === 'function') {
+          try {
+            worth = GameEngine.calculateNetWorth(selectedPlayerState);
+          } catch (_) {}
         }
-        if (selectedPlayerState.stocks) {
-          Object.keys(selectedPlayerState.stocks).forEach(sym => {
-            const shares = (selectedPlayerState.stocks[sym] && selectedPlayerState.stocks[sym].shares) || 0;
-            const history = GameEngine.stockPrices[sym] || [GameEngine.STOCKS[sym]?.basePrice || 10];
-            const currentPrice = history[history.length - 1];
-            worth += shares * currentPrice;
-          });
-        }
-        if (selectedPlayerState.investments && Array.isArray(selectedPlayerState.investments)) {
-          selectedPlayerState.investments.forEach(inv => worth += (inv.investedAmount || 0));
-        }
-        if (selectedPlayerState.activeLoan) {
-          const loanDebt = Number(selectedPlayerState.activeLoan.totalDue || selectedPlayerState.activeLoan.amount || 0);
-          if (loanDebt > 0) worth -= loanDebt;
+        if (!worth || worth <= 0) {
+          worth = (typeof calculatePlayerComprehensiveNetWorth === 'function')
+            ? calculatePlayerComprehensiveNetWorth(selectedPlayerState)
+            : ((Number(selectedPlayerState.cash || 0) + Number(selectedPlayerState.bank || 0)));
         }
         selectedPlayerState.netWorth = Math.max(0, Math.floor(worth));
+        const worthEl = document.getElementById('admin-p-worth');
+        if (worthEl) worthEl.textContent = `${selectedPlayerState.netWorth.toLocaleString()} EGP`;
         selectedPlayerState.adminModifiedTimestamp = Date.now();
 
         // Save to DB

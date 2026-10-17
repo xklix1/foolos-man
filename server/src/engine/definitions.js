@@ -142,7 +142,10 @@ const ASSETS = {
   apartment: { id: 'apartment', name: 'شقة سكنية مؤجرة', cost: 212500, rent: 98, appreciation: 0.0004 },
   office: { id: 'office', name: 'مبنى مكاتب تجارية', cost: 1360000, rent: 598, appreciation: 0.0006 },
   commercial_center: { id: 'commercial_center', name: 'مركز تجاري وسوق متكامل', cost: 6800000, rent: 2880, appreciation: 0.0007 },
+  mansion: { id: 'mansion', name: 'قصر ريفي فاخر', cost: 6120000, rent: 2760, appreciation: 0.0008 },
+  skyline_tower: { id: 'skyline_tower', name: 'برج ناطحة سحاب تجاري', cost: 29750000, rent: 13225, appreciation: 0.0010 },
   hotel: { id: 'hotel', name: 'منتجع وفندق 5 نجوم', cost: 38250000, rent: 15400, appreciation: 0.0008 },
+  luxury_resort: { id: 'luxury_resort', name: 'منتجع وفندق سياحي 5 نجوم', cost: 136000000, rent: 59800, appreciation: 0.0012 },
   private_island: { id: 'private_island', name: 'جزيرة خاصة سياحية', cost: 191250000, rent: 74000, appreciation: 0.0009 },
   mega_yacht: { id: 'mega_yacht', name: 'يخت عملاق فاره', cost: 680000000, rent: 240000, appreciation: 0.001 },
   orbital_station: { id: 'orbital_station', name: 'محطة أبحاث مدارية خاصة', cost: 2550000000, rent: 850000, appreciation: 0.0012 }

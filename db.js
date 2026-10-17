@@ -4918,6 +4918,181 @@ var AppDB = (() => {
     }
   }
 
+  function calculatePlayerComprehensiveNetWorth(p) {
+    if (!p) return 0;
+    if (typeof GameEngine !== 'undefined' && typeof GameEngine.calculateNetWorth === 'function') {
+      try {
+        const val = GameEngine.calculateNetWorth(p);
+        if (typeof val === 'number' && !isNaN(val) && val > 0) return Math.floor(val);
+      } catch (e) {}
+    }
+    const cash = Math.max(0, Number(p.cash || 0));
+    const bank = Math.max(0, Number(p.bank || 0));
+    const dirtyCash = Math.max(0, Number(p.dirtyCash || p.dirty_cash || 0));
+    let worth = cash + bank + dirtyCash;
+
+    if (Array.isArray(p.investments)) {
+      p.investments.forEach(inv => {
+        if (inv && inv.investedAmount) worth += Number(inv.investedAmount || 0);
+      });
+    }
+
+    const ASSET_PRICES = {
+      small_studio: 250000,
+      luxury_apartment: 750000,
+      commercial_shop: 1800000,
+      residential_villa: 4500000,
+      administrative_floor: 12000000,
+      commercial_mall: 35000000,
+      residential_tower: 95000000,
+      resort_hotel: 250000000
+    };
+    if (p.assets && typeof p.assets === 'object') {
+      Object.keys(p.assets).forEach(k => {
+        const qty = Number(p.assets[k] || 0);
+        if (qty > 0) {
+          const cost = (typeof GameEngine !== 'undefined' && GameEngine.ASSETS && GameEngine.ASSETS[k])
+            ? GameEngine.ASSETS[k].cost
+            : (ASSET_PRICES[k] || 0);
+          worth += qty * cost;
+        }
+      });
+    }
+
+    const CAR_PRICES = {
+      sedan_economy: 250000,
+      suv_family: 650000,
+      german_executive: 1800000,
+      italian_supercar: 6500000,
+      british_luxury: 14000000,
+      hypercar_edition: 35000000
+    };
+    if (Array.isArray(p.ownedCars)) {
+      p.ownedCars.forEach(c => {
+        const cId = (c && typeof c === 'object') ? c.id : c;
+        if (cId) {
+          const cost = (typeof CAR_TEMPLATES !== 'undefined' && CAR_TEMPLATES[cId])
+            ? CAR_TEMPLATES[cId].cost
+            : (CAR_PRICES[cId] || 0);
+          worth += cost;
+        }
+      });
+    }
+
+    if (p.stocks && typeof p.stocks === 'object') {
+      Object.keys(p.stocks).forEach(sym => {
+        const s = p.stocks[sym];
+        const shares = Number(s && s.shares || 0);
+        if (shares > 0) {
+          const avgPrice = Number(s && s.avgPrice || (typeof GameEngine !== 'undefined' && GameEngine.STOCKS && GameEngine.STOCKS[sym] ? GameEngine.STOCKS[sym].basePrice : 50));
+          worth += shares * avgPrice;
+        }
+      });
+    }
+
+    if (p.industry && typeof p.industry === 'object') {
+      const IND_COSTS = {
+        electronics: { unlockCost: 50000000, baseCost: 15000000, productBase: 45000 },
+        pharmaceuticals: { unlockCost: 120000000, baseCost: 35000000, productBase: 22000 },
+        heavy_machinery: { unlockCost: 300000000, baseCost: 90000000, productBase: 250000 },
+        automotive: { unlockCost: 750000000, baseCost: 200000000, productBase: 85000 }
+      };
+      Object.keys(p.industry).forEach(secKey => {
+        const sec = p.industry[secKey];
+        const def = IND_COSTS[secKey];
+        if (sec && sec.unlocked && def) {
+          worth += def.unlockCost;
+          ['stage1', 'stage2', 'stage3', 'logistics'].forEach(stKey => {
+            const lvl = Number(sec[stKey] || 0);
+            if (lvl > 1) {
+              for (let i = 1; i < lvl; i++) {
+                worth += Math.floor(def.baseCost * Math.pow(1.65, i));
+              }
+            }
+          });
+          if (Number(sec.readyStock || 0) > 0) {
+            worth += Math.floor(Number(sec.readyStock) * def.productBase);
+          }
+        }
+      });
+    }
+
+    if (p.tradeCompany && typeof p.tradeCompany === 'object') {
+      const COMM_COSTS = {
+        fashion_brands: 5000,
+        espresso_coffee: 8000,
+        auto_spare_parts: 25000,
+        solar_panels: 50000,
+        luxury_cars: 120000,
+        industrial_turbines: 250000,
+        ai_quantum_chips: 500000,
+        luxury_perfumes: 12000,
+        medical_devices: 22000,
+        smart_electronics: 45000,
+        ev_cars: 85000
+      };
+      if (p.tradeCompany.warehouse && typeof p.tradeCompany.warehouse === 'object') {
+        Object.keys(p.tradeCompany.warehouse).forEach(cId => {
+          const qty = Number(p.tradeCompany.warehouse[cId] || 0);
+          if (qty > 0) worth += qty * (COMM_COSTS[cId] || 5000);
+        });
+      }
+      if (Array.isArray(p.tradeCompany.activeImports)) {
+        p.tradeCompany.activeImports.forEach(imp => {
+          worth += Number(imp.totalCost || ((imp.quantity || 0) * (COMM_COSTS[imp.commodityId] || 5000)) || 0);
+        });
+      }
+      if (Array.isArray(p.tradeCompany.activeExports)) {
+        p.tradeCompany.activeExports.forEach(exp => {
+          if (!exp.claimed) {
+            worth += Number(exp.quantity || 0) * (COMM_COSTS[exp.commodityId] || 5000);
+          }
+        });
+      }
+    }
+
+    if (p.farm && p.farm.unlocked) {
+      const landLevels = { 1: 1000000, 2: 1500000, 3: 4500000, 4: 14500000 };
+      worth += (landLevels[p.farm.landLevel] || ((p.farm.maxPlots || 4) * 250000));
+      const irrLevels = { 1: 0, 2: 50000, 3: 300000, 4: 1300000 };
+      worth += (irrLevels[p.farm.irrigationLevel || p.farm.waterLevel || 1] || 0);
+      const fertLevels = { 1: 0, 2: 40000, 3: 240000, 4: 1040000 };
+      worth += (fertLevels[p.farm.fertilizerLevel || 1] || 0);
+      worth += Math.max(0, Number(p.farm.workers || 0)) * 30000;
+      const siloLevels = { 1: 0, 2: 250000, 3: 1250000, 4: 4750000 };
+      worth += (siloLevels[p.farm.siloLevel || 1] || 0);
+      if (p.farm.livestock) {
+        worth += Math.max(0, Number(p.farm.livestock.cows || 0)) * 25000;
+        worth += Math.max(0, Number(p.farm.livestock.chickens || 0)) * 8000;
+      }
+      if (p.farm.processing && p.farm.processing.unlocked) worth += 500000;
+    }
+
+    if (p.airport && p.airport.unlocked) {
+      worth += 30000000;
+      const PLANE_COSTS = {
+        cessna_caravan: 4500000,
+        embraer_190: 28000000,
+        airbus_a320neo: 75000000,
+        boeing_787_dreamliner: 180000000,
+        airbus_a380_superjumbo: 420000000
+      };
+      if (Array.isArray(p.airport.fleet)) {
+        p.airport.fleet.forEach(pl => {
+          const mId = pl && (pl.modelId || pl.id);
+          if (mId && PLANE_COSTS[mId]) worth += PLANE_COSTS[mId];
+        });
+      }
+    }
+
+    if (p.activeLoan) {
+      const loanDue = Number(p.activeLoan.totalDue || p.activeLoan.amount || 0);
+      if (loanDue > 0) worth -= loanDue;
+    }
+
+    return Math.max(0, Math.floor(worth));
+  }
+
   async function adminGetAllPlayers() {
     const rows = await _api('players?select=username,pin,cash,bank,dirty_cash,net_worth,xp,title,job_id,is_admin,is_banned,jail_timer,total_taxes_paid,afk_manager_expires_at,last_seen,created_at,state&order=net_worth.desc&limit=10000');
     return (rows || []).filter(r => !HIDDEN_ADMIN_USERNAMES.includes(String(r.username || '').trim().toLowerCase())).map(r => {
@@ -4935,7 +5110,8 @@ var AppDB = (() => {
       p.cash = Number(r.cash || 0);
       p.bank = Number(r.bank || 0);
       p.dirtyCash = Number(r.dirty_cash || 0);
-      p.netWorth = Number(r.net_worth || 0);
+      const compWorthAll = calculatePlayerComprehensiveNetWorth(p);
+      p.netWorth = compWorthAll > 0 ? compWorthAll : Number(r.net_worth || 0);
       p.xp = Number(r.xp || 0);
       p.title = r.title || 'عامل مبتدئ';
       p.jobId = r.job_id || 'worker';
@@ -4979,7 +5155,8 @@ var AppDB = (() => {
     p.cash = Number(r.cash !== undefined ? r.cash : (stateObj.cash || 0));
     p.bank = Number(r.bank !== undefined ? r.bank : (stateObj.bank || 0));
     p.dirtyCash = Number(r.dirty_cash !== undefined ? r.dirty_cash : (stateObj.dirtyCash || 0));
-    p.netWorth = Number(r.net_worth !== undefined ? r.net_worth : (stateObj.netWorth || 0));
+    const compWorthSingle = calculatePlayerComprehensiveNetWorth(p);
+    p.netWorth = compWorthSingle > 0 ? compWorthSingle : Number(r.net_worth !== undefined ? r.net_worth : (stateObj.netWorth || 0));
     p.xp = Number(r.xp !== undefined ? r.xp : (stateObj.xp || 0));
     p.title = r.title || stateObj.title || 'عامل مبتدئ';
     p.jobId = r.job_id || stateObj.jobId || 'worker';
