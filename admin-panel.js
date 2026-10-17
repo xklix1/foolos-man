@@ -399,6 +399,10 @@
           <td class="p-2.5 text-left">
             <div class="flex items-center justify-end gap-1.5">
               <button data-user="${p.username}" class="btn-select-player px-2.5 py-1 bg-yellow-500/20 hover:bg-yellow-500 text-yellow-400 hover:text-slate-950 rounded text-[10px] font-bold transition">إدارة </button>
+              <button data-user="${p.username}" class="btn-quick-trade-player px-2.5 py-1 bg-cyan-600/20 hover:bg-cyan-600 text-cyan-300 hover:text-white border border-cyan-500/30 rounded text-[10px] font-bold transition cursor-pointer flex items-center gap-1 shadow-sm" title="فحص ومراقبة استيراد وتصدير اللاعب">
+                <i class="fa-solid fa-ship text-[10px]"></i>
+                <span>استيراد</span>
+              </button>
               <button data-user="${p.username}" class="btn-quick-deduct-player px-2.5 py-1 bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/30 rounded text-[10px] font-bold transition cursor-pointer flex items-center gap-1 shadow-sm" title="خصم مالي فوري من اللاعب">
                 <i class="fa-solid fa-file-invoice-dollar text-[10px]"></i>
                 <span>خصم</span>
@@ -410,6 +414,22 @@
           selectPlayerForModeration(p.username);
         });
 
+        const tradeBtn = tr.querySelector('.btn-quick-trade-player');
+        if (tradeBtn) {
+          tradeBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await selectPlayerForModeration(p.username);
+            if (typeof switchPlayerSubTab === 'function') {
+              switchPlayerSubTab('trade');
+            }
+            setTimeout(() => {
+              const tradePanel = document.getElementById('player-subtab-panel-trade');
+              if (tradePanel) {
+                tradePanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }, 200);
+          });
+        }
         const deductBtn = tr.querySelector('.btn-quick-deduct-player');
         if (deductBtn) {
           deductBtn.addEventListener('click', async (e) => {
@@ -8718,13 +8738,16 @@
 
   function switchAdminTab(tabId) {
     cleanupAdminListeners();
-    const subtabs = ['stats','players','transfers','fraud','devices','chat','market','broadcast','auctions','giftcodes','onlinegift','system','corporations','topup'];
+    const subtabs = ['stats','players','trade','transfers','fraud','devices','chat','market','broadcast','auctions','giftcodes','onlinegift','system','corporations','topup'];
     subtabs.forEach(t => {
       const btn = document.getElementById(`tab-admin-${t}`);
       const mobPill = document.getElementById(`mobtab-admin-${t}`);
       const panel = document.getElementById(`admin-subpanel-${t}`);
       if (!panel) return;
       if (t === tabId) {
+        if (tabId === 'trade') {
+          try { populateMainTradePlayerSelector(); } catch (_) {}
+        }
         if (btn) {
           btn.classList.add('border-yellow-500/40','bg-yellow-500/10','text-yellow-400','active-admin-tab','active-admin-sidebar-btn');
           btn.classList.remove('border-transparent','text-slate-400','hover:bg-slate-900/60');
@@ -8792,6 +8815,60 @@
         }
       }
     }
+    
+    // Populate Trade Player Selector
+    function populateMainTradePlayerSelector() {
+      const selectEl = document.getElementById('admin-main-trade-player-select');
+      if (!selectEl) return;
+      const currentVal = selectEl.value;
+      selectEl.innerHTML = '<option value="">اختر لاعباً لعرض مستودعه وشحناته بالتفصيل...</option>';
+      if (Array.isArray(cachedPlayers)) {
+        cachedPlayers.forEach(p => {
+          const opt = document.createElement('option');
+          opt.value = p.username;
+          opt.textContent = `${p.username} (${(p.title || 'عامل مبتدئ')} - ثروة: ${Number(p.netWorth || p.net_worth || 0).toLocaleString()} EGP)`;
+          if (p.username === selectedPlayer || p.username === currentVal) opt.selected = true;
+          selectEl.appendChild(opt);
+        });
+      }
+    }
+
+    window.adminMainTradeSelectPlayer = async function(username) {
+      if (!username) return;
+      await selectPlayerForModeration(username);
+      if (typeof switchPlayerSubTab === 'function') {
+        switchPlayerSubTab('trade');
+      }
+      const tradePanel = document.getElementById('player-subtab-panel-trade');
+      const targetContainer = document.getElementById('admin-main-trade-target-container');
+      if (tradePanel && targetContainer) {
+        // Clone or reveal
+        targetContainer.innerHTML = '';
+        const clone = tradePanel.cloneNode(true);
+        clone.id = 'admin-main-trade-cloned-panel';
+        clone.classList.remove('hidden');
+        targetContainer.appendChild(clone);
+      }
+    };
+
+    window.adminMainTradeSelectCurrent = async function() {
+      const selectEl = document.getElementById('admin-main-trade-player-select');
+      const u = selectEl ? selectEl.value : selectedPlayer;
+      if (u) {
+        await selectPlayerForModeration(u);
+        switchAdminTab('players');
+        setTimeout(() => {
+          if (typeof switchPlayerSubTab === 'function') {
+            switchPlayerSubTab('trade');
+          }
+          const tradePanel = document.getElementById('player-subtab-panel-trade');
+          if (tradePanel) tradePanel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 150);
+      } else {
+        showToast('تنبيه', 'يرجى اختيار لاعب أولاً من القائمة.', 'info');
+      }
+    };
+
     window.switchAdminTab = switchAdminTab;
   }
 

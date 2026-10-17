@@ -32,7 +32,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
   
-  <link rel="stylesheet" href="app.css?v=v10.0.22">
+  <link rel="stylesheet" href="app.css?v=v10.0.23">
 
 
 
@@ -728,6 +728,8 @@
         <button id="mobtab-admin-stats" onclick="window.switchAdminTab('stats')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition active-admin-mob-pill shadow-sm">
           <i class="fa-solid fa-chart-pie text-xs text-amber-400"></i><span>الإحصائيات</span></button>
         <button id="mobtab-admin-players" onclick="window.switchAdminTab('players')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition shadow-sm">
+        <button id="mobtab-admin-trade" onclick="window.switchAdminTab('trade')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-cyan-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition shadow-sm">
+          <i class="fa-solid fa-ship text-xs text-cyan-400"></i><span>الاستيراد والتصدير</span></button>
           <i class="fa-solid fa-users-gear text-xs text-yellow-400"></i><span>اللاعبين</span></button>
         <button id="mobtab-admin-transfers" onclick="window.switchAdminTab('transfers')" class="shrink-0 px-3 py-1.5 rounded-xl border border-transparent bg-slate-900 text-slate-300 text-xs font-bold whitespace-nowrap flex items-center gap-1.5 transition shadow-sm">
           <i class="fa-solid fa-money-bill-transfer text-xs text-emerald-400"></i><span>التحويلات</span></button>
@@ -800,6 +802,12 @@
                   <i class="fa-solid fa-users-gear text-xs"></i>
                 </div>
                 <span>إدارة اللاعبين والسجلات</span></button>
+              <button id="tab-admin-trade" onclick="window.switchAdminTab('trade')"
+                class="admin-tab-btn w-full px-3.5 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/70 text-cyan-400/90 hover:text-cyan-300 font-bold transition-all duration-200 flex items-center gap-3 hover:translate-x-[-2px]">
+                <div class="w-6 h-6 rounded-lg bg-cyan-500/15 flex items-center justify-center text-cyan-400 shrink-0">
+                  <i class="fa-solid fa-ship text-xs"></i>
+                </div>
+                <span>الاستيراد والتصدير</span></button>
               <button id="tab-admin-transfers" onclick="window.switchAdminTab('transfers')"
                 class="admin-tab-btn w-full px-3.5 py-2.5 rounded-xl border border-transparent hover:bg-slate-900/70 text-slate-400 hover:text-white font-bold transition-all duration-200 flex items-center gap-3 hover:translate-x-[-2px]">
                 <div class="w-6 h-6 rounded-lg bg-slate-800/60 flex items-center justify-center text-slate-400 group-hover:text-white shrink-0">
@@ -1143,6 +1151,58 @@
                     <td colspan="5" class="py-6 text-center text-slate-500 font-sans">لا توجد حسابات مشبوهة مرصودة حالياً. السيرفر آمن تماماً!</td></tr></tbody></table></div></div></div></div>
 
       <!-- 2. PANEL PLAYERS -->
+      
+      <!-- PANEL TRADE (MAIN ADMIN HUB) -->
+      <div id="admin-subpanel-trade" class="hidden space-y-4">
+        <!-- Header & Quick Player Selector -->
+        <div class="glass-panel p-4 sm:p-5 rounded-2xl border border-cyan-500/40 bg-gradient-to-l from-slate-900 via-slate-900/90 to-cyan-950/40 shadow-xl space-y-4">
+          <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-3 border-b border-slate-800 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400 text-lg shadow-md shrink-0">
+                <i class="fa-solid fa-ship"></i>
+              </div>
+              <div>
+                <h3 class="text-sm sm:text-base font-black text-white flex items-center gap-2">
+                  <span>مركز مراقبة الاستيراد والتصدير والمستودعات الجمركية</span>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">مباشر</span>
+                </h3>
+                <p class="text-[11px] text-slate-400">فحص شامل لسعة المستودعات، البضائع المحتجزة والجاهزة، شحنات الاستيراد الدولية، وعقود التصدير لأي لاعب</p>
+              </div>
+            </div>
+            <div class="flex items-center gap-2">
+              <button onclick="window.switchAdminTab('players')" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer">
+                <i class="fa-solid fa-users text-yellow-400"></i>
+                <span>دليل اللاعبين</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Select Player Bar -->
+          <div class="p-3 bg-slate-950/70 border border-slate-800 rounded-xl flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <span class="text-xs font-bold text-slate-300 shrink-0 flex items-center gap-1.5">
+              <i class="fa-solid fa-user-tag text-cyan-400"></i>
+              <span>اختر اللاعب للمراقبة الفورية:</span>
+            </span>
+            <select id="admin-main-trade-player-select" onchange="window.adminMainTradeSelectPlayer(this.value)" class="flex-1 bg-slate-900 border border-slate-700 text-slate-200 p-2 rounded-lg text-xs font-bold focus:outline-none focus:border-cyan-500">
+              <option value="">اختر لاعباً لعرض مستودعه وشحناته بالتفصيل...</option>
+            </select>
+            <button onclick="window.adminMainTradeSelectCurrent()" class="px-3 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition shrink-0 flex items-center justify-center gap-1.5 shadow-md shadow-cyan-600/20 cursor-pointer">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <span>فحص الحساب المختار</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- In-Hub Trade Card Container -->
+        <div id="admin-main-trade-target-container" class="space-y-4">
+          <div class="glass-panel p-8 rounded-2xl border border-slate-800 text-center space-y-3">
+            <i class="fa-solid fa-boxes-packing text-4xl text-slate-600"></i>
+            <div class="text-sm font-bold text-slate-300">اختر لاعباً من القائمة أعلاه أو من جدول اللاعبين لمعاينة عملياته التجارية بالتفصيل.</div>
+            <p class="text-xs text-slate-500 max-w-md mx-auto">يمكنك أيضاً النقر على زر <span class="text-cyan-400 font-bold">[استيراد]</span> الموجود بجانب أي لاعب في جدول اللاعبين لفتح مستودعه فوراً.</p>
+          </div>
+        </div>
+      </div>
+
       <div id="admin-subpanel-players" class="hidden space-y-4">
         <!-- Season 1 Top 10 Badges Granter Quick Action Banner -->
         <div class="p-3.5 bg-gradient-to-r from-amber-950/70 via-slate-900/95 to-amber-950/70 border border-amber-500/40 rounded-2xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 shadow-lg shadow-amber-500/5">
@@ -4784,9 +4844,9 @@
   <div id="toast-container" class="fixed top-4 left-4 z-[9999] flex flex-col gap-2 pointer-events-none"></div>
 
   <!-- Core Modules -->
-  <script src="game.js?v=v10.0.22"></script>
-  <script src="db.js?v=v10.0.22"></script>
-  <script src="admin-panel.js?v=v10.0.22"></script>
+  <script src="game.js?v=v10.0.23"></script>
+  <script src="db.js?v=v10.0.23"></script>
+  <script src="admin-panel.js?v=v10.0.23"></script>
 
   <!-- Standalone Admin Controller Script -->
   <script>
