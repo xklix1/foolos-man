@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.24",
-  "build": 1792268033143,
-  "timestamp": 1792268033143,
-  "notes": "Staff Portal Trade Hub & Authoritative Net Worth v10.0.24: Added Trade & Cargo inspection tab to v-98x3p7q2m1k4.html and unconditional authoritative net worth engine.",
-  "releaseNotes": "تحديث v10.0.24: إضافة تبويب الاستيراد والتصدير في بوابة الرقابة والتفتيش (v-98x3p7q2m1k4.html) وتحديث محرك حساب صافي الثروة الشامل لجميع اللاعبين فورياً."
+  "version": "v10.0.25",
+  "build": 1792269169774,
+  "timestamp": 1792269169774,
+  "notes": "Fix Moderator Search: Import calculateNetWorth in moderator-routes.js with try/catch safeguard.",
+  "releaseNotes": "إصلاح بحث قائمة اللاعبين في لوحة الرقابة وإضافة دالة حساب الثروة الشاملة بأمان تام."
 }

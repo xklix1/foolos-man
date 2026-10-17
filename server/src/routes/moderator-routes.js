@@ -11,6 +11,7 @@ const { BUSINESSES, ASSETS, CAR_TEMPLATES } = require('../engine/definitions');
 const { calculateSingleBusinessProfit } = require('../engine/business-engine');
 const { sanitizePlayerState } = require('../engine/state-sanitizer');
 const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-engine');
+const { calculateNetWorth } = require('../engine/net-worth-engine');
 const { AIRCRAFT_MODELS, AIRPORT_FACILITIES, CONTROL_TOWER_CONFIG, calculateDutyFreeAccumulated, calculateTransitAccumulated } = require('../engine/airport-engine');
 
 const CHAT_IMAGES_DIR = path.resolve(__dirname, '../../../uploads/chat_images');
@@ -686,7 +687,12 @@ async function moderatorRoutes(fastify, options) {
         }
 
         // Unconditionally compute authoritative net worth so offline players never show just cash or 0
-        const searchComputedWorth = calculateNetWorth(state);
+        let searchComputedWorth = 0;
+        try {
+          searchComputedWorth = calculateNetWorth(state);
+        } catch (errNW) {
+          console.warn('[Search NetWorth Error]:', errNW.message);
+        }
         const searchEffectiveNetWorth = Math.max(
           Number(searchComputedWorth || 0),
           (Number(state.cash || 0) + Number(state.bank || 0)),
@@ -806,7 +812,12 @@ async function moderatorRoutes(fastify, options) {
       }
 
       // Unconditionally compute authoritative total net worth (Liquid + Real Estate + Cars + Stocks + Industry + Trade + Farm + Airport - Loans)
-      const authoritativeNetWorth = calculateNetWorth(liveState);
+      let authoritativeNetWorth = 0;
+      try {
+        authoritativeNetWorth = calculateNetWorth(liveState);
+      } catch (errNW) {
+        console.warn('[Inspect NetWorth Error]:', errNW.message);
+      }
       const effectiveNetWorth = Math.max(
         Number(authoritativeNetWorth || 0),
         (Number(liveState.cash || 0) + Number(liveState.bank || 0)),
