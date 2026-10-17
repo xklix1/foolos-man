@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.26",
-  "build": 1792270602600,
-  "timestamp": 1792270602600,
-  "notes": "Fix Bank Race Condition & Ghost Cash Duplication: Strict 15s bank sync lock, authoritative server reconciliation, and removal of client wealth tolerance bypass.",
-  "releaseNotes": "إصلاح سباق عمليات البنك (Race Condition) ومنع ظهور الكاش بعد الإيداع، وتأكيد السلطة المطلقة للسيرفر على أرصدة البنك والكاش."
+  "version": "v10.0.27",
+  "build": 1792272388840,
+  "timestamp": 1792272388840,
+  "notes": "Fix Airport Speedup & Flight Claim: Immediate zero-landing speedup with gold, 15s authoritative server cash earn lock, prevent client sync from rolling back flight profits, and preserve in-flight fleet against stale client syncs.",
+  "releaseNotes": "إصلاح تسريع طائرات المطار بالذهب فورياً وضمان احتساب وإيداع أرباح الرحلات بدقة 100% ومنع مسحها بواسطة المزامنة الخلفية."
 }

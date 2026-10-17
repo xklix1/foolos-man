@@ -383,6 +383,7 @@ var ServerBridge = (() => {
         if (res.cash !== undefined) s.cash = res.cash;
         if (res.bank !== undefined) s.bank = res.bank;
         if (res.dirtyCash !== undefined) s.dirtyCash = res.dirtyCash;
+        if (res.gold !== undefined) s.gold = res.gold;
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
         if (res.title !== undefined) s.title = res.title;
         if (res.xp !== undefined) s.xp = res.xp;
@@ -580,6 +581,7 @@ var ServerBridge = (() => {
   }
 
   let _lastBankActionTimestamp = 0;
+  let _lastServerEarnTimestamp = 0;
   let _isBankActionInProgress = false;
 
   function getBankCooldownRemaining() {
@@ -736,9 +738,11 @@ var ServerBridge = (() => {
           const nowMs = Date.now();
           const isRecentSpend = (nowMs - _lastLocalSpendTimestamp) < 15000;
           const isRecentBankAction = (nowMs - _lastBankActionTimestamp) < 15000;
+          const isRecentServerEarn = (nowMs - _lastServerEarnTimestamp) < 15000;
 
-          if (isRecentBankAction) {
-            // When a bank action occurred recently, the bankAction response already set the exact authoritative balances.
+          if (isRecentBankAction || isRecentServerEarn) {
+            // When an authoritative bank or cash-earning action occurred recently,
+            // the response already set the exact authoritative balances.
             // Under NO circumstance allow an in-flight background sync response to roll back cash or bank!
           } else {
             if (res.authoritativeState.cash !== undefined) {
@@ -1107,10 +1111,19 @@ var ServerBridge = (() => {
     const user = _activeUsername || (typeof GameEngine !== 'undefined' && GameEngine.state && GameEngine.state.username);
     if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
     const token = resolveEffectiveToken(user);
-    return await _post('/api/airport/speedup-flight', {
+    const res = await _post('/api/airport/speedup-flight', {
       username: user,
       token,
       planeId
+    });
+    _lastServerEarnTimestamp = Date.now();
+    _lastBankActionTimestamp = Date.now();
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.gold !== undefined) s.gold = r.gold;
+      if (r.airport) s.airport = r.airport;
+      if (typeof window.AirportUI !== 'undefined' && window.AirportUI.renderAirportPanel) {
+        try { window.AirportUI.renderAirportPanel(); } catch (_) {}
+      }
     });
   }
 
@@ -1123,7 +1136,11 @@ var ServerBridge = (() => {
       token,
       planeId
     });
+    _lastServerEarnTimestamp = Date.now();
+    _lastBankActionTimestamp = Date.now();
     return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.cash !== undefined) s.cash = r.cash;
+      if (r.xp !== undefined) s.xp = r.xp;
       if (r.airport) s.airport = r.airport;
       if (typeof window.AirportUI !== 'undefined' && window.AirportUI.renderAirportPanel) {
         try { window.AirportUI.renderAirportPanel(); } catch (_) {}

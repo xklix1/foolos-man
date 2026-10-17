@@ -236,7 +236,13 @@ class SessionManager {
       (Date.now() - session.lastServerCashSpendAt < 15000) &&
       (incomingCash > s.cash)
     );
-    const isClientStale = (sessionAdminTs > 0 && clientAdminTs < sessionAdminTs) || hasRecentBankAction || hasRecentServerCashSpend;
+    const hasRecentServerCashEarn = Boolean(
+      (session.lastServerCashEarnAt && (Date.now() - session.lastServerCashEarnAt < 15000)) ||
+      (s.lastServerCashEarnAt && (Date.now() - s.lastServerCashEarnAt < 15000)) ||
+      (session.lastServerAirportActionAt && (Date.now() - session.lastServerAirportActionAt < 15000)) ||
+      (s.lastServerAirportActionAt && (Date.now() - s.lastServerAirportActionAt < 15000))
+    );
+    const isClientStale = (sessionAdminTs > 0 && clientAdminTs < sessionAdminTs) || hasRecentBankAction || hasRecentServerCashSpend || hasRecentServerCashEarn;
     // CRITICAL SECURITY ENFORCEMENT:
     // Client sync payloads CANNOT grant themselves admin authority via timestamps or spoofed flags.
     // isAdminGrant is ONLY valid when explicitly invoked from an authenticated server admin context.
@@ -280,9 +286,9 @@ class SessionManager {
         console.warn(`[Security Alert] Crushed unauthorized client bank inflation attempt for "${username}": Server=${currentBank.toLocaleString()} vs Injected=${incomingBank.toLocaleString()} (+${(incomingBank - currentBank).toLocaleString()})`);
       }
 
-      // (b) Cash Balance: Strictly preserve server cash during bank operations or server spends
+      // (b) Cash Balance: Strictly preserve server cash during bank operations, server spends, or authoritative earnings
       const currentCash = Number(s.cash || 0);
-      if (hasRecentBankAction || hasRecentServerCashSpend) {
+      if (hasRecentBankAction || hasRecentServerCashSpend || hasRecentServerCashEarn) {
         // Authoritative server balance is strictly locked against client sync interference
       } else if (incomingCash > currentCash) {
         console.warn(`[Security Alert] Crushed unauthorized client cash inflation attempt for "${username}": Server=${currentCash.toLocaleString()} vs Injected=${incomingCash.toLocaleString()} (+${(incomingCash - currentCash).toLocaleString()})`);
@@ -422,17 +428,34 @@ class SessionManager {
                     return;
                   }
 
-                  const sLaunch = sFlight ? Number(sFlight.launchTime || 0) : 0;
-                  if (Number(cFlight.launchTime) > sLaunch || (sPlane.status === 'idle' && !isLanded)) {
-                    sPlane.status = 'in_flight';
-                    sPlane.activeFlight = JSON.parse(JSON.stringify(cFlight));
-                    sPlane.currentFlight = JSON.parse(JSON.stringify(cFlight));
+                  // If server plane has already been sped up (landingTime === 0 or isLanded === true), NEVER overwrite it with an older in-air client landingTime!
+                  const sIsSpedUp = sFlight && (Number(sFlight.landingTime || 0) === 0 || sFlight.isLanded === true);
+                  if (sIsSpedUp) {
+                    sPlane.activeFlight.landingTime = 0;
+                    sPlane.activeFlight.isLanded = true;
+                    if (sPlane.currentFlight) {
+                      sPlane.currentFlight.landingTime = 0;
+                      sPlane.currentFlight.isLanded = true;
+                    }
+                  } else {
+                    const sLaunch = sFlight ? Number(sFlight.launchTime || 0) : 0;
+                    if (Number(cFlight.launchTime) > sLaunch || (sPlane.status === 'idle' && !isLanded)) {
+                      sPlane.status = 'in_flight';
+                      sPlane.activeFlight = JSON.parse(JSON.stringify(cFlight));
+                      sPlane.currentFlight = JSON.parse(JSON.stringify(cFlight));
+                    }
                   }
                 } else if (cPlane.status === 'idle') {
                   if (sPlane.status === 'in_flight') {
-                    sPlane.status = 'idle';
-                    sPlane.activeFlight = null;
-                    sPlane.currentFlight = null;
+                    // Only transition server plane to idle if this flight was genuinely claimed in claimedIds or lastClaimedFlightId!
+                    const sFlight = sPlane.activeFlight || sPlane.currentFlight;
+                    const sFlightId = sFlight && (sFlight.flightId || ('flt_' + sPlane.id + '_' + sFlight.launchTime));
+                    if (sFlightId && (claimedIds.includes(sFlightId) || sPlane.lastClaimedFlightId === sFlightId)) {
+                      sPlane.status = 'idle';
+                      sPlane.activeFlight = null;
+                      sPlane.currentFlight = null;
+                    }
+                    // NEVER wipe an actively flying server flight to idle from a stale client sync!
                   }
                 }
                 sPlane.totalFlights = Math.max(Number(sPlane.totalFlights) || 0, Number(cPlane.totalFlights) || 0);

@@ -827,8 +827,8 @@ window.AirportUI = (() => {
     const isFlight = plane.status === 'in_flight' && Boolean(flight.launchTime || flight.destinationName);
     const now = getTrustedNow();
     const landingTime = Number(flight.landingTime || 0);
-    const isLanded = isFlight && (now >= landingTime);
-    const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
+    const isLanded = isFlight && (landingTime === 0 || now >= landingTime || flight.isLanded === true);
+    const remSec = (landingTime === 0 || flight.isLanded) ? 0 : Math.max(0, Math.ceil((landingTime - now) / 1000));
     const currentSpeedupCost = Math.max(1, Math.ceil(remSec / 600));
 
     // Calculate initial preview economics for the default destination
@@ -882,7 +882,7 @@ window.AirportUI = (() => {
             <div class="space-y-1.5">
               <div class="flex justify-between text-[11px] font-bold">
                 <span class="text-slate-400">حالة الرحلة:</span>
-                <span id="timer-${plane.id}" class="text-sky-400 font-black numbers-font" data-landing="${landingTime}">
+                <span id="timer-${plane.id}" class="${isLanded ? 'text-emerald-400' : 'text-sky-400'} font-black numbers-font" data-landing="${landingTime}" data-landed="${isLanded ? 'true' : 'false'}">
                   ${isLanded ? ' وصلت الوجهة!' : `متبقي: ${formatSeconds(remSec)}`}
                 </span>
               </div>
@@ -1623,11 +1623,12 @@ window.AirportUI = (() => {
 
     timerEls.forEach(el => {
       const landingTime = Number(el.getAttribute('data-landing') || 0);
+      const isLandedAttr = el.getAttribute('data-landed') === 'true';
       const planeId = el.id.replace('timer-', '');
-      const remSec = Math.max(0, Math.ceil((landingTime - now) / 1000));
+      const remSec = (landingTime === 0 || isLandedAttr) ? 0 : Math.max(0, Math.ceil((landingTime - now) / 1000));
       const bar = document.getElementById(`bar-${planeId}`);
 
-      if (remSec <= 0) {
+      if (remSec <= 0 || landingTime === 0 || isLandedAttr) {
         el.textContent = ' وصلت الوجهة!';
         el.classList.add('text-emerald-400');
         el.classList.remove('text-sky-400');
@@ -2106,19 +2107,23 @@ window.AirportUI = (() => {
           if (updatedPlane && res.plane) {
             updatedPlane.activeFlight = res.plane.activeFlight;
             updatedPlane.currentFlight = res.plane.activeFlight;
+            if (updatedPlane.activeFlight) {
+              updatedPlane.activeFlight.landingTime = 0;
+              updatedPlane.activeFlight.isLanded = true;
+            }
           }
 
           if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
             window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
           }
+          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+          if (typeof window.UI !== 'undefined' && typeof window.UI.renderStatsBar === 'function') window.UI.renderStatsBar();
           persistGameState();
           if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
             window.GameEngine.recordPlayerActivity('تسريع رحلة طائرة ', `تسريع فوري لهبوط طائرة (${plane.customName || planeId}) بالمطار مقابل ${costGold} سبيكة ذهب`, 'business');
           }
           showAirportToast(res.message || ' تم تسريع الرحلة وهبوط الطائرة فوراً بنجاح!', 'success');
-          if (!updatePlaneCardDOM(planeId)) {
-            renderAirportPanel();
-          }
+          renderAirportPanel();
           return;
         } else {
           showAirportToast(res?.error || 'تعذر تسريع الرحلة', 'error');
@@ -2228,9 +2233,7 @@ window.AirportUI = (() => {
           }
           showAirportToast(res.message || ' تم تحصيل عوائد الرحلة بنجاح!', 'success');
           _claimingPlanes.delete(planeId);
-          if (!updatePlaneCardDOM(planeId)) {
-            renderAirportPanel();
-          }
+          renderAirportPanel();
           return;
         } else {
           throw new Error((res && res.error) || 'فشل التحقق من السيرفر');
@@ -2240,7 +2243,7 @@ window.AirportUI = (() => {
         const errMsg = err?.message || String(err || '');
 
         // If the server rejected because it was already claimed, clean up state immediately!
-        if (errMsg.includes('مسبقاً') || errMsg.includes('بالفعل') || err.alreadyClaimed || errMsg.includes('لا توجد رحلة جاهزة')) {
+        if (errMsg.includes('مسبقاً') || errMsg.includes('بالفعل') || err.alreadyClaimed) {
           if (!ap.claimedFlightIds.includes(flightId)) ap.claimedFlightIds.push(flightId);
           plane.lastClaimedFlightId = flightId;
           plane.status = 'idle';
@@ -2248,9 +2251,30 @@ window.AirportUI = (() => {
           plane.activeFlight = null;
           persistGameState();
           showAirportToast(' عوائد هذه الرحلة تم تحصيلها وتحديث رصيدك بالفعل.', 'info');
-          if (!updatePlaneCardDOM(planeId)) {
-            renderAirportPanel();
+          renderAirportPanel();
+          return;
+        }
+
+        // If server says flight was missing/idle on server, credit flight earnings to player so hard-earned profits are NEVER lost!
+        if (errMsg.includes('لا توجد رحلة جاهزة')) {
+          console.warn('[AirportUI] Server plane was idle/missing active flight, reconciling flight revenue locally...');
+          const grossRev = Number(f.grossRevenue || f.expectedProfit || 0);
+          const xp = Number(f.expectedXp || 50);
+          liveState.cash = (Number(liveState.cash) || 0) + grossRev;
+          liveState.xp = (Number(liveState.xp) || 0) + xp;
+          if (!ap.claimedFlightIds.includes(flightId)) ap.claimedFlightIds.push(flightId);
+          plane.lastClaimedFlightId = flightId;
+          plane.status = 'idle';
+          plane.currentFlight = null;
+          plane.activeFlight = null;
+          if (typeof window.AppDB !== 'undefined' && typeof window.AppDB.setEncryptedLocalState === 'function' && liveState.username) {
+            window.AppDB.setEncryptedLocalState(`rasalmal_state_${liveState.username}`, liveState);
           }
+          if (typeof window.renderStatsBar === 'function') window.renderStatsBar();
+          if (typeof window.UI !== 'undefined' && typeof window.UI.renderStatsBar === 'function') window.UI.renderStatsBar();
+          persistGameState();
+          showAirportToast(` هبطت الرحلة بنجاح! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م و +${xp} XP`, 'success');
+          renderAirportPanel();
           return;
         }
 

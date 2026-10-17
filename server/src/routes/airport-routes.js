@@ -465,11 +465,20 @@ async function airportRoutes(fastify, options) {
     }
 
     s.gold = curGold - goldCost;
-    // Set landing time to past so it can be claimed immediately
-    plane.activeFlight.landingTime = Date.now() - 1000;
+    // Set landing time to 0 & isLanded = true so it lands immediately across all devices, clocks, and timezones!
+    plane.activeFlight.landingTime = 0;
+    plane.activeFlight.isLanded = true;
     plane.activeFlight.speedupGold = goldCost;
+    plane.currentFlight = plane.activeFlight;
+
+    // Protect session against stale client sync rollbacks
+    session.lastServerAirportActionAt = Date.now();
+    session.lastServerCashEarnAt = Date.now();
+    session.lastServerBankActionAt = Date.now();
+    s.lastServerAirportActionAt = Date.now();
     s.lastActiveTimestamp = Date.now();
     s.lastSeen = Date.now();
+    session.dirty = true;
 
     await dbService.savePlayerState(session.username, s);
 
@@ -530,16 +539,29 @@ async function airportRoutes(fastify, options) {
         });
       }
 
-      // Server-authoritative time check
-      if (now < Number(flight.landingTime || 0)) {
-        const remSec = Math.ceil((Number(flight.landingTime) - now) / 1000);
+      // Server-authoritative time check (landingTime 0 or isLanded true means immediate arrival)
+      const landingTime = Number(flight.landingTime || 0);
+      if (landingTime > 0 && !flight.isLanded && now < landingTime) {
+        const remSec = Math.ceil((landingTime - now) / 1000);
         return reply.code(400).send({
           error: ` الطائرة لا تزال في الجو! متبقي على الهبوط: ${remSec} ثانية.`
         });
       }
 
-      const profit = Number(flight.expectedProfit || 0);
-      const xpGain = Number(flight.expectedXp || 0);
+      // Robust profit calculation: ensure gross ticket revenue is credited even if expectedProfit was unpopulated
+      const grossRev = Number(flight.grossRevenue || flight.expectedProfit || 0);
+      let profit = grossRev;
+      if (profit <= 0) {
+        try {
+          const model = AIRCRAFT_MODELS[plane.modelId] || AIRCRAFT_MODELS.cessna_sky;
+          const dest = FLIGHT_DESTINATIONS[flight.destinationId] || FLIGHT_DESTINATIONS['cairo_riyadh'];
+          const eco = calculateFlightEconomics(model, dest, s.airport);
+          profit = Number(eco.grossRevenue) || 100000;
+        } catch (_) {
+          profit = 100000;
+        }
+      }
+      const xpGain = Number(flight.expectedXp || 50);
 
       s.cash = Math.max(0, Number(s.cash || 0)) + profit;
       s.xp = Math.max(0, Number(s.xp || 0)) + xpGain;
@@ -560,6 +582,13 @@ async function airportRoutes(fastify, options) {
       plane.activeFlight = null;
       plane.currentFlight = null;
       session.dirty = true;
+
+      // Authoritative 15s session lock to strictly prevent background client sync from wiping flight earnings
+      session.lastServerCashEarnAt = Date.now();
+      session.lastServerAirportActionAt = Date.now();
+      session.lastServerBankActionAt = Date.now();
+      s.lastServerCashEarnAt = Date.now();
+      s.lastServerAirportActionAt = Date.now();
 
       s.netWorth = calculateNetWorth(s);
       s.title = getAppropriateTitle(s.netWorth, s.xp);
@@ -635,6 +664,12 @@ async function airportRoutes(fastify, options) {
       s.airport.lastDutyFreeCollectionAt = now;
       if (!s.airport.stats) s.airport.stats = {};
       s.airport.stats.totalDutyFreeCollected = (Number(s.airport.stats.totalDutyFreeCollected) || 0) + dutyFreeEarnings;
+
+      session.lastServerCashEarnAt = Date.now();
+      session.lastServerAirportActionAt = Date.now();
+      session.lastServerBankActionAt = Date.now();
+      s.lastServerCashEarnAt = Date.now();
+      s.lastServerAirportActionAt = Date.now();
 
       s.netWorth = calculateNetWorth(s);
       s.lastActiveTimestamp = Date.now();
