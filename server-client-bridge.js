@@ -579,34 +579,62 @@ var ServerBridge = (() => {
     return _reconcileGenericActionResponse(res);
   }
 
+  let _lastBankActionTimestamp = 0;
+  let _isBankActionInProgress = false;
+
+  function getBankCooldownRemaining() {
+    const elapsed = Date.now() - _lastBankActionTimestamp;
+    if (elapsed < 5000) {
+      return Math.ceil((5000 - elapsed) / 1000);
+    }
+    return 0;
+  }
+
   /**
-   * Bank deposit or withdrawal
+   * Bank deposit or withdrawal with 5s Cooldown & In-Flight Protection
    */
   async function bankAction(type, amount, isAll = false) {
     if (!_isServerOnline || !_activeUsername) return null;
-    const res = await _post('/api/action/bank', {
-      username: _activeUsername,
-      type,
-      amount,
-      isAll: isAll || amount === 'all'
-    });
-    return _reconcileGenericActionResponse(res, (s, r) => {
-      if (r && r.success && typeof GameEngine !== 'undefined' && typeof GameEngine.recordPlayerActivity === 'function') {
-        const amtVal = Number(r.amount || amount || 0);
-        GameEngine.recordPlayerActivity(
-          r.type === 'deposit' ? 'إيداع بنكي' : 'سحب بنكي',
-          r.type === 'deposit'
-            ? `إيداع نقدي بقيمة ${amtVal.toLocaleString()} ج.م في الحساب المصرفي`
-            : `سحب نقدي بقيمة ${amtVal.toLocaleString()} ج.م من الحساب المصرفي`,
-          'banking',
-          {
-            amount: r.type === 'deposit' ? amtVal : -amtVal,
-            cash: s.cash,
-            bank: s.bank
-          }
-        );
+    if (_isBankActionInProgress) {
+      throw new Error('يوجد عملية مصرفية قيد المعالجة حالياً، يرجى الانتظار...');
+    }
+    const elapsed = Date.now() - _lastBankActionTimestamp;
+    if (elapsed < 5000) {
+      const waitSec = Math.ceil((5000 - elapsed) / 1000);
+      throw new Error(`فترة تهدئة مصرفية: يرجى الانتظار ${waitSec} ثوانٍ قبل تنفيذ عملية أخرى.`);
+    }
+
+    _isBankActionInProgress = true;
+    try {
+      const res = await _post('/api/action/bank', {
+        username: _activeUsername,
+        type,
+        amount,
+        isAll: isAll || amount === 'all'
+      });
+      if (res && res.success) {
+        _lastBankActionTimestamp = Date.now();
       }
-    });
+      return _reconcileGenericActionResponse(res, (s, r) => {
+        if (r && r.success && typeof GameEngine !== 'undefined' && typeof GameEngine.recordPlayerActivity === 'function') {
+          const amtVal = Number(r.amount || amount || 0);
+          GameEngine.recordPlayerActivity(
+            r.type === 'deposit' ? 'إيداع بنكي' : 'سحب بنكي',
+            r.type === 'deposit'
+              ? `إيداع نقدي بقيمة ${amtVal.toLocaleString()} ج.م في الحساب المصرفي`
+              : `سحب نقدي بقيمة ${amtVal.toLocaleString()} ج.م من الحساب المصرفي`,
+            'banking',
+            {
+              amount: r.type === 'deposit' ? amtVal : -amtVal,
+              cash: s.cash,
+              bank: s.bank
+            }
+          );
+        }
+      });
+    } finally {
+      _isBankActionInProgress = false;
+    }
   }
 
   /**
@@ -1637,6 +1665,7 @@ var ServerBridge = (() => {
     deductCasinoBet,
     settleCasinoPayout,
     bankAction,
+    getBankCooldownRemaining,
     claimBankInterest,
     changePin,
     executeWireTransfer,

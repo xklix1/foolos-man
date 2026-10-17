@@ -5467,10 +5467,77 @@ const UIController = (() => {
       });
     }
 
-    // Bank Actions (Depositing)
+    // Bank Actions with 5s Cooldown & Universal Lockout
+    let _bankCooldownTimer = null;
+    let _bankCooldownRemaining = 0;
+
+    function triggerBankCooldown(durationSec = 5) {
+      if (_bankCooldownTimer) clearInterval(_bankCooldownTimer);
+      _bankCooldownRemaining = durationSec;
+
+      const dBtn = document.getElementById('btn-bank-deposit');
+      const wBtn = document.getElementById('btn-bank-withdraw');
+      const presetBtns = document.querySelectorAll('.bank-preset');
+
+      if (dBtn && !dBtn.dataset.origText) dBtn.dataset.origText = dBtn.innerHTML;
+      if (wBtn && !wBtn.dataset.origText) wBtn.dataset.origText = wBtn.innerHTML;
+
+      const updateUI = (rem) => {
+        if (dBtn) {
+          dBtn.disabled = true;
+          dBtn.classList.add('opacity-60', 'cursor-not-allowed');
+          dBtn.innerHTML = `<i class="fa-solid fa-hourglass-half fa-spin text-xs"></i> انتظر (${rem}s)...`;
+        }
+        if (wBtn) {
+          wBtn.disabled = true;
+          wBtn.classList.add('opacity-60', 'cursor-not-allowed');
+          wBtn.innerHTML = `<i class="fa-solid fa-hourglass-half fa-spin text-xs"></i> انتظر (${rem}s)...`;
+        }
+        presetBtns.forEach(btn => {
+          btn.disabled = true;
+          btn.classList.add('opacity-50', 'pointer-events-none');
+        });
+      };
+
+      updateUI(_bankCooldownRemaining);
+
+      _bankCooldownTimer = setInterval(() => {
+        _bankCooldownRemaining--;
+        if (_bankCooldownRemaining <= 0) {
+          clearInterval(_bankCooldownTimer);
+          _bankCooldownTimer = null;
+          _bankCooldownRemaining = 0;
+
+          if (dBtn) {
+            dBtn.disabled = false;
+            dBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            dBtn.innerHTML = dBtn.dataset.origText || 'إيداع نقدية';
+          }
+          if (wBtn) {
+            wBtn.disabled = false;
+            wBtn.classList.remove('opacity-60', 'cursor-not-allowed');
+            wBtn.innerHTML = wBtn.dataset.origText || 'سحب نقدية';
+          }
+          presetBtns.forEach(btn => {
+            btn.disabled = false;
+            btn.classList.remove('opacity-50', 'pointer-events-none');
+          });
+        } else {
+          updateUI(_bankCooldownRemaining);
+        }
+      }, 1000);
+    }
+
     const depositBtn = document.getElementById('btn-bank-deposit');
+    const withdrawBtn = document.getElementById('btn-bank-withdraw');
+
     if (depositBtn) {
       depositBtn.addEventListener('click', async () => {
+        if (_bankCooldownRemaining > 0) {
+          showToast('فترة تهدئة مصرفية', `يرجى الانتظار ${_bankCooldownRemaining} ثوانٍ قبل تنفيذ عملية مصرفية أخرى.`, 'warning');
+          return;
+        }
+
         const input = document.getElementById('bank-amount-input');
         const inputVal = parseFloat(input.value);
         const currentCash = Number(GameEngine.state.cash || 0);
@@ -5482,6 +5549,8 @@ const UIController = (() => {
           if (!isExplicitAll && currentCash < val) throw new Error("رصيدك النقدي (الكاش) لا يكفي لإتمام هذا الإيداع.");
 
           depositBtn.disabled = true;
+          if (withdrawBtn) withdrawBtn.disabled = true;
+
           if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
             throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
           }
@@ -5494,7 +5563,6 @@ const UIController = (() => {
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
 
-              // Record player activity in audit log
               if (typeof GameEngine.recordPlayerActivity === 'function') {
                 GameEngine.recordPlayerActivity(
                   'إيداع بنكي',
@@ -5514,21 +5582,33 @@ const UIController = (() => {
             input.value = '';
             showToast('إيداع بنكي', `تم إيداع ${amtVal.toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
             renderAll();
+            triggerBankCooldown(5);
             return;
           } else if (res && res.error) {
+            if (res.cooldownRemaining) triggerBankCooldown(res.cooldownRemaining);
             throw new Error(res.error);
           }
         } catch (err) {
           showToast('فشل الإيداع', err.message, 'error');
+          if (err.message && err.message.includes('تهدئة')) {
+            triggerBankCooldown(5);
+          }
         } finally {
-          depositBtn.disabled = false;
+          if (_bankCooldownRemaining <= 0) {
+            depositBtn.disabled = false;
+            if (withdrawBtn) withdrawBtn.disabled = false;
+          }
         }
       });
     }
 
-    const withdrawBtn = document.getElementById('btn-bank-withdraw');
     if (withdrawBtn) {
       withdrawBtn.addEventListener('click', async () => {
+        if (_bankCooldownRemaining > 0) {
+          showToast('فترة تهدئة مصرفية', `يرجى الانتظار ${_bankCooldownRemaining} ثوانٍ قبل تنفيذ عملية مصرفية أخرى.`, 'warning');
+          return;
+        }
+
         const input = document.getElementById('bank-amount-input');
         const inputVal = parseFloat(input.value);
         const currentBank = Number(GameEngine.state.bank || 0);
@@ -5540,6 +5620,8 @@ const UIController = (() => {
           if (!isExplicitAll && currentBank < val) throw new Error("رصيدك في حساب البنك لا يكفي لإتمام هذا السحب.");
 
           withdrawBtn.disabled = true;
+          if (depositBtn) depositBtn.disabled = true;
+
           if (!window.ServerBridge || !window.ServerBridge.isServerOnline()) {
             throw new Error("العمليات المصرفية تتطلب اتصالاً بالإنترنت لتأكيد الرصيد وضمان الحفظ.");
           }
@@ -5552,7 +5634,6 @@ const UIController = (() => {
               if (res.bank !== undefined) s.bank = res.bank;
               if (res.netWorth !== undefined) s.netWorth = res.netWorth;
 
-              // Record player activity in audit log
               if (typeof GameEngine.recordPlayerActivity === 'function') {
                 GameEngine.recordPlayerActivity(
                   'سحب بنكي',
@@ -5572,14 +5653,22 @@ const UIController = (() => {
             input.value = '';
             showToast('سحب بنكي', `تم سحب ${amtVal.toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
             renderAll();
+            triggerBankCooldown(5);
             return;
           } else if (res && res.error) {
+            if (res.cooldownRemaining) triggerBankCooldown(res.cooldownRemaining);
             throw new Error(res.error);
           }
         } catch (err) {
           showToast('فشل السحب', err.message, 'error');
+          if (err.message && err.message.includes('تهدئة')) {
+            triggerBankCooldown(5);
+          }
         } finally {
-          withdrawBtn.disabled = false;
+          if (_bankCooldownRemaining <= 0) {
+            withdrawBtn.disabled = false;
+            if (depositBtn) depositBtn.disabled = false;
+          }
         }
       });
     }

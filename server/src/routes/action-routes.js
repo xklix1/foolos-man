@@ -483,12 +483,36 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     };
   });
 
-  // 5. POST /api/action/bank (Bank Deposit / Withdrawal)
+  // 5. POST /api/action/bank (Bank Deposit / Withdrawal with 5s Cooldown & Atomic Mutex)
   fastify.post('/api/action/bank', async (request, reply) => {
     const session = await resolveSession(request, reply);
     if (!session) return;
 
-    const { type, amount, isAll } = request.body || {};
+    // 1. Atomic Mutex Lock: Reject concurrent requests for the same user session
+    if (session._bankOperationLock) {
+      return reply.code(429).send({
+        error: 'يوجد عملية مصرفية قيد المعالجة حالياً، يرجى الانتظار ثوانٍ...',
+        code: 'BANK_BUSY'
+      });
+    }
+
+    // 2. Strict 5-Second Cooldown between consecutive bank operations
+    const nowMs = Date.now();
+    const timeSinceLast = nowMs - (session.lastServerBankActionAt || 0);
+    const BANK_COOLDOWN_MS = 5000;
+
+    if (timeSinceLast < BANK_COOLDOWN_MS) {
+      const remainingSec = Math.ceil((BANK_COOLDOWN_MS - timeSinceLast) / 1000);
+      return reply.code(429).send({
+        error: `فترة تهدئة مصرفية: يرجى الانتظار ${remainingSec} ثوانٍ قبل تنفيذ عملية مصرفية أخرى.`,
+        cooldownRemaining: remainingSec,
+        code: 'BANK_COOLDOWN'
+      });
+    }
+
+    session._bankOperationLock = true;
+    try {
+      const { type, amount, isAll } = request.body || {};
     const s = session.state;
     const isAllRequested = isAll === true || amount === 'all';
     let val = 0;
@@ -565,8 +589,12 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       cash: s.cash,
       bank: s.bank,
       netWorth: s.netWorth,
-      activityLogEntry: bankLogEntry
+      activityLogEntry: bankLogEntry,
+      cooldown: BANK_COOLDOWN_MS
     };
+    } finally {
+      session._bankOperationLock = false;
+    }
   });
 
   // 5.5 POST /api/action/bank/claim-interest (Claim Daily Bank Deposit Interest)
