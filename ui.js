@@ -5576,12 +5576,17 @@ const UIController = (() => {
                 );
               }
             }
+            if (typeof window.ServerBridge !== 'undefined' && typeof window.ServerBridge.notifyLocalSpend === 'function') {
+              window.ServerBridge.notifyLocalSpend(s.cash, s.bank);
+            }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             delete input.dataset.allVal;
             input.value = '';
             showToast('إيداع بنكي', `تم إيداع ${amtVal.toLocaleString()} EGP بنجاح في حسابك المصرفي.`, 'success');
             renderAll();
+            updateBankInDOM();
+            renderStatsBar();
             triggerBankCooldown(5);
             return;
           } else if (res && res.error) {
@@ -5647,12 +5652,17 @@ const UIController = (() => {
                 );
               }
             }
+            if (typeof window.ServerBridge !== 'undefined' && typeof window.ServerBridge.notifyLocalSpend === 'function') {
+              window.ServerBridge.notifyLocalSpend(s.cash, s.bank);
+            }
             if (typeof GameEngine.forceSaveState === 'function') GameEngine.forceSaveState(true);
             delete input.dataset.all;
             delete input.dataset.allVal;
             input.value = '';
             showToast('سحب بنكي', `تم سحب ${amtVal.toLocaleString()} EGP نقدية بنجاح من البنك.`, 'success');
             renderAll();
+            updateBankInDOM();
+            renderStatsBar();
             triggerBankCooldown(5);
             return;
           } else if (res && res.error) {

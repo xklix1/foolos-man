@@ -735,30 +735,28 @@ var ServerBridge = (() => {
           const playerWealthTolerance = Math.max(500000000, Number(s.netWorth || 0));
           const nowMs = Date.now();
           const isRecentSpend = (nowMs - _lastLocalSpendTimestamp) < 15000;
+          const isRecentBankAction = (nowMs - _lastBankActionTimestamp) < 15000;
 
-          if (res.authoritativeState.cash !== undefined) {
-            const localCash = Number(s.cash || 0);
-            const serverCash = Number(res.authoritativeState.cash || 0);
-            // Anti-Rollback Shield: If player recently spent money locally and localCash is lower,
-            // strictly protect local spend from being rolled back upward by an in-flight stale server response!
-            if (isRecentSpend && localCash < serverCash) {
-              // Retain legitimate local cash deduction
-            } else if (localCash > serverCash && (localCash - serverCash) <= playerWealthTolerance) {
-              // Retain newer client state within wealth velocity ceiling
-            } else {
-              s.cash = serverCash;
+          if (isRecentBankAction) {
+            // When a bank action occurred recently, the bankAction response already set the exact authoritative balances.
+            // Under NO circumstance allow an in-flight background sync response to roll back cash or bank!
+          } else {
+            if (res.authoritativeState.cash !== undefined) {
+              const localCash = Number(s.cash || 0);
+              const serverCash = Number(res.authoritativeState.cash || 0);
+              const CLICK_TOLERANCE = 50000; // Small tolerance for rapid manual clicker tapping only
+              if (isRecentSpend && localCash < serverCash) {
+                // Retain legitimate local cash deduction
+              } else if (localCash > serverCash && (localCash - serverCash) <= CLICK_TOLERANCE) {
+                // Retain tiny micro-clicks in flight
+              } else {
+                s.cash = serverCash;
+              }
             }
-          }
 
-          if (res.authoritativeState.bank !== undefined) {
-            const localBank = Number(s.bank || 0);
-            const serverBank = Number(res.authoritativeState.bank || 0);
-            if (isRecentSpend && localBank < serverBank) {
-              // Retain legitimate local bank deduction
-            } else if (localBank > serverBank && (localBank - serverBank) <= playerWealthTolerance) {
-              // Retain newer client bank
-            } else {
-              s.bank = serverBank;
+            if (res.authoritativeState.bank !== undefined) {
+              // Bank balance is ALWAYS strictly server-authoritative!
+              s.bank = Number(res.authoritativeState.bank || 0);
             }
           }
 

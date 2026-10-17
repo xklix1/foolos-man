@@ -229,8 +229,7 @@ class SessionManager {
     // Bank action & server cash spend race condition guards:
     const hasRecentBankAction = Boolean(
       session.lastServerBankActionAt &&
-      (Date.now() - session.lastServerBankActionAt < 15000) &&
-      ((incomingCash > s.cash && incomingBank < s.bank) || (incomingBank > s.bank && incomingCash < s.cash))
+      (Date.now() - session.lastServerBankActionAt < 15000)
     );
     const hasRecentServerCashSpend = Boolean(
       session.lastServerCashSpendAt &&
@@ -281,17 +280,15 @@ class SessionManager {
         console.warn(`[Security Alert] Crushed unauthorized client bank inflation attempt for "${username}": Server=${currentBank.toLocaleString()} vs Injected=${incomingBank.toLocaleString()} (+${(incomingBank - currentBank).toLocaleString()})`);
       }
 
-      // (b) Cash Balance: Crush any attempt by client to inject cash funds
+      // (b) Cash Balance: Strictly preserve server cash during bank operations or server spends
       const currentCash = Number(s.cash || 0);
-      if (incomingCash > currentCash) {
+      if (hasRecentBankAction || hasRecentServerCashSpend) {
+        // Authoritative server balance is strictly locked against client sync interference
+      } else if (incomingCash > currentCash) {
         console.warn(`[Security Alert] Crushed unauthorized client cash inflation attempt for "${username}": Server=${currentCash.toLocaleString()} vs Injected=${incomingCash.toLocaleString()} (+${(incomingCash - currentCash).toLocaleString()})`);
       } else if (incomingCash < currentCash) {
         // Legitimate client cash spending (items, supplies, offline deductions)
-        if (hasRecentServerCashSpend) {
-          console.log(`[SessionManager] Preserved authoritative server cash after server spend for "${username}": Server=${currentCash.toLocaleString()} vs StaleClient=${incomingCash.toLocaleString()}`);
-        } else {
-          s.cash = incomingCash;
-        }
+        s.cash = incomingCash;
       }
 
       // (c) Dirty Cash deduction reconciliation:
