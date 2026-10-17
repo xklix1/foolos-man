@@ -268,93 +268,40 @@ class SessionManager {
       const highestTs = Math.max(sessionAdminTs, clientAdminTs, Date.now());
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
-    } else if (isClientStale) {
-      // CRITICAL DATA INTEGRITY SHIELD:
-      // The client's snapshot has an older adminModifiedTimestamp than the active session
-      // (e.g. an in-flight background sync queued before a bank withdrawal, wire transfer, or server reward).
-      // Under no circumstances should stale client monetary balances overwrite authoritative server balances!
-      // However, if the client SPENT cash/dirtyCash, accept the legitimate expenditure!
-      if (incomingCash < Number(s.cash || 0)) {
-        s.cash = incomingCash;
-      }
-      if (clientState.dirtyCash !== undefined && (Number(clientState.dirtyCash) || 0) < Number(s.dirtyCash || 0)) {
-        s.dirtyCash = Math.max(0, Number(clientState.dirtyCash) || 0);
-      }
-      session.lastSyncTime = Date.now();
     } else {
-      // 1. Zero-Sum Internal Transfer (Cash <-> Bank transfers)
-      // When moving money between cash and bank:
-      // (a) Withdrawal: Cash increases and Bank decreases by the same amount.
-      // (b) Deposit: Bank increases and Cash decreases by the same amount.
-      const cashDiff = incomingCash - Number(s.cash || 0);
-      const bankDiff = incomingBank - Number(s.bank || 0);
-      // Absorb server passive cashflow and interest accrual in bank during withdrawal/deposit (tolerance up to player's wealth, minimum 50M)
-      const playerWealth = Math.max(0, Number(s.netWorth || 0));
-      const transferTolerance = Math.max(50000000, playerWealth);
-      const isInternalWithdrawal = (cashDiff > 0 && bankDiff < 0 && (cashDiff <= Math.abs(bankDiff) + transferTolerance));
-      const isInternalDeposit = (bankDiff > 0 && cashDiff < 0 && (bankDiff <= Math.abs(cashDiff) + transferTolerance));
+      // STRICT SERVER-AUTHORITATIVE WEALTH LOCKDOWN:
+      // Core liquid wealth balances (cash, bank, dirtyCash, gold) are strictly Server-Authoritative.
+      // Untrusted client syncState calls cannot directly inject or overwrite these values.
+      // All bank gains derive from accrueAuthoritativeCashflow, /api/action/bank, or server transactions.
+      // All cash gains derive from /api/action/click, /api/action/bank, or server transactions.
 
-      if (isInternalWithdrawal) {
-        // Player withdrew funds from Bank to Cash: update both without clamping
-        s.cash = incomingCash;
-        s.bank = incomingBank;
-      } else if (isInternalDeposit) {
-        // Player deposited funds from Cash to Bank: update both without clamping
-        s.cash = incomingCash;
-        s.bank = incomingBank;
-      } else {
-        // Not an internal transfer:
-        const now = Date.now();
-        const timeSinceLastSync = Math.max(1, (now - (session.lastSyncTime || now)) / 1000);
-        // Wealth-Proportional Elastic Jump Ceiling:
-        // Baseline floor: 500,000,000 (500M) for early-game players.
-        // For tycoons/whales: expands dynamically to match player's entire net worth (playerWealth)!
-        const maxAllowedJump = Math.max(500000000, playerWealth, Math.floor(1000000000 / 3600 * timeSinceLastSync));
+      // (a) Bank Balance: Crush any attempt by client to inject bank funds
+      const currentBank = Number(s.bank || 0);
+      if (incomingBank > currentBank) {
+        console.warn(`[Security Alert] Crushed unauthorized client bank inflation attempt for "${username}": Server=${currentBank.toLocaleString()} vs Injected=${incomingBank.toLocaleString()} (+${(incomingBank - currentBank).toLocaleString()})`);
+      }
 
-        // (a) If player spent cash (supplies, items, business upgrades), always accept cash deduction
-        if (incomingCash <= Number(s.cash || 0)) {
+      // (b) Cash Balance: Crush any attempt by client to inject cash funds
+      const currentCash = Number(s.cash || 0);
+      if (incomingCash > currentCash) {
+        console.warn(`[Security Alert] Crushed unauthorized client cash inflation attempt for "${username}": Server=${currentCash.toLocaleString()} vs Injected=${incomingCash.toLocaleString()} (+${(incomingCash - currentCash).toLocaleString()})`);
+      } else if (incomingCash < currentCash) {
+        // Legitimate client cash spending (items, supplies, offline deductions)
+        if (hasRecentServerCashSpend) {
+          console.log(`[SessionManager] Preserved authoritative server cash after server spend for "${username}": Server=${currentCash.toLocaleString()} vs StaleClient=${incomingCash.toLocaleString()}`);
+        } else {
           s.cash = incomingCash;
-        } else {
-          // Cash increased without bank deduction: check against max allowed velocity jump
-          if (hasRecentServerCashSpend) {
-            console.log(`[SessionManager] Preserved authoritative server cash after server spend for "${username}": Server=${Number(s.cash || 0).toLocaleString()} vs StaleClient=${incomingCash.toLocaleString()}`);
-          } else if (cashDiff <= maxAllowedJump) {
-            s.cash = incomingCash;
-          } else {
-            s.cash = (Number(s.cash) || 0) + maxAllowedJump;
-          }
-        }
-
-        // (b) Bank reconciliation:
-        // Accept legitimate bank growth (farm contracts, investments, dividends, passive profits)
-        if (incomingBank <= Number(s.bank || 0)) {
-          const bankDrop = Number(s.bank || 0) - incomingBank;
-          const hasRecentServerBankAction = Boolean(
-            session.lastServerBankActionAt && (Date.now() - session.lastServerBankActionAt < 15000)
-          );
-          if (bankDrop === 0 || hasRecentServerBankAction) {
-            s.bank = incomingBank;
-          } else {
-            console.log(`[SessionManager] Preserved authoritative server bank for "${username}": Server=${s.bank.toLocaleString()} vs StaleClient=${incomingBank.toLocaleString()} (+${bankDrop.toLocaleString()})`);
-          }
-        } else {
-          // Bank increased: validate against velocity jump
-          if (bankDiff <= maxAllowedJump) {
-            s.bank = incomingBank;
-          } else {
-            s.bank = (Number(s.bank) || 0) + maxAllowedJump;
-          }
-        }
-
-        // (c) Dirty Cash deduction reconciliation:
-        // Always accept legitimate dirty cash spending (black market deals, laundering, police confiscation)
-        if (clientState.dirtyCash !== undefined) {
-          const incomingDirty = Math.max(0, Number(clientState.dirtyCash) || 0);
-          if (incomingDirty <= Number(s.dirtyCash || 0)) {
-            s.dirtyCash = incomingDirty;
-          }
         }
       }
+
+      // (c) Dirty Cash deduction reconciliation:
+      if (clientState.dirtyCash !== undefined) {
+        const incomingDirty = Math.max(0, Number(clientState.dirtyCash) || 0);
+        if (incomingDirty <= Number(s.dirtyCash || 0)) {
+          s.dirtyCash = incomingDirty;
+        }
+      }
+
       session.lastSyncTime = Date.now();
 
       if (clientAdminTs >= sessionAdminTs) {
