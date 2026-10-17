@@ -529,6 +529,9 @@
         <button onclick="switchInspectTab('farm')" id="itab_farm" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
           <i class="fa-solid fa-wheat-awn text-emerald-400 ml-1"></i> المزرعة
         </button>
+        <button onclick="switchInspectTab('trade')" id="itab_trade" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
+          <i class="fa-solid fa-ship text-cyan-400 ml-1"></i> الاستيراد والتصدير
+        </button>
         <button onclick="switchInspectTab('collectibles')" id="itab_collectibles" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
           <i class="fa-solid fa-gem text-purple-400 ml-1"></i> المقتنيات
         </button>
@@ -850,6 +853,26 @@
 
           <div id="p_farmDetailsContainer" class="space-y-4">
             <!-- Injected Farm UI -->
+          </div>
+        </div>
+
+        <!-- Tab: International Trade & Import-Export (الاستيراد والتصدير) -->
+        <div id="tabContent_trade" class="hidden space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+            <div class="flex items-center gap-2">
+              <div class="w-7 h-7 rounded-lg bg-cyan-600/20 text-cyan-400 flex items-center justify-center text-sm">
+                <i class="fa-solid fa-ship"></i>
+              </div>
+              <div>
+                <h3 class="text-xs font-bold text-white">إمبراطورية الاستيراد والتصدير والشحن الدولي (Trade Tycoon)</h3>
+                <p class="text-[10px] text-slate-400">فحص سعة المستودع الجمركي، البضائع المخزنة، وشحنات الاستيراد والتصدير الجارية</p>
+              </div>
+            </div>
+            <span id="p_tradeStatusBadge" class="text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">مستودع تجاري</span>
+          </div>
+
+          <div id="p_tradeDetailsContainer" class="space-y-4">
+            <!-- Injected Trade UI -->
           </div>
         </div>
 
@@ -2321,8 +2344,10 @@
         inspectingPlayer = data.profile;
         populateInspector(inspectingPlayer);
 
-        if (initialTab === 'chat') {
-          switchInspectTab('chat');
+        if (initialTab && initialTab !== 'economy') {
+          switchInspectTab(initialTab);
+        } else {
+          switchInspectTab('economy');
         }
       } catch (err) {
         alert(err.message);
@@ -2465,7 +2490,8 @@
       // Tab 1: Economy & Cashflow Integration
       document.getElementById('p_cash').textContent = fmtMoney(p.cash);
       document.getElementById('p_bank').textContent = fmtMoney(p.bank);
-      document.getElementById('p_networth').textContent = fmtMoney(p.netWorth);
+      const displayNetWorth = Math.max(Number(p.netWorth || 0), (Number(p.cash || 0) + Number(p.bank || 0)));
+      document.getElementById('p_networth').textContent = fmtMoney(displayNetWorth);
       document.getElementById('p_gold').textContent = (p.gold || 0).toLocaleString('en-US') + ' ';
       document.getElementById('p_dirtyCash').textContent = fmtMoney(p.dirtyCash);
       document.getElementById('p_taxes').textContent = fmtMoney(p.totalTaxesPaid);
@@ -2662,6 +2688,9 @@
 
       // Tab: Agro Farm Tycoon (المزرعة الاستثمارية)
       renderFarmDetails(p.farm);
+
+      // Tab: Trade & Cargo Tycoon (الاستيراد والتصدير)
+      renderTradeDetails(p.tradeCompany || (p.state && p.state.tradeCompany) || {}, p.username);
 
       // Tab: Collectibles & Rare Museum
       const mMus = document.getElementById('p_museumList');
@@ -3461,6 +3490,323 @@
     }
 
     // ================= AGRO FARM TYCOON RENDERING =================
+    // ==========================================
+    // Trade & Cargo Hub (الاستيراد والتصدير) Inspector Logic
+    // ==========================================
+    const TRADE_COMMODITIES_DICT = {
+      fashion_brands: { name: 'أزياء وملابس ماركات عالمية', icon: 'fa-shirt', iconColor: 'text-pink-400', tier: 'شحن جوي سريع', unitCost: 5000, sellEst: 6075 },
+      espresso_coffee: { name: 'بن إسبريسو كولومبي فاخر', icon: 'fa-mug-hot', iconColor: 'text-amber-500', tier: 'شحن جوي سريع', unitCost: 8000, sellEst: 9850 },
+      auto_spare_parts: { name: 'قطع غيار سيارات أوروبية أصلية', icon: 'fa-gears', iconColor: 'text-blue-400', tier: 'شحن بحري إقليمي', unitCost: 25000, sellEst: 30750 },
+      solar_panels: { name: 'ألواح وخلايا طاقة شمسية ألمانية', icon: 'fa-solar-panel', iconColor: 'text-yellow-400', tier: 'شحن بحري إقليمي', unitCost: 50000, sellEst: 62500 },
+      luxury_cars: { name: 'سيارات فارهة ومدرعة مستوردة', icon: 'fa-car-side', iconColor: 'text-purple-400', tier: 'شحن بحري دولي', unitCost: 120000, sellEst: 150500 },
+      industrial_turbines: { name: 'توربينات وخطوط إنتاج صناعية ثقيلة', icon: 'fa-industry', iconColor: 'text-indigo-400', tier: 'شحن بحري دولي', unitCost: 250000, sellEst: 320000 },
+      ai_quantum_chips: { name: 'رقائق ومعالجات ذكاء اصطناعي سيليكونية', icon: 'fa-microchip', iconColor: 'text-emerald-400', tier: 'شحن جوي فائق الأمان', unitCost: 500000, sellEst: 640000 },
+      gold_bullion_bars: { name: 'سبائك ذهب ومعادن نادرة نقية', icon: 'fa-coins', iconColor: 'text-yellow-300', tier: 'شحن بحري/جوي محصن', unitCost: 1000000, sellEst: 1285000 }
+    };
+
+    function renderTradeDetails(tc, username) {
+      const badge = document.getElementById('p_tradeStatusBadge');
+      const container = document.getElementById('p_tradeDetailsContainer');
+      if (!container) return;
+
+      const company = (tc && typeof tc === 'object') ? tc : {
+        warehouseCapacity: 10,
+        warehouse: {},
+        activeImports: [],
+        activeExports: [],
+        totalProfitEarned: 0,
+        totalShipmentsCompleted: 0
+      };
+
+      const capacity = Math.min(50, Math.max(10, Number(company.warehouseCapacity) || 10));
+      const warehouse = (company.warehouse && typeof company.warehouse === 'object') ? company.warehouse : {};
+      const activeImports = Array.isArray(company.activeImports) ? company.activeImports : [];
+      const activeExports = Array.isArray(company.activeExports) ? company.activeExports : [];
+      const totalProfit = Number(company.totalProfitEarned || 0);
+      const totalShipments = Number(company.totalShipmentsCompleted || 0);
+
+      // Calculate stored items & total valuation
+      let storedCount = 0;
+      let storedValue = 0;
+      const storedItems = [];
+
+      Object.keys(warehouse).forEach(cId => {
+        const qty = Number(warehouse[cId] || 0);
+        if (qty > 0) {
+          storedCount += qty;
+          const def = TRADE_COMMODITIES_DICT[cId] || { name: cId, icon: 'fa-box', iconColor: 'text-cyan-400', tier: 'بضائع تجارية', unitCost: 5000, sellEst: 6000 };
+          const val = qty * def.unitCost;
+          storedValue += val;
+          storedItems.push({ id: cId, qty, val, def });
+        }
+      });
+
+      // Calculate incoming occupancy
+      const now = Date.now();
+      let incomingCount = 0;
+      activeImports.forEach(imp => {
+        if (!imp.arrived && now < Number(imp.arrivalTime || 0)) {
+          incomingCount += (Number(imp.quantity) || 0);
+        }
+      });
+
+      const totalOccupied = storedCount + incomingCount;
+      const occupancyPct = Math.min(100, Math.round((totalOccupied / capacity) * 100));
+
+      const hasActivity = storedCount > 0 || activeImports.length > 0 || activeExports.length > 0 || totalProfit > 0 || totalShipments > 0;
+
+      if (badge) {
+        if (hasActivity) {
+          badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 animate-pulse';
+          badge.textContent = 'شركة نشطة وشحنات جارية 🚢';
+        } else {
+          badge.className = 'text-[10px] px-2.5 py-0.5 rounded-full font-bold bg-slate-800 text-slate-400 border border-slate-700';
+          badge.textContent = 'مستودع جاهز (0 بضائع)';
+        }
+      }
+
+      const barColor = occupancyPct >= 90 ? 'bg-rose-500' : (occupancyPct >= 70 ? 'bg-amber-500' : 'bg-gradient-to-r from-cyan-500 to-blue-500');
+
+      function formatDuration(ms) {
+        if (ms <= 0) return 'وصلت / جاهزة للتسليم';
+        const totalSec = Math.floor(ms / 1000);
+        const hours = Math.floor(totalSec / 3600);
+        const mins = Math.floor((totalSec % 3600) / 60);
+        const secs = totalSec % 60;
+        if (hours > 0) return `${hours} س و ${mins} د`;
+        if (mins > 0) return `${mins} د و ${secs} ث`;
+        return `${secs} ثانية`;
+      }
+
+      container.innerHTML = `
+        <!-- Overview KPI Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          <div class="glass-card p-3 rounded-xl border border-cyan-500/30 flex flex-col justify-between">
+            <div>
+              <div class="text-[10px] text-slate-400 mb-0.5 font-bold flex items-center justify-between">
+                <span>سعة المستودع</span>
+                <span class="numbers-font text-cyan-300 font-bold">${occupancyPct}%</span>
+              </div>
+              <div class="text-base font-black numbers-font text-white">${storedCount} <span class="text-xs text-slate-400 font-normal">/ ${capacity} حاوية</span></div>
+            </div>
+            <div class="w-full bg-slate-800 h-1.5 rounded-full overflow-hidden mt-2 border border-slate-700/50">
+              <div class="h-full ${barColor} rounded-full transition-all duration-500" style="width: ${occupancyPct}%"></div>
+            </div>
+            <div class="text-[9px] text-slate-500 mt-1">${incomingCount > 0 ? `+${incomingCount} قيد الوصول` : 'متاح: ' + (capacity - totalOccupied) + ' مكان'}</div>
+          </div>
+
+          <div class="glass-card p-3 rounded-xl border border-emerald-500/30 flex flex-col justify-between">
+            <div>
+              <div class="text-[10px] text-slate-400 mb-0.5 font-bold">قيمة المخزون المقدرة</div>
+              <div class="text-base font-black numbers-font text-emerald-400">${fmtMoney(storedValue)}</div>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-boxes-stacked text-xs text-emerald-400"></i>
+              <span>${storedCount} حاوية مخزنة</span>
+            </div>
+          </div>
+
+          <div class="glass-card p-3 rounded-xl border border-amber-500/30 flex flex-col justify-between">
+            <div>
+              <div class="text-[10px] text-slate-400 mb-0.5 font-bold">أرباح التصدير المحققة</div>
+              <div class="text-base font-black numbers-font text-amber-300">${fmtMoney(totalProfit)}</div>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
+              <i class="fa-solid fa-trophy text-xs text-amber-400"></i>
+              <span>${totalShipments} صفقات ناجحة</span>
+            </div>
+          </div>
+
+          <div class="glass-card p-3 rounded-xl border border-indigo-500/30 flex flex-col justify-between">
+            <div>
+              <div class="text-[10px] text-slate-400 mb-0.5 font-bold">الشحنات النشطة</div>
+              <div class="text-base font-black numbers-font text-indigo-300">${activeImports.length + activeExports.length} <span class="text-xs text-slate-400 font-normal">عمليات</span></div>
+            </div>
+            <div class="text-[10px] text-slate-400 mt-1 flex items-center gap-2">
+              <span class="text-cyan-400">${activeImports.length} استيراد</span>
+              <span>•</span>
+              <span class="text-emerald-400">${activeExports.length} تصدير</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Section 1: Stored Commodities in Warehouse -->
+        <div class="glass-card p-3.5 rounded-2xl border border-slate-800/80 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-warehouse text-cyan-400 text-sm"></i>
+              <h4 class="text-xs font-bold text-white">المستودع الجمركي والبضائع المخزنة</h4>
+              <span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 border border-slate-700 font-bold">${storedCount} حاويات</span>
+            </div>
+            <span class="text-[11px] font-bold text-emerald-400 numbers-font">${fmtMoney(storedValue)}</span>
+          </div>
+
+          ${storedItems.length === 0 ? `
+            <div class="py-6 text-center rounded-xl bg-slate-900/40 border border-dashed border-slate-800/80">
+              <i class="fa-solid fa-boxes-stacked text-slate-600 text-2xl mb-1.5 block"></i>
+              <p class="text-xs text-slate-400 font-medium">المستودع الجمركي خالي حالياً من أي بضائع أو حاويات مخزنة.</p>
+              <p class="text-[10px] text-slate-500 mt-0.5">يمكن للاعب شراء واستيراد البضائع الدولية لشحنها وتخزينها هنا.</p>
+            </div>
+          ` : `
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
+              ${storedItems.map(item => `
+                <div class="glass-card p-3 rounded-xl border border-slate-800/90 bg-slate-900/60 flex items-center justify-between gap-2.5 hover:border-cyan-500/40 transition">
+                  <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-slate-800/90 border border-slate-700/60 flex items-center justify-center text-sm shrink-0">
+                      <i class="fa-solid ${item.def.icon} ${item.def.iconColor}"></i>
+                    </div>
+                    <div class="min-w-0">
+                      <div class="text-xs font-bold text-white truncate" title="${item.def.name}">${item.def.name}</div>
+                      <div class="text-[10px] text-slate-400 flex items-center gap-1.5">
+                        <span class="text-cyan-300 font-bold">${item.qty} حاوية</span>
+                        <span>•</span>
+                        <span>${item.def.tier}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-left shrink-0">
+                    <div class="text-xs font-bold text-emerald-400 numbers-font">${fmtMoney(item.val)}</div>
+                    <div class="text-[9px] text-slate-500">${fmtMoney(item.def.unitCost)} / ح</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Section 2: Active Imports in Transit -->
+        <div class="glass-card p-3.5 rounded-2xl border border-slate-800/80 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-plane-arrival text-cyan-400 text-sm"></i>
+              <h4 class="text-xs font-bold text-white">شحنات الاستيراد القادمة (In-Transit Imports)</h4>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 font-bold">${activeImports.length} شحنة</span>
+          </div>
+
+          ${activeImports.length === 0 ? `
+            <div class="py-5 text-center rounded-xl bg-slate-900/40 border border-dashed border-slate-800/80">
+              <p class="text-xs text-slate-500 font-medium">لا توجد شحنات استيراد دولية في طريقها للميناء حالياً.</p>
+            </div>
+          ` : `
+            <div class="space-y-2">
+              ${activeImports.map((imp, idx) => {
+                const def = TRADE_COMMODITIES_DICT[imp.commodityId] || { name: imp.commodityId, icon: 'fa-box', iconColor: 'text-cyan-400', tier: 'شحن بحري', unitCost: imp.unitCost || 5000 };
+                const arrivalMs = Number(imp.arrivalTime || 0);
+                const remMs = arrivalMs - now;
+                const isArrived = imp.arrived || remMs <= 0;
+                const cost = Number(imp.baseCost || (imp.unitCost * imp.quantity) || 0);
+                const customs = Number(imp.customsAndFreightFee || 0);
+
+                return `
+                  <div class="glass-card p-3 rounded-xl border border-slate-800/90 bg-slate-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-cyan-950/60 border border-cyan-800/60 text-cyan-400 flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid ${def.icon}"></i>
+                      </div>
+                      <div>
+                        <div class="text-xs font-bold text-white flex items-center gap-2">
+                          <span>${def.name}</span>
+                          <span class="text-[10px] px-2 py-0.2 rounded bg-slate-800 text-cyan-300 font-mono font-bold">${imp.quantity} حاويات</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                          <span>التكلفة: ${fmtMoney(cost)}</span>
+                          <span>•</span>
+                          <span>الجمارك: ${fmtMoney(customs)}</span>
+                          <span>•</span>
+                          <span class="font-mono text-slate-500">#${imp.id ? imp.id.substring(0, 14) : idx + 1}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                      ${isArrived ? `
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1.5">
+                          <i class="fa-solid fa-circle-check text-xs"></i>
+                          <span>وصلت للميناء وجاهزة للتخزين</span>
+                        </span>
+                      ` : `
+                        <span class="px-2.5 py-1 rounded-lg bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 text-[10px] font-bold flex items-center gap-1.5 animate-pulse">
+                          <i class="fa-solid fa-ship text-xs"></i>
+                          <span>في الطريق (متبقي ${formatDuration(remMs)})</span>
+                        </span>
+                      `}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- Section 3: Active Export Contracts -->
+        <div class="glass-card p-3.5 rounded-2xl border border-slate-800/80 space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-800/60 pb-2">
+            <div class="flex items-center gap-2">
+              <i class="fa-solid fa-plane-departure text-emerald-400 text-sm"></i>
+              <h4 class="text-xs font-bold text-white">عقود وصفقات التصدير الدولية (Export Contracts)</h4>
+            </div>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 font-bold">${activeExports.length} عقد</span>
+          </div>
+
+          ${activeExports.length === 0 ? `
+            <div class="py-5 text-center rounded-xl bg-slate-900/40 border border-dashed border-slate-800/80">
+              <p class="text-xs text-slate-500 font-medium">لا توجد عقود تصدير نشطة مسجلة لهذا اللاعب حالياً.</p>
+            </div>
+          ` : `
+            <div class="space-y-2">
+              ${activeExports.map((exp, idx) => {
+                const def = TRADE_COMMODITIES_DICT[exp.commodityId] || { name: exp.commodityId, icon: 'fa-box', iconColor: 'text-emerald-400', tier: 'شحن بحري', unitCost: 5000 };
+                const arrivalMs = Number(exp.arrivalTime || 0);
+                const remMs = arrivalMs - now;
+                const isDelivered = exp.claimed || exp.arrived || remMs <= 0;
+                const revenue = Number(exp.totalRevenue || (exp.unitSellPrice * exp.quantity) || 0);
+                const profit = Number(exp.profit || 0);
+
+                return `
+                  <div class="glass-card p-3 rounded-xl border border-slate-800/90 bg-slate-900/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div class="flex items-center gap-3">
+                      <div class="w-8 h-8 rounded-lg bg-emerald-950/60 border border-emerald-800/60 text-emerald-400 flex items-center justify-center text-sm shrink-0">
+                        <i class="fa-solid ${def.icon}"></i>
+                      </div>
+                      <div>
+                        <div class="text-xs font-bold text-white flex items-center gap-2">
+                          <span>${def.name}</span>
+                          <span class="text-[10px] px-2 py-0.2 rounded bg-slate-800 text-emerald-300 font-mono font-bold">${exp.quantity} حاويات</span>
+                        </div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 flex items-center gap-2">
+                          <span>العائد: ${fmtMoney(revenue)}</span>
+                          <span>•</span>
+                          <span class="text-emerald-400 font-bold">الربح الصافي: +${fmtMoney(profit)}</span>
+                          <span>•</span>
+                          <span class="font-mono text-slate-500">#${exp.id ? exp.id.substring(0, 14) : idx + 1}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                      ${isDelivered ? `
+                        <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1.5">
+                          <i class="fa-solid fa-check-double text-xs"></i>
+                          <span>تم التسليم وجاهز لتحصيل الأرباح</span>
+                        </span>
+                      ` : `
+                        <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1.5 animate-pulse">
+                          <i class="fa-solid fa-truck-plane text-xs"></i>
+                          <span>جاري الشحن والتسليم (متبقي ${formatDuration(remMs)})</span>
+                        </span>
+                      `}
+                    </div>
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+      `;
+    }
+
+
     function renderFarmDetails(farm) {
       const badge = document.getElementById('p_farmStatusBadge');
       const container = document.getElementById('p_farmDetailsContainer');
@@ -4442,7 +4788,7 @@
         modChatPollInterval = null;
       }
 
-      ['economy', 'activity', 'notes', 'businesses', 'stocks', 'airport', 'farm', 'collectibles', 'transfers', 'chat', 'moderation', 'logins'].forEach(t => {
+      ['economy', 'activity', 'notes', 'businesses', 'stocks', 'airport', 'farm', 'trade', 'collectibles', 'transfers', 'chat', 'moderation', 'logins'].forEach(t => {
         const btn = document.getElementById(`itab_${t}`);
         const content = document.getElementById(`tabContent_${t}`);
         if (!btn || !content) return;

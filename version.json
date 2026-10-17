@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.23",
-  "build": 1792267202243,
-  "timestamp": 1792267202243,
-  "notes": "Moderator Trade Hub & Net Worth v10.0.23: Dedicated Trade inspection tab, quick-access table button, and authoritative net worth engine.",
-  "releaseNotes": "تحديث v10.0.23: إضافة تبويب الاستيراد والتصدير المباشر في القائمة الجانبية وزر الفحص السريع في جدول اللاعبين، مع التحديث الشامل للثروة."
+  "version": "v10.0.24",
+  "build": 1792268033143,
+  "timestamp": 1792268033143,
+  "notes": "Staff Portal Trade Hub & Authoritative Net Worth v10.0.24: Added Trade & Cargo inspection tab to v-98x3p7q2m1k4.html and unconditional authoritative net worth engine.",
+  "releaseNotes": "تحديث v10.0.24: إضافة تبويب الاستيراد والتصدير في بوابة الرقابة والتفتيش (v-98x3p7q2m1k4.html) وتحديث محرك حساب صافي الثروة الشامل لجميع اللاعبين فورياً."
 }

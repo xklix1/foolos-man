@@ -685,6 +685,15 @@ async function moderatorRoutes(fastify, options) {
           calculateAuthoritativeOfflineProgress(state, now);
         }
 
+        // Unconditionally compute authoritative net worth so offline players never show just cash or 0
+        const searchComputedWorth = calculateNetWorth(state);
+        const searchEffectiveNetWorth = Math.max(
+          Number(searchComputedWorth || 0),
+          (Number(state.cash || 0) + Number(state.bank || 0)),
+          Number(r.net_worth || 0)
+        );
+        state.netWorth = searchEffectiveNetWorth;
+
         const isFrozen = Boolean(
           (Number(state.freezeUntil || 0) > now) ||
           (state.freezeReason && Number(r.jail_timer || state.jailTimer || 0) > 0) ||
@@ -704,7 +713,7 @@ async function moderatorRoutes(fastify, options) {
           jobId: state.jobId || r.job_id || 'worker',
           cash: Number(state.cash !== undefined ? state.cash : (r.cash || 0)),
           bank: Number(state.bank !== undefined ? state.bank : (r.bank || 0)),
-          netWorth: Number(state.netWorth !== undefined && state.netWorth > 0 ? state.netWorth : (r.net_worth || 0)),
+          netWorth: Number(state.netWorth || searchEffectiveNetWorth || r.net_worth || 0),
           gold: Number(state.gold !== undefined ? state.gold : (r.gold || 0)),
           lastSeen: Number(state.lastSeen || r.last_seen || 0),
           isOnline,
@@ -794,7 +803,19 @@ async function moderatorRoutes(fastify, options) {
         liveState = sanitizePlayerState({ ...pDoc, state: rawState });
         // Calculate authoritative offline progress on the server right now so inspector shows real current values
         calculateAuthoritativeOfflineProgress(liveState, now);
+      }
 
+      // Unconditionally compute authoritative total net worth (Liquid + Real Estate + Cars + Stocks + Industry + Trade + Farm + Airport - Loans)
+      const authoritativeNetWorth = calculateNetWorth(liveState);
+      const effectiveNetWorth = Math.max(
+        Number(authoritativeNetWorth || 0),
+        (Number(liveState.cash || 0) + Number(liveState.bank || 0)),
+        Number(pDoc.net_worth || 0)
+      );
+      liveState.netWorth = effectiveNetWorth;
+      pDoc.net_worth = effectiveNetWorth;
+
+      if (!inMemSession) {
         // Immediately update Supabase with fresh authoritative numbers so the database remains 100% current
         modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=eq.${encodeURIComponent(pDoc.username)}`, {
           method: 'PATCH',
@@ -802,7 +823,7 @@ async function moderatorRoutes(fastify, options) {
           body: JSON.stringify({
             cash: Number(liveState.cash || 0),
             bank: Number(liveState.bank || 0),
-            net_worth: Number(liveState.netWorth || 0),
+            net_worth: Number(effectiveNetWorth || 0),
             title: liveState.title || pDoc.title,
             jail_timer: Number(liveState.jailTimer || 0),
             state: liveState
@@ -813,7 +834,7 @@ async function moderatorRoutes(fastify, options) {
       // Sync computed values back to pDoc for consistent financial reports
       pDoc.cash = Number(liveState.cash !== undefined ? liveState.cash : (pDoc.cash || 0));
       pDoc.bank = Number(liveState.bank !== undefined ? liveState.bank : (pDoc.bank || 0));
-      pDoc.net_worth = Number(liveState.netWorth !== undefined ? liveState.netWorth : (pDoc.net_worth || 0));
+      pDoc.net_worth = effectiveNetWorth;
       pDoc.gold = Number(liveState.gold !== undefined ? liveState.gold : (pDoc.gold || 0));
       pDoc.title = liveState.title || pDoc.title;
       const state = liveState;
@@ -1364,7 +1385,7 @@ async function moderatorRoutes(fastify, options) {
         cash: Number(pDoc.cash || 0),
         bank: Number(pDoc.bank || 0),
         dirtyCash: Number(pDoc.dirty_cash || state.dirtyCash || 0),
-        netWorth: Number(pDoc.net_worth || 0),
+        netWorth: Number(liveState.netWorth || pDoc.net_worth || 0),
         gold: Number(pDoc.gold || state.gold || 0),
         xp: Number(pDoc.xp || 0),
         totalTaxesPaid: Number(pDoc.total_taxes_paid || state.totalTaxesPaid || 0),
