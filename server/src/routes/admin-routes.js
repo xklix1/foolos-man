@@ -135,9 +135,19 @@ async function adminRoutes(fastify, options) {
 
     const cleanBody = sanitizePayload(body);
 
+    // Normalize query whether passed as string or key-value object
+    let queryString = '';
+    if (typeof query === 'string') {
+      queryString = query.replace(/^\?/, '');
+    } else if (query && typeof query === 'object') {
+      queryString = Object.entries(query)
+        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
+        .join('&');
+    }
+
     // Absolute Admin Immunity for Master Admin (Khaled)
     if (table === 'players') {
-      const qLower = String(query || '').toLowerCase();
+      const qLower = (queryString || '').toLowerCase();
       const bUserLower = (cleanBody && cleanBody.username ? String(cleanBody.username) : '').toLowerCase();
       const isTargetingKhaled = qLower.includes('khaled') || bUserLower === 'khaled';
 
@@ -161,7 +171,7 @@ async function adminRoutes(fastify, options) {
       ? 'resolution=merge-duplicates, return=representation'
       : 'return=representation';
 
-    const pathAndQuery = `/rest/v1/${table}${query ? '?' + query.replace(/^\?/, '') : ''}`;
+    const pathAndQuery = `/rest/v1/${table}${queryString ? '?' + queryString : ''}`;
 
     try {
       const fetchOpts = {
@@ -190,7 +200,7 @@ async function adminRoutes(fastify, options) {
       // If an active player was modified, reset, banned, or deleted, sync/evict in sessionManager
       if (table === 'players' && sessionManager) {
         try {
-          const matchUser = (query || '').match(/username=(?:eq|ilike)\.([^&]+)/i);
+          const matchUser = queryString.match(/username=(?:eq|ilike)\.([^&]+)/i);
           if (matchUser && matchUser[1]) {
             const targetUsername = decodeURIComponent(matchUser[1]).replace(/^@/, '').trim();
             if (cleanMethod === 'DELETE') {
