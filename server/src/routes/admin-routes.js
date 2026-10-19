@@ -382,6 +382,16 @@ async function adminRoutes(fastify, options) {
 
         pState.hasPurchasedTopup = true;
         pState.purchasedTopups = (pState.purchasedTopups || 0) + 1;
+
+        // Track one-time exclusive packages per account
+        if (req.packageId && (req.packageId.startsWith('pkg_exclusive_') || (rewards && rewards.isOneTime))) {
+          if (!Array.isArray(pState.purchasedOneTimePackages)) {
+            pState.purchasedOneTimePackages = [];
+          }
+          if (!pState.purchasedOneTimePackages.includes(req.packageId)) {
+            pState.purchasedOneTimePackages.push(req.packageId);
+          }
+        }
         pState.adminModifiedTimestamp = ts;
 
         // Update player row in Supabase

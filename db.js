@@ -4316,8 +4316,78 @@ var AppDB = (() => {
       badgeTitle: 'إمبراطور الطيران VIP',
       description: 'تعيين الرئيس التنفيذي ألكسندر كإمبراطور للمطار (+15% أرباح، -10% تكاليف، طيار آلي ذكي Smart Auto-Pilot وتشغيل أوفلاين حتى 72 ساعة) مع 150 مليون كاش و 150 ذهبة.',
       hidden: false
+    },
+    // ── حزم العروض الحصرية لمرة واحدة (Exclusive One-Time Starter Packs - 1$ = 53 EGP) ──
+    {
+      id: 'pkg_exclusive_starter_10usd',
+      name: 'باقة الانطلاقة الذهبية',
+      price: 530,
+      usdPrice: 10,
+      category: 'exclusive',
+      cash: 50000000,
+      bank: 0,
+      gold: 100,
+      xp: 0,
+      isOneTime: true,
+      description: 'عرض حصري لمرة واحدة لكل حساب: 50,000,000 كاش فوري + 100 ذهبة نقية لتسريع أعمالك.'
+    },
+    {
+      id: 'pkg_exclusive_rising_25usd',
+      name: 'باقة رجل الأعمال الصاعد',
+      price: 1325,
+      usdPrice: 25,
+      category: 'exclusive',
+      cash: 200000000,
+      bank: 0,
+      gold: 300,
+      xp: 0,
+      isOneTime: true,
+      description: 'عرض حصري لمرة واحدة لكل حساب: 200,000,000 كاش فوري + 300 ذهبة نقية للسيطرة على الاستثمارات.'
+    },
+    {
+      id: 'pkg_exclusive_whale_50usd',
+      name: 'باقة حوت الاستثمار',
+      price: 2650,
+      usdPrice: 50,
+      category: 'exclusive',
+      cash: 500000000,
+      bank: 0,
+      gold: 600,
+      xp: 0,
+      isOneTime: true,
+      description: 'عرض حصري لمرة واحدة لكل حساب: 500,000,000 كاش فوري + 600 ذهبة نقية للهيمنة على السوق.'
+    },
+    {
+      id: 'pkg_exclusive_elite_85usd',
+      name: 'باقة النخبة السيادية',
+      price: 4505,
+      usdPrice: 85,
+      category: 'exclusive',
+      cash: 800000000,
+      bank: 0,
+      gold: 1500,
+      xp: 0,
+      isOneTime: true,
+      description: 'عرض حصري لمرة واحدة لكل حساب: 800,000,000 كاش فوري + 1,500 ذهبة نقية لعرش كبار المستثمرين.'
+    },
+    {
+      id: 'pkg_exclusive_emperor_100usd',
+      name: 'باقة العرش الإمبراطوري',
+      price: 5300,
+      usdPrice: 100,
+      category: 'exclusive',
+      cash: 1150000000,
+      bank: 0,
+      gold: 3000,
+      xp: 0,
+      isOneTime: true,
+      description: 'عرض حصري لمرة واحدة لكل حساب: 1,150,000,000 كاش فوري + 3,000 ذهبة نقية للتربع على قمة إمبراطورية المال.'
     }
   ];
+
+  function getExclusiveOneTimePackages() {
+    return DEFAULT_TOPUP_PACKAGES.filter(p => p.isOneTime || (p.id && p.id.startsWith('pkg_exclusive_')));
+  }
 
   async function getTopupPackages() {
     try {
@@ -4628,6 +4698,16 @@ var AppDB = (() => {
 
       pState.hasPurchasedTopup = true;
       pState.purchasedTopups = (pState.purchasedTopups || 0) + 1;
+
+      // Track one-time exclusive packages per account
+      if (req.packageId && (req.packageId.startsWith('pkg_exclusive_') || (pkgDef && pkgDef.isOneTime) || (rewards && rewards.isOneTime))) {
+        if (!Array.isArray(pState.purchasedOneTimePackages)) {
+          pState.purchasedOneTimePackages = [];
+        }
+        if (!pState.purchasedOneTimePackages.includes(req.packageId)) {
+          pState.purchasedOneTimePackages.push(req.packageId);
+        }
+      }
 
       if (rewards.features) {
         if (rewards.features.chatGlow) {
@@ -7914,6 +7994,7 @@ var AppDB = (() => {
 
     // Top-up & Monetization
     getTopupPackages,
+    getExclusiveOneTimePackages,
     saveTopupPackages,
     getPaymentSettings,
     savePaymentSettings,

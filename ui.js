@@ -2460,6 +2460,7 @@ const UIController = (() => {
       startGameLoop();
       renderAll();
       showToast('أهلاً بعودتك',`تم استئناف جلسة الإمبراطور: ${canonicalUser}`,'success');
+      checkAndShowExclusiveOffersModal();
  
       // Check if user has not yet granted notification permission and offer quick enable action
       if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default') {
@@ -2824,6 +2825,7 @@ const UIController = (() => {
           setupRealTimeListeners(_stagedRegUsername);
           startGameLoop();
           renderAll();
+          checkAndShowExclusiveOffersModal();
 
           if (playerState && playerState.offlineReport) {
             const rep = playerState.offlineReport;
@@ -2976,6 +2978,7 @@ const UIController = (() => {
 
           startGameLoop();
           renderAll();
+          checkAndShowExclusiveOffersModal();
 
           // Check and display offline idle earnings with detailed report modal
           if (playerState && playerState.offlineReport) {
@@ -24589,6 +24592,367 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
 
   // ─────────────────────────────────────────────
+  // EXCLUSIVE ONE-TIME OFFERS CONTROLLER (العروض الحصرية لمرة واحدة)
+  // ─────────────────────────────────────────────
+  let _activeSelectedExclusivePkg = null;
+  let _exclusiveModalEventsBound = false;
+  let _cachedExclusivePackagesList = [];
+
+  function bindExclusiveOffersModalEvents() {
+    if (_exclusiveModalEventsBound) return;
+    _exclusiveModalEventsBound = true;
+
+    const closeBtn = document.getElementById('btn-close-exclusive-offers-modal');
+    if (closeBtn) closeBtn.addEventListener('click', closeExclusiveOffersModal);
+
+    const backBtn = document.getElementById('btn-exclusive-back-to-pkgs');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        playMenuSound('click');
+        document.getElementById('exclusive-view-checkout')?.classList.add('hidden');
+        document.getElementById('exclusive-view-packages')?.classList.remove('hidden');
+      });
+    }
+
+    const submitBtn = document.getElementById('btn-submit-exclusive-order');
+    if (submitBtn) submitBtn.addEventListener('click', submitExclusiveOfferOrder);
+
+    const modal = document.getElementById('exclusive-offers-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeExclusiveOffersModal();
+      });
+    }
+  }
+
+  function closeExclusiveOffersModal() {
+    const modal = document.getElementById('exclusive-offers-modal');
+    if (modal) modal.classList.add('hidden');
+    _activeSelectedExclusivePkg = null;
+  }
+
+  async function openExclusiveOffersModal() {
+    playMenuSound('modal_open');
+    bindExclusiveOffersModalEvents();
+
+    const modal = document.getElementById('exclusive-offers-modal');
+    if (!modal) return;
+
+    // Reset views
+    document.getElementById('exclusive-view-packages')?.classList.remove('hidden');
+    document.getElementById('exclusive-view-checkout')?.classList.add('hidden');
+    document.getElementById('exclusive-success-notice')?.classList.add('hidden');
+    document.getElementById('exclusive-order-form')?.classList.remove('hidden');
+
+    modal.classList.remove('hidden');
+
+    const container = document.getElementById('exclusive-packages-container');
+    if (container) {
+      container.innerHTML = '<div class="col-span-full p-8 text-center text-slate-400"><i class="fa-solid fa-spinner animate-spin text-xl text-amber-400 block mb-2"></i><span>جاري جلب العروض الحصرية...</span></div>';
+    }
+
+    try {
+      let packages = [];
+      if (typeof AppDB !== 'undefined' && typeof AppDB.getExclusiveOneTimePackages === 'function') {
+        packages = AppDB.getExclusiveOneTimePackages();
+      }
+      if (!packages || packages.length === 0) {
+        const allPkgs = (typeof AppDB !== 'undefined' && typeof AppDB.getTopupPackages === 'function')
+          ? await AppDB.getTopupPackages()
+          : [];
+        packages = (allPkgs || []).filter(p => p.isOneTime || (p.id && p.id.startsWith('pkg_exclusive_')));
+      }
+
+      _cachedExclusivePackagesList = packages || [];
+
+      // Payment info for view 2
+      const settings = (typeof AppDB !== 'undefined' && typeof AppDB.getPaymentSettings === 'function')
+        ? await AppDB.getPaymentSettings()
+        : {};
+
+      const vodafoneNumEl = document.getElementById('exclusive-vodafone-num');
+      const instapayNumEl = document.getElementById('exclusive-instapay-num');
+      if (vodafoneNumEl) vodafoneNumEl.textContent = settings.vodafoneCash || '01044119920';
+      if (instapayNumEl) instapayNumEl.textContent = settings.instapay || 'rasalmal@instapay';
+
+      // Load player state & pending requests
+      const s = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : {};
+      const purchasedOneTime = Array.isArray(s.purchasedOneTimePackages) ? s.purchasedOneTimePackages : [];
+
+      let pendingRequests = [];
+      try {
+        if (typeof AppDB !== 'undefined' && typeof AppDB.getTopupRequests === 'function') {
+          const reqs = await AppDB.getTopupRequests();
+          const uname = (GameEngine.activeUsername || '').toLowerCase();
+          pendingRequests = (reqs || []).filter(r => (r.username || '').toLowerCase() === uname && r.status === 'pending');
+        }
+      } catch (_) {}
+
+      renderExclusivePackagesGrid(_cachedExclusivePackagesList, purchasedOneTime, pendingRequests);
+    } catch (err) {
+      if (container) {
+        container.innerHTML = `<div class="col-span-full p-4 text-center text-rose-400 bg-rose-950/40 rounded-2xl border border-rose-500/30">تعذر جلب العروض: ${err.message}</div>`;
+      }
+    }
+  }
+
+  function renderExclusivePackagesGrid(packages, purchasedList = [], pendingList = []) {
+    const container = document.getElementById('exclusive-packages-container');
+    if (!container) return;
+
+    if (!packages || packages.length === 0) {
+      container.innerHTML = '<div class="col-span-full p-6 text-center text-slate-400">لا توجد عروض حصرية متاحة حالياً.</div>';
+      return;
+    }
+
+    container.innerHTML = '';
+    packages.forEach(pkg => {
+      const isPurchased = purchasedList.includes(pkg.id);
+      const isPending = !isPurchased && pendingList.some(r => r.packageId === pkg.id);
+
+      const card = document.createElement('div');
+      
+      let cardBorder = 'border-amber-500/40 hover:border-yellow-400 hover:shadow-yellow-500/20';
+      let cardBg = 'bg-gradient-to-b from-amber-950/30 via-slate-900/95 to-slate-950';
+      let glowBg = 'bg-amber-500/10';
+      let topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 font-black">⚡ لمرة واحدة</span>';
+
+      if (isPurchased) {
+        cardBorder = 'border-emerald-500/30 opacity-75';
+        cardBg = 'bg-gradient-to-b from-emerald-950/20 via-slate-900/90 to-slate-950';
+        glowBg = 'bg-emerald-500/5';
+        topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-black">✔️ تم الشحن</span>';
+      } else if (isPending) {
+        cardBorder = 'border-yellow-500/50 animate-pulse';
+        cardBg = 'bg-gradient-to-b from-yellow-950/30 via-slate-900/95 to-slate-950';
+        glowBg = 'bg-yellow-500/15';
+        topPill = '<span class="text-[9px] px-2 py-0.5 rounded-full bg-yellow-500/25 text-yellow-300 border border-yellow-500/40 font-black">⏳ قيد المراجعة</span>';
+      }
+
+      card.className = `p-4 rounded-3xl ${cardBg} border-2 ${cardBorder} flex flex-col justify-between space-y-3.5 transition-all duration-300 shadow-xl relative overflow-hidden group`;
+
+      let btnHtml = '';
+      if (isPurchased) {
+        btnHtml = `
+          <button type="button" disabled class="w-full py-2.5 rounded-xl bg-slate-900/90 text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-not-allowed">
+            <i class="fa-solid fa-check-double text-emerald-400"></i>
+            <span>تم الشراء بنجاح</span>
+          </button>
+        `;
+      } else if (isPending) {
+        btnHtml = `
+          <button type="button" disabled class="w-full py-2.5 rounded-xl bg-amber-950/60 text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-amber-500/40 cursor-not-allowed animate-pulse">
+            <i class="fa-solid fa-hourglass-half text-amber-400"></i>
+            <span>قيد المراجعة لدى الإدارة</span>
+          </button>
+        `;
+      } else {
+        btnHtml = `
+          <button type="button" class="btn-select-exclusive-pkg w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 hover:from-amber-400 hover:to-yellow-300 text-slate-950 font-black text-xs flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/25 transition cursor-pointer active:scale-95 group-hover:brightness-110">
+            <i class="fa-solid fa-bolt text-slate-950"></i>
+            <span>شحن الباقة الآن</span>
+          </button>
+        `;
+      }
+
+      card.innerHTML = `
+        <div class="absolute -top-12 -right-12 w-28 h-28 ${glowBg} rounded-full blur-2xl pointer-events-none group-hover:scale-150 transition-transform duration-500"></div>
+
+        <div class="space-y-3 relative z-10">
+          <!-- Top Row: Tag & Price -->
+          <div class="flex items-center justify-between gap-1.5">
+            <div>${topPill}</div>
+            <div class="text-right">
+              <span class="numbers-font text-amber-300 font-black text-xs px-2 py-0.5 rounded-lg bg-amber-500/15 border border-amber-500/30 font-mono inline-block">
+                ${pkg.usdPrice}$
+              </span>
+              <span class="text-[10px] text-slate-400 font-bold block mt-0.5">
+                ${Number(pkg.price).toLocaleString()} ج.م
+              </span>
+            </div>
+          </div>
+
+          <!-- Package Title -->
+          <div class="pb-2 border-b border-slate-800/80">
+            <h3 class="font-black text-white text-xs sm:text-sm group-hover:text-amber-300 transition-colors leading-tight">${pkg.name}</h3>
+            <p class="text-[10px] text-slate-400 mt-1 line-clamp-2">${pkg.description || 'باقة حصرية مميزة لمرة واحدة.'}</p>
+          </div>
+
+          <!-- Highlight Rewards Box -->
+          <div class="space-y-1.5 py-1 text-right">
+            <!-- Cash -->
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+              <span class="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-money-bill-wave text-emerald-400"></i> كاش فوري
+              </span>
+              <span class="numbers-font font-black text-emerald-400 text-xs">${Number(pkg.cash).toLocaleString()} ج.م</span>
+            </div>
+
+            <!-- Gold -->
+            <div class="flex items-center justify-between p-2 rounded-xl bg-slate-950/80 border border-slate-800">
+              <span class="text-[10px] text-slate-400 font-bold flex items-center gap-1">
+                <i class="fa-solid fa-coins text-amber-400"></i> ذهب سيادي
+              </span>
+              <span class="numbers-font font-black text-amber-400 text-xs">${Number(pkg.gold).toLocaleString()} 🪙</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="relative z-10 pt-1">
+          ${btnHtml}
+        </div>
+      `;
+
+      if (!isPurchased && !isPending) {
+        const btn = card.querySelector('.btn-select-exclusive-pkg');
+        if (btn) {
+          btn.addEventListener('click', () => {
+            selectPackageForExclusiveCheckout(pkg);
+          });
+        }
+      }
+
+      container.appendChild(card);
+    });
+  }
+
+  function selectPackageForExclusiveCheckout(pkg) {
+    playMenuSound('click');
+    _activeSelectedExclusivePkg = pkg;
+
+    const summaryEl = document.getElementById('exclusive-selected-pkg-summary');
+    if (summaryEl) {
+      summaryEl.innerHTML = `
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-yellow-400 to-amber-500 text-slate-950 flex items-center justify-center font-black text-lg shrink-0 shadow">
+            <i class="fa-solid fa-bolt text-slate-950"></i>
+          </div>
+          <div class="min-w-0">
+            <h4 class="font-black text-white text-xs sm:text-sm truncate">${pkg.name}</h4>
+            <div class="flex items-center gap-2 text-[10px] text-slate-300 mt-0.5">
+              <span class="text-emerald-400 font-bold"><i class="fa-solid fa-money-bill-wave text-emerald-400"></i> ${Number(pkg.cash).toLocaleString()} كاش</span>
+              <span>•</span>
+              <span class="text-amber-400 font-bold"><i class="fa-solid fa-coins text-amber-400"></i> ${Number(pkg.gold).toLocaleString()} ذهبة</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="text-right">
+          <span class="text-[10px] text-slate-400 block font-medium">المبلغ المطلوب تحويله:</span>
+          <div class="flex items-center gap-1.5 justify-end">
+            <strong class="numbers-font text-amber-300 font-black text-sm">${pkg.usdPrice}$</strong>
+            <span class="text-xs text-slate-500">/</span>
+            <strong class="numbers-font text-amber-400 font-black text-sm">${Number(pkg.price).toLocaleString()} EGP</strong>
+          </div>
+        </div>
+      `;
+    }
+
+    // Reset inputs
+    const phoneInput = document.getElementById('exclusive-sender-phone');
+    const receiptInput = document.getElementById('exclusive-receipt-number');
+    if (phoneInput) phoneInput.value = '';
+    if (receiptInput) receiptInput.value = '';
+
+    document.getElementById('exclusive-success-notice')?.classList.add('hidden');
+    document.getElementById('exclusive-order-form')?.classList.remove('hidden');
+
+    document.getElementById('exclusive-view-packages')?.classList.add('hidden');
+    document.getElementById('exclusive-view-checkout')?.classList.remove('hidden');
+  }
+
+  async function submitExclusiveOfferOrder() {
+    if (!_activeSelectedExclusivePkg) {
+      showToast('خطأ', 'يرجى اختيار باقة عروض أولاً.', 'error');
+      return;
+    }
+
+    const phone = (document.getElementById('exclusive-sender-phone')?.value || '').trim();
+    const receipt = (document.getElementById('exclusive-receipt-number')?.value || '').trim();
+    const submitBtn = document.getElementById('btn-submit-exclusive-order');
+    const btnText = document.getElementById('exclusive-submit-btn-text');
+
+    if (!phone || !receipt) {
+      showToast('بيانات ناقصة', 'يرجى إدخال رقم الهاتف/الحساب المحوّل منه ورقم العملية أو الوصل.', 'error');
+      return;
+    }
+
+    try {
+      if (submitBtn) submitBtn.disabled = true;
+      if (btnText) btnText.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> جاري الإرسال...';
+
+      const requestPayload = {
+        username: GameEngine.activeUsername,
+        packageId: _activeSelectedExclusivePkg.id,
+        packageName: _activeSelectedExclusivePkg.name,
+        price: _activeSelectedExclusivePkg.price,
+        rewards: {
+          cash: _activeSelectedExclusivePkg.cash || 0,
+          bank: 0,
+          gold: _activeSelectedExclusivePkg.gold || 0,
+          xp: 0,
+          isOneTime: true
+        },
+        senderPhoneOrName: phone,
+        receiptNumber: receipt
+      };
+
+      await AppDB.submitTopupRequest(requestPayload);
+
+      playCasinoSound('win');
+      showToast('تم الإرسال بنجاح', 'طلب شحن العرض الحصري قيد المراجعة الفورية لدى الإدارة.', 'success');
+
+      document.getElementById('exclusive-order-form')?.classList.add('hidden');
+      document.getElementById('exclusive-success-notice')?.classList.remove('hidden');
+
+      // Update current state to mark as pending immediately
+      setTimeout(() => {
+        openExclusiveOffersModal();
+      }, 2500);
+    } catch (err) {
+      showToast('خطأ في الإرسال', err.message || 'تعذر إرسال طلب الشحن.', 'error');
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+      if (btnText) btnText.innerHTML = 'إرسال وتأكيد طلب الشحن الآن ⚡';
+    }
+  }
+
+  function checkAndShowExclusiveOffersModal() {
+    try {
+      if (typeof sessionStorage !== 'undefined') {
+        const alreadyShown = sessionStorage.getItem('rasalmal_exclusive_offers_shown_session');
+        if (alreadyShown) return;
+      }
+
+      const s = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : {};
+      const purchased = Array.isArray(s.purchasedOneTimePackages) ? s.purchasedOneTimePackages : [];
+      const allPkgIds = [
+        'pkg_exclusive_starter_10usd',
+        'pkg_exclusive_rising_25usd',
+        'pkg_exclusive_whale_50usd',
+        'pkg_exclusive_elite_85usd',
+        'pkg_exclusive_emperor_100usd'
+      ];
+      const allPurchased = allPkgIds.every(id => purchased.includes(id));
+      if (allPurchased) {
+        // Player already owns all 5 exclusive packages!
+        return;
+      }
+
+      if (typeof sessionStorage !== 'undefined') {
+        sessionStorage.setItem('rasalmal_exclusive_offers_shown_session', 'true');
+      }
+
+      setTimeout(() => {
+        openExclusiveOffersModal();
+      }, 1600);
+    } catch (e) {
+      console.warn('[ExclusiveOffers] checkAndShow error:', e);
+    }
+  }
+
+
+  // ─────────────────────────────────────────────
   // TOP-UP & SUPPORT STORE CONTROLLER (متجر الشحن والدعم)
   // ─────────────────────────────────────────────
   let _activeSelectedTopupPkg = null;
@@ -25976,6 +26340,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     closeTopupModal,
     selectPackageForTopup,
     submitTopupOrder,
+    openExclusiveOffersModal,
+    closeExclusiveOffersModal,
+    checkAndShowExclusiveOffersModal,
 
     // Notifications & Messages Center Exports
     openNotificationsModal,
@@ -26099,6 +26466,8 @@ window.sendLinkEmailOtp = UIController.sendLinkEmailOtp;
 window.verifyAndLinkEmail = UIController.verifyAndLinkEmail;
 window.skipLinkEmailAndContinue = UIController.skipLinkEmailAndContinue;
 window.resetLinkEmailStep = UIController.resetLinkEmailStep;
+window.openExclusiveOffersModal = UIController.openExclusiveOffersModal;
+window.closeExclusiveOffersModal = UIController.closeExclusiveOffersModal;
 
 // Continuous Farm Live Ticker (Every 1s smooth countdown & progress bar gliding)
 if (typeof window !== 'undefined') {
