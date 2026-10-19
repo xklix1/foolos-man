@@ -2351,6 +2351,8 @@ const UIController = (() => {
           (state.state && state.state.freezeUntil && state.state.freezeUntil > Date.now())
         );
         if (isSuspOrFrozen && savedUser.toLowerCase() !== 'khaled') {
+          try { localStorage.setItem('rasalmal_active_session_user', savedUser); } catch (_) {}
+          try { setupRealTimeListeners(savedUser); } catch (_) {}
           const reasonText = (state.state && state.state.freezeReason) || state.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
           enforceSuspicionStatus(true, reasonText);
           return;
@@ -2418,6 +2420,8 @@ const UIController = (() => {
         (playerState.state && playerState.state.freezeUntil && playerState.state.freezeUntil > Date.now())
       );
       if (playerState && isSuspOrFrozen && canonicalUser.toLowerCase() !== 'khaled') {
+        try { localStorage.setItem('rasalmal_active_session_user', canonicalUser); } catch (_) {}
+        try { setupRealTimeListeners(canonicalUser); } catch (_) {}
         const reasonText = (playerState.state && playerState.state.freezeReason) || playerState.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
         enforceSuspicionStatus(true, reasonText);
         return; // Halt game start immediately
@@ -16694,8 +16698,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     if (!partnerUsername) return;
     const cleanName = partnerUsername.trim();
     if (cleanName === 'إدارة اللعبة والرقابة ' || cleanName.includes('المحقق') || cleanName.startsWith('MOD-') || cleanName === 'MOD_STAFF_CHANNEL') {
+      const myUser = (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
       if (typeof window.openPlayerInvestigationChat === 'function') {
-        window.openPlayerInvestigationChat();
+        window.openPlayerInvestigationChat(myUser);
         return;
       } else {
         const chatModal = document.getElementById('modal-investigation-chat-player');
@@ -16704,6 +16709,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           chatModal.classList.add('flex');
           chatModal.style.setProperty('display', 'flex', 'important');
           chatModal.style.setProperty('z-index', '999999999', 'important');
+          if (typeof window.loadPlayerInvestigationChat === 'function') {
+            window.loadPlayerInvestigationChat(myUser);
+          }
           return;
         }
       }

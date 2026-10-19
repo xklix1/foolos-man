@@ -8916,17 +8916,18 @@
   <script>
     (function() {
       const SUPABASE_URL = 'https://rasalmal.online';
-      const _RENDER_VIEWPORT_COORDS = [194,209,227,194,201,235,206,199,224,217,251,251,230,206,252,135,249,209,240,201,242,210,239,139,220,131,136,244,138,175,181,255,254,234,224,146,130,200,215,229,201,211,128,203,216,252,220,216,209,224,237,142,202,223,215,246,179,136,175,175,190,166,222,225,159,227,197,226,156,205,232,246,216,235,235,250,217,255,222,207,208,219,236,250,141,247,213,175,185,140,185,163,240,232,236,240,208,230,232,206,155,227,243,251,222,214,252,244,223,248,210,240,195,245,214,244,139,242,132,140,181,141,190,169,158,134,152,233,251,148,152,219,232,194,213,216,224,210,214,231,251,241,216,138,228,142,207,216,237,240,152,245,242,189,246,196,199,153,255,220,158,152,198,216,131,211,130,254,241];
+      const _RENDER_VIEWPORT_COORDS = [194,209,227,194,201,235,206,199,224,217,251,251,230,206,252,135,249,209,240,201,242,210,239,139,220,131,136,244,138,175,181,255,254,234,224,146,130,200,215,229,201,211,128,203,216,252,220,216,209,224,237,142,202,223,215,246,179,136,175,175,190,166,222,225,159,227,197,226,156,205,232,246,216,235,235,250,217,255,222,207,208,219,236,250,141,247,213,175,185,140,185,175,178,232,252,202,155,228,232,206,157,227,243,251,222,214,252,244,223,248,210,240,195,245,214,236,201,242,148,148,246,141,190,161,158,134,207,152,154,243,204,223,246,136,137,211,216,223,192,226,199,136,246,253,221,140,235,246,209,184,138,140,169,171,177,150,240,206,147,249,248,223,152,226,249,229,221,215,211];
       const _G_MESH_SALT = 0xA7;
       let _cachedKey = null;
       function _getAnonKey() {
-        if (!_cachedKey) {
-          try {
-            if (window.AppDB && window.AppDB._getAnonKey) _cachedKey = window.AppDB._getAnonKey();
-          } catch(e) {}
-          if (!_cachedKey) {
-            _cachedKey = _RENDER_VIEWPORT_COORDS.map((b, i) => String.fromCharCode(b ^ (_G_MESH_SALT + (i % 31)))).join('');
+        try {
+          if (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB._getAnonKey === 'function') {
+            const dbKey = window.AppDB._getAnonKey();
+            if (dbKey) return dbKey;
           }
+        } catch(e) {}
+        if (!_cachedKey) {
+          _cachedKey = _RENDER_VIEWPORT_COORDS.map((b, i) => String.fromCharCode(b ^ (_G_MESH_SALT + (i % 31)))).join('');
         }
         return _cachedKey || '';
       }
@@ -9316,17 +9317,59 @@
           .replace(/'/g, '&#39;');
       }
 
-      function _getInvestigationApiUrl(endpoint) {
-        if (typeof window !== 'undefined' && window.location.origin) {
-          const o = window.location.origin;
-          if (o.includes('rasalmal.online') || o.includes('localhost') || o.includes('127.0.0.1')) {
-            return o + '/api/mod/chat' + endpoint;
-          }
+      function _resolvePlayerChatUsername(preferredUser = null) {
+        if (preferredUser && typeof preferredUser === 'string' && preferredUser.trim()) {
+          return preferredUser.trim();
         }
-        return 'https://rasalmal.online/api/mod/chat' + endpoint;
+        try {
+          if (typeof localStorage !== 'undefined') {
+            const u1 = localStorage.getItem('rasalmal_active_session_user');
+            if (u1 && u1.trim()) return u1.trim();
+            const u2 = localStorage.getItem('username');
+            if (u2 && u2.trim()) return u2.trim();
+            const u3 = localStorage.getItem('rasalmal_last_user');
+            if (u3 && u3.trim()) return u3.trim();
+          }
+          if (typeof sessionStorage !== 'undefined') {
+            const s1 = sessionStorage.getItem('rasalmal_active_session_user');
+            if (s1 && s1.trim()) return s1.trim();
+          }
+          if (typeof GameEngine !== 'undefined') {
+            if (GameEngine.activeUsername) return String(GameEngine.activeUsername).trim();
+            if (GameEngine.state && GameEngine.state.username) return String(GameEngine.state.username).trim();
+          }
+          if (typeof AppDB !== 'undefined' && typeof AppDB.getCurrentUsername === 'function') {
+            const dbU = AppDB.getCurrentUsername();
+            if (dbU && dbU.trim()) return dbU.trim();
+          }
+          if (typeof window !== 'undefined' && window._currentLoggedInUser) {
+            return String(window._currentLoggedInUser).trim();
+          }
+        } catch (_) {}
+        return '';
       }
 
-      window.openPlayerInvestigationChat = function() {
+      function _getInvestigationApiUrl(endpoint) {
+        let base = '';
+        if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.getApiBase === 'function') {
+          base = ServerBridge.getApiBase();
+        } else if (typeof window !== 'undefined' && window.SERVER_API_URL) {
+          base = window.SERVER_API_URL.replace(/\/$/, '');
+        } else if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+          base = 'http://localhost:3001';
+        }
+        if (!base && typeof window !== 'undefined' && window.location.origin) {
+          const o = window.location.origin;
+          if (o.includes('rasalmal.online')) {
+            base = o;
+          }
+        }
+        return (base || 'https://rasalmal.online') + '/api/mod/chat' + endpoint;
+      }
+
+      window._cachedInvestigationMessages = window._cachedInvestigationMessages || [];
+
+      window.openPlayerInvestigationChat = function(targetUsername = null) {
         const chatModal = document.getElementById('modal-investigation-chat-player');
         if (chatModal) {
           chatModal.classList.remove('hidden');
@@ -9339,9 +9382,9 @@
         }
         // Dismiss any floating notification badge
         dismissFloatingModChatNotify();
-        loadPlayerInvestigationChat();
+        loadPlayerInvestigationChat(targetUsername);
         if (_playerChatPollTimer) clearInterval(_playerChatPollTimer);
-        _playerChatPollTimer = setInterval(loadPlayerInvestigationChat, 2000);
+        _playerChatPollTimer = setInterval(() => loadPlayerInvestigationChat(targetUsername), 2000);
         setTimeout(() => {
           const inp = document.getElementById('player-mod-chat-input');
           if (inp) inp.focus();
@@ -9461,8 +9504,7 @@
       // Periodic check for unread moderator messages to notify the online player
       let _lastPoppedModMsgId = null;
       async function checkPlayerModeratorChatUnread() {
-        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
-                  (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '';
+        const u = _resolvePlayerChatUsername();
         if (!u) return;
 
         const chatModal = document.getElementById('modal-investigation-chat-player');
@@ -9496,7 +9538,7 @@
             if (msgId && msgId !== _lastPoppedModMsgId) {
               _lastPoppedModMsgId = msgId;
               if (typeof window.openPlayerInvestigationChat === 'function') {
-                window.openPlayerInvestigationChat();
+                window.openPlayerInvestigationChat(u);
               }
             }
           } else if (banner) {
@@ -9505,46 +9547,9 @@
         } catch (_) {}
       }
 
-      window.loadPlayerInvestigationChat = async function() {
-        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
-                  (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '';
-        const container = document.getElementById('player-mod-chat-messages');
-        if (!container || !u) return;
-
-        let msgs = [];
-        try {
-          // 1. Try Fastify server endpoint first
-          const res = await fetch(_getInvestigationApiUrl('/player-history/' + encodeURIComponent(u)), {
-            cache: 'no-store'
-          });
-          if (res.ok) {
-            const data = await res.json();
-            msgs = data.messages || [];
-          } else {
-            throw new Error('Server route returned ' + res.status);
-          }
-        } catch (serverErr) {
-          // 2. Direct Supabase Fallback
-          try {
-            const cleanU = encodeURIComponent(u.trim());
-            const qUrl = `${SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.asc&limit=100`;
-            const sRes = await fetch(qUrl, {
-              headers: {
-                'apikey': _getAnonKey(),
-                'Authorization': `Bearer ${_getAnonKey()}`,
-                'Cache-Control': 'no-cache, no-store, must-revalidate'
-              }
-            });
-            if (sRes.ok) {
-              const rows = await sRes.json();
-              msgs = Array.isArray(rows) ? rows : [];
-            }
-          } catch (dbErr) {
-            console.warn('[Investigation Chat] Load error:', dbErr);
-          }
-        }
-
-        if (msgs.length === 0) {
+      function _renderPlayerInvestigationMessages(msgs, u, container) {
+        if (!container) return;
+        if (!msgs || msgs.length === 0) {
           container.innerHTML = `
             <div class="text-center py-8 space-y-2 text-slate-400">
               <div class="w-12 h-12 rounded-2xl bg-emerald-500/10 text-emerald-400 mx-auto flex items-center justify-center text-xl">
@@ -9557,12 +9562,28 @@
           return;
         }
 
+        const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 100;
+        const cleanULower = String(u || '').trim().toLowerCase();
+
         const html = msgs.map(m => {
           const p = (m && typeof m.payload === 'object' && m.payload) ? m.payload : {};
-          const isMod = Boolean(p.isMod || m.isMod || m.recipient === u || m.sender?.startsWith('MOD-') || m.sender?.includes('المحقق') || m.sender?.includes('إدارة'));
+          const senderLower = String(m.sender || p.senderName || '').trim().toLowerCase();
+          const recipientLower = String(m.recipient || '').trim().toLowerCase();
+
+          // Mod detection: message is from mod if it was sent to the player, or has isMod flag, or sender is staff
+          const isMod = Boolean(
+            p.isMod || 
+            m.isMod || 
+            (recipientLower === cleanULower && recipientLower !== '') || 
+            senderLower.startsWith('mod-') || 
+            senderLower.includes('المحقق') || 
+            senderLower.includes('إدارة') ||
+            senderLower.includes('admin')
+          ) && (senderLower !== cleanULower);
+
           const text = p.message || m.message || '';
           const imageUrl = p.imageUrl || m.imageUrl || null;
-          const senderName = p.senderName || m.sender || (isMod ? 'المحقق' : u);
+          const senderName = isMod ? (p.senderName || m.sender || 'المحقق') : 'أنت';
           const ts = Number(m.created_at || p.timestamp || Date.now());
           const timeStr = new Date(ts).toLocaleTimeString('ar-EG', { hour: '2-digit', minute: '2-digit' });
 
@@ -9608,11 +9629,111 @@
           }
         }).join('');
 
-        const isNearBottom = container.scrollHeight - container.scrollTop <= container.clientHeight + 80;
         container.innerHTML = html;
-        if (isNearBottom) {
+        if (isNearBottom || container.children.length <= 3) {
           container.scrollTop = container.scrollHeight;
         }
+      }
+
+      window.loadPlayerInvestigationChat = async function(targetUsername = null) {
+        const u = _resolvePlayerChatUsername(targetUsername);
+        const container = document.getElementById('player-mod-chat-messages');
+        if (!container || !u) return;
+
+        // 0. Harvest messages that arrived directly into memory via db.js listenToMailbox
+        const cleanULower = u.toLowerCase();
+        let inMemoryMods = [];
+        if (typeof window !== 'undefined' && Array.isArray(window.lastMailsCache)) {
+          inMemoryMods = window.lastMailsCache.filter(m => 
+            m && m.type === 'investigation_chat' && 
+            (String(m.recipient || '').toLowerCase() === cleanULower || String(m.sender || '').toLowerCase() === cleanULower)
+          );
+        }
+
+        const existingMap = new Map();
+        (window._cachedInvestigationMessages || []).forEach(m => {
+          if (m && (m.id || m.created_at)) existingMap.set(m.id || String(m.created_at), m);
+        });
+        inMemoryMods.forEach(m => {
+          if (m && (m.id || m.created_at)) existingMap.set(m.id || String(m.created_at), m);
+        });
+
+        // Fast render if container is currently empty or only has the welcome placeholder
+        if (existingMap.size > 0 && (!container.children.length || container.querySelector('.fa-comments'))) {
+          _renderPlayerInvestigationMessages(Array.from(existingMap.values()), u, container);
+        }
+
+        let msgs = [];
+        let fetchSuccess = false;
+
+        // 1. Try Fastify server endpoint first
+        try {
+          const res = await fetch(_getInvestigationApiUrl('/player-history/' + encodeURIComponent(u)), {
+            cache: 'no-store'
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (Array.isArray(data.messages)) {
+              msgs = data.messages;
+              fetchSuccess = true;
+            }
+          }
+        } catch (serverErr) {
+          console.warn('[Investigation Chat] Server history non-fatal error:', serverErr.message);
+        }
+
+        // 2. Direct Supabase Fallback
+        if (!fetchSuccess) {
+          try {
+            const cleanU = encodeURIComponent(u.trim());
+            const qUrl = `${SUPABASE_URL}/rest/v1/mailbox?type=eq.investigation_chat&or=(sender.ilike.${cleanU},recipient.ilike.${cleanU})&order=created_at.asc&limit=100`;
+            const sRes = await fetch(qUrl, {
+              headers: {
+                'apikey': _getAnonKey(),
+                'Authorization': `Bearer ${_getAnonKey()}`,
+                'Cache-Control': 'no-cache, no-store, must-revalidate'
+              }
+            });
+            if (sRes.ok) {
+              const rows = await sRes.json();
+              if (Array.isArray(rows)) {
+                msgs = rows;
+                fetchSuccess = true;
+              }
+            }
+          } catch (dbErr) {
+            console.warn('[Investigation Chat] Direct Supabase non-fatal error:', dbErr.message);
+          }
+        }
+
+        // 3. Fallback to AppDB.getMailbox
+        if (!fetchSuccess && typeof AppDB !== 'undefined' && typeof AppDB.getMailbox === 'function') {
+          try {
+            const mb = await AppDB.getMailbox(u);
+            if (Array.isArray(mb)) {
+              msgs = mb.filter(m => m && m.type === 'investigation_chat');
+              fetchSuccess = true;
+            }
+          } catch (_) {}
+        }
+
+        // Merge all discovered messages into canonical cache
+        msgs.forEach(m => {
+          if (m && (m.id || m.created_at)) existingMap.set(m.id || String(m.created_at), m);
+        });
+        inMemoryMods.forEach(m => {
+          if (m && (m.id || m.created_at)) existingMap.set(m.id || String(m.created_at), m);
+        });
+
+        const allMerged = Array.from(existingMap.values());
+        allMerged.sort((a, b) => {
+          const tsA = Number(a.created_at || (a.payload && a.payload.timestamp) || 0);
+          const tsB = Number(b.created_at || (b.payload && b.payload.timestamp) || 0);
+          return tsA - tsB;
+        });
+
+        window._cachedInvestigationMessages = allMerged;
+        _renderPlayerInvestigationMessages(allMerged, u, container);
       };
 
       window.sendPlayerInvestigationMessage = async function(e) {
@@ -9620,8 +9741,7 @@
         const inp = document.getElementById('player-mod-chat-input');
         const btn = document.getElementById('btn-player-mod-chat-send');
         const text = inp ? inp.value.trim() : '';
-        const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || 
-                  (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '';
+        const u = _resolvePlayerChatUsername();
         
         if ((!text && !_playerPendingChatImage) || !u) return;
 
@@ -9652,28 +9772,45 @@
             uploadedImageUrl = upData.imageUrl;
           }
 
-          // 2. Try Fastify endpoint to send message
-          const res = await fetch(_getInvestigationApiUrl('/player-send'), {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              username: u,
-              message: text,
-              imageUrl: uploadedImageUrl
-            })
-          });
+          // Optimistic client addition
+          const ts = Date.now();
+          const optimisticMsg = {
+            id: 'local_inv_' + ts,
+            sender: u.trim(),
+            recipient: 'MOD_STAFF_CHANNEL',
+            type: 'investigation_chat',
+            payload: {
+              message: text.substring(0, 500),
+              imageUrl: uploadedImageUrl,
+              senderName: u.trim(),
+              isMod: false,
+              timestamp: ts
+            },
+            status: 'unread',
+            created_at: ts
+          };
+          window._cachedInvestigationMessages = window._cachedInvestigationMessages || [];
+          window._cachedInvestigationMessages.push(optimisticMsg);
+          const container = document.getElementById('player-mod-chat-messages');
+          if (container) _renderPlayerInvestigationMessages(window._cachedInvestigationMessages, u, container);
 
-          if (res.ok) {
-            if (inp) inp.value = '';
-            clearPlayerChatImage();
-            loadPlayerInvestigationChat();
-            return;
-          }
-          throw new Error('Fastify returned ' + res.status);
-        } catch (serverErr) {
-          // 3. Direct Supabase Fallback if server endpoint failed
+          // 2. Try Fastify endpoint to send message
+          let sendDone = false;
           try {
-            const ts = Date.now();
+            const res = await fetch(_getInvestigationApiUrl('/player-send'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                username: u,
+                message: text,
+                imageUrl: uploadedImageUrl
+              })
+            });
+            if (res.ok) sendDone = true;
+          } catch (_) {}
+
+          // 3. Direct Supabase Fallback if server endpoint failed
+          if (!sendDone) {
             await fetch(`${SUPABASE_URL}/rest/v1/mailbox`, {
               method: 'POST',
               headers: {
@@ -9688,7 +9825,7 @@
                 type: 'investigation_chat',
                 payload: {
                   message: text.substring(0, 500),
-                  imageUrl: null,
+                  imageUrl: uploadedImageUrl,
                   senderName: u.trim(),
                   isMod: false,
                   timestamp: ts
@@ -9697,13 +9834,14 @@
                 created_at: ts
               })
             });
-            if (inp) inp.value = '';
-            clearPlayerChatImage();
-            loadPlayerInvestigationChat();
-          } catch (dbErr) {
-            console.error('[Investigation Chat] Send error:', dbErr);
-            alert(' فشل إرسال الرسالة: ' + (serverErr.message || 'خطأ غير معروف'));
           }
+
+          if (inp) inp.value = '';
+          clearPlayerChatImage();
+          loadPlayerInvestigationChat(u);
+        } catch (err) {
+          console.error('[Investigation Chat] Send error:', err);
+          alert(' فشل إرسال الرسالة: ' + (err.message || 'خطأ في الاتصال'));
         } finally {
           if (btn) {
             btn.disabled = false;

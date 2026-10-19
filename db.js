@@ -3061,7 +3061,7 @@ var AppDB = (() => {
     try {
       const u1 = encodeURIComponent(user1.trim());
       const u2 = encodeURIComponent(user2.trim());
-      const rows = await _api(`mailbox?or=(and(recipient.eq.${u1},sender.eq.${u2}),and(recipient.eq.${u2},sender.eq.${u1}))&type=eq.dm&order=seq.desc.nullslast,created_at.desc&limit=150`);
+      const rows = await _api(`mailbox?or=(and(recipient.eq.${u1},sender.eq.${u2}),and(recipient.eq.${u2},sender.eq.${u1}))&type=in.(dm,investigation_chat)&order=seq.desc.nullslast,created_at.desc&limit=150`);
       if (!Array.isArray(rows)) return [];
       return rows.reverse();
     } catch (e) {
@@ -3073,7 +3073,7 @@ var AppDB = (() => {
     if (!username) return [];
     try {
       const u = encodeURIComponent(username.trim());
-      const rows = await _api(`mailbox?or=(recipient.eq.${u},sender.eq.${u})&type=eq.dm&order=seq.desc.nullslast,created_at.desc&limit=150`);
+      const rows = await _api(`mailbox?or=(recipient.eq.${u},sender.eq.${u})&type=in.(dm,investigation_chat)&order=seq.desc.nullslast,created_at.desc&limit=150`);
       return Array.isArray(rows) ? rows : [];
     } catch (e) {
       return [];
@@ -3358,14 +3358,22 @@ var AppDB = (() => {
                   const senderName = payload.senderName || sender || 'المحقق';
                   const msgText = payload.message || m.message || (payload.imageUrl ? ' أرسل لك صورة مرفقة.' : 'رسالة جديدة من فريق التحقيق والمراقبة.');
 
+                  // Cache incoming message in memory immediately so chat view never renders empty
+                  if (typeof window !== 'undefined') {
+                    window._cachedInvestigationMessages = window._cachedInvestigationMessages || [];
+                    if (!window._cachedInvestigationMessages.some(existing => (existing.id && existing.id === m.id) || (existing.created_at === m.created_at && (existing.payload?.message === payload.message)))) {
+                      window._cachedInvestigationMessages.push(m);
+                    }
+                  }
+
                   // Open the live private chat window directly on the player's screen!
                   if (typeof window !== 'undefined' && typeof window.openPlayerInvestigationChat === 'function') {
-                    window.openPlayerInvestigationChat();
+                    window.openPlayerInvestigationChat(username);
                   }
 
                   // If already open, refresh messages immediately!
                   if (typeof window !== 'undefined' && typeof window.loadPlayerInvestigationChat === 'function') {
-                    window.loadPlayerInvestigationChat();
+                    window.loadPlayerInvestigationChat(username);
                   }
 
                   // Play chat notification sound
