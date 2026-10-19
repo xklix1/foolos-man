@@ -598,17 +598,17 @@ function sellFarmCrop(state, cropId, requestedQty = null, serverNow = Date.now()
     throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} ج.م).`);
   }
 
-  // Contract-Only Economy: Direct emergency clearance recovers capital cost (seedCost / baseYield)
-  const unitCropCost = Math.max(1, Math.floor((crop.seedCost || 10) / (crop.baseYield || 10)));
+  // Profitable Farm Economy: Use crop.sellPrice for profitable liquidation
+  const unitPrice = Number(crop.sellPrice) || Math.max(1, Math.floor((crop.seedCost || 10) / (crop.baseYield || 10)));
   let qtyToSell = requestedQty ? Math.min(available, Math.max(1, Number(requestedQty))) : available;
-  let totalPrice = qtyToSell * unitCropCost;
+  let totalPrice = qtyToSell * unitPrice;
 
   if (totalPrice > remainingCap) {
-    qtyToSell = Math.floor(remainingCap / unitCropCost);
+    qtyToSell = Math.floor(remainingCap / unitPrice);
     if (qtyToSell <= 0) {
       throw new Error(`سقف التسييل المتبقي اليوم (${remainingCap.toLocaleString()} ج.م) لا يكفي لتسييل المحصول.`);
     }
-    totalPrice = qtyToSell * unitCropCost;
+    totalPrice = qtyToSell * unitPrice;
   }
 
   f.inventory[cropId] = Math.max(0, available - qtyToSell);
@@ -664,12 +664,12 @@ function sellAllFarmCrops(state, serverNow = Date.now(), clientInventory = null)
     const avail = Number(f.inventory[cId] || 0);
     const crop = FARM_CROPS[cId];
     if (avail > 0 && crop && remainingCap > 0) {
-      const unitCropCost = Math.max(1, Math.floor((crop.seedCost || 10) / (crop.baseYield || 10)));
+      const unitPrice = Number(crop.sellPrice) || Math.max(1, Math.floor((crop.seedCost || 10) / (crop.baseYield || 10)));
       let qty = avail;
-      let cost = qty * unitCropCost;
+      let cost = qty * unitPrice;
       if (cost > remainingCap) {
-        qty = Math.floor(remainingCap / unitCropCost);
-        cost = qty * unitCropCost;
+        qty = Math.floor(remainingCap / unitPrice);
+        cost = qty * unitPrice;
       }
       if (qty > 0) {
         f.inventory[cId] = Math.max(0, avail - qty);
@@ -738,20 +738,17 @@ function sellProcessedGood(state, recipeId, requestedQty = null, serverNow = Dat
     throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} ج.م).`);
   }
 
-  // Contract-Only Economy: Emergency dump recovers raw material cost
-  const rawCrop = FARM_CROPS[recipe.inputCrop];
-  const unitCropCost = rawCrop ? Math.max(1, Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10))) : 5;
-  const rawCostPerUnit = unitCropCost * (recipe.inputQty || 1);
-
+  // Value-Add Agro-Processing: Use recipe.baseValue for high-value sales
+  const itemValue = Number(recipe.baseValue) || 35;
   let sellQty = (requestedQty === null || requestedQty <= 0 || requestedQty > available) ? available : Math.floor(Number(requestedQty));
-  let totalPrice = sellQty * rawCostPerUnit;
+  let totalPrice = sellQty * itemValue;
 
   if (totalPrice > remainingCap) {
-    sellQty = Math.floor(remainingCap / rawCostPerUnit);
+    sellQty = Math.floor(remainingCap / itemValue);
     if (sellQty <= 0) {
       throw new Error(`سقف التسييل المتبقي اليوم (${remainingCap.toLocaleString()} ج.م) لا يكفي لتسييل حتى عبوة واحدة من "${recipe.name}".`);
     }
-    totalPrice = sellQty * rawCostPerUnit;
+    totalPrice = sellQty * itemValue;
   }
 
   f.processing.storage[recipeId] = Math.max(0, available - sellQty);
@@ -812,7 +809,8 @@ function sellLivestockProduce(state, produceKey, requestedQty = null, serverNow 
     throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} ج.م).`);
   }
 
-  const pricePerUnit = produceKey === 'compost' ? 10 : 5;
+  // Livestock produce pricing: Milk = 45 EGP, Eggs = 15 EGP, Compost = 10 EGP
+  const pricePerUnit = produceKey === 'compost' ? 10 : (produceKey === 'milk' ? 45 : 15);
   let sellQty = (requestedQty === null || requestedQty <= 0 || requestedQty > available) ? available : Math.floor(Number(requestedQty));
   let totalPrice = sellQty * pricePerUnit;
 
@@ -879,15 +877,12 @@ function sellAllProcessedGoods(state, serverNow = Date.now(), clientStorage = nu
     const avail = Number(f.processing.storage[rId] || 0);
     const recipe = FARM_RECIPES[rId];
     if (avail > 0 && recipe && remainingCap > 0) {
-      const rawCrop = FARM_CROPS[recipe.inputCrop];
-      const unitCropCost = rawCrop ? Math.max(1, Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10))) : 5;
-      const rawCostPerUnit = unitCropCost * (recipe.inputQty || 1);
-
+      const itemValue = Number(recipe.baseValue) || 35;
       let qty = avail;
-      let cost = qty * rawCostPerUnit;
+      let cost = qty * itemValue;
       if (cost > remainingCap) {
-        qty = Math.floor(remainingCap / rawCostPerUnit);
-        cost = qty * rawCostPerUnit;
+        qty = Math.floor(remainingCap / itemValue);
+        cost = qty * itemValue;
       }
       if (qty > 0) {
         f.processing.storage[rId] = Math.max(0, avail - qty);
@@ -956,7 +951,7 @@ function sellAllLivestockProduce(state, serverNow = Date.now(), clientProduce = 
   let soldEggs = eggs;
   let soldCompost = compost;
 
-  const mCost = 5, eCost = 5, cCost = 10;
+  const mCost = 45, eCost = 15, cCost = 10;
   const mFunds = Math.min(remainingCap, milk * mCost);
   soldMilk = Math.floor(mFunds / mCost);
   remainingCap -= soldMilk * mCost;

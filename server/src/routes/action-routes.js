@@ -198,17 +198,33 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     const upgradeCost = getBusinessUpgradeCost(businessId, currentLevel, s);
 
-    // Validate sufficient funds
-    if ((Number(s.cash) || 0) < upgradeCost) {
+    // Validate sufficient funds (Cash + Bank, matching client deductFunds)
+    const currentCash = Number(s.cash) || 0;
+    const currentBank = Number(s.bank) || 0;
+    const totalFunds = currentCash + currentBank;
+
+    if (totalFunds < upgradeCost) {
       return reply.code(400).send({
-        error: `رصيدك غير كافٍ. تحتاج: ${upgradeCost.toLocaleString()} EGP — لديك: ${(Number(s.cash) || 0).toLocaleString()} EGP`,
-        requiredCash: upgradeCost,
-        currentCash: s.cash
+        error: `رصيدك غير كافٍ. تحتاج: ${upgradeCost.toLocaleString()} EGP — لديك: ${totalFunds.toLocaleString()} EGP`,
+        requiredCost: upgradeCost,
+        currentCash,
+        currentBank,
+        totalFunds
       });
     }
 
-    // Authoritatively deduct and upgrade
-    s.cash = (Number(s.cash) || 0) - upgradeCost;
+    // Authoritatively deduct and upgrade (cash first, remainder from bank)
+    if (currentCash >= upgradeCost) {
+      s.cash = currentCash - upgradeCost;
+      s.lastServerCashSpendAt = Date.now();
+    } else {
+      const remainder = upgradeCost - currentCash;
+      s.cash = 0;
+      s.bank = Math.max(0, currentBank - remainder);
+      s.lastServerCashSpendAt = Date.now();
+      s.lastServerBankActionAt = Date.now();
+    }
+
     b.level = currentLevel + 1;
     if (!b.suppliesTicks || b.suppliesTicks <= 0) {
       b.suppliesTicks = 3600; // Refill 1 hour upon initial purchase
@@ -217,7 +233,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     s.netWorth = calculateNetWorth(s);
     s.title = getAppropriateTitle(s.netWorth, s.xp);
 
-    sessionManager.markDirty(session.username);
+    await sessionManager.forceSaveSession(session.username);
 
     return {
       success: true,
@@ -225,6 +241,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       newLevel: b.level,
       costPaid: upgradeCost,
       cash: s.cash,
+      bank: s.bank,
       netWorth: s.netWorth,
       title: s.title,
       businesses: s.businesses
@@ -2481,7 +2498,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const { sectorId } = request.body || {};
     try {
       const res = industryEngine.unlockIndustrySector(session.state, sectorId);
-      sessionManager.markDirty(session.username);
+      session.state.lastServerCashSpendAt = Date.now();
+      session.state.lastServerBankActionAt = Date.now();
+      await sessionManager.forceSaveSession(session.username);
       return reply.send({ success: true, ...res });
     } catch (err) {
       return reply.code(400).send({ error: err.message });
@@ -2495,7 +2514,33 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const { sectorId, stageKey, multiplier = 1 } = request.body || {};
     try {
       const res = industryEngine.upgradeIndustryStage(session.state, sectorId, stageKey, multiplier);
-      sessionManager.markDirty(session.username);
+      session.state.lastServerCashSpendAt = Date.now();
+      session.state.lastServerBankActionAt = Date.now();
+      await sessionManager.forceSaveSession(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/industry/collect-revenue
+  fastify.post('/api/action/industry/collect-revenue', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { sectorId, units, clientIndustry } = request.body || {};
+    try {
+      // Adopt client readyStock if higher (since simulation runs in client loop)
+      if (clientIndustry && clientIndustry.readyStock !== undefined) {
+        const cStock = Math.max(0, Number(clientIndustry.readyStock) || 0);
+        const sSec = session.state.industry && session.state.industry[sectorId];
+        if (sSec && cStock > (Number(sSec.readyStock) || 0)) {
+          sSec.readyStock = cStock;
+        }
+      }
+      const res = industryEngine.collectIndustryRevenue(session.state, sectorId, units);
+      session.state.lastServerCashEarnAt = Date.now();
+      session.state.lastServerCashSpendAt = Date.now();
+      await sessionManager.forceSaveSession(session.username);
       return reply.send({ success: true, ...res });
     } catch (err) {
       return reply.code(400).send({ error: err.message });

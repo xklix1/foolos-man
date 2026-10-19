@@ -286,9 +286,11 @@ var ServerBridge = (() => {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {
         if (res.cash !== undefined) s.cash = res.cash;
+        if (res.bank !== undefined) s.bank = res.bank;
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
         if (res.title !== undefined) s.title = res.title;
         if (res.afkManagerExpiresAt !== undefined) s.afkManagerExpiresAt = res.afkManagerExpiresAt;
+        notifyLocalSpend(s.cash, s.bank);
         if (res.businesses && typeof res.businesses === 'object') {
           s.businesses = s.businesses || {};
           Object.assign(s.businesses, res.businesses);
@@ -414,6 +416,28 @@ var ServerBridge = (() => {
     return _reconcileGenericActionResponse(res, (s, r) => {
       if (r.industry) s.industry = r.industry;
       if (typeof UI !== 'undefined' && UI.renderIndustryEmpirePanel) { try { UI.renderIndustryEmpirePanel(); } catch (_) {} }
+    });
+  }
+
+  async function collectIndustryRevenue(sectorId, units = null, clientIndustry = null) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    _lastServerEarnTimestamp = Date.now();
+    const res = await _post('/api/action/industry/collect-revenue', {
+      username: _activeUsername,
+      sectorId,
+      units,
+      clientIndustry
+    });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.industry && s.industry) {
+        s.industry[sectorId] = r.industry[sectorId];
+      }
+      if (typeof UI !== 'undefined' && UI.renderIndustryEmpirePanel) {
+        try { UI.renderIndustryEmpirePanel(); } catch (_) {}
+      }
+      if (typeof UI !== 'undefined' && UI.renderDashboard) {
+        try { UI.renderDashboard(); } catch (_) {}
+      }
     });
   }
 
@@ -1662,6 +1686,7 @@ var ServerBridge = (() => {
     fireWorker,
     unlockIndustrySector,
     upgradeIndustryStage,
+    collectIndustryRevenue,
     buyImportCargo,
     upgradeWarehouse,
     claimExportProfit,

@@ -138,8 +138,52 @@ function upgradeIndustryStage(state, sectorId, stageKey, multiplier = 1) {
   };
 }
 
+function collectIndustryRevenue(state, sectorId, requestedUnits = null) {
+  if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك بيع الإنتاج الصناعي.");
+  const def = INDUSTRIAL_SECTORS[sectorId];
+  if (!def) throw new Error("القطاع الصناعي المحدد غير متوفر.");
+
+  const industry = ensureIndustryState(state);
+  const secState = industry[sectorId];
+  if (!secState || !secState.unlocked) throw new Error("هذا القطاع الصناعي غير مرخص.");
+
+  const availableUnits = Math.floor(Number(secState.readyStock) || 0);
+  if (availableUnits <= 0) {
+    throw new Error("لا يوجد إنتاج جاهز للبيع في مستودع هذا المصنع حالياً.");
+  }
+
+  const units = (requestedUnits && requestedUnits > 0) ? Math.min(availableUnits, Math.floor(Number(requestedUnits))) : availableUnits;
+  const unitPrice = def.product.baseValue;
+  const grossPayout = units * unitPrice;
+  const overheadRate = 0.15; // 15% operational, energy & maintenance expenses
+  const overheadCost = Math.floor(grossPayout * overheadRate);
+  const netPayout = grossPayout - overheadCost;
+
+  secState.readyStock = Math.max(0, availableUnits - units);
+  secState.totalEarned = (Number(secState.totalEarned) || 0) + netPayout;
+
+  state.cash = (Number(state.cash) || 0) + netPayout;
+  state.netWorth = calculateNetWorth(state);
+
+  return {
+    sectorId,
+    units,
+    unitPrice,
+    grossPayout,
+    overheadCost,
+    netPayout,
+    totalPayout: netPayout,
+    readyStock: secState.readyStock,
+    cash: state.cash,
+    netWorth: state.netWorth,
+    industry: state.industry
+  };
+}
+
 module.exports = {
   ensureIndustryState,
   unlockIndustrySector,
-  upgradeIndustryStage
+  upgradeIndustryStage,
+  collectIndustryRevenue
 };
+

@@ -6879,7 +6879,7 @@ const GameEngine = (() => {
     };
   }
 
-  function collectIndustryRevenue(sectorId) {
+  async function collectIndustryRevenue(sectorId) {
     const info = getIndustrySectorState(sectorId);
     if (!info.state.unlocked) throw new Error("هذا القطاع غير مرخص.");
 
@@ -6891,6 +6891,27 @@ const GameEngine = (() => {
     const overheadRate = 0.15; // 15% operational, energy & maintenance expenses
     const overheadCost = Math.floor(grossPayout * overheadRate);
     const netPayout = grossPayout - overheadCost;
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      try {
+        const serverRes = await ServerBridge.collectIndustryRevenue(sectorId, units, info.state);
+        if (serverRes && serverRes.success) {
+          recordPlayerActivity('بيع إنتاج صناعي',`بيع ${units.toLocaleString()} وحدة من "${info.definition.product.name}" بإجمالي ${grossPayout.toLocaleString()} EGP (مصاريف تشغيل 15%: -${overheadCost.toLocaleString()} EGP | صافي مودع: +${netPayout.toLocaleString()} EGP)`,'business');
+          state.netWorth = calculateNetWorth();
+          await forceSaveState(true);
+          return {
+            units,
+            unitPrice,
+            grossPayout,
+            overheadCost,
+            netPayout,
+            totalPayout: netPayout
+          };
+        }
+      } catch (e) {
+        console.warn('[GameEngine] Server collectIndustryRevenue warning:', e.message);
+      }
+    }
 
     info.state.readyStock -= units;
     state.cash = (state.cash || 0) + netPayout;
@@ -7712,18 +7733,18 @@ const GameEngine = (() => {
       throw new Error(`لقد استنفدت كامل سقف الأرباح والتسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} EGP). المتبقي لك اليوم: 0 EGP. يمكنك الانتظار للغد.`);
     }
 
-    // Contract-Only Economy: Direct sale is an emergency clearance recovering only seedCost (0% profit)
-    const unitCropCost = Math.max(1, Math.floor((crop.seedCost || 10) / (crop.baseYield || 10)));
+    // Profitable Farm Economy: Use crop.sellPrice for profitable liquidation
+    const unitPrice = Number(crop.sellPrice) || Math.max(1, Math.floor((crop.seedCost || 10) / (crop.baseYield || 10)));
     let sellQty = available;
-    let totalPrice = sellQty * unitCropCost;
+    let totalPrice = sellQty * unitPrice;
 
     if (!info.isUnlimited && totalPrice > info.remaining) {
-      const allowedQty = Math.floor(info.remaining / unitCropCost);
+      const allowedQty = Math.floor(info.remaining / unitPrice);
       if (allowedQty <= 0) {
         throw new Error(`سقف الأرباح والتسييل المتبقي اليوم (${info.remaining.toLocaleString()} EGP) لا يكفي لتسييل حتى وحدة واحدة من "${crop.name}".`);
       }
       sellQty = allowedQty;
-      totalPrice = sellQty * unitCropCost;
+      totalPrice = sellQty * unitPrice;
     }
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
@@ -7781,15 +7802,15 @@ const GameEngine = (() => {
     Object.keys(f.inventory).forEach(cId => {
       const availableQty = Number(f.inventory[cId] || 0);
       if (availableQty > 0 && FARM_CROPS[cId] && remainingCap > 0) {
-        const unitCropCost = Math.max(1, Math.floor((FARM_CROPS[cId].seedCost || 10) / (FARM_CROPS[cId].baseYield || 10)));
-        const neededFunds = availableQty * unitCropCost;
+        const unitPrice = Number(FARM_CROPS[cId].sellPrice) || Math.max(1, Math.floor((FARM_CROPS[cId].seedCost || 10) / (FARM_CROPS[cId].baseYield || 10)));
+        const neededFunds = availableQty * unitPrice;
         let qtyToSell = availableQty;
         if (neededFunds > remainingCap) {
-          qtyToSell = Math.floor(remainingCap / unitCropCost);
+          qtyToSell = Math.floor(remainingCap / unitPrice);
         }
 
         if (qtyToSell > 0) {
-          const itemPrice = qtyToSell * unitCropCost;
+          const itemPrice = qtyToSell * unitPrice;
           grandTotal += itemPrice;
           itemsSold += qtyToSell;
           remainingCap -= itemPrice;
@@ -7906,20 +7927,18 @@ const GameEngine = (() => {
     }
 
     let sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
-    // Contract-Only Economy: Emergency dump recovers only raw material seed cost (0% profit)
-    const rawCrop = FARM_CROPS[recipe.inputCrop];
-    const unitCropCost = rawCrop ? Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10)) : 5;
-    const rawCostPerUnit = unitCropCost * (recipe.inputQty || 1);
-    let totalPrice = sellQty * rawCostPerUnit;
+    // Value-Add Agro-Processing: Use recipe.baseValue for high-value sales
+    const itemValue = Number(recipe.baseValue) || 35;
+    let totalPrice = sellQty * itemValue;
 
     // Smart Partial Liquidation: if requested amount exceeds remaining cap, clamp sellQty to fit perfectly
     if (!info.isUnlimited && totalPrice > info.remaining) {
-      const allowedQty = Math.floor(info.remaining / rawCostPerUnit);
+      const allowedQty = Math.floor(info.remaining / itemValue);
       if (allowedQty <= 0) {
         throw new Error(`سقف التسييل المتبقي اليوم (${info.remaining.toLocaleString()} EGP) لا يكفي لتسييل حتى وحدة واحدة من "${recipe.name}". المتبقي لك محفوظ بالمستودع.`);
       }
       sellQty = allowedQty;
-      totalPrice = sellQty * rawCostPerUnit;
+      totalPrice = sellQty * itemValue;
     }
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
@@ -7987,18 +8006,15 @@ const GameEngine = (() => {
     Object.keys(f.processing.storage).forEach(rId => {
       const availableQty = Number(f.processing.storage[rId] || 0);
       if (availableQty > 0 && FARM_RECIPES[rId] && remainingCap > 0) {
-        const rawCrop = FARM_CROPS[FARM_RECIPES[rId].inputCrop];
-        const unitCropCost = rawCrop ? Math.floor((rawCrop.seedCost || 10) / (rawCrop.baseYield || 10)) : 5;
-        const rawCostPerUnit = unitCropCost * (FARM_RECIPES[rId].inputQty || 1);
-
-        const neededFunds = availableQty * rawCostPerUnit;
+        const itemValue = Number(FARM_RECIPES[rId].baseValue) || 35;
+        const neededFunds = availableQty * itemValue;
         let qtyToSell = availableQty;
         if (neededFunds > remainingCap) {
-          qtyToSell = Math.floor(remainingCap / rawCostPerUnit);
+          qtyToSell = Math.floor(remainingCap / itemValue);
         }
 
         if (qtyToSell > 0) {
-          const itemPrice = qtyToSell * rawCostPerUnit;
+          const itemPrice = qtyToSell * itemValue;
           grandTotal += itemPrice;
           itemsSold += qtyToSell;
           remainingCap -= itemPrice;
@@ -8127,8 +8143,8 @@ const GameEngine = (() => {
     }
 
     let sellQty = (qty === null || qty <= 0 || qty > available) ? available : Math.floor(Number(qty));
-    // Contract-Only Economy: Emergency dump recovers only nominal feeding cost (5 EGP, 0% profit)
-    const pricePerUnit = produceKey === 'compost' ? 10 : 5;
+    // Livestock produce market pricing: Milk = 45 EGP, Eggs = 15 EGP, Compost = 10 EGP
+    const pricePerUnit = produceKey === 'compost' ? 10 : (produceKey === 'milk' ? 45 : 15);
     let totalPrice = sellQty * pricePerUnit;
 
     if (!info.isUnlimited && totalPrice > info.remaining) {
@@ -8204,9 +8220,9 @@ const GameEngine = (() => {
     const eggs = Number(ls.eggs || 0);
     const compost = Number(ls.compost || 0);
 
-    // Nominal feed recovery (0% profit)
-    const milkPrice = milk * 5;
-    const eggsPrice = eggs * 5;
+    // Profitable produce market pricing: Milk = 45 EGP, Eggs = 15 EGP, Compost = 10 EGP
+    const milkPrice = milk * 45;
+    const eggsPrice = eggs * 15;
     const compostPrice = compost * 10;
     const grandTotal = milkPrice + eggsPrice + compostPrice;
 
@@ -8220,8 +8236,8 @@ const GameEngine = (() => {
     let soldCompost = compost;
 
     if (!info.isUnlimited && grandTotal > remainingCap) {
-      const mCost = 5;
-      const eCost = 5;
+      const mCost = 45;
+      const eCost = 15;
       const cCost = 10;
 
       const mFunds = Math.min(remainingCap, milk * mCost);
@@ -8242,7 +8258,7 @@ const GameEngine = (() => {
       }
     }
 
-    const finalTotal = (soldMilk * 5) + (soldEggs * 5) + (soldCompost * 10);
+    const finalTotal = (soldMilk * 45) + (soldEggs * 15) + (soldCompost * 10);
 
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
       const serverRes = await ServerBridge.sellAllLivestockProduce(ls);

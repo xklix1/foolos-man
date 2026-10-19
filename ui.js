@@ -22825,10 +22825,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     // Bind Sell Cash Button
     const sellCashBtn = document.getElementById('btn-industry-sell-cash');
     if (sellCashBtn) {
-      sellCashBtn.onclick = () => {
+      sellCashBtn.onclick = async () => {
         try {
           playCasinoSound('win');
-          const res = GameEngine.collectIndustryRevenue(currentIndustrySector);
+          const res = await GameEngine.collectIndustryRevenue(currentIndustrySector);
           showToast('تم البيع نقداً',`تم بيع ${res.units.toLocaleString()} وحدة بإجمالي ${res.grossPayout.toLocaleString()} EGP (مصاريف تشغيل وصيانة 15%: -${res.overheadCost.toLocaleString()} EGP | صافي أرباح مودعة: +${res.netPayout.toLocaleString()} EGP).`,'success');
           renderIndustryPanel();
           renderDashboard();
