@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.27",
-  "build": 1792272388840,
-  "timestamp": 1792272388840,
-  "notes": "Fix Airport Speedup & Flight Claim: Immediate zero-landing speedup with gold, 15s authoritative server cash earn lock, prevent client sync from rolling back flight profits, and preserve in-flight fleet against stale client syncs.",
-  "releaseNotes": "إصلاح تسريع طائرات المطار بالذهب فورياً وضمان احتساب وإيداع أرباح الرحلات بدقة 100% ومنع مسحها بواسطة المزامنة الخلفية."
+  "version": "v10.0.28",
+  "build": 1792276700000,
+  "timestamp": 1792276700000,
+  "notes": "Exclusive one-time starter packages popup on game start with in-modal checkout flow and admin topup review.",
+  "releaseNotes": "إضافة العروض الحصرية لمرة واحدة كنافذة منبثقة مميزة تظهر للاعب عند بدء اللعبة مع إمكانية الشحن الفوري لكل باقة مرة واحدة لكل حساب."
 }

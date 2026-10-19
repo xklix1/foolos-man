@@ -19235,6 +19235,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           bankStatEl.classList.add('animate-pulse', 'text-yellow-300');
           setTimeout(() => bankStatEl.classList.remove('animate-pulse', 'text-yellow-300'), 2500);
         }
+        setTimeout(() => {
+          checkAndShowExclusiveOffersModal();
+        }, 500);
       };
     }
 
@@ -24627,7 +24630,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
   function closeExclusiveOffersModal() {
     const modal = document.getElementById('exclusive-offers-modal');
-    if (modal) modal.classList.add('hidden');
+    if (modal) {
+      modal.classList.add('hidden');
+      modal.style.display = 'none';
+    }
     _activeSelectedExclusivePkg = null;
   }
 
@@ -24636,7 +24642,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     bindExclusiveOffersModalEvents();
 
     const modal = document.getElementById('exclusive-offers-modal');
-    if (!modal) return;
+    if (!modal) {
+      console.warn('[ExclusiveOffers] Modal #exclusive-offers-modal not found');
+      return;
+    }
 
     // Reset views
     document.getElementById('exclusive-view-packages')?.classList.remove('hidden');
@@ -24645,6 +24654,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     document.getElementById('exclusive-order-form')?.classList.remove('hidden');
 
     modal.classList.remove('hidden');
+    modal.style.display = 'flex';
 
     const container = document.getElementById('exclusive-packages-container');
     if (container) {
@@ -24657,18 +24667,90 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         packages = AppDB.getExclusiveOneTimePackages();
       }
       if (!packages || packages.length === 0) {
-        const allPkgs = (typeof AppDB !== 'undefined' && typeof AppDB.getTopupPackages === 'function')
-          ? await AppDB.getTopupPackages()
-          : [];
-        packages = (allPkgs || []).filter(p => p.isOneTime || (p.id && p.id.startsWith('pkg_exclusive_')));
+        if (typeof AppDB !== 'undefined' && typeof AppDB.getTopupPackages === 'function') {
+          const allPkgs = await AppDB.getTopupPackages();
+          packages = (allPkgs || []).filter(p => p.isOneTime || (p.id && p.id.startsWith('pkg_exclusive_')));
+        }
+      }
+      if (!packages || packages.length === 0) {
+        packages = [
+          {
+            id: 'pkg_exclusive_starter_10usd',
+            name: 'باقة الانطلاقة الذهبية',
+            price: 530,
+            usdPrice: 10,
+            category: 'exclusive',
+            cash: 50000000,
+            bank: 0,
+            gold: 100,
+            xp: 0,
+            isOneTime: true,
+            description: 'عرض حصري لمرة واحدة لكل حساب: 50,000,000 كاش فوري + 100 ذهبة نقية لتسريع أعمالك.'
+          },
+          {
+            id: 'pkg_exclusive_rising_25usd',
+            name: 'باقة رجل الأعمال الصاعد',
+            price: 1325,
+            usdPrice: 25,
+            category: 'exclusive',
+            cash: 200000000,
+            bank: 0,
+            gold: 300,
+            xp: 0,
+            isOneTime: true,
+            description: 'عرض حصري لمرة واحدة لكل حساب: 200,000,000 كاش فوري + 300 ذهبة نقية للسيطرة على الاستثمارات.'
+          },
+          {
+            id: 'pkg_exclusive_whale_50usd',
+            name: 'باقة حوت الاستثمار',
+            price: 2650,
+            usdPrice: 50,
+            category: 'exclusive',
+            cash: 500000000,
+            bank: 0,
+            gold: 600,
+            xp: 0,
+            isOneTime: true,
+            description: 'عرض حصري لمرة واحدة لكل حساب: 500,000,000 كاش فوري + 600 ذهبة نقية للهيمنة على السوق.'
+          },
+          {
+            id: 'pkg_exclusive_elite_85usd',
+            name: 'باقة النخبة السيادية',
+            price: 4505,
+            usdPrice: 85,
+            category: 'exclusive',
+            cash: 800000000,
+            bank: 0,
+            gold: 1500,
+            xp: 0,
+            isOneTime: true,
+            description: 'عرض حصري لمرة واحدة لكل حساب: 800,000,000 كاش فوري + 1,500 ذهبة نقية لعرش كبار المستثمرين.'
+          },
+          {
+            id: 'pkg_exclusive_emperor_100usd',
+            name: 'باقة العرش الإمبراطوري',
+            price: 5300,
+            usdPrice: 100,
+            category: 'exclusive',
+            cash: 1150000000,
+            bank: 0,
+            gold: 3000,
+            xp: 0,
+            isOneTime: true,
+            description: 'عرض حصري لمرة واحدة لكل حساب: 1,150,000,000 كاش فوري + 3,000 ذهبة نقية للتربع على قمة إمبراطورية المال.'
+          }
+        ];
       }
 
       _cachedExclusivePackagesList = packages || [];
 
       // Payment info for view 2
-      const settings = (typeof AppDB !== 'undefined' && typeof AppDB.getPaymentSettings === 'function')
-        ? await AppDB.getPaymentSettings()
-        : {};
+      let settings = {};
+      try {
+        if (typeof AppDB !== 'undefined' && typeof AppDB.getPaymentSettings === 'function') {
+          settings = await AppDB.getPaymentSettings();
+        }
+      } catch (_) {}
 
       const vodafoneNumEl = document.getElementById('exclusive-vodafone-num');
       const instapayNumEl = document.getElementById('exclusive-instapay-num');
@@ -24881,8 +24963,14 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       if (submitBtn) submitBtn.disabled = true;
       if (btnText) btnText.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> جاري الإرسال...';
 
+      const uname = GameEngine.activeUsername || (typeof localStorage !== 'undefined' ? localStorage.getItem('rasalmal_active_session_user') : '');
+      if (!uname) {
+        showToast('تنبيه', 'يرجى تسجيل الدخول أولاً لتأكيد الحساب المراد الشحن له.', 'warning');
+        return;
+      }
+
       const requestPayload = {
-        username: GameEngine.activeUsername,
+        username: uname,
         packageId: _activeSelectedExclusivePkg.id,
         packageName: _activeSelectedExclusivePkg.name,
         price: _activeSelectedExclusivePkg.price,
@@ -24917,11 +25005,15 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
+  let _exclusiveOffersShownInSession = false;
+
   function checkAndShowExclusiveOffersModal() {
     try {
-      if (typeof sessionStorage !== 'undefined') {
-        const alreadyShown = sessionStorage.getItem('rasalmal_exclusive_offers_shown_session');
-        if (alreadyShown) return;
+      if (_exclusiveOffersShownInSession) return;
+
+      const offlineModal = document.getElementById('modal-offline-report');
+      if (offlineModal && !offlineModal.classList.contains('hidden') && offlineModal.style.display !== 'none') {
+        return; // Defer until player closes offline report
       }
 
       const s = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : {};
@@ -24939,13 +25031,11 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         return;
       }
 
-      if (typeof sessionStorage !== 'undefined') {
-        sessionStorage.setItem('rasalmal_exclusive_offers_shown_session', 'true');
-      }
+      _exclusiveOffersShownInSession = true;
 
       setTimeout(() => {
         openExclusiveOffersModal();
-      }, 1600);
+      }, 700);
     } catch (e) {
       console.warn('[ExclusiveOffers] checkAndShow error:', e);
     }

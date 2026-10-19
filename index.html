@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.27';
+    window._CLIENT_VERSION = 'v10.0.28';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.27';
+      const CURRENT_APP_BUILD = 'v10.0.28';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.27">
+  <link rel="stylesheet" href="app.css?v=v10.0.28">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -442,6 +442,21 @@
             </div>
           </div>
           <i class="fa-solid fa-chevron-left text-xs text-slate-400 group-hover:-translate-x-1 transition"></i>
+        </button>
+
+        <!-- Exclusive Offers Start Menu Button -->
+        <button id="btn-menu-exclusive-offers" onclick="window.UI.openExclusiveOffersModal()" type="button"
+          class="menu-btn-game w-full py-3 px-5 rounded-2xl flex items-center justify-between text-amber-300 bg-gradient-to-r from-amber-500/20 via-yellow-500/10 to-transparent border border-amber-500/40 hover:border-yellow-400 hover:bg-amber-500/25 transition duration-300 shadow-lg group">
+          <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 transition">
+              <i class="fa-solid fa-bolt-lightning text-base"></i>
+            </div>
+            <div class="text-right">
+              <span class="block leading-tight text-sm font-black text-white">العروض الحصرية لمرة واحدة ⚡</span>
+              <span class="block text-[10px] text-amber-400/80 font-bold mt-0.5">باقات الكاش والذهب التأسيسية بخصم استثنائي</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-chevron-left text-amber-400 text-sm group-hover:-translate-x-1 transition"></i>
         </button>
 
         <!-- Secondary Grid: Hall of Fame, Guide, Facebook, Telegram, Settings -->
@@ -7463,7 +7478,7 @@
 
   <!-- ==================== EXCLUSIVE ONE-TIME OFFERS MODAL (العروض الحصرية لمرة واحدة) ==================== -->
   <div id="exclusive-offers-modal" dir="rtl"
-    class="hidden fixed inset-0 z-[170] flex items-center justify-center bg-black/92 backdrop-blur-lg p-3 sm:p-5 animate-fade-in text-right select-none">
+    class="hidden fixed inset-0 z-[99999] flex items-center justify-center bg-black/92 backdrop-blur-lg p-3 sm:p-5 animate-fade-in text-right select-none">
     <div dir="rtl"
       class="glass-panel w-full max-w-5xl max-h-[94vh] flex flex-col rounded-3xl border-2 border-amber-500/70 p-4 sm:p-6 shadow-[0_0_50px_rgba(245,158,11,0.25)] bg-gradient-to-b from-slate-900/98 via-slate-950 to-black text-right relative overflow-hidden">
       
@@ -8303,7 +8318,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.27"></script>
+  <script src="core.bundle.js?v=v10.0.28"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
