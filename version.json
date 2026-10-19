@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.29",
-  "build": 1792277500000,
-  "timestamp": 1792277500000,
-  "notes": "Update official PayPal payment link to https://paypal.me/khalidsaad475 with direct open button across topup and exclusive offers modal.",
-  "releaseNotes": "تحديث رابط الباي بال الرسمي إلى https://paypal.me/khalidsaad475 مع زر فتح فوري ومباشر في نوافذ الشحن."
+  "version": "v10.0.30",
+  "build": 1792278500000,
+  "timestamp": 1792278500000,
+  "notes": "Fix topup package delivery: lock authoritative cash against stale client sync, fix receipt details parsing in ui.js, and restore credited player balances.",
+  "releaseNotes": "إصلاح تسليم باقات الشحن التأسيسية ومنع مزامنة العميل من مسح الكاش المعتمد وضمان نزول الرصيد فوراً بحساب اللاعب."
 }

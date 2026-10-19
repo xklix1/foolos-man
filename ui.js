@@ -16055,8 +16055,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
       // 1. Top-up Receipt Card
       if (mail.type ==='topup_receipt' || (mail.payload && mail.payload.topupDetails)) {
-        const details = (mail.payload && mail.payload.topupDetails) || {};
-        const isApproved = (details.status ==='approved');
+        const details = (mail.payload && mail.payload.topupDetails) || mail.payload || {};
+        const isApproved = (details.status ==='approved' || mail.type === 'topup_receipt');
 
         if (isApproved) {
           // Render Approved Receipt
@@ -19422,8 +19422,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         localStorage.setItem('rasalmal_processed_topups', JSON.stringify(localProcessed.slice(-100)));
       } catch (_) {}
 
-      const details = (tm.payload && tm.payload.topupDetails) || {};
-      if (details.status === 'approved') {
+      const details = (tm.payload && tm.payload.topupDetails) || tm.payload || {};
+      const isApproved = (details.status === 'approved' || tm.type === 'topup_receipt');
+      if (isApproved) {
         const addedCash = Number(details.cash) || 0;
         const addedBank = Number(details.bank) || 0;
         const addedGold = Number(details.gold) || 0;
@@ -19438,6 +19439,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           if (details.isPreApplied) {
             if (details.newCash !== undefined && !isNaN(Number(details.newCash))) GameEngine.state.cash = Number(details.newCash);
             if (details.newBank !== undefined && !isNaN(Number(details.newBank))) GameEngine.state.bank = Number(details.newBank);
+            if (details.newGold !== undefined && !isNaN(Number(details.newGold))) GameEngine.state.gold = Number(details.newGold);
             if (details.newXp !== undefined && !isNaN(Number(details.newXp))) GameEngine.state.xp = Number(details.newXp);
             if (details.newWorth !== undefined && !isNaN(Number(details.newWorth))) {
               GameEngine.state.netWorth = Number(details.newWorth);
@@ -19515,8 +19517,24 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           // Advance adminModifiedTimestamp in memory to prevent cloud save rejection
           const topupTs = Number(details.date || tm.created_at || Date.now());
           GameEngine.state.adminModifiedTimestamp = Math.max(Number(GameEngine.state.adminModifiedTimestamp || 0), topupTs);
+          GameEngine.state._legitimateTransactionBypass = true;
+
+          // Track one-time exclusive packages in player state
+          if (details.packageId && (details.packageId.startsWith('pkg_exclusive_') || details.isOneTime)) {
+            if (!Array.isArray(GameEngine.state.purchasedOneTimePackages)) {
+              GameEngine.state.purchasedOneTimePackages = [];
+            }
+            if (!GameEngine.state.purchasedOneTimePackages.includes(details.packageId)) {
+              GameEngine.state.purchasedOneTimePackages.push(details.packageId);
+            }
+          }
+
           await AppDB.savePlayerState(GameEngine.activeUsername, GameEngine.state, true);
         }
+
+        // Re-render HUD & Stats Bar immediately
+        if (typeof renderAll === 'function') renderAll();
+        if (typeof renderStatsBar === 'function') renderStatsBar();
 
         // Show celebratory popup modal
         let itemsDesc = '';

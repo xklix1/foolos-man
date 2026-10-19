@@ -423,6 +423,9 @@ async function adminRoutes(fastify, options) {
             session.state.xp = updatedXP;
             session.state.netWorth = updatedNetworth;
             session.state.adminModifiedTimestamp = ts;
+            session._lastProcessedAdminTs = ts;
+            session.lastServerCashEarnAt = ts;
+            session.state.lastServerCashEarnAt = ts;
             if (customBadge) {
               session.state.customBadge = customBadge;
               session.state.badgeTitle = badgeTitle;
@@ -465,7 +468,10 @@ async function adminRoutes(fastify, options) {
             sender: 'إدارة اللعبة (Financial Team)',
             recipient: targetUser,
             type: 'topup_receipt',
-            payload: topupReceiptData,
+            payload: {
+              ...topupReceiptData,
+              topupDetails: topupReceiptData
+            },
             status: 'unread',
             created_at: ts
           })

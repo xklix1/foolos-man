@@ -282,13 +282,16 @@ class SessionManager {
 
       // (a) Bank Balance: Crush any attempt by client to inject bank funds
       const currentBank = Number(s.bank || 0);
-      if (incomingBank > currentBank) {
+      const hasRecentAdminMod = (Date.now() - Number(s.adminModifiedTimestamp || 0)) < 60000;
+      if (hasRecentAdminMod) {
+        // Retain authoritative bank balance granted by admin topup
+      } else if (incomingBank > currentBank) {
         console.warn(`[Security Alert] Crushed unauthorized client bank inflation attempt for "${username}": Server=${currentBank.toLocaleString()} vs Injected=${incomingBank.toLocaleString()} (+${(incomingBank - currentBank).toLocaleString()})`);
       }
 
-      // (b) Cash Balance: Strictly preserve server cash during bank operations, server spends, or authoritative earnings
+      // (b) Cash Balance: Strictly preserve server cash during bank operations, server spends, authoritative earnings, or recent admin grants
       const currentCash = Number(s.cash || 0);
-      if (hasRecentBankAction || hasRecentServerCashSpend || hasRecentServerCashEarn) {
+      if (hasRecentBankAction || hasRecentServerCashSpend || hasRecentServerCashEarn || hasRecentAdminMod) {
         // Authoritative server balance is strictly locked against client sync interference
       } else if (incomingCash > currentCash) {
         console.warn(`[Security Alert] Crushed unauthorized client cash inflation attempt for "${username}": Server=${currentCash.toLocaleString()} vs Injected=${incomingCash.toLocaleString()} (+${(incomingCash - currentCash).toLocaleString()})`);

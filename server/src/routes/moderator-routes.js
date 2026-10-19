@@ -1951,6 +1951,9 @@ async function moderatorRoutes(fastify, options) {
             session.state.xp = updatedXP;
             session.state.netWorth = updatedNetworth;
             session.state.adminModifiedTimestamp = ts;
+            session._lastProcessedAdminTs = ts;
+            session.lastServerCashEarnAt = ts;
+            session.state.lastServerCashEarnAt = ts;
             if (customBadge) {
               session.state.customBadge = customBadge;
               session.state.badgeTitle = badgeTitle;
@@ -1960,6 +1963,30 @@ async function moderatorRoutes(fastify, options) {
         }
 
         // Send topup receipt mail
+        const modReceiptData = {
+          packageId: req.packageId,
+          packageName: req.packageName,
+          price: req.price,
+          cash: addedCash,
+          bank: addedBank,
+          gold: addedGold,
+          xp: addedXP,
+          newCash: updatedCash,
+          newBank: updatedBank,
+          newGold: updatedGold,
+          newXp: updatedXP,
+          newWorth: updatedNetworth,
+          isPreApplied: true,
+          customBadge: customBadge,
+          badgeTitle: badgeTitle,
+          items: rewards.items || {},
+          status: 'approved',
+          date: ts,
+          receiptNumber: req.receiptNumber || '',
+          senderPhoneOrName: req.senderPhoneOrName || '',
+          reviewerNote: reviewerNote || 'تم الاعتماد والشحن بنجاح بواسطة الإدارة'
+        };
+
         await modDbFetch(`${config.SUPABASE_URL}/rest/v1/mailbox`, {
           method: 'POST',
           headers: { 'Prefer': 'return=minimal' },
@@ -1968,27 +1995,8 @@ async function moderatorRoutes(fastify, options) {
             recipient: targetUser,
             type: 'topup_receipt',
             payload: {
-              packageId: req.packageId,
-              packageName: req.packageName,
-              price: req.price,
-              cash: addedCash,
-              bank: addedBank,
-              gold: addedGold,
-              xp: addedXP,
-              newCash: updatedCash,
-              newBank: updatedBank,
-              newGold: updatedGold,
-              newXp: updatedXP,
-              newWorth: updatedNetworth,
-              isPreApplied: true,
-              customBadge: customBadge,
-              badgeTitle: badgeTitle,
-              items: rewards.items || {},
-              status: 'approved',
-              date: ts,
-              receiptNumber: req.receiptNumber || '',
-              senderPhoneOrName: req.senderPhoneOrName || '',
-              reviewerNote: reviewerNote || 'تم الاعتماد والشحن بنجاح بواسطة الإدارة'
+              ...modReceiptData,
+              topupDetails: modReceiptData
             },
             status: 'unread',
             created_at: ts
