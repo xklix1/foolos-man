@@ -2077,6 +2077,12 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
   // ── Authoritative Farm System Routes ──
   function finalizeFarmAction(session) {
     const s = session.state;
+    const now = Date.now();
+    // Authoritative 15s session lock to strictly prevent background client sync from wiping farm earnings or state
+    session.lastServerCashEarnAt = now;
+    session.lastServerBankActionAt = now;
+    s.lastServerCashEarnAt = now;
+    s.lastServerBankActionAt = now;
     s.netWorth = calculateNetWorth(s);
     s.title = getAppropriateTitle(s.netWorth, s.xp || 0);
     sessionManager.markDirty(session.username);

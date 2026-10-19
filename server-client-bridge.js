@@ -1262,6 +1262,8 @@ var ServerBridge = (() => {
   // ── Authoritative Farm Bridge Actions ──
   function _reconcileFarmResponse(res) {
     if (!res || !res.success) return res;
+    _lastServerEarnTimestamp = Date.now();
+    _lastBankActionTimestamp = Date.now();
     if (typeof GameEngine !== 'undefined') {
       const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
       if (s) {
@@ -1270,6 +1272,12 @@ var ServerBridge = (() => {
         if (res.netWorth !== undefined) s.netWorth = res.netWorth;
         if (res.farm && typeof res.farm === 'object') {
           s.farm = res.farm;
+        }
+        notifyLocalSpend(s.cash, s.bank);
+        if (typeof window !== 'undefined' && window.AppDB && typeof window.AppDB.notifyLegitimateWealthGain === 'function') {
+          try {
+            window.AppDB.notifyLegitimateWealthGain((Number(s.cash) || 0) + (Number(s.bank) || 0));
+          } catch (_) {}
         }
       }
       if (typeof UI !== 'undefined') {

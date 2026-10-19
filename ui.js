@@ -24466,9 +24466,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function sellProcessedGood(recipeId, qty) {
+  async function sellProcessedGood(recipeId, qty) {
     try {
-      const res = GameEngine.sellProcessedGood(recipeId, qty);
+      const res = await GameEngine.sellProcessedGood(recipeId, qty);
       playCasinoSound('win');
       const soldQty = Number((res && (res.sellQty || res.qty)) || qty || 0);
       const rev = Number((res && (res.totalPrice || res.totalRevenue || res.revenue || res.grandTotal)) || 0);
@@ -24483,9 +24483,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function sellAllProcessedGoods() {
+  async function sellAllProcessedGoods() {
     try {
-      const res = GameEngine.sellAllProcessedGoods();
+      const res = await GameEngine.sellAllProcessedGoods();
       playCasinoSound('win');
       const soldUnits = Number((res && (res.totalUnits || res.itemsSold || res.qty)) || 0);
       const rev = Number((res && (res.totalRevenue || res.grandTotal || res.totalPrice || res.revenue)) || 0);
@@ -24512,10 +24512,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function sellLivestockProduce(produceKey, qty) {
+  async function sellLivestockProduce(produceKey, qty) {
     try {
       playCasinoSound('win');
-      const res = GameEngine.sellLivestockProduce(produceKey, qty);
+      const res = await GameEngine.sellLivestockProduce(produceKey, qty);
       const rev = Number(res.revenue || res.totalPrice || res.totalRevenue || 0);
       showToast('تم البيع ', `تم بيع ${res.qty.toLocaleString()} وحدة بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {
@@ -24527,10 +24527,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  function sellAllLivestockProduce() {
+  async function sellAllLivestockProduce() {
     try {
       playCasinoSound('win');
-      const res = GameEngine.sellAllLivestockProduce();
+      const res = await GameEngine.sellAllLivestockProduce();
       const rev = Number(res.totalRevenue || res.grandTotal || res.revenue || 0);
       showToast('بيع منتجات المزرعة ', `تم بيع كافة المنتجات الحيوانية بقيمة +${rev.toLocaleString()} EGP نقداً!`, 'success');
     } catch (e) {

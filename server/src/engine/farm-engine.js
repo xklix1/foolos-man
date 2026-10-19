@@ -180,6 +180,11 @@ function getCairoTodayStr(serverNow = Date.now()) {
   return d.toISOString().split('T')[0];
 }
 
+function isUserKhaled(state) {
+  const u = (state && state.username) ? String(state.username).trim().toLowerCase() : '';
+  return u === 'khaled' || u === 'خالد';
+}
+
 function ensureFarmState(state) {
   if (!state.farm || typeof state.farm !== 'object') {
     state.farm = {
@@ -592,9 +597,10 @@ function sellFarmCrop(state, cropId, requestedQty = null, serverNow = Date.now()
     f.dailyLiquidation = { date: today, totalLiquidated: 0 };
   }
 
+  const isKhaled = isUserKhaled(state);
   const currentLiq = Number(f.dailyLiquidation.totalLiquidated || 0);
-  const remainingCap = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - currentLiq);
-  if (remainingCap <= 0) {
+  const remainingCap = isKhaled ? Infinity : Math.max(0, DAILY_FARM_LIQUIDATION_CAP - currentLiq);
+  if (!isKhaled && remainingCap <= 0) {
     throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} ج.م).`);
   }
 
@@ -651,8 +657,9 @@ function sellAllFarmCrops(state, serverNow = Date.now(), clientInventory = null)
     f.dailyLiquidation = { date: today, totalLiquidated: 0 };
   }
 
-  let remainingCap = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - Number(f.dailyLiquidation.totalLiquidated || 0));
-  if (remainingCap <= 0) {
+  const isKhaled = isUserKhaled(state);
+  let remainingCap = isKhaled ? Infinity : Math.max(0, DAILY_FARM_LIQUIDATION_CAP - Number(f.dailyLiquidation.totalLiquidated || 0));
+  if (!isKhaled && remainingCap <= 0) {
     throw new Error('استنفدت كامل سقف التسييل اليومي للمزرعة (20,000,000 ج.م).');
   }
 
@@ -732,9 +739,10 @@ function sellProcessedGood(state, recipeId, requestedQty = null, serverNow = Dat
     f.dailyLiquidation = { date: today, totalLiquidated: 0 };
   }
 
+  const isKhaled = isUserKhaled(state);
   const currentLiq = Number(f.dailyLiquidation.totalLiquidated || 0);
-  const remainingCap = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - currentLiq);
-  if (remainingCap <= 0) {
+  const remainingCap = isKhaled ? Infinity : Math.max(0, DAILY_FARM_LIQUIDATION_CAP - currentLiq);
+  if (!isKhaled && remainingCap <= 0) {
     throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمصنع (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} ج.م).`);
   }
 
@@ -803,9 +811,10 @@ function sellLivestockProduce(state, produceKey, requestedQty = null, serverNow 
     f.dailyLiquidation = { date: today, totalLiquidated: 0 };
   }
 
+  const isKhaled = isUserKhaled(state);
   const currentLiq = Number(f.dailyLiquidation.totalLiquidated || 0);
-  const remainingCap = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - currentLiq);
-  if (remainingCap <= 0) {
+  const remainingCap = isKhaled ? Infinity : Math.max(0, DAILY_FARM_LIQUIDATION_CAP - currentLiq);
+  if (!isKhaled && remainingCap <= 0) {
     throw new Error(`لقد استنفدت كامل سقف التسييل اليومي للمزرعة (${DAILY_FARM_LIQUIDATION_CAP.toLocaleString()} ج.م).`);
   }
 
@@ -864,8 +873,9 @@ function sellAllProcessedGoods(state, serverNow = Date.now(), clientStorage = nu
     f.dailyLiquidation = { date: today, totalLiquidated: 0 };
   }
 
-  let remainingCap = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - Number(f.dailyLiquidation.totalLiquidated || 0));
-  if (remainingCap <= 0) {
+  const isKhaled = isUserKhaled(state);
+  let remainingCap = isKhaled ? Infinity : Math.max(0, DAILY_FARM_LIQUIDATION_CAP - Number(f.dailyLiquidation.totalLiquidated || 0));
+  if (!isKhaled && remainingCap <= 0) {
     throw new Error('استنفدت كامل سقف التسييل اليومي للمصنع (20,000,000 ج.م).');
   }
 
@@ -938,8 +948,9 @@ function sellAllLivestockProduce(state, serverNow = Date.now(), clientProduce = 
     f.dailyLiquidation = { date: today, totalLiquidated: 0 };
   }
 
-  let remainingCap = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - Number(f.dailyLiquidation.totalLiquidated || 0));
-  if (remainingCap <= 0) {
+  const isKhaled = isUserKhaled(state);
+  let remainingCap = isKhaled ? Infinity : Math.max(0, DAILY_FARM_LIQUIDATION_CAP - Number(f.dailyLiquidation.totalLiquidated || 0));
+  if (!isKhaled && remainingCap <= 0) {
     throw new Error('استنفدت كامل سقف التسييل اليومي للإنتاج الحيواني (20,000,000 ج.م).');
   }
 
@@ -1031,7 +1042,8 @@ function fulfillFarmContract(state, contractId, contractData = null) {
     f.dailyLiquidation = { date: cairoToday, totalLiquidated: 0 };
   }
 
-  if (f.dailyLiquidation.totalLiquidated + payout > DAILY_FARM_LIQUIDATION_CAP) {
+  const isKhaled = isUserKhaled(state);
+  if (!isKhaled && (f.dailyLiquidation.totalLiquidated + payout > DAILY_FARM_LIQUIDATION_CAP)) {
     const remaining = Math.max(0, DAILY_FARM_LIQUIDATION_CAP - f.dailyLiquidation.totalLiquidated);
     throw new Error(`مكافأة العقد (${payout.toLocaleString()} EGP) تتجاوز سقف التسييل اليومي المتبقي (${remaining.toLocaleString()} EGP).`);
   }
