@@ -406,6 +406,7 @@ async function adminRoutes(fastify, options) {
         if (sessionManager) {
           const session = sessionManager.getSession(targetUser);
           if (session) {
+            session.state = JSON.parse(JSON.stringify(pState));
             session.state.cash = updatedCash;
             session.state.bank = updatedBank;
             session.state.gold = updatedGold;

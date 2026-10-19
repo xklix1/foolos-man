@@ -814,6 +814,12 @@ var ServerBridge = (() => {
               s.farm.dailyLiquidation = res.authoritativeState.farm.dailyLiquidation;
             }
           }
+          if (res.authoritativeState.airport !== undefined && typeof res.authoritativeState.airport === 'object') {
+            s.airport = s.airport || {};
+            if (res.authoritativeState.airport.manager) {
+              s.airport.manager = res.authoritativeState.airport.manager;
+            }
+          }
           if (res.authoritativeState.businesses !== undefined && typeof res.authoritativeState.businesses === 'object') {
             s.businesses = s.businesses || {};
             Object.keys(res.authoritativeState.businesses).forEach(bk => {
