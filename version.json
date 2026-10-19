@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.28",
-  "build": 1792276700000,
-  "timestamp": 1792276700000,
-  "notes": "Exclusive one-time starter packages popup on game start with in-modal checkout flow and admin topup review.",
-  "releaseNotes": "إضافة العروض الحصرية لمرة واحدة كنافذة منبثقة مميزة تظهر للاعب عند بدء اللعبة مع إمكانية الشحن الفوري لكل باقة مرة واحدة لكل حساب."
+  "version": "v10.0.29",
+  "build": 1792277500000,
+  "timestamp": 1792277500000,
+  "notes": "Update official PayPal payment link to https://paypal.me/khalidsaad475 with direct open button across topup and exclusive offers modal.",
+  "releaseNotes": "تحديث رابط الباي بال الرسمي إلى https://paypal.me/khalidsaad475 مع زر فتح فوري ومباشر في نوافذ الشحن."
 }

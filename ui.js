@@ -24754,8 +24754,13 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
       const vodafoneNumEl = document.getElementById('exclusive-vodafone-num');
       const instapayNumEl = document.getElementById('exclusive-instapay-num');
+      const paypalNumEl = document.getElementById('exclusive-paypal-num');
+      const paypalLinkEl = document.getElementById('btn-open-exclusive-paypal');
+      const paypalVal = settings.paypal || 'https://paypal.me/khalidsaad475';
       if (vodafoneNumEl) vodafoneNumEl.textContent = settings.vodafoneCash || '01044119920';
       if (instapayNumEl) instapayNumEl.textContent = settings.instapay || 'rasalmal@instapay';
+      if (paypalNumEl) paypalNumEl.textContent = paypalVal;
+      if (paypalLinkEl) paypalLinkEl.href = paypalVal;
 
       // Load player state & pending requests
       const s = (typeof GameEngine !== 'undefined' && GameEngine.state) ? GameEngine.state : {};

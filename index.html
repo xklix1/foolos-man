@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.28';
+    window._CLIENT_VERSION = 'v10.0.29';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.28';
+      const CURRENT_APP_BUILD = 'v10.0.29';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.28">
+  <link rel="stylesheet" href="app.css?v=v10.0.29">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -7600,12 +7600,17 @@
                 <span class="font-bold text-sky-300 flex items-center gap-1.5">
                   <i class="fa-brands fa-paypal"></i> باي بال (PayPal)
                 </span>
-                <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('exclusive-paypal-num')?.textContent || ''); window.UI?.showToast?.('تم النسخ', 'تم نسخ حساب باي بال', 'info');" class="text-[10px] text-sky-300 hover:text-white px-2 py-0.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/40 transition cursor-pointer">
-                  <i class="fa-solid fa-copy"></i> نسخ
-                </button>
+                <div class="flex items-center gap-1">
+                  <a id="btn-open-exclusive-paypal" href="https://paypal.me/khalidsaad475" target="_blank" rel="noopener noreferrer" class="text-[10px] text-sky-300 hover:text-white px-2 py-0.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/40 transition cursor-pointer flex items-center gap-1" title="فتح الرابط مباشرة">
+                    <i class="fa-solid fa-arrow-up-right-from-square text-[9px]"></i> فتح
+                  </a>
+                  <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('exclusive-paypal-num')?.textContent || 'https://paypal.me/khalidsaad475'); window.UI?.showToast?.('تم النسخ', 'تم نسخ رابط باي بال بنجاح', 'info');" class="text-[10px] text-sky-300 hover:text-white px-2 py-0.5 rounded-lg bg-sky-500/20 hover:bg-sky-500/40 transition cursor-pointer flex items-center gap-1">
+                    <i class="fa-solid fa-copy"></i> نسخ
+                  </button>
+                </div>
               </div>
-              <div class="bg-black/60 p-2 rounded-xl text-center border border-sky-500/20 font-mono text-xs font-black text-sky-200 truncate" id="exclusive-paypal-num">
-                rasalmal.support@gmail.com
+              <div class="bg-black/60 p-2 rounded-xl text-center border border-sky-500/20 font-mono text-xs font-black text-sky-200 truncate select-all" id="exclusive-paypal-num">
+                https://paypal.me/khalidsaad475
               </div>
               <span class="text-[10px] text-slate-400">تحويل دولي بالدولار الأمريكي ($) عبر PayPal.</span>
             </div>
@@ -8318,7 +8323,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.28"></script>
+  <script src="core.bundle.js?v=v10.0.29"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

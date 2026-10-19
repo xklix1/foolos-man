@@ -4431,9 +4431,10 @@ var AppDB = (() => {
       }
     } catch (e) {}
     return {
-      vodafoneCash:'',
-      instapay:'',
-      notes:'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه أو اسم حسابك في انستاباي ورقم العملية/الوصل لتأكيد الشحن فوراً.'
+      vodafoneCash: '01044119920',
+      instapay: 'rasalmal@instapay',
+      paypal: 'https://paypal.me/khalidsaad475',
+      notes: 'يرجى تحويل المبلغ بدقة وكتابة رقم الهاتف المحوّل منه أو اسم حسابك في انستاباي/باي بال ورقم العملية/الوصل لتأكيد الشحن فوراً.'
     };
   }
 
@@ -4446,6 +4447,7 @@ var AppDB = (() => {
         data: {
           vodafoneCash: (settings.vodafoneCash ||'').trim(),
           instapay: (settings.instapay ||'').trim(),
+          paypal: (settings.paypal ||'https://paypal.me/khalidsaad475').trim(),
           notes: settings.notes ||'',
           updatedAt: Date.now()
         },
