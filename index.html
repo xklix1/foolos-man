@@ -198,6 +198,159 @@
 
 <body class="bg-darkbg text-slate-100 min-h-screen relative">
 
+  <!-- ==================== MAINTENANCE OVERLAY ==================== -->
+  <div id="maintenance-overlay"
+    class="fixed inset-0 z-[99999999] hidden items-center justify-center bg-slate-950/99 backdrop-blur-2xl p-4 select-none pointer-events-auto overflow-y-auto">
+
+    <!-- Ambient Orbs -->
+    <div class="pointer-events-none absolute inset-0 overflow-hidden">
+      <div class="absolute -top-32 -right-32 w-96 h-96 rounded-full bg-amber-500/10 blur-3xl animate-pulse"></div>
+      <div class="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-yellow-600/8 blur-3xl animate-pulse" style="animation-delay:1.5s"></div>
+    </div>
+
+    <div class="relative w-full max-w-md mx-auto">
+      <div class="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-amber-500/30 rounded-3xl p-8 text-center shadow-2xl shadow-amber-500/10">
+
+        <!-- Icon -->
+        <div class="w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-tr from-amber-500/20 to-yellow-500/25 border-2 border-amber-500/40 flex items-center justify-center shadow-lg shadow-amber-500/20">
+          <i class="fa-solid fa-screwdriver-wrench text-amber-400 text-4xl animate-bounce" style="animation-duration:2s"></i>
+        </div>
+
+        <!-- Badge -->
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-amber-500/15 border border-amber-500/30 rounded-full text-amber-300 text-xs font-black uppercase tracking-widest mb-4">
+          <span class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+          وضع الصيانة
+        </div>
+
+        <h2 class="text-2xl sm:text-3xl font-black text-white mb-3">اللعبة تحت الصيانة 🛠️</h2>
+        <p class="text-sm text-slate-400 leading-relaxed mb-2">
+          نعمل على تحسينات وتحديثات جديدة لتجربة أفضل.
+        </p>
+        <p class="text-xs text-slate-500 mb-8">سنعود قريباً إن شاء الله — ترقب الإعلانات على صفحتنا.</p>
+
+        <!-- Social link -->
+        <a href="https://www.facebook.com/share/1V5sfNkvC9/?mibextid=wwXIfr" target="_blank" rel="noopener noreferrer"
+          class="inline-flex items-center gap-2 px-5 py-2.5 bg-blue-600/20 hover:bg-blue-600/30 border border-blue-500/30 text-blue-300 text-sm font-bold rounded-2xl transition mb-8 no-underline">
+          <i class="fa-brands fa-facebook text-blue-400"></i>
+          تابعنا على فيسبوك
+        </a>
+
+        <!-- Divider -->
+        <div class="flex items-center gap-3 mb-6">
+          <div class="flex-1 h-px bg-slate-700/60"></div>
+          <span class="text-xs text-slate-500 font-bold">للتيسترز فقط</span>
+          <div class="flex-1 h-px bg-slate-700/60"></div>
+        </div>
+
+        <!-- Tester Code Input -->
+        <div class="space-y-3">
+          <div id="maint-input-wrap" class="relative">
+            <input
+              id="maint-tester-code"
+              type="password"
+              placeholder="أدخل كود التيستر..."
+              autocomplete="off"
+              dir="ltr"
+              class="w-full bg-slate-800/80 border border-slate-700 focus:border-amber-500/70 text-white placeholder-slate-500 rounded-2xl px-4 py-3.5 text-sm font-mono outline-none transition-all duration-200 text-center tracking-widest"
+            />
+          </div>
+
+          <button
+            id="maint-verify-btn"
+            class="w-full py-3.5 bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 active:scale-95 text-slate-900 font-black rounded-2xl transition-all duration-200 shadow-lg shadow-amber-600/30 flex items-center justify-center gap-2 cursor-pointer"
+            onclick="window._verifyTesterCode()"
+          >
+            <i class="fa-solid fa-unlock-keyhole"></i>
+            <span>دخول التيستر</span>
+          </button>
+
+          <p id="maint-error-msg" class="text-xs text-rose-400 font-bold hidden">الكود غير صحيح — حاول مرة أخرى</p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ─── Maintenance Gate ─────────────────────────────────────────────────────
+    (function() {
+      const BYPASS_KEY = 'ram_tester_bypass';
+      const overlay    = document.getElementById('maintenance-overlay');
+      const codeInput  = document.getElementById('maint-tester-code');
+      const errorMsg   = document.getElementById('maint-error-msg');
+      const verifyBtn  = document.getElementById('maint-verify-btn');
+
+      // كشف الـ API base URL
+      const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        ? 'http://localhost:3001'
+        : 'https://rasalmal.online/api-server'; // غيّر حسب nginx config لو لازم
+
+      function showOverlay()  { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
+      function hideOverlay()  { overlay.classList.add('hidden');    overlay.classList.remove('flex'); }
+
+      // لو عنده bypass محفوظ من قبل، خليه يدخل فوراً
+      if (sessionStorage.getItem(BYPASS_KEY) === '1') {
+        hideOverlay();
+        return;
+      }
+
+      // اسأل السيرفر عن حالة الصيانة
+      fetch(API_BASE + '/api/maintenance', { cache: 'no-store' })
+        .then(r => r.json())
+        .then(data => {
+          if (data && data.maintenance === true) {
+            showOverlay();
+          }
+          // لو مش في صيانة — الـ overlay يبقى hidden
+        })
+        .catch(() => {
+          // لو السيرفر مش متاح، مش هنعاقب الناس — نسيب اللعبة تشتغل
+        });
+
+      // دالة التحقق من كود التيستر
+      window._verifyTesterCode = async function() {
+        const code = (codeInput.value || '').trim();
+        if (!code) return;
+
+        verifyBtn.disabled = true;
+        verifyBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>جارٍ التحقق...</span>';
+        errorMsg.classList.add('hidden');
+
+        try {
+          const res = await fetch(API_BASE + '/api/maintenance/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+          });
+          const data = await res.json();
+
+          if (data && data.valid) {
+            sessionStorage.setItem(BYPASS_KEY, '1'); // احفظ الـ bypass في الجلسة
+            hideOverlay();
+          } else {
+            errorMsg.textContent = data.error || 'الكود غير صحيح — حاول مرة أخرى';
+            errorMsg.classList.remove('hidden');
+            codeInput.value = '';
+            codeInput.focus();
+          }
+        } catch (e) {
+          errorMsg.textContent = 'تعذّر الاتصال بالسيرفر — تأكد من الاتصال وحاول مجدداً';
+          errorMsg.classList.remove('hidden');
+        } finally {
+          verifyBtn.disabled = false;
+          verifyBtn.innerHTML = '<i class="fa-solid fa-unlock-keyhole"></i><span>دخول التيستر</span>';
+        }
+      };
+
+      // اضغط Enter عشان تتحقق
+      document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && overlay && !overlay.classList.contains('hidden')) {
+          window._verifyTesterCode();
+        }
+      });
+    })();
+  </script>
+
   <!-- ==================== CONNECTING OVERLAY ==================== -->
   <div id="connecting-overlay"
     class="fixed inset-0 z-[300] hidden items-center justify-center bg-black/95 backdrop-blur-lg p-4">

@@ -47,7 +47,12 @@ const config = {
   
   // Resend Email API (with secure obfuscated fallback for maximum uptime resilience)
   RESEND_API_KEY: process.env.RESEND_API_KEY || Buffer.from('cmVfZFo4R2dFM2ZfR3ZWWFNaSzJYV3Faa0ZVTFF1S1pETnhj', 'base64').toString('utf8'),
-  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Ras ALmal Tycoon <auth@rasalmal.online>'
+  RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Ras ALmal Tycoon <auth@rasalmal.online>',
+
+  // Maintenance Mode
+  MAINTENANCE_MODE: process.env.MAINTENANCE_MODE === 'true',
+  TESTER_CODE: process.env.TESTER_CODE || ''
+
 };
 
 module.exports = config;

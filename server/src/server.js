@@ -104,6 +104,51 @@ app.get('/api/status', async (request, reply) => {
   };
 });
 
+// ─── Maintenance Mode Endpoints ───────────────────────────────────────────────
+
+// GET /api/maintenance — يرجع حالة الصيانة (بدون كشف الكود أبداً)
+app.get('/api/maintenance', async (request, reply) => {
+  return {
+    maintenance: config.MAINTENANCE_MODE,
+    message: 'اللعبة تحت الصيانة حالياً. سنعود قريباً إن شاء الله 🛠️'
+  };
+});
+
+// POST /api/maintenance/verify — يتحقق من كود التيستر بشكل آمن
+app.post('/api/maintenance/verify', {
+  config: { rateLimit: { max: 10, timeWindow: 60 * 1000 } } // 10 محاولات فقط كل دقيقة
+}, async (request, reply) => {
+  const { code } = request.body || {};
+  if (!code || typeof code !== 'string') {
+    return reply.status(400).send({ valid: false, error: 'كود غير صالح' });
+  }
+
+  // لو الصيانة مش مفعلة أصلاً — الكود مش مطلوب
+  if (!config.MAINTENANCE_MODE) {
+    return { valid: true };
+  }
+
+  // timingSafeEqual لمنع timing attacks
+  const crypto = require('crypto');
+  const expected = config.TESTER_CODE;
+  if (!expected) {
+    return reply.status(503).send({ valid: false, error: 'لا يوجد كود تيستر مضبوط على السيرفر' });
+  }
+
+  const inputBuf = Buffer.from(code.trim());
+  const expectedBuf = Buffer.from(expected.trim());
+
+  const isValid = inputBuf.length === expectedBuf.length &&
+    crypto.timingSafeEqual(inputBuf, expectedBuf);
+
+  if (!isValid) {
+    return reply.status(401).send({ valid: false, error: 'الكود غير صحيح' });
+  }
+
+  return { valid: true };
+});
+
+
 // Register Action, Airport, Auction, Session, Admin, Auth OTP, and Push API routes
 app.register(require('./routes/session-routes'));
 app.register(require('./routes/action-routes'));
