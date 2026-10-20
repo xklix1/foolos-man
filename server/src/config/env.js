@@ -35,9 +35,9 @@ const config = {
   
   // Supabase connection (Direct HTTPS to production eliminates PostgREST local loopback 401/timeout issues)
   SUPABASE_URL: process.env.SUPABASE_INTERNAL_URL || process.env.SUPABASE_URL || 'https://rasalmal.online',
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTc1ODc3LCJleHAiOjIyNjQwMTU4Nzd9.f21_aqY88akkuTp0OGf0VHnxKNjot1Xg9RTr6MITodg',
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NzU4NzcsImV4cCI6MjI2NDAxNTg3N30.yihpgeW-aXfKQiTYxsZRzP2AvOGvaI4UmF_3tmvNMBU',
-  ADMIN_KEY_SHA256: process.env.ADMIN_KEY_SHA256 || 'f7bd3e9d5f13264c2dcc635b0f0e7edd3cc732d23d86b1d642e20ce9bd43dd99',
+  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || '',
+  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || '',
+  ADMIN_KEY_SHA256: process.env.ADMIN_KEY_SHA256 || '',
 
   // Game Engine Settings
   AUTOSAVE_INTERVAL_MS: 5000, // 5 seconds write-behind to DB
@@ -45,8 +45,8 @@ const config = {
   SESSION_IDLE_TIMEOUT_MS: 15 * 60 * 1000, // 15 minutes before unloading session from RAM
   MAX_CPS: 25, // 25 clicks per second generous clicker limit
   
-  // Resend Email API (with secure obfuscated fallback for maximum uptime resilience)
-  RESEND_API_KEY: process.env.RESEND_API_KEY || Buffer.from('cmVfZFo4R2dFM2ZfR3ZWWFNaSzJYV3Faa0ZVTFF1S1pETnhj', 'base64').toString('utf8'),
+  // Resend Email API (must be provided via environment / .env)
+  RESEND_API_KEY: process.env.RESEND_API_KEY || '',
   RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Ras ALmal Tycoon <auth@rasalmal.online>',
 
   // Maintenance Mode
@@ -54,5 +54,18 @@ const config = {
   TESTER_CODE: process.env.TESTER_CODE || ''
 
 };
+
+if (!config.SUPABASE_ANON_KEY) {
+  console.error('[config] SUPABASE_ANON_KEY is not set. Add it to server/.env or the process environment.');
+}
+if (!config.SUPABASE_SERVICE_ROLE_KEY) {
+  console.error('[config] SUPABASE_SERVICE_ROLE_KEY is not set. Add it to server/.env or the process environment.');
+}
+if (!config.ADMIN_KEY_SHA256) {
+  console.error('[config] ADMIN_KEY_SHA256 is not set. Admin endpoints will be inaccessible until it is configured.');
+}
+if (!config.RESEND_API_KEY) {
+  console.error('[config] RESEND_API_KEY is not set. OTP emails will fail until it is configured.');
+}
 
 module.exports = config;
