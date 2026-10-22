@@ -1886,9 +1886,28 @@ window.AirportUI = (() => {
           } catch (err) {
             const errMsg = err?.message || '';
             console.warn('[AirportUI] claimDutyFree server bridge error:', err);
-            showAirportToast(errMsg || 'تعذر تحصيل أرباح السوق الحرة حالياً', 'warning');
-            updateActiveAirportLiveStats(liveState.airport, liveState);
-            return;
+            // 1. If session was lost or server restarted, attempt auto-reconnect once
+            const isAuthOrDbError = err?.status === 503 || err?.status === 401 || err?.isAuthError || errMsg.includes('قاعدة البيانات') || errMsg.includes('جلستك');
+            if (isAuthOrDbError && window.ServerBridge && typeof window.ServerBridge.startSession === 'function' && liveState.username) {
+              try {
+                const token = window.ServerBridge.resolveEffectiveToken ? window.ServerBridge.resolveEffectiveToken(liveState.username) : null;
+                const reAuthed = await window.ServerBridge.startSession(liveState.username, null, token);
+                if (reAuthed) {
+                  const retryRes = await window.ServerBridge.claimDutyFree();
+                  if (retryRes && retryRes.success) {
+                    if (retryRes.airport) liveState.airport = retryRes.airport;
+                    if (retryRes.cash !== undefined) liveState.cash = retryRes.cash;
+                    if (retryRes.netWorth !== undefined) liveState.netWorth = retryRes.netWorth;
+                    persistGameState();
+                    showAirportToast(retryRes.message || ` تم تحصيل +${(retryRes.earnings || amt).toLocaleString()} ج.م من أرباح السوق الحرة!`, 'success');
+                    updateActiveAirportLiveStats(liveState.airport, liveState);
+                    return;
+                  }
+                }
+              } catch (_) {}
+            }
+            // 2. If server remains unavailable, fall through gracefully to local claim so player earnings are NEVER lost!
+            console.log('[AirportUI] Falling back to offline duty free claim...');
           }
         }
 
@@ -2734,9 +2753,27 @@ window.AirportUI = (() => {
         } catch (err) {
           const errMsg = err?.message || '';
           console.warn('[AirportUI] acceptAirportTransit server bridge returned error:', err);
-          showAirportToast(errMsg || 'تعذر تحصيل رسوم الترانزيت، يرجى المحاولة لاحقاً', 'warning');
-          renderAirportPanel();
-          return;
+          const isAuthOrDbError = err?.status === 503 || err?.status === 401 || err?.isAuthError || errMsg.includes('قاعدة البيانات') || errMsg.includes('جلستك');
+          if (isAuthOrDbError && window.ServerBridge && typeof window.ServerBridge.startSession === 'function' && liveState.username) {
+            try {
+              const token = window.ServerBridge.resolveEffectiveToken ? window.ServerBridge.resolveEffectiveToken(liveState.username) : null;
+              const reAuthed = await window.ServerBridge.startSession(liveState.username, null, token);
+              if (reAuthed) {
+                const retryRes = await window.ServerBridge.acceptAirportTransit();
+                if (retryRes && retryRes.success) {
+                  if (retryRes.airport) liveState.airport = retryRes.airport;
+                  if (retryRes.cash !== undefined) liveState.cash = retryRes.cash;
+                  if (retryRes.xp !== undefined) liveState.xp = retryRes.xp;
+                  if (retryRes.netWorth !== undefined) liveState.netWorth = retryRes.netWorth;
+                  persistGameState();
+                  showAirportToast(retryRes.message || ` تم تحصيل رسوم الترانزيت المتراكمة بنجاح (+${(retryRes.fee || amt).toLocaleString()} ج.م)!`, 'success');
+                  renderAirportPanel();
+                  return;
+                }
+              }
+            } catch (_) {}
+          }
+          console.log('[AirportUI] Falling back to offline transit claim...');
         }
       }
 

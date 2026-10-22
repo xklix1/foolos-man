@@ -7,18 +7,21 @@ const config = require('../config/env');
 
 class DbService {
   constructor() {
-    this.candidateUrls = [
+    const urls = [
+      config.SUPABASE_INTERNAL_URL,
+      config.SUPABASE_URL,
       'http://127.0.0.1:8000',
-      'https://rasalmal.online',
-      config.SUPABASE_URL
+      'https://rasalmal.online'
     ].filter(Boolean);
+    this.candidateUrls = [...new Set(urls)];
 
-    this.candidateKeys = [
+    const keys = [
       config.SUPABASE_SERVICE_ROLE_KEY,
       config.SUPABASE_ANON_KEY
     ].filter(Boolean);
+    this.candidateKeys = [...new Set(keys)];
 
-    this.url = 'https://rasalmal.online';
+    this.url = this.candidateUrls[0];
     this.key = this.candidateKeys[0];
   }
 
@@ -39,8 +42,12 @@ class DbService {
     let lastStatus = null;
     let lastResponseBody = '';
 
-    for (const baseUrl of this.candidateUrls) {
-      for (const k of this.candidateKeys) {
+    // Prioritize the last known working URL and key for instant response times
+    const orderedUrls = [this.url, ...this.candidateUrls.filter(u => u !== this.url)];
+    const orderedKeys = [this.key, ...this.candidateKeys.filter(k => k !== this.key)];
+
+    for (const baseUrl of orderedUrls) {
+      for (const k of orderedKeys) {
         try {
           const endpoint = `${baseUrl}${pathAndQuery}`;
           const headers = {
@@ -50,10 +57,14 @@ class DbService {
             ...(options.headers || {})
           };
 
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 4000);
+
           const res = await fetch(endpoint, {
             ...options,
-            headers
-          });
+            headers,
+            signal: options.signal || controller.signal
+          }).finally(() => clearTimeout(timeoutId));
 
           lastStatus = res.status;
           if (res.ok) {
