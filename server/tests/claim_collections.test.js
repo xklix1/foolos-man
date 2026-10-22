@@ -141,8 +141,8 @@ test('Authoritative Collection Flows (Trade & Airport to Cash)', async () => {
     assert.ok(airportClaimRes, 'Airport flight claim response received');
     assert.strictEqual(airportClaimRes.success, true);
 
-    // Verify cash credited
-    const expectedCashAfterAirport = initialCash + 250000 + 60000;
+    // Verify cash credited (gross revenue added to cash, operating costs were deducted on launch)
+    const expectedCashAfterAirport = initialCash + 250000 + 80000;
     assert.strictEqual(userSession.state.cash, expectedCashAfterAirport, 'Cash must increase by flight profit');
     assert.strictEqual(userSession.state.bank, initialBank, 'Bank must still remain unchanged');
     assert.strictEqual(plane.status, 'idle', 'Plane must return to idle status');

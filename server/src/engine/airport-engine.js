@@ -376,15 +376,17 @@ function calculateFlightEconomics(model, dest, airportState) {
  */
 function calculateDutyFreeAccumulated(airportState, nowMs = Date.now()) {
   if (!airportState || !airportState.unlocked || !airportState.facilities?.duty_free) return 0;
-  const lvl = airportState.facilities.duty_free;
-  const ratePerMin = AIRPORT_FACILITIES.duty_free.levels[lvl]?.passivePerMin || 0;
+  const lvl = Number(airportState.facilities.duty_free || 0);
+  const ratePerMin = AIRPORT_FACILITIES.duty_free?.levels?.[lvl]?.passivePerMin || 0;
   if (ratePerMin <= 0) return 0;
 
   const lastTime = Number(airportState.lastDutyFreeCollectionAt || airportState.unlockedAt || nowMs);
   const elapsedMinutes = Math.max(0, (nowMs - lastTime) / (60 * 1000));
   // Cap at 8 hours max accumulation
-  const cappedMinutes = Math.min(8 * 60, elapsedMinutes);
-  return Math.floor(cappedMinutes * ratePerMin);
+  const dutyCap = ratePerMin * 60 * 8;
+  const currentElapsed = Math.floor(Math.min(8 * 60, elapsedMinutes) * ratePerMin);
+  const accumulated = Number(airportState.dutyFreeAccumulated || 0);
+  return Math.min(dutyCap, currentElapsed + accumulated);
 }
 
 /**

@@ -24,7 +24,7 @@ async function airportRoutes(fastify, options) {
   const _transitClaimLocks = new Set();
   const _dutyFreeClaimLocks = new Set();
 
-  // Helper to authenticate and resolve session
+  // Helper to authenticate and resolve session safely
   async function resolveSession(request, reply) {
     const authHeader = request.headers['authorization'] || '';
     const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : null;
@@ -35,8 +35,26 @@ async function airportRoutes(fastify, options) {
       reply.code(400).send({ error: 'Username is required' });
       return null;
     }
-    const { session } = await sessionManager.getOrCreateSession(username, true);
+
+    const uKey = String(username).trim().toLowerCase();
+    let session = sessionManager.sessions.get(uKey);
+
     if (!session) {
+      try {
+        const result = await sessionManager.getOrCreateSession(username, false);
+        session = result ? result.session : null;
+      } catch (err) {
+        fastify.log.warn(`[Airport] Failed to load session from DB for ${username}: ${err.message}`);
+        // Fallback: check if session was set in memory concurrently
+        session = sessionManager.sessions.get(uKey);
+        if (!session) {
+          reply.code(503).send({ error: 'تعذر الاتصال بقاعدة البيانات للتحقق من جلستك، يرجى المحاولة بعد قليل' });
+          return null;
+        }
+      }
+    }
+
+    if (!session || !session.state) {
       reply.code(404).send({ error: 'Player session not found' });
       return null;
     }
@@ -63,6 +81,17 @@ async function airportRoutes(fastify, options) {
     } else if (effectiveToken) {
       session.sessionToken = effectiveToken;
       if (session.state) session.state.sessionToken = effectiveToken;
+    }
+
+    // Ensure s.airport exists and is well-formed
+    if (session.state.airport) {
+      if (!session.state.airport.facilities) {
+        session.state.airport.facilities = { runway: 1, terminals: 1, hangar: 1, duty_free: 0 };
+      } else {
+        if (session.state.airport.facilities.terminal && !session.state.airport.facilities.terminals) {
+          session.state.airport.facilities.terminals = session.state.airport.facilities.terminal;
+        }
+      }
     }
 
     return session;
@@ -494,34 +523,35 @@ async function airportRoutes(fastify, options) {
 
   // 7. POST /api/airport/claim-flight (Collect Flight Revenue - Strictly Deduplicated)
   fastify.post('/api/airport/claim-flight', async (request, reply) => {
-    const session = await resolveSession(request, reply);
-    if (!session) return;
-    const s = session.state;
-
-    if (!s.airport || !s.airport.unlocked) {
-      return reply.code(400).send({ error: 'المطار غير مفعل.' });
-    }
-
-    const { planeId } = request.body || {};
-    if (!planeId) {
-      return reply.code(400).send({ error: 'معرف الطائرة مطلوب.' });
-    }
-
-    // In-memory lock per user & plane to prevent concurrent lag/spam double claims
-    const lockKey = `${session.username}_${planeId}`;
-    if (_flightClaimLocks.has(lockKey)) {
-      return reply.code(429).send({ error: 'جاري معالجة تحصيل هذه الرحلة بالفعل، يرجى الانتظار...' });
-    }
-    _flightClaimLocks.add(lockKey);
-
+    let lockKey = null;
     try {
+      const session = await resolveSession(request, reply);
+      if (!session) return;
+      const s = session.state;
+
+      if (!s || !s.airport || !s.airport.unlocked) {
+        return reply.code(400).send({ error: 'المطار غير مفعل.' });
+      }
+
+      const { planeId } = request.body || {};
+      if (!planeId) {
+        return reply.code(400).send({ error: 'معرف الطائرة مطلوب.' });
+      }
+
+      // In-memory lock per user & plane to prevent concurrent lag/spam double claims
+      lockKey = `${session.username}_${planeId}`;
+      if (_flightClaimLocks.has(lockKey)) {
+        return reply.code(429).send({ error: 'جاري معالجة تحصيل هذه الرحلة بالفعل، يرجى الانتظار...' });
+      }
+      _flightClaimLocks.add(lockKey);
+
       const plane = (s.airport.fleet || []).find(p => p.id === planeId);
       if (!plane || plane.status !== 'in_flight' || !plane.activeFlight) {
         return reply.code(400).send({ error: 'لا توجد رحلة جاهزة للهبوط والتحصيل.' });
       }
 
       const flight = plane.activeFlight;
-      const flightId = flight.flightId || ('flt_' + plane.id + '_' + flight.launchTime);
+      const flightId = flight.flightId || ('flt_' + plane.id + '_' + (flight.launchTime || Date.now()));
       const now = Date.now();
 
       // Deduplication check: Has this specific flight already been collected?
@@ -540,7 +570,7 @@ async function airportRoutes(fastify, options) {
       }
 
       // Server-authoritative time check (landingTime 0 or isLanded true means immediate arrival)
-      const landingTime = Number(flight.landingTime || 0);
+      const landingTime = Number(flight.landingTime || flight.arrivalTime || 0);
       if (landingTime > 0 && !flight.isLanded && now < landingTime) {
         const remSec = Math.ceil((landingTime - now) / 1000);
         return reply.code(400).send({
@@ -609,31 +639,32 @@ async function airportRoutes(fastify, options) {
         netWorth: s.netWorth
       };
     } catch (err) {
-      fastify.log.error(`[Airport] Error in claim-flight for ${session.username} (plane ${planeId}): ${err.message}`);
+      fastify.log.error(`[Airport] Error in claim-flight: ${err.message}`);
       return reply.code(400).send({ error: err.message || 'حدث خطأ أثناء تحصيل أرباح الرحلة' });
     } finally {
-      _flightClaimLocks.delete(lockKey);
+      if (lockKey) _flightClaimLocks.delete(lockKey);
     }
   });
 
   // 8. POST /api/airport/claim-duty-free (Collect Duty Free Passive Income)
   fastify.post('/api/airport/claim-duty-free', async (request, reply) => {
-    const session = await resolveSession(request, reply);
-    if (!session) return;
-    const s = session.state;
-
-    if (!s.airport || !s.airport.unlocked) {
-      return reply.code(400).send({ error: 'المطار غير مفعل.' });
-    }
-
-    const lockKey = `${session.username}_duty_free`;
-    if (_dutyFreeClaimLocks.has(lockKey)) {
-      return reply.code(429).send({ error: 'جاري معالجة تحصيل أرباح السوق الحرة بالفعل، يرجى الانتظار...' });
-    }
-    _dutyFreeClaimLocks.add(lockKey);
-
+    let lockKey = null;
     try {
-      if (!s.airport.facilities) s.airport.facilities = { runway: 1, terminal: 1, hangar: 1, fuel_depot: 1, duty_free: 0 };
+      const session = await resolveSession(request, reply);
+      if (!session) return;
+      const s = session.state;
+
+      if (!s || !s.airport || !s.airport.unlocked) {
+        return reply.code(400).send({ error: 'المطار غير مفعل.' });
+      }
+
+      lockKey = `${session.username}_duty_free`;
+      if (_dutyFreeClaimLocks.has(lockKey)) {
+        return reply.code(429).send({ error: 'جاري معالجة تحصيل أرباح السوق الحرة بالفعل، يرجى الانتظار...' });
+      }
+      _dutyFreeClaimLocks.add(lockKey);
+
+      if (!s.airport.facilities) s.airport.facilities = { runway: 1, terminals: 1, hangar: 1, duty_free: 0 };
       const lvl = Number(s.airport.facilities.duty_free || 0);
       if (lvl <= 0) {
         return reply.code(400).send({ error: 'لم يتم تفعيل أو بناء السوق الحرة بمطارك بعد!' });
@@ -662,6 +693,8 @@ async function airportRoutes(fastify, options) {
 
       s.cash = Math.max(0, Number(s.cash || 0)) + dutyFreeEarnings;
       s.airport.lastDutyFreeCollectionAt = now;
+      s.airport.dutyFreeAccumulated = 0;
+
       if (!s.airport.stats) s.airport.stats = {};
       s.airport.stats.totalDutyFreeCollected = (Number(s.airport.stats.totalDutyFreeCollected) || 0) + dutyFreeEarnings;
 
@@ -686,31 +719,32 @@ async function airportRoutes(fastify, options) {
         netWorth: s.netWorth
       };
     } catch (err) {
-      fastify.log.error(`[Airport] Error in claim-duty-free for ${session.username}: ${err.message}`);
+      fastify.log.error(`[Airport] Error in claim-duty-free: ${err.message}`);
       return reply.code(400).send({ error: err.message || 'حدث خطأ أثناء تحصيل أرباح السوق الحرة' });
     } finally {
-      _dutyFreeClaimLocks.delete(lockKey);
+      if (lockKey) _dutyFreeClaimLocks.delete(lockKey);
     }
   });
 
   // 9. POST /api/airport/transit (Claim Accumulated Control Tower Transit Fees - 8h Max)
   fastify.post('/api/airport/transit', async (request, reply) => {
-    const session = await resolveSession(request, reply);
-    if (!session) return;
-    const s = session.state;
-
-    if (!s.airport || !s.airport.unlocked) {
-      return reply.code(400).send({ error: 'المطار غير مفعل.' });
-    }
-
-    const lockKey = `${session.username}_transit`;
-    if (_transitClaimLocks.has(lockKey)) {
-      return reply.code(429).send({ error: 'جاري معالجة تحصيل رسوم الترانزيت بالفعل، يرجى الانتظار...' });
-    }
-    _transitClaimLocks.add(lockKey);
-
+    let lockKey = null;
     try {
-      if (!s.airport.facilities) s.airport.facilities = { runway: 1, terminal: 1, hangar: 1, fuel_depot: 1, duty_free: 0 };
+      const session = await resolveSession(request, reply);
+      if (!session) return;
+      const s = session.state;
+
+      if (!s || !s.airport || !s.airport.unlocked) {
+        return reply.code(400).send({ error: 'المطار غير مفعل.' });
+      }
+
+      lockKey = `${session.username}_transit`;
+      if (_transitClaimLocks.has(lockKey)) {
+        return reply.code(429).send({ error: 'جاري معالجة تحصيل رسوم الترانزيت بالفعل، يرجى الانتظار...' });
+      }
+      _transitClaimLocks.add(lockKey);
+
+      if (!s.airport.facilities) s.airport.facilities = { runway: 1, terminals: 1, hangar: 1, duty_free: 0 };
       const now = Date.now();
       const lastCollect = Number(s.airport.lastTransitCollectionAt || s.airport.lastTransitPermitAt || s.airport.unlockedAt || now);
       const elapsedMs = Math.max(0, now - lastCollect);
@@ -741,6 +775,12 @@ async function airportRoutes(fastify, options) {
       s.airport.stats.transitPermitsAccepted = (Number(s.airport.stats.transitPermitsAccepted) || 0) + 1;
       s.airport.stats.totalTransitFeesCollected = (Number(s.airport.stats.totalTransitFeesCollected) || 0) + accumulatedFee;
 
+      session.lastServerCashEarnAt = Date.now();
+      session.lastServerAirportActionAt = Date.now();
+      session.lastServerBankActionAt = Date.now();
+      s.lastServerCashEarnAt = Date.now();
+      s.lastServerAirportActionAt = Date.now();
+
       s.netWorth = calculateNetWorth(s);
       s.lastActiveTimestamp = Date.now();
       s.lastSeen = Date.now();
@@ -758,12 +798,13 @@ async function airportRoutes(fastify, options) {
         netWorth: s.netWorth
       };
     } catch (err) {
-      fastify.log.error(`[Airport] Error in transit for ${session.username}: ${err.message}`);
+      fastify.log.error(`[Airport] Error in transit: ${err.message}`);
       return reply.code(400).send({ error: err.message || 'حدث خطأ أثناء تحصيل رسوم الترانزيت' });
     } finally {
-      _transitClaimLocks.delete(lockKey);
+      if (lockKey) _transitClaimLocks.delete(lockKey);
     }
   });
+
 
   // 10. POST /api/airport/sell-plane (Sell plane for 50% refund)
   fastify.post('/api/airport/sell-plane', async (request, reply) => {
