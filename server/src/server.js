@@ -97,10 +97,7 @@ app.get('/api/status', async (request, reply) => {
     engineModel: 'Action-Driven Delta-Time',
     maxCpsLimit: config.MAX_CPS,
     maxOfflineHours: config.MAX_OFFLINE_SECONDS / 3600,
-    autosaveIntervalSeconds: config.AUTOSAVE_INTERVAL_MS / 1000,
-    supabaseUrl: config.SUPABASE_URL,
-    serviceKeyLength: config.SUPABASE_SERVICE_ROLE_KEY ? config.SUPABASE_SERVICE_ROLE_KEY.length : 0,
-    serviceKeyPrefix: config.SUPABASE_SERVICE_ROLE_KEY ? config.SUPABASE_SERVICE_ROLE_KEY.slice(0, 15) : 'none'
+    autosaveIntervalSeconds: config.AUTOSAVE_INTERVAL_MS / 1000
   };
 });
 

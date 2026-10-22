@@ -1392,9 +1392,12 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
           }).catch(e => fastify.log.warn(`[WireTransfer] mailbox notice: ${e.message}`))
         ]);
 
-        sessionManager.deductSenderWireTransfer(cleanSender, amt, lockTs);
+        // Sender balance was already deducted in sState above and saved via dbService.savePlayerState.
+        // Marking dirty = false prevents duplicate deduction or overwrite.
+        senderSession.dirty = false;
+
+        // Credit recipient active session in RAM if they are currently online
         sessionManager.creditRecipientWireTransfer(cleanRecipient, netAmt, lockTs);
-        sessionManager.forceSaveSession(cleanSender).catch(() => {});
         sessionManager.forceSaveSession(cleanRecipient).catch(() => {});
 
         return {
