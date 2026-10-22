@@ -6057,15 +6057,15 @@ const GameEngine = (() => {
     }
 
     const supplyCost = getBusinessSupplyCost(key, bizState);
-    if (state.cash < supplyCost) {
-      throw new Error(`رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${state.cash.toLocaleString()} EGP`);
+    if ((Number(state.bank) || 0) < supplyCost) {
+      throw new Error(`رصيدك في البنك لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(state.bank) || 0).toLocaleString()} EGP`);
     }
 
-    state.cash -= supplyCost;
+    state.bank = (Number(state.bank) || 0) - supplyCost;
     bizState.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
 
     const totalHours = (bizState.suppliesTicks / 3600).toFixed(1);
-    recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+1 ساعة تشغيل، الإجمالي المكدس: ${totalHours} ساعة)`,'business');
+    recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م من الحساب البنكي (+1 ساعة تشغيل، الإجمالي المكدس: ${totalHours} ساعة)`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
 
@@ -6075,9 +6075,13 @@ const GameEngine = (() => {
         ServerBridge.notifyLocalSpend(state.cash, state.bank, state.dirtyCash);
       }
       ServerBridge.supplyBusiness(key).then(res => {
-        if (res && res.success && res.businesses && res.businesses[key]) {
-          const sTicks = Number(res.businesses[key].suppliesTicks || 0);
-          bizState.suppliesTicks = Math.max(bizState.suppliesTicks, sTicks);
+        if (res && res.success) {
+          if (res.bank !== undefined) state.bank = res.bank;
+          if (res.cash !== undefined) state.cash = res.cash;
+          if (res.businesses && res.businesses[key]) {
+            const sTicks = Number(res.businesses[key].suppliesTicks || 0);
+            bizState.suppliesTicks = Math.max(bizState.suppliesTicks, sTicks);
+          }
         }
       }).catch(() => {});
     }

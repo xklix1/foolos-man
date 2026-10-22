@@ -86,20 +86,23 @@ test('Server Authoritative Business Economy & Anti-Free Exploit Tests', async ()
     // 5. Restock Supplies (Single Business)
     const expectedSupplyCost = getBusinessSupplyCost('kiosk', session.state.businesses.kiosk);
     const currentTicks = session.state.businesses.kiosk.suppliesTicks;
+    const initialBankInTest = session.state.bank;
     const supplyRes = await ServerBridge.supplyBusiness('kiosk');
     assert.ok(supplyRes && supplyRes.success, 'Supply business succeeded');
     assert.strictEqual(supplyRes.costPaid, expectedSupplyCost);
     assert.strictEqual(supplyRes.suppliesTicks, currentTicks + 3600);
-    const cashAfterSupply = cashAfterHire - expectedSupplyCost;
-    assert.strictEqual(supplyRes.cash, cashAfterSupply);
-    assert.strictEqual(session.state.cash, cashAfterSupply, 'Server cash deducted for supplies');
+    const bankAfterSupply = initialBankInTest - expectedSupplyCost;
+    assert.strictEqual(supplyRes.bank, bankAfterSupply);
+    assert.strictEqual(session.state.bank, bankAfterSupply, 'Server bank deducted for supplies');
+    assert.strictEqual(supplyRes.cash, cashAfterHire, 'Cash unchanged when restocking from bank');
+    assert.strictEqual(session.state.cash, cashAfterHire, 'Server cash untouched for supplies');
 
     // 6. Fire Worker
     const fireRes = await ServerBridge.fireWorker('kiosk');
     assert.ok(fireRes && fireRes.success, 'Fire worker succeeded');
     assert.strictEqual(fireRes.workers, 0);
     assert.strictEqual(session.state.businesses.kiosk.workers, 0);
-    assert.strictEqual(session.state.cash, cashAfterSupply, 'Fire worker does not cost extra money');
+    assert.strictEqual(session.state.cash, cashAfterHire, 'Fire worker does not cost extra money');
 
     // 7. Renew AFK Manager (Free: 0 EGP)
     const expectedAfkFee = getAfkManagerRenewalCost(session.state);
@@ -107,7 +110,7 @@ test('Server Authoritative Business Economy & Anti-Free Exploit Tests', async ()
     const afkRes = await ServerBridge.renewAfkManager();
     assert.ok(afkRes && afkRes.success, 'Renew AFK manager succeeded');
     assert.strictEqual(afkRes.costPaid, 0);
-    const cashAfterAfk = cashAfterSupply;
+    const cashAfterAfk = cashAfterHire;
     assert.strictEqual(afkRes.cash, cashAfterAfk);
     assert.strictEqual(session.state.cash, cashAfterAfk, 'Server cash unchanged for free AFK manager');
     assert.ok(session.state.afkManagerExpiresAt > Date.now(), 'AFK manager expiration extended by 12 hours');

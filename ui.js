@@ -4365,8 +4365,8 @@ const UIController = (() => {
               showToast(
                 window.currentLang === 'en' ? 'Supplies Restocked' : 'توريد ناجح',
                 window.currentLang === 'en'
-                  ? `Supplied goods to "${biz.name}" for ${res.cost.toLocaleString()} EGP (+1h, Total: ${res.hoursStacked}h stacked at 125% output)!`
-                  : `تم توريد خامات وبضاعة لمشروع "${biz.name}" بتكلفة ${res.cost.toLocaleString()} EGP (+1 ساعة، الإجمالي المكدس: ${res.hoursStacked} ساعة كفاءة 125%)!`,
+                  ? `Supplied goods to "${biz.name}" for ${res.cost.toLocaleString()} EGP from your bank account (+1h, Total: ${res.hoursStacked}h stacked at 125% output)!`
+                  : `تم توريد خامات وبضاعة لمشروع "${biz.name}" بتكلفة ${res.cost.toLocaleString()} EGP خصماً من رصيد البنك (+1 ساعة، الإجمالي المكدس: ${res.hoursStacked} ساعة كفاءة 125%)!`,
                 'success'
               );
               renderBusinesses(true);

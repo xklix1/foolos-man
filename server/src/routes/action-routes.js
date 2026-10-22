@@ -308,15 +308,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
 
     const supplyCost = getBusinessSupplyCost(businessId, b);
-    if ((Number(s.cash) || 0) < supplyCost) {
+    if ((Number(s.bank) || 0) < supplyCost) {
       return reply.code(400).send({
-        error: `رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(s.cash) || 0).toLocaleString()} EGP`,
-        requiredCash: supplyCost,
-        currentCash: s.cash
+        error: `رصيدك في البنك لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(s.bank) || 0).toLocaleString()} EGP`,
+        requiredBank: supplyCost,
+        currentBank: s.bank
       });
     }
 
-    s.cash = (Number(s.cash) || 0) - supplyCost;
+    s.bank = (Number(s.bank) || 0) - supplyCost;
     b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
     s.netWorth = calculateNetWorth(s);
     session.lastServerCashSpendAt = Date.now();
@@ -330,6 +330,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       costPaid: supplyCost,
       suppliesTicks: b.suppliesTicks,
       hoursStacked: (b.suppliesTicks / 3600).toFixed(1),
+      bank: s.bank,
       cash: s.cash,
       netWorth: s.netWorth,
       businesses: s.businesses
@@ -355,14 +356,14 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         return reply.code(400).send({ error: 'وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!' });
       }
       const supplyCost = getBusinessSupplyCost(businessId, b);
-      if ((Number(s.cash) || 0) < supplyCost) {
+      if ((Number(s.bank) || 0) < supplyCost) {
         return reply.code(400).send({
-          error: `رصيدك الكاش لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP`,
-          requiredCash: supplyCost,
-          currentCash: s.cash
+          error: `رصيدك في البنك لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(s.bank) || 0).toLocaleString()} EGP`,
+          requiredBank: supplyCost,
+          currentBank: s.bank
         });
       }
-      s.cash = (Number(s.cash) || 0) - supplyCost;
+      s.bank = (Number(s.bank) || 0) - supplyCost;
       b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + 3600);
       s.netWorth = calculateNetWorth(s);
       session.lastServerCashSpendAt = Date.now();
@@ -374,6 +375,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         costPaid: supplyCost,
         suppliesTicks: b.suppliesTicks,
         hoursStacked: (b.suppliesTicks / 3600).toFixed(1),
+        bank: s.bank,
         cash: s.cash,
         netWorth: s.netWorth,
         businesses: s.businesses
@@ -390,8 +392,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       }
     });
 
-    if (totalCost > 0 && (Number(s.cash) || 0) >= totalCost) {
-      s.cash = (Number(s.cash) || 0) - totalCost;
+    if (totalCost > 0) {
+      if ((Number(s.bank) || 0) < totalCost) {
+        return reply.code(400).send({
+          error: `رصيدك في البنك لا يكفي لتوريد بضاعة لجميع المشاريع. تحتاج: ${totalCost.toLocaleString()} EGP — لديك: ${(Number(s.bank) || 0).toLocaleString()} EGP`,
+          requiredBank: totalCost,
+          currentBank: s.bank
+        });
+      }
+      s.bank = (Number(s.bank) || 0) - totalCost;
       Object.keys(s.businesses).forEach(bk => {
         const b = s.businesses[bk];
         if (b && b.level > 0) {
@@ -399,12 +408,15 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         }
       });
       s.netWorth = calculateNetWorth(s);
+      session.lastServerCashSpendAt = Date.now();
+      session.lastServerBankActionAt = Date.now();
       await sessionManager.forceSaveSession(session.username);
     }
 
     return {
       success: true,
       costPaid: totalCost,
+      bank: s.bank,
       cash: s.cash,
       netWorth: s.netWorth,
       businesses: s.businesses
