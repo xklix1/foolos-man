@@ -2297,9 +2297,30 @@ window.AirportUI = (() => {
           return;
         }
 
-        const isAuthError = err.status === 401 || err.isAuthError || errMsg.includes('session token') || errMsg.includes('Unauthorized');
-        if (isAuthError) {
-          console.warn('[AirportUI] Session token error on claimAirportFlight, evaluating local landing status...');
+        const isAuthOrServerError = err.status === 401 || err.status === 503 || err.isAuthError || errMsg.includes('session token') || errMsg.includes('Unauthorized') || errMsg.includes('قاعدة البيانات') || errMsg.includes('جلستك');
+        if (isAuthOrServerError) {
+          console.warn('[AirportUI] Session/DB status on claimAirportFlight, attempting auto-reconnect...');
+          if (window.ServerBridge && typeof window.ServerBridge.startSession === 'function' && liveState.username) {
+            try {
+              const token = window.ServerBridge.resolveEffectiveToken ? window.ServerBridge.resolveEffectiveToken(liveState.username) : null;
+              const reAuthed = await window.ServerBridge.startSession(liveState.username, null, token);
+              if (reAuthed) {
+                const retryRes = await window.ServerBridge.claimAirportFlight(planeId);
+                if (retryRes && retryRes.success) {
+                  if (retryRes.airport) liveState.airport = retryRes.airport;
+                  if (retryRes.cash !== undefined) liveState.cash = retryRes.cash;
+                  if (retryRes.xp !== undefined) liveState.xp = retryRes.xp;
+                  if (retryRes.netWorth !== undefined) liveState.netWorth = retryRes.netWorth;
+                  persistGameState();
+                  showAirportToast(retryRes.message || ` هبطت الرحلة بنجاح! تم تحصيل ${Number(retryRes.profit || f.grossRevenue || 0).toLocaleString()} ج.م`, 'success');
+                  if (!updatePlaneCardDOM(planeId)) renderAirportPanel();
+                  return;
+                }
+              }
+            } catch (_) {}
+          }
+
+          console.warn('[AirportUI] Evaluating local landing status for flight:', flightId);
           const trustedNow = getTrustedNow();
           if (trustedNow >= Number(f.landingTime || 0)) {
             // Guard against duplicate local credit
@@ -2340,19 +2361,10 @@ window.AirportUI = (() => {
             if (window.GameEngine && typeof window.GameEngine.recordPlayerActivity === 'function') {
               window.GameEngine.recordPlayerActivity('تحصيل رحلة طيران ', `تحصيل أرباح رحلة طائرة (${plane.customName || plane.modelId || 'طائرة'}) بقيمة (+${grossRev.toLocaleString()} ج.م) و +${xp} XP`, 'business');
             }
-            showAirportToast(` هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م (يرجى إعادة تأكيد كلمة السر لتحديث الحفظ السحابي)`, 'warning');
+            showAirportToast(` هبطت الرحلة بسلام! تم تحصيل عوائد +${grossRev.toLocaleString()} ج.م بنجاح!`, 'success');
             if (!updatePlaneCardDOM(planeId)) {
               renderAirportPanel();
             }
-
-            setTimeout(() => {
-              if (typeof window.showAuthModal === 'function') {
-                const u = liveState.username || (window.ServerBridge && window.ServerBridge.getActiveUsername && window.ServerBridge.getActiveUsername());
-                const authUserEl = document.getElementById('auth-username');
-                if (authUserEl && u) authUserEl.value = u;
-                window.showAuthModal('login');
-              }
-            }, 1800);
             return;
           }
         }

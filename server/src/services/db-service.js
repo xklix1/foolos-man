@@ -8,10 +8,10 @@ const config = require('../config/env');
 class DbService {
   constructor() {
     const urls = [
-      config.SUPABASE_INTERNAL_URL,
+      'https://rasalmal.online',
       config.SUPABASE_URL,
-      'http://127.0.0.1:8000',
-      'https://rasalmal.online'
+      config.SUPABASE_INTERNAL_URL,
+      'http://127.0.0.1:8000'
     ].filter(Boolean);
     this.candidateUrls = [...new Set(urls)];
 

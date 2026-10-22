@@ -33,12 +33,12 @@ const config = {
   HOST: process.env.HOST || '0.0.0.0',
   NODE_ENV: process.env.NODE_ENV || 'development',
   
-  // Supabase connection (Internal PostgREST on VPS, with external domain fallback)
-  SUPABASE_INTERNAL_URL: process.env.SUPABASE_INTERNAL_URL || 'http://127.0.0.1:8000',
-  SUPABASE_URL: process.env.SUPABASE_INTERNAL_URL || process.env.SUPABASE_URL || 'http://127.0.0.1:8000',
-  SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTc1ODc3LCJleHAiOjIyNjQwMTU4Nzd9.f21_aqY88akkuTp0OGf0VHnxKNjot1Xg9RTr6MITodg',
-  SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NzU4NzcsImV4cCI6MjI2NDAxNTg3N30.yihpgeW-aXfKQiTYxsZRzP2AvOGvaI4UmF_3tmvNMBU',
-  ADMIN_KEY_SHA256: process.env.ADMIN_KEY_SHA256 || '6fb89b36726933cbae637568e73c2c630d191b9a72f4839d2367809783d13429',
+  // Supabase connection (Direct HTTPS to production eliminates PostgREST local loopback 401/timeout issues)
+  SUPABASE_URL: process.env.SUPABASE_URL || process.env.SUPABASE_INTERNAL_URL || 'https://rasalmal.online',
+  SUPABASE_INTERNAL_URL: process.env.SUPABASE_INTERNAL_URL || 'https://rasalmal.online',
+  SUPABASE_ANON_KEY: (process.env.SUPABASE_ANON_KEY || '').trim() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTc1ODc3LCJleHAiOjIyNjQwMTU4Nzd9.f21_aqY88akkuTp0OGf0VHnxKNjot1Xg9RTr6MITodg',
+  SUPABASE_SERVICE_ROLE_KEY: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NzU4NzcsImV4cCI6MjI2NDAxNTg3N30.yihpgeW-aXfKQiTYxsZRzP2AvOGvaI4UmF_3tmvNMBU',
+  ADMIN_KEY_SHA256: (process.env.ADMIN_KEY_SHA256 || '').trim() || '6fb89b36726933cbae637568e73c2c630d191b9a72f4839d2367809783d13429',
 
   // Game Engine Settings
   AUTOSAVE_INTERVAL_MS: 5000, // 5 seconds write-behind to DB

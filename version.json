@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.30",
-  "build": 1792278500000,
-  "timestamp": 1792278500000,
-  "notes": "Fix topup package delivery: lock authoritative cash against stale client sync, fix receipt details parsing in ui.js, and restore credited player balances.",
-  "releaseNotes": "إصلاح تسليم باقات الشحن التأسيسية ومنع مزامنة العميل من مسح الكاش المعتمد وضمان نزول الرصيد فوراً بحساب اللاعب."
+  "version": "v10.0.31",
+  "build": 1792700000000,
+  "timestamp": 1792700000000,
+  "notes": "Fix airport flight and revenue claims: auto-reconnect session and resilient local landing fallback, prioritize direct https supabase connection.",
+  "releaseNotes": "إصلاح تحصيل عوائد المطار والسوق الحرة والترانزيت بالكامل مع ميزة إعادة الاتصال التلقائي بالخادم والتحصيل الموثوق للأرباح."
 }
