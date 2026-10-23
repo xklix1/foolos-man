@@ -73,8 +73,10 @@ async function sessionRoutes(fastify, options) {
       ].filter(Boolean);
 
       const targetUrls = [
-        'https://rasalmal.online/rest/v1/globals?id=eq.maintenance&select=*',
-        `${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`
+        `${config.SUPABASE_INTERNAL_URL}/rest/v1/globals?id=eq.maintenance&select=*`,
+        'http://127.0.0.1:8000/rest/v1/globals?id=eq.maintenance&select=*',
+        `${config.SUPABASE_URL}/rest/v1/globals?id=eq.maintenance&select=*`,
+        'https://rasalmal.online/rest/v1/globals?id=eq.maintenance&select=*'
       ];
 
       let res = null;

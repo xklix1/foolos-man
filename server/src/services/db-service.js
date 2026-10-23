@@ -8,10 +8,10 @@ const config = require('../config/env');
 class DbService {
   constructor() {
     const urls = [
-      'https://rasalmal.online',
-      config.SUPABASE_URL,
       config.SUPABASE_INTERNAL_URL,
-      'http://127.0.0.1:8000'
+      'http://127.0.0.1:8000',
+      config.SUPABASE_URL,
+      'https://rasalmal.online'
     ].filter(Boolean);
     this.candidateUrls = [...new Set(urls)];
 
@@ -58,7 +58,7 @@ class DbService {
           };
 
           const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 4000);
+          const timeoutId = setTimeout(() => controller.abort(), 2500);
 
           const res = await fetch(endpoint, {
             ...options,

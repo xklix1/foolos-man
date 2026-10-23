@@ -3209,8 +3209,10 @@ async function moderatorRoutes(fastify, options) {
       ].filter(Boolean);
 
       const urls = [
-        'https://rasalmal.online',
-        config.SUPABASE_URL
+        config.SUPABASE_INTERNAL_URL,
+        'http://127.0.0.1:8000',
+        config.SUPABASE_URL,
+        'https://rasalmal.online'
       ].filter(Boolean);
 
       let rows = null;

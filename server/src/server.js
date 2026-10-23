@@ -195,7 +195,8 @@ async function updateAuthoritativeLeaderboardSnapshot() {
     const nextUpdateAt = now + (cycleMs - msIntoCurrentHour);
     const updatedAt = nextUpdateAt - cycleMs;
 
-    const playersRes = await fetch(`${config.SUPABASE_URL}/rest/v1/players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,خالد,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2,asd,Asd,ASD,7ablas,7Ablas,osos,Osos,OSOS,tito2761,Tito2761,TITO2761)&order=net_worth.desc&limit=35`, {
+    const dbBase = config.SUPABASE_INTERNAL_URL || 'http://127.0.0.1:8000';
+    const playersRes = await fetch(`${dbBase}/rest/v1/players?select=username,cash,bank,net_worth,title,job_id,is_admin,is_banned&is_banned=eq.false&username=not.in.(newu,khaled,Khaled,خالد,rasalmal,rasalmal1,rasalmal2,Rasalmal,Rasalmal1,Rasalmal2,asd,Asd,ASD,7ablas,7Ablas,osos,Osos,OSOS,tito2761,Tito2761,TITO2761)&order=net_worth.desc&limit=35`, {
       headers: {
         'apikey': serviceKey,
         'Authorization': `Bearer ${serviceKey}`
@@ -233,7 +234,7 @@ async function updateAuthoritativeLeaderboardSnapshot() {
       updated_at: now
     };
 
-    await fetch(`${config.SUPABASE_URL}/rest/v1/globals`, {
+    await fetch(`${dbBase}/rest/v1/globals`, {
       method: 'POST',
       headers: {
         'apikey': serviceKey,
