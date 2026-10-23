@@ -5,7 +5,8 @@
   "main": "index.html",
   "scripts": {
     "start": "node server.js",
-    "build": "node scripts/build-bundle.js"
+    "build": "node scripts/build-bundle.js",
+    "build:bundle": "node scripts/build-bundle.js"
   },
   "keywords": [
     "tycoon",
