@@ -19,9 +19,9 @@ module.exports = {
         PORT: 3001,
         HOST: '127.0.0.1',
         SUPABASE_URL: process.env.SUPABASE_URL || 'https://rasalmal.online',
-        SUPABASE_INTERNAL_URL: process.env.SUPABASE_INTERNAL_URL || 'https://rasalmal.online',
-        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTc1ODc3LCJleHAiOjIyNjQwMTU4Nzd9.f21_aqY88akkuTp0OGf0VHnxKNjot1Xg9RTr6MITodg',
-        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NzU4NzcsImV4cCI6MjI2NDAxNTg3N30.yihpgeW-aXfKQiTYxsZRzP2AvOGvaI4UmF_3tmvNMBU',
+        SUPABASE_INTERNAL_URL: process.env.SUPABASE_INTERNAL_URL || 'http://127.0.0.1:8000',
+        SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTY4MjU5LCJleHAiOjIyNjQwMDgyNTl9.x3wRfLfk3UDMIlVf5JmBU7OhrHG_-CkccOfiV7H-Ad0',
+        SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NjgyNTksImV4cCI6MjI2NDAwODI1OX0._IEwkBwWBGYLdgMTM_f0czJkaBq7GuzDHJAo5SqofQc',
         AUTOSAVE_INTERVAL_MS: 30000,
         RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Ras ALmal Tycoon <auth@rasalmal.online>'
       }

@@ -36,8 +36,8 @@ const config = {
   // Supabase connection (Direct internal PostgREST on localhost port 8000 for zero-latency & avoiding hairpin NAT)
   SUPABASE_URL: process.env.SUPABASE_URL || 'https://rasalmal.online',
   SUPABASE_INTERNAL_URL: process.env.SUPABASE_INTERNAL_URL || 'http://127.0.0.1:8000',
-  SUPABASE_ANON_KEY: (process.env.SUPABASE_ANON_KEY || '').trim() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTc1ODc3LCJleHAiOjIyNjQwMTU4Nzd9.f21_aqY88akkuTp0OGf0VHnxKNjot1Xg9RTr6MITodg',
-  SUPABASE_SERVICE_ROLE_KEY: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NzU4NzcsImV4cCI6MjI2NDAxNTg3N30.yihpgeW-aXfKQiTYxsZRzP2AvOGvaI4UmF_3tmvNMBU',
+  SUPABASE_ANON_KEY: (process.env.SUPABASE_ANON_KEY || '').trim() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoiYW5vbiIsImlzcyI6InN1cGFiYXNlIiwiaWF0IjoxNzkwOTY4MjU5LCJleHAiOjIyNjQwMDgyNTl9.x3wRfLfk3UDMIlVf5JmBU7OhrHG_-CkccOfiV7H-Ad0',
+  SUPABASE_SERVICE_ROLE_KEY: (process.env.SUPABASE_SERVICE_ROLE_KEY || '').trim() || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaXNzIjoic3VwYWJhc2UiLCJpYXQiOjE3OTA5NjgyNTksImV4cCI6MjI2NDAwODI1OX0._IEwkBwWBGYLdgMTM_f0czJkaBq7GuzDHJAo5SqofQc',
   ADMIN_KEY_SHA256: (process.env.ADMIN_KEY_SHA256 || '').trim() || '6fb89b36726933cbae637568e73c2c630d191b9a72f4839d2367809783d13429',
 
   // Game Engine Settings

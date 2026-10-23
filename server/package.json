@@ -19,6 +19,7 @@
     "@fastify/cors": "^8.5.0",
     "@fastify/rate-limit": "^9.1.0",
     "fastify": "^4.26.2",
+    "ssh2": "^1.17.0",
     "web-push": "^3.6.7"
   }
 }
