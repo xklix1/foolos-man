@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.32';
+    window._CLIENT_VERSION = 'v10.0.33';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.32';
+      const CURRENT_APP_BUILD = 'v10.0.33';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.32">
+  <link rel="stylesheet" href="app.css?v=v10.0.33">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -8476,7 +8476,7 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.32"></script>
+  <script src="core.bundle.js?v=v10.0.33"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -9326,21 +9326,20 @@
       async function checkSystemStatusDirectly() {
         if (typeof document !== 'undefined' && document.hidden) return;
         try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/globals?id=in.(maintenance,standby_mode,force_reload)&select=id,data', {
-            cache: 'no-store',
-            headers: {
-              'apikey': _getAnonKey(),
-              'Authorization': 'Bearer ' + _getAnonKey(),
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
-            }
-          });
-          if (!res.ok) return;
-          const rows = await res.json();
-          if (!Array.isArray(rows)) return;
+          const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+          const res = await fetch(`${apiBase}/api/public/system-status`, {
+            cache: 'no-store'
+          }).catch(() => fetch('/api/public/system-status', { cache: 'no-store' }));
 
-          const configMap = {};
-          rows.forEach(r => { if (r && r.id) configMap[r.id] = r.data || {}; });
+          if (!res || !res.ok) return;
+          const statusData = await res.json().catch(() => null);
+          if (!statusData) return;
+
+          const configMap = {
+            force_reload: statusData.force_reload || {},
+            maintenance: statusData.maintenance || {},
+            standby_mode: statusData.standby_mode || {}
+          };
 
           // 1. Force Reload Check
           const forceData = configMap['force_reload'];
@@ -9609,35 +9608,25 @@
         const u = (typeof localStorage !== 'undefined' && localStorage.getItem('rasalmal_active_session_user')) || '';
         if (!u || u.toLowerCase() === 'khaled') return;
         try {
-          const res = await fetch(SUPABASE_URL + '/rest/v1/players?username=ilike.' + encodeURIComponent(u) + '&select=username,is_banned,jail_timer,state', {
-            cache: 'no-store',
-            headers: {
-              'apikey': _getAnonKey(),
-              'Authorization': 'Bearer ' + _getAnonKey(),
-              'Cache-Control': 'no-cache, no-store, must-revalidate',
-              'Pragma': 'no-cache'
-            }
-          });
-          if (!res.ok) return;
-          const rows = await res.json();
-          if (!rows || rows.length === 0) return;
-          const p = rows[0];
-          const pState = (p && typeof p.state === 'object' && p.state) ? p.state : {};
-          const isFrozen = Boolean(
-            p.underSuspicion || 
-            pState.underSuspicion || 
-            (p.freezeUntil && p.freezeUntil > Date.now()) || 
-            (pState.freezeUntil && pState.freezeUntil > Date.now())
-          );
+          const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+          const res = await fetch(`${apiBase}/api/session/account-status?username=${encodeURIComponent(u)}`, {
+            cache: 'no-store'
+          }).catch(() => fetch(`/api/session/account-status?username=${encodeURIComponent(u)}`, { cache: 'no-store' }));
+
+          if (!res || !res.ok) return;
+          const statusRes = await res.json().catch(() => null);
+          if (!statusRes) return;
+
+          const isFrozen = Boolean(statusRes.isFrozen);
           const modal = document.getElementById('modal-account-under-suspicion');
           if (modal) {
             const isCurrentlyVisible = (modal.style.display === 'flex' && !modal.classList.contains('hidden'));
             if (isFrozen) {
-              const reason = pState.freezeReason || p.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
+              const reason = statusRes.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.';
               const pEl = modal.querySelector('p.font-bold') || document.getElementById('suspicion-modal-reason');
               if (pEl && pEl.textContent !== reason) pEl.textContent = reason;
               
-              const byVal = pState.frozenBy || p.frozenBy || 'غرفة الرقابة والتحقيق';
+              const byVal = statusRes.frozenBy || 'غرفة الرقابة والتحقيق';
               const safeBy = String(byVal).replace(/المساعد/g, 'المحقق').replace(/مساعد/g, 'محقق');
               const byEl = document.getElementById('suspicion-modal-by');
               if (byEl && byEl.textContent !== safeBy) byEl.textContent = safeBy;

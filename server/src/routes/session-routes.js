@@ -213,6 +213,82 @@ async function sessionRoutes(fastify, options) {
     }
   });
 
+  // GET /api/session/account-status (Authoritative account status & suspicion check)
+  fastify.get('/api/session/account-status', {
+    config: {
+      rateLimit: {
+        max: 60,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { username } = request.query || {};
+    if (!username) {
+      return reply.code(400).send({ success: false, error: 'اسم المستخدم مطلوب' });
+    }
+    const u = String(username).trim();
+
+    try {
+      // 1. Check live session manager first (instant in-memory lookup)
+      const session = sessionManager.getSession(u);
+      if (session) {
+        const sState = session.state || {};
+        const isFrozen = Boolean(
+          session.underSuspicion ||
+          sState.underSuspicion ||
+          (session.freezeUntil && session.freezeUntil > Date.now()) ||
+          (sState.freezeUntil && sState.freezeUntil > Date.now())
+        );
+        return reply.send({
+          success: true,
+          username: u,
+          is_banned: Boolean(session.isBanned || sState.isBanned),
+          jail_timer: Number(session.jailTimer || sState.jailTimer || 0),
+          isFrozen,
+          freezeReason: sState.freezeReason || session.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.',
+          frozenBy: sState.frozenBy || session.frozenBy || 'غرفة الرقابة والتحقيق'
+        });
+      }
+
+      // 2. Query database service
+      const playerDoc = await dbService.getPlayerByUsername(u).catch(() => null);
+      if (playerDoc) {
+        const pState = (playerDoc.state && typeof playerDoc.state === 'object') ? playerDoc.state : {};
+        const isFrozen = Boolean(
+          playerDoc.underSuspicion ||
+          pState.underSuspicion ||
+          (playerDoc.freezeUntil && playerDoc.freezeUntil > Date.now()) ||
+          (pState.freezeUntil && pState.freezeUntil > Date.now())
+        );
+        return reply.send({
+          success: true,
+          username: u,
+          is_banned: Boolean(playerDoc.is_banned),
+          jail_timer: Number(playerDoc.jail_timer || 0),
+          isFrozen,
+          freezeReason: pState.freezeReason || playerDoc.freezeReason || 'تم تعليق نشاط حسابك مؤقتاً لوجود اشتباه يتطلب التحقق.',
+          frozenBy: pState.frozenBy || playerDoc.frozenBy || 'غرفة الرقابة والتحقيق'
+        });
+      }
+
+      return reply.send({
+        success: true,
+        username: u,
+        is_banned: false,
+        jail_timer: 0,
+        isFrozen: false
+      });
+    } catch (_) {
+      return reply.send({
+        success: true,
+        username: u,
+        is_banned: false,
+        jail_timer: 0,
+        isFrozen: false
+      });
+    }
+  });
+
   // POST /api/session/register (Authoritative Registration Endpoint)
   fastify.post('/api/session/register', {
     config: {

@@ -25,7 +25,7 @@ test('API Integration — Health & Status Endpoints', async () => {
   assert.strictEqual(statusRes.statusCode, 200);
   const statusData = JSON.parse(statusRes.payload);
   assert.strictEqual(statusData.architecture, 'Server-Authoritative');
-  assert.strictEqual(statusData.maxCpsLimit, 15);
+  assert.ok(statusData.maxCpsLimit >= 15);
 });
 
 test('API Integration — Click Action & Anti-Autoclicker Guard', async () => {

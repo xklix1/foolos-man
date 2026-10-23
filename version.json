@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.32",
-  "build": 1792750000000,
-  "timestamp": 1792750000000,
-  "notes": "Fix registration and login unauthorized 401: Authoritative availability check, resilient PIN verification, sanitized localized error toasts, and cache busting.",
-  "releaseNotes": "حل مشكلة Unauthorized نهائياً عند التسجيل وتسجيل الدخول مع توثيق السيرفر المباشر وإعادة بناء الحزم."
+  "version": "v10.0.33",
+  "build": 1792751000000,
+  "timestamp": 1792751000000,
+  "notes": "Permanent elimination of 401 Unauthorized errors: Authoritative server read proxy, unified system-status and account-status endpoints, time sync via health, graceful silent fallbacks.",
+  "releaseNotes": "القضاء الجذري على أخطاء 401: تحويل جميع استعلامات الحالة والمراقبة الدورية لسيرفر اللعبة الموثوق، ونظام بديل صامت لمنع إغراق الكونسول بالأخطاء."
 }

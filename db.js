@@ -214,11 +214,10 @@ var AppDB = (() => {
 
   async function fetchServerTime() {
     try {
-      const res = await fetch(`${SUPABASE_URL}/rest/v1/players?select=username&limit=1`, {
-        method: 'HEAD',
-        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': `Bearer ${SUPABASE_ANON_KEY}` }
-      });
-      const dateHeader = res.headers.get('date');
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+      const res = await fetch(`${apiBase}/health`, { method: 'HEAD', cache: 'no-store' })
+        .catch(() => fetch('/health', { method: 'HEAD', cache: 'no-store' }));
+      const dateHeader = res && res.headers && res.headers.get('date');
       if (dateHeader) _updateServerTimeFromHeader(dateHeader);
     } catch (e) {}
     return getTrustedNow();
@@ -295,6 +294,27 @@ var AppDB = (() => {
     let fetchErr = null;
     const isRead = method === 'GET' || method === 'HEAD';
 
+    // Route public read-only requests (globals, mailbox, etc.) through authoritative server read proxy
+    // to prevent direct PostgREST 401 unauthenticated errors in client browser
+    if (isRead && (AppDB._useServerReadProxy || endpoint.startsWith('globals') || endpoint.startsWith('mailbox') || endpoint.includes('limit=1'))) {
+      try {
+        const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+          ? window.SERVER_API_URL.replace(/\/$/, '') 
+          : (typeof window !== 'undefined' ? window.location.origin : '');
+        const proxyRes = await fetch(`${apiBase}/api/public/read?path=${encodeURIComponent(endpoint)}`, {
+          cache: 'no-store'
+        }).catch(() => fetch(`/api/public/read?path=${encodeURIComponent(endpoint)}`, { cache: 'no-store' }));
+        if (proxyRes && proxyRes.ok) {
+          AppDB._useServerReadProxy = true;
+          const contentType = proxyRes.headers.get('content-type') || '';
+          if (contentType.includes('application/json')) {
+            return await proxyRes.json();
+          }
+          return null;
+        }
+      } catch (_) {}
+    }
+
     keyLoop:
     for (const activeAuthKey of orderedAnonKeys) {
       const headers = {
@@ -346,9 +366,29 @@ var AppDB = (() => {
     const dateHeader = res ? res.headers.get('date') : null;
     if (dateHeader) _updateServerTimeFromHeader(dateHeader);
 
-    if (!res.ok) {
+    if (!res || !res.ok) {
+      // If a read request failed or was unauthorized, try authoritative server read proxy
+      if (isRead) {
+        try {
+          const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
+            ? window.SERVER_API_URL.replace(/\/$/, '') 
+            : (typeof window !== 'undefined' ? window.location.origin : '');
+          const proxyRes = await fetch(`${apiBase}/api/public/read?path=${encodeURIComponent(endpoint)}`, {
+            cache: 'no-store'
+          }).catch(() => fetch(`/api/public/read?path=${encodeURIComponent(endpoint)}`, { cache: 'no-store' }));
+          if (proxyRes && proxyRes.ok) {
+            AppDB._useServerReadProxy = true;
+            const contentType = proxyRes.headers.get('content-type') || '';
+            if (contentType.includes('application/json')) {
+              return await proxyRes.json();
+            }
+            return null;
+          }
+        } catch (_) {}
+      }
+
       // If mutation was rejected due to RLS/permissions (4xx status), try authoritative admin mutate endpoint
-      if (res.status >= 400 && res.status < 500 && isMutation && adminTok) {
+      if (res && res.status >= 400 && res.status < 500 && isMutation && adminTok) {
         try {
           const [table, ...queryParts] = endpoint.split('?');
           const query = queryParts.join('?');
@@ -391,17 +431,22 @@ var AppDB = (() => {
         }
       }
 
-      if (res.status === 401) {
+      if (isRead) {
+        // Return graceful empty read result rather than throwing an exception to caller
+        return [];
+      }
+
+      if (res && res.status === 401) {
         console.warn('[Sync] Request unauthorized or permission denied (HTTP 401).');
       }
-      const errBody = await res.text().catch(() => '');
+      const errBody = res ? await res.text().catch(() => '') : '';
       let parsed = null;
       try { parsed = JSON.parse(errBody); } catch (e) {}
-      let msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody || `HTTP ${res.status}`;
+      let msg = (parsed && (parsed.message || parsed.hint || parsed.details)) || errBody || (res ? `HTTP ${res.status}` : 'Connection Error');
       if (typeof msg === 'string' && msg.includes('<html')) {
-        msg = `خطأ في الاتصال بالخادم (${res.status} ${res.status === 413 ? 'حجم البيانات كبير جداً' : res.statusText || 'Error'})`;
+        msg = `خطأ في الاتصال بالخادم (${res ? res.status : 500} ${res && res.status === 413 ? 'حجم البيانات كبير جداً' : (res && res.statusText) || 'Error'})`;
       }
-      if (res.status === 401 || (typeof msg === 'string' && (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('unoutherised') || msg.includes('JWT') || msg.includes('JWSError')))) {
+      if ((res && res.status === 401) || (typeof msg === 'string' && (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('unoutherised') || msg.includes('JWT') || msg.includes('JWSError')))) {
         msg = 'تعذر التحقق من التصريح الأمني لقاعدة البيانات (401). يرجى تحديث الصفحة أو إعادة المحاولة.';
       }
       throw new Error(msg);
@@ -4143,6 +4188,15 @@ var AppDB = (() => {
   }
 
   async function getForceReloadStatus() {
+    try {
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+      const res = await fetch(`${apiBase}/api/public/system-status`, { cache: 'no-store' })
+        .catch(() => fetch('/api/public/system-status', { cache: 'no-store' }));
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.force_reload) return data.force_reload;
+      }
+    } catch (_) {}
     try {
       const rows = await _api(`globals?id=eq.force_reload`);
       if (rows && rows.length > 0 && rows[0].data) {

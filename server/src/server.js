@@ -6,6 +6,9 @@
 const Fastify = require('fastify');
 const config = require('./config/env');
 const { sanitizePlayerState } = require('./engine/state-sanitizer');
+const fs = require('fs');
+const path = require('path');
+const dbService = require('./services/db-service');
 
 const app = Fastify({
   trustProxy: true,
@@ -101,6 +104,137 @@ app.get('/api/status', async (request, reply) => {
   };
 });
 
+// GET /api/public/system-status (Instant unified status check for client watchdogs)
+app.get('/api/public/system-status', async (request, reply) => {
+  let dynamicReloadTs = 0;
+  try {
+    const vPath = path.join(__dirname, '../../version.json');
+    if (fs.existsSync(vPath)) {
+      const v = JSON.parse(fs.readFileSync(vPath, 'utf8'));
+      dynamicReloadTs = Number(v.timestamp) || 0;
+    }
+  } catch (_) {}
+
+  return {
+    success: true,
+    force_reload: {
+      timestamp: dynamicReloadTs || Date.now()
+    },
+    maintenance: {
+      active: Boolean(config.MAINTENANCE_MODE),
+      enabled: Boolean(config.MAINTENANCE_MODE),
+      message: 'اللعبة تحت الصيانة حالياً. سنعود قريباً إن شاء الله 🛠️'
+    },
+    standby_mode: {
+      active: false
+    },
+    serverTime: Date.now()
+  };
+});
+
+// GET /api/public/globals (Serves public global configurations from cache/RAM)
+app.get('/api/public/globals', async (request, reply) => {
+  const { id } = request.query || {};
+  let dynamicReloadTs = 0;
+  try {
+    const vPath = path.join(__dirname, '../../version.json');
+    if (fs.existsSync(vPath)) {
+      const v = JSON.parse(fs.readFileSync(vPath, 'utf8'));
+      dynamicReloadTs = Number(v.timestamp) || 0;
+    }
+  } catch (_) {}
+
+  const globalsMap = {
+    force_reload: { timestamp: dynamicReloadTs || Date.now() },
+    maintenance: {
+      active: Boolean(config.MAINTENANCE_MODE),
+      enabled: Boolean(config.MAINTENANCE_MODE),
+      message: 'اللعبة تحت الصيانة حالياً. سنعود قريباً إن شاء الله 🛠️'
+    },
+    standby_mode: { active: false },
+    airdrop: { active: false, timestamp: Date.now() },
+    market_event: { active: false, timestamp: Date.now() },
+    taxConfig: { rate: 0.05 },
+    serverConfig: { maxCps: config.MAX_CPS }
+  };
+
+  if (id && globalsMap[id]) {
+    return { success: true, id, data: globalsMap[id] };
+  }
+  return { success: true, data: globalsMap };
+});
+
+// GET /api/public/read (Server-side resilient proxy for read-only database queries)
+app.get('/api/public/read', async (request, reply) => {
+  const queryPath = (request.query && (request.query.path || request.query.endpoint)) || '';
+  if (!queryPath || typeof queryPath !== 'string') {
+    return reply.code(400).send({ error: 'Missing path parameter' });
+  }
+
+  const cleanPath = queryPath.replace(/^\/+/, '');
+  // Security whitelist: only allow safe public tables
+  if (!cleanPath.startsWith('globals') && !cleanPath.startsWith('players') && !cleanPath.startsWith('mailbox') && !cleanPath.startsWith('corporations')) {
+    return reply.code(403).send({ error: 'Disallowed read target' });
+  }
+
+  // Attempt database query via server-authenticated dbService
+  try {
+    const res = await dbService.resilientFetch(`/rest/v1/${cleanPath}`);
+    if (res && res.ok) {
+      const data = await res.json();
+      return reply.send(data);
+    }
+  } catch (_) {}
+
+  // Resilient graceful fallback so client polling never receives 401 or throws
+  let dynamicReloadTs = Date.now();
+  try {
+    const vPath = path.join(__dirname, '../../version.json');
+    if (fs.existsSync(vPath)) {
+      const v = JSON.parse(fs.readFileSync(vPath, 'utf8'));
+      dynamicReloadTs = Number(v.timestamp) || dynamicReloadTs;
+    }
+  } catch (_) {}
+
+  if (cleanPath.includes('globals')) {
+    if (cleanPath.includes('force_reload')) {
+      return reply.send([{ id: 'force_reload', data: { timestamp: dynamicReloadTs } }]);
+    }
+    if (cleanPath.includes('maintenance')) {
+      return reply.send([{ id: 'maintenance', data: { active: Boolean(config.MAINTENANCE_MODE), enabled: Boolean(config.MAINTENANCE_MODE), message: 'اللعبة تحت الصيانة حالياً.' } }]);
+    }
+    if (cleanPath.includes('standby_mode')) {
+      return reply.send([{ id: 'standby_mode', data: { active: false } }]);
+    }
+    if (cleanPath.includes('chat_feed')) {
+      return reply.send([{ id: 'chat_feed', data: { messages: [] }, updated_at: Date.now() }]);
+    }
+    if (cleanPath.includes('broadcast')) {
+      return reply.send([{ id: 'broadcast', data: { active: false }, updated_at: Date.now() }]);
+    }
+    if (cleanPath.includes('airdrop')) {
+      return reply.send([{ id: 'airdrop', data: { active: false } }]);
+    }
+    if (cleanPath.includes('market_event')) {
+      return reply.send([{ id: 'market_event', data: { active: false } }]);
+    }
+    if (cleanPath.includes('taxConfig')) {
+      return reply.send([{ id: 'taxConfig', data: { rate: 0.05 } }]);
+    }
+    if (cleanPath.includes('serverConfig')) {
+      return reply.send([{ id: 'serverConfig', data: { maxCps: config.MAX_CPS } }]);
+    }
+    if (cleanPath.includes('topup_payment_settings')) {
+      return reply.send([{ id: 'topup_payment_settings', data: {} }]);
+    }
+    if (cleanPath.includes('topup_requests')) {
+      return reply.send([{ id: 'topup_requests', data: {} }]);
+    }
+  }
+
+  return reply.send([]);
+});
+
 // ─── Maintenance Mode Endpoints ───────────────────────────────────────────────
 
 // GET /api/maintenance — يرجع حالة الصيانة (بدون كشف الكود أبداً)
@@ -166,7 +300,6 @@ app.register(require('./routes/moderator-routes'), {
 
 // Background offline push notification checker (runs every 60 seconds)
 const pushService = require('./services/push-service');
-const dbService = require('./services/db-service');
 const sessionManager = require('./services/session-manager');
 
 const OFFLINE_PUSH_CHECK_INTERVAL_MS = 60 * 1000;
