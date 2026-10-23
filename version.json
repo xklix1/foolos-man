@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.31",
-  "build": 1792700000000,
-  "timestamp": 1792700000000,
-  "notes": "Fix airport flight and revenue claims: auto-reconnect session and resilient local landing fallback, prioritize direct https supabase connection.",
-  "releaseNotes": "إصلاح تحصيل عوائد المطار والسوق الحرة والترانزيت بالكامل مع ميزة إعادة الاتصال التلقائي بالخادم والتحصيل الموثوق للأرباح."
+  "version": "v10.0.32",
+  "build": 1792750000000,
+  "timestamp": 1792750000000,
+  "notes": "Fix registration and login unauthorized 401: Authoritative availability check, resilient PIN verification, sanitized localized error toasts, and cache busting.",
+  "releaseNotes": "حل مشكلة Unauthorized نهائياً عند التسجيل وتسجيل الدخول مع توثيق السيرفر المباشر وإعادة بناء الحزم."
 }

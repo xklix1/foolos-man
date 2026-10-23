@@ -401,6 +401,9 @@ var AppDB = (() => {
       if (typeof msg === 'string' && msg.includes('<html')) {
         msg = `خطأ في الاتصال بالخادم (${res.status} ${res.status === 413 ? 'حجم البيانات كبير جداً' : res.statusText || 'Error'})`;
       }
+      if (res.status === 401 || (typeof msg === 'string' && (msg.toLowerCase().includes('unauthorized') || msg.toLowerCase().includes('unoutherised') || msg.includes('JWT') || msg.includes('JWSError')))) {
+        msg = 'تعذر التحقق من التصريح الأمني لقاعدة البيانات (401). يرجى تحديث الصفحة أو إعادة المحاولة.';
+      }
       throw new Error(msg);
     }
 
@@ -1201,35 +1204,71 @@ var AppDB = (() => {
       throw new Error(devBan.reason || 'تم حظر هذا الجهاز نهائياً من تسجيل أي حسابات جديدة.');
     }
 
-    // 4. Check if exists (case-insensitive)
-    const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
-    if (existing && existing.length > 0) {
-      throw new Error('اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.');
-    }
-
-    // Check if email already registered with another account
-    if (cleanEmail) {
-      try {
-        const emailExists = await _api(`players?state->>email=eq.${encodeURIComponent(cleanEmail)}&select=username`);
-        if (emailExists && emailExists.length > 0) {
-          throw new Error('هذا البريد الإلكتروني مسجل بالفعل مع حساب آخر.');
-        }
-      } catch (emErr) {
-        if (emErr.message && emErr.message.includes('مسجل بالفعل')) throw emErr;
-      }
-    }
-
-    // 5. Validate optional referral code if provided at registration
+    // 4. Authoritative check: Check if exists via server bridge first, fallback to resilient DB check
     let referrerUsername = '';
     let referrerCodeValid = '';
-    if (refCode) {
-      const refRows = await _api(`players?state->>referralCode=eq.${encodeURIComponent(refCode)}&select=username,state`);
-      if (refRows && refRows.length > 0 && refRows[0].username.toLowerCase() !== u.toLowerCase()) {
-        referrerUsername = refRows[0].username;
-        referrerCodeValid = refCode;
-      } else {
-        throw new Error('كود الدعوة المدخل غير صحيح أو ينتمي لنفس الحساب.');
+
+    if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.checkAvailability === 'function') {
+      try {
+        const avail = await ServerBridge.checkAvailability({
+          username: u,
+          email: cleanEmail,
+          referralCode: refCode
+        });
+        if (avail) {
+          if (avail.usernameAvailable === false) {
+            throw new Error('اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.');
+          }
+          if (cleanEmail && avail.emailAvailable === false) {
+            throw new Error('هذا البريد الإلكتروني مسجل بالفعل مع حساب آخر.');
+          }
+          if (refCode) {
+            if (avail.referralValid === false) {
+              throw new Error('كود الدعوة المدخل غير صحيح أو ينتمي لنفس الحساب.');
+            }
+            if (avail.referrerUsername && avail.referrerUsername.toLowerCase() !== u.toLowerCase()) {
+              referrerUsername = avail.referrerUsername;
+              referrerCodeValid = refCode;
+            }
+          }
+        }
+      } catch (bridgeErr) {
+        if (bridgeErr.message && (bridgeErr.message.includes('مسجل بالفعل') || bridgeErr.message.includes('كود الدعوة'))) {
+          throw bridgeErr;
+        }
+        console.warn('[DB] ServerBridge checkAvailability notice:', bridgeErr.message);
       }
+    }
+
+    // Direct DB verification fallback if ServerBridge was unreachable or skipped
+    if (!referrerUsername && refCode) {
+      try {
+        const existing = await _api(`players?username=ilike.${encodeURIComponent(u)}&select=username`);
+        if (existing && existing.length > 0) {
+          throw new Error('اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.');
+        }
+      } catch (chkErr) {
+        if (chkErr.message && chkErr.message.includes('مسجل بالفعل')) throw chkErr;
+      }
+
+      if (cleanEmail) {
+        try {
+          const emailExists = await _api(`players?state->>email=eq.${encodeURIComponent(cleanEmail)}&select=username`);
+          if (emailExists && emailExists.length > 0) {
+            throw new Error('هذا البريد الإلكتروني مسجل بالفعل مع حساب آخر.');
+          }
+        } catch (emErr) {
+          if (emErr.message && emErr.message.includes('مسجل بالفعل')) throw emErr;
+        }
+      }
+
+      try {
+        const refRows = await _api(`players?state->>referralCode=eq.${encodeURIComponent(refCode)}&select=username,state`);
+        if (refRows && refRows.length > 0 && refRows[0].username.toLowerCase() !== u.toLowerCase()) {
+          referrerUsername = refRows[0].username;
+          referrerCodeValid = refCode;
+        }
+      } catch (_) {}
     }
 
     const hashed = await hashPin(p);
@@ -1587,7 +1626,22 @@ var AppDB = (() => {
     const p = String(inputPin).trim();
 
     // Query case-insensitively and sort by last_seen descending to prioritize most recently active account over duplicates
-    const rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=username,pin,cash,bank,net_worth,title,is_admin,is_banned,jail_timer,state`);
+    let rows = null;
+    try {
+      rows = await _api(`players?username=ilike.${encodeURIComponent(u)}&order=last_seen.desc&select=username,pin,cash,bank,net_worth,title,is_admin,is_banned,jail_timer,state`);
+    } catch (apiErr) {
+      console.warn('[DB] verifyPin _api note:', apiErr.message);
+      // If direct PostgREST read failed with 401 or network, fallback to ServerBridge startSession verification!
+      if (typeof ServerBridge !== 'undefined' && typeof ServerBridge.startSession === 'function') {
+        try {
+          const sRes = await ServerBridge.startSession(u, p);
+          if (sRes && (sRes.success || sRes.sessionToken)) {
+            return returnFullRow ? { ok: true, canonicalUsername: sRes.username, row: { username: sRes.username, state: sRes.state } } : true;
+          }
+        } catch (_) {}
+      }
+      return false;
+    }
     if (!rows || rows.length === 0) return false;
 
     // Verify PIN first

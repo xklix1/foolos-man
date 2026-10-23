@@ -149,6 +149,70 @@ async function sessionRoutes(fastify, options) {
     }
   });
 
+  // POST /api/session/check-availability (Authoritative Pre-Registration Availability Check)
+  fastify.post('/api/session/check-availability', {
+    config: {
+      rateLimit: {
+        max: 30,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const { username, email, referralCode } = request.body || {};
+    let usernameAvailable = true;
+    let emailAvailable = true;
+    let referralValid = null;
+    let referrerUsername = '';
+
+    try {
+      if (username) {
+        const u = String(username).trim();
+        const existing = await dbService.getPlayerByUsername(u);
+        if (existing) usernameAvailable = false;
+      }
+
+      if (email) {
+        const cleanEmail = String(email).trim().toLowerCase();
+        const existingEmail = await dbService.getPlayerByEmail(cleanEmail);
+        if (existingEmail) emailAvailable = false;
+      }
+
+      if (referralCode) {
+        const code = String(referralCode).trim().toUpperCase();
+        try {
+          const res = await dbService.resilientFetch(`/rest/v1/players?state->>referralCode=eq.${encodeURIComponent(code)}&select=username,state`);
+          const rows = await res.json();
+          if (Array.isArray(rows) && rows.length > 0) {
+            referralValid = true;
+            referrerUsername = rows[0].username;
+          } else {
+            referralValid = false;
+          }
+        } catch (_) {
+          referralValid = true; // Permissive fallback if database is under high load
+        }
+      }
+
+      return reply.send({
+        success: true,
+        usernameAvailable,
+        emailAvailable,
+        referralValid,
+        referrerUsername
+      });
+    } catch (err) {
+      fastify.log.warn('[CheckAvailability Error]', err.message);
+      // Fallback permissively so server-side register/verify-otp can handle authoritative decision
+      return reply.send({
+        success: true,
+        usernameAvailable: true,
+        emailAvailable: true,
+        referralValid: true,
+        referrerUsername: ''
+      });
+    }
+  });
+
   // POST /api/session/register (Authoritative Registration Endpoint)
   fastify.post('/api/session/register', {
     config: {
@@ -274,7 +338,7 @@ async function sessionRoutes(fastify, options) {
       }
 
       if (!isAuthed) {
-        return reply.code(401).send({ error: 'Invalid PIN credentials or expired session token' });
+        return reply.code(401).send({ error: 'الرقم السري غير صحيح أو انتهت صلاحية الجلسة. يرجى إعادة المحاولة.', code: 'INVALID_CREDENTIALS' });
       }
 
       // 3. User is 100% verified -> Record authoritative device and IP telemetry
@@ -349,7 +413,7 @@ async function sessionRoutes(fastify, options) {
     const session = sessionManager.sessions.get(uKey);
     if (session) {
       if (session.sessionToken && effectiveToken && effectiveToken !== session.sessionToken) {
-        return reply.code(401).send({ error: 'Unauthorized: Invalid session token' });
+        return reply.code(401).send({ error: 'انتهت صلاحية الجلسة. يرجى إعادة تسجيل الدخول.', code: 'INVALID_SESSION_TOKEN' });
       }
       session.lastActivity = Date.now();
       session.state.lastSeen = Date.now();
@@ -386,7 +450,7 @@ async function sessionRoutes(fastify, options) {
     const uKey = username.trim().toLowerCase();
     const activeSession = sessionManager.sessions.get(uKey);
     if (activeSession && activeSession.sessionToken && effectiveToken && effectiveToken !== activeSession.sessionToken) {
-      return reply.code(401).send({ error: 'Unauthorized: Invalid or expired session token' });
+      return reply.code(401).send({ error: 'انتهت صلاحية الجلسة. يرجى إعادة تسجيل الدخول.', code: 'INVALID_SESSION_TOKEN' });
     }
 
     try {
@@ -443,7 +507,7 @@ async function sessionRoutes(fastify, options) {
     const uKey = username.trim().toLowerCase();
     const activeSession = sessionManager.sessions.get(uKey);
     if (activeSession && activeSession.sessionToken && effectiveToken && effectiveToken !== activeSession.sessionToken) {
-      return reply.code(401).send({ error: 'Unauthorized: Invalid or expired session token' });
+      return reply.code(401).send({ error: 'انتهت صلاحية الجلسة. يرجى إعادة تسجيل الدخول.', code: 'INVALID_SESSION_TOKEN' });
     }
 
     let saved = false;

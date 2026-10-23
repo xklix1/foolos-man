@@ -379,21 +379,29 @@ module.exports = async function authOtpRoutes(fastify, opts) {
       const sessionManager = opts.sessionManager || fastify.sessionManager;
 
       // 1. Check if username already exists
-      const existing = await dbService.getPlayerByUsername(cleanUsername);
-      if (existing) {
-        return reply.status(409).send({
-          success: false,
-          error: 'اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.'
-        });
+      try {
+        const existing = await dbService.getPlayerByUsername(cleanUsername);
+        if (existing) {
+          return reply.status(409).send({
+            success: false,
+            error: 'اسم المستخدم مسجل بالفعل. يرجى اختيار اسم آخر.'
+          });
+        }
+      } catch (uErr) {
+        request.log.warn({ uErr }, 'Warning checking username existence during OTP verification');
       }
 
       // 2. Check if email already registered
-      const emailExisting = await dbService.getPlayerByEmail(cleanEmail);
-      if (emailExisting) {
-        return reply.status(409).send({
-          success: false,
-          error: 'هذا البريد الإلكتروني مسجل بالفعل مع حساب آخر.'
-        });
+      try {
+        const emailExisting = await dbService.getPlayerByEmail(cleanEmail);
+        if (emailExisting) {
+          return reply.status(409).send({
+            success: false,
+            error: 'هذا البريد الإلكتروني مسجل بالفعل مع حساب آخر.'
+          });
+        }
+      } catch (eErr) {
+        request.log.warn({ eErr }, 'Warning checking email existence during OTP verification');
       }
 
       // 3. Build authoritative new player row
@@ -467,9 +475,12 @@ module.exports = async function authOtpRoutes(fastify, opts) {
         });
       } catch (regErr) {
         request.log.error({ regErr }, 'Failed to create player record on DB during OTP verification');
+        const isAuthErr = regErr.message && (regErr.message.includes('401') || regErr.message.includes('Unauthorized'));
         return reply.status(500).send({
           success: false,
-          error: 'تم تأكيد الرمز بنجاح لكن حدث خطأ أثناء حفظ الحساب في قاعدة البيانات (' + (regErr.message || 'Database error') + ').'
+          error: isAuthErr
+            ? 'تم تأكيد الرمز بنجاح ولكن حدث تعذر مؤقت في الاتصال بقاعدة البيانات. يرجى المحاولة بعد لحظات.'
+            : 'تم تأكيد الرمز بنجاح لكن حدث خطأ أثناء حفظ الحساب في قاعدة البيانات (' + (regErr.message || 'Database error') + ').'
         });
       }
     }

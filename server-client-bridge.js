@@ -1036,6 +1036,15 @@ var ServerBridge = (() => {
     }
   }
 
+  async function checkAvailability(params = {}) {
+    try {
+      return await _post('/api/session/check-availability', params);
+    } catch (e) {
+      console.warn('[ServerBridge] checkAvailability notice:', e.message);
+      return null;
+    }
+  }
+
   async function registerAccount(playerRow) {
     let deviceInfo = {
       screen: (typeof window !== 'undefined' && window.screen) ? `${window.screen.width}x${window.screen.height}` : null,
@@ -1689,6 +1698,7 @@ var ServerBridge = (() => {
     fetchMarketStocks,
     buyStock,
     sellStock,
+    checkAvailability,
     registerAccount,
     startSession,
     dispatchClick,

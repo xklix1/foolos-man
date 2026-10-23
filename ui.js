@@ -2836,8 +2836,12 @@ const UIController = (() => {
           }
 
         } catch (err) {
+          let errText = err.message || 'تعذر تأكيد رمز التحقق.';
+          if (errText.toLowerCase().includes('unauthorized') || errText.toLowerCase().includes('unoutherised') || errText.includes('401')) {
+            errText = 'تعذر التحقق من الخادم (رمز التصريح غير صالح). يرجى تحديث الصفحة والمحاولة مجدداً.';
+          }
           const isRegError = err.message && (err.message.includes('قاعدة البيانات') || err.message.includes('حفظ الحساب') || err.message.includes('403') || err.message.includes('مسجل بالفعل'));
-          showToast(isRegError ? 'فشل إنشاء الحساب' : 'فشل التحقق', err.message || 'تعذر تأكيد رمز التحقق.', 'error');
+          showToast(isRegError ? 'فشل إنشاء الحساب' : 'فشل التحقق', errText, 'error');
           playMenuSound('back');
         } finally {
           btnAuthVerifyOtp.disabled = false;
@@ -2927,7 +2931,11 @@ const UIController = (() => {
             startResendCountdown();
 
           } catch (err) {
-            showToast('خطأ في الإرسال', err.message || 'حدث خطأ أثناء إرسال رمز التحقق.', 'error');
+            let errText = err.message || 'حدث خطأ أثناء إرسال رمز التحقق.';
+            if (errText.toLowerCase().includes('unauthorized') || errText.toLowerCase().includes('unoutherised') || errText.includes('401')) {
+              errText = 'تعذر الاتصال بالخادم (401). يرجى تحديث الصفحة أو المحاولة لاحقاً.';
+            }
+            showToast('خطأ في الإرسال', errText, 'error');
             playMenuSound('back');
           } finally {
             isAuthSubmitting = false;
@@ -2996,7 +3004,11 @@ const UIController = (() => {
             delete playerState.offlineReport;
           }
         } catch (err) {
-          showToast('فشل تسجيل الدخول', err.message,'error');
+          let errText = err.message || 'تعذر تسجيل الدخول، يرجى التأكد من البيانات.';
+          if (errText.toLowerCase().includes('unauthorized') || errText.toLowerCase().includes('unoutherised') || errText.includes('401') || errText.includes('invalid pin') || errText.includes('session token')) {
+            errText = 'الرقم السري غير صحيح أو انتهت صلاحية الجلسة. يرجى التأكد من الرمز والمحاولة مرة أخرى.';
+          }
+          showToast('فشل تسجيل الدخول', errText, 'error');
           playMenuSound('back');
         } finally {
           isAuthSubmitting = false;
