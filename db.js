@@ -294,9 +294,9 @@ var AppDB = (() => {
     let fetchErr = null;
     const isRead = method === 'GET' || method === 'HEAD';
 
-    // Route public read-only requests (globals, mailbox, etc.) through authoritative server read proxy
+    // Route ALL public read requests through authoritative server read proxy
     // to prevent direct PostgREST 401 unauthenticated errors in client browser
-    if (isRead && (AppDB._useServerReadProxy || endpoint.startsWith('globals') || endpoint.startsWith('mailbox') || endpoint.includes('limit=1'))) {
+    if (isRead) {
       try {
         const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) 
           ? window.SERVER_API_URL.replace(/\/$/, '') 
@@ -4072,28 +4072,14 @@ var AppDB = (() => {
       return { active: false, enabled: false, message: '' };
     }
     try {
-      // Direct fetch with guaranteed no-cache to bypass all HTTP caching layers
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/globals?id=eq.maintenance`,
-        {
-          method: 'GET',
-          cache: 'no-store',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        }
-      );
-      if (!res.ok) return { active: false, message: '' };
-      const rows = await res.json();
-      if (rows && rows.length > 0 && rows[0].data) {
-        return rows[0].data;
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+      const res = await fetch(`${apiBase}/api/public/system-status`, { cache: 'no-store' })
+        .catch(() => fetch('/api/public/system-status', { cache: 'no-store' }));
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.maintenance) return data.maintenance;
       }
-    } catch (e) {}
+    } catch (_) {}
     return { active: false, message: '' };
   }
 

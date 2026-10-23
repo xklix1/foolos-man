@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.33",
-  "build": 1792751000000,
-  "timestamp": 1792751000000,
-  "notes": "Permanent elimination of 401 Unauthorized errors: Authoritative server read proxy, unified system-status and account-status endpoints, time sync via health, graceful silent fallbacks.",
-  "releaseNotes": "القضاء الجذري على أخطاء 401: تحويل جميع استعلامات الحالة والمراقبة الدورية لسيرفر اللعبة الموثوق، ونظام بديل صامت لمنع إغراق الكونسول بالأخطاء."
+  "version": "v10.0.34",
+  "build": 1792752000000,
+  "timestamp": 1792752000000,
+  "notes": "Route ALL client read queries (players, globals, mailbox) through authoritative server read proxy, eliminate direct PostgREST calls in getMaintenanceStatus.",
+  "releaseNotes": "تحويل كافة قراءات الواجهة (اللاعبين، الإعدادات، الصيانة) بالكامل إلى سيرفر اللعبة الموثوق، وإنهاء أي اتصال مباشر بقاعدة البيانات من المتصفح."
 }

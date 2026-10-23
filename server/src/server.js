@@ -9,6 +9,7 @@ const { sanitizePlayerState } = require('./engine/state-sanitizer');
 const fs = require('fs');
 const path = require('path');
 const dbService = require('./services/db-service');
+const sessionManager = require('./services/session-manager');
 
 const app = Fastify({
   trustProxy: true,
@@ -232,6 +233,32 @@ app.get('/api/public/read', async (request, reply) => {
     }
   }
 
+  if (cleanPath.startsWith('players')) {
+    const userMatch = cleanPath.match(/username=(?:ilike|eq)\.([^&]+)/i);
+    if (userMatch) {
+      const u = decodeURIComponent(userMatch[1]).trim();
+      const session = sessionManager.getSession(u);
+      if (session && session.state) {
+        return reply.send([{
+          username: u,
+          cash: Number(session.state.cash || 0),
+          bank: Number(session.state.bank || 0),
+          dirty_cash: Number(session.state.dirtyCash || 0),
+          net_worth: Number(session.state.netWorth || 0),
+          xp: Number(session.state.xp || 0),
+          title: session.state.title || 'عامل مبتدئ',
+          job_id: session.state.jobId || 'worker',
+          is_admin: Boolean(session.isAdmin || session.state.isAdmin),
+          is_banned: Boolean(session.isBanned || session.state.isBanned),
+          jail_timer: Number(session.jailTimer || session.state.jailTimer || 0),
+          admin_modified_timestamp: 0,
+          state: session.state
+        }]);
+      }
+    }
+    return reply.send([]);
+  }
+
   return reply.send([]);
 });
 
@@ -300,7 +327,6 @@ app.register(require('./routes/moderator-routes'), {
 
 // Background offline push notification checker (runs every 60 seconds)
 const pushService = require('./services/push-service');
-const sessionManager = require('./services/session-manager');
 
 const OFFLINE_PUSH_CHECK_INTERVAL_MS = 60 * 1000;
 const pushCheckerTimer = setInterval(async () => {
