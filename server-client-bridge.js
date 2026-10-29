@@ -1668,6 +1668,42 @@ var ServerBridge = (() => {
     return res;
   }
 
+  async function shortStock(symbol, shares, quotedPrice = null) {
+    const user = _activeUsername;
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const body = { username: user, token, symbol, shares };
+    if (quotedPrice !== null && !isNaN(quotedPrice) && Number(quotedPrice) > 0) {
+      body.price = Number(quotedPrice);
+    }
+    const res = await _post('/api/action/stock/short', body);
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.stocks) s.stocks = res.stocks;
+        if (res.cash !== undefined) {
+          s.cash = res.cash;
+          notifyLocalSpend(s.cash, s.bank, s.dirtyCash);
+        }
+        if (res.netWorth !== undefined) s.netWorth = res.netWorth;
+        if (res.dailyStockProfit) s.dailyStockProfit = res.dailyStockProfit;
+      }
+    }
+    return res;
+  }
+
+  async function setStockOrders(symbol, takeProfit = 0, stopLoss = 0) {
+    const user = _activeUsername;
+    if (!user) throw new Error('يرجى تسجيل الدخول أولاً');
+    const token = resolveEffectiveToken(user);
+    const res = await _post('/api/action/stock/orders', { username: user, token, symbol, takeProfit, stopLoss });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s && res.stocks) s.stocks = res.stocks;
+    }
+    return res;
+  }
+
   async function verifyTesterPass(pass) {
     return await _post('/api/session/verify-tester-pass', { pass });
   }
@@ -1719,6 +1755,8 @@ var ServerBridge = (() => {
     fetchMarketStocks,
     buyStock,
     sellStock,
+    shortStock,
+    setStockOrders,
     checkAvailability,
     registerAccount,
     startSession,

@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.41",
-  "build": 1793314400000,
-  "timestamp": 1793314400000,
-  "notes": "Comprehensive Server & Client Audit Fixes (Cashflow, Laundering, Careers, Quests, Investments, Space Net Worth).",
-  "releaseNotes": "تحديث شامل لمحرك السيرفر واللعبة: إصلاح تقييم وكالة الفضاء في صافي الثروة، استحقاق الودائع أونلاين، غسيل الأموال، ورديات العمل، التهريب، والمهام اليومية."
+  "version": "v10.0.42",
+  "build": 1793316600000,
+  "timestamp": 1793316600000,
+  "notes": "Stock Exchange Pro Upgrade: Short Selling, Take-Profit/Stop-Loss Auto Orders, Chart Target Lines, 10M Daily Cap & 2x Max Shares.",
+  "releaseNotes": "تطوير شامل لبورصة الأسهم: إضافة البيع على المكشوف (Short Selling)، أوامر جني الأرباح ووقف الخسارة التلقائية (TP/SL) على الشارت، مضاعفة سقف الأسهم 2x، ورفع سقف الربح اليومي إلى 10 مليون ج.م."
 }

@@ -2498,6 +2498,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const { symbol, shares, price } = request.body || {};
     try {
       const res = stockEngine.sellStock(session.state, symbol, parseInt(shares, 10), Date.now(), price);
+      session.lastServerCashEarnAt = Date.now();
       session.lastServerBankActionAt = Date.now();
       sessionManager.markDirty(session.username);
       return reply.send({
@@ -2507,6 +2508,63 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         cash: session.state.cash,
         netWorth: session.state.netWorth,
         dailyStockProfit: session.state.dailyStockProfit
+      });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/stock/short (Open/Add Short Selling Position)
+  fastify.post('/api/action/stock/short', {
+    config: {
+      rateLimit: {
+        max: 60,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    const { symbol, shares, price } = request.body || {};
+    try {
+      const res = stockEngine.shortStock(session.state, symbol, parseInt(shares, 10), Date.now(), price);
+      session.lastServerBankActionAt = Date.now();
+      session.lastServerCashSpendAt = Date.now();
+      sessionManager.markDirty(session.username);
+      return reply.send({
+        success: true,
+        result: res,
+        stocks: session.state.stocks,
+        cash: session.state.cash,
+        netWorth: session.state.netWorth,
+        dailyStockProfit: session.state.dailyStockProfit
+      });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/stock/orders (Set/Clear Take-Profit & Stop-Loss Orders)
+  fastify.post('/api/action/stock/orders', {
+    config: {
+      rateLimit: {
+        max: 60,
+        timeWindow: 60 * 1000
+      }
+    }
+  }, async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    if (session.state.jailTimer > 0) return reply.code(400).send({ error: 'أنت في السجن!' });
+    const { symbol, takeProfit, stopLoss } = request.body || {};
+    try {
+      const res = stockEngine.setStockOrders(session.state, symbol, takeProfit, stopLoss);
+      sessionManager.markDirty(session.username);
+      return reply.send({
+        success: true,
+        result: res,
+        stocks: session.state.stocks
       });
     } catch (err) {
       return reply.code(400).send({ error: err.message });

@@ -849,17 +849,17 @@ class SessionManager {
         if (sDate === serverToday && cDate === serverToday) {
           s.dailyStockProfit = {
             date: serverToday,
-            realizedProfit: Math.min(3000000, Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0)))
+            realizedProfit: Math.min(10000000, Math.max(Number(s.dailyStockProfit.realizedProfit || 0), Number(clientState.dailyStockProfit.realizedProfit || 0)))
           };
         } else if (cDate === serverToday) {
           s.dailyStockProfit = {
             date: serverToday,
-            realizedProfit: Math.min(3000000, Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0)))
+            realizedProfit: Math.min(10000000, Math.max(0, Number(clientState.dailyStockProfit.realizedProfit || 0)))
           };
         } else if (sDate === serverToday) {
           s.dailyStockProfit = {
             date: serverToday,
-            realizedProfit: Math.min(3000000, Math.max(0, Number(s.dailyStockProfit.realizedProfit || 0)))
+            realizedProfit: Math.min(10000000, Math.max(0, Number(s.dailyStockProfit.realizedProfit || 0)))
           };
         } else {
           s.dailyStockProfit = {
@@ -869,6 +869,18 @@ class SessionManager {
         }
       } else if (s.dailyStockProfit && s.dailyStockProfit.date !== serverToday) {
         s.dailyStockProfit = { date: serverToday, realizedProfit: 0 };
+      }
+
+      // Synchronize Take-Profit & Stop-Loss target prices on server-verified stock positions
+      if (clientState.stocks && typeof clientState.stocks === 'object' && s.stocks && typeof s.stocks === 'object' && !isAdminGrant) {
+        Object.keys(s.stocks).forEach(sym => {
+          const sPos = s.stocks[sym];
+          const cPos = clientState.stocks[sym];
+          if (sPos && Number(sPos.shares) > 0 && cPos && typeof cPos === 'object') {
+            if (cPos.takeProfit !== undefined) sPos.takeProfit = Math.max(0, Math.round(Number(cPos.takeProfit) || 0));
+            if (cPos.stopLoss !== undefined) sPos.stopLoss = Math.max(0, Math.round(Number(cPos.stopLoss) || 0));
+          }
+        });
       }
 
       if (clientState.dailyWork && typeof clientState.dailyWork === 'object') {

@@ -7260,8 +7260,49 @@ const UIController = (() => {
     renderCarsTab();
   }
 
-  // --- Tab 6: Stock Market Panel (Optimized In-Place Updates) ---
+  // --- Tab 6: Stock Market Panel (Optimized In-Place Updates + Short Selling + TP/SL Orders) ---
   let lastStocksBuilt = false;
+  const stockTradeModes = {}; // sym -> 'long' | 'short'
+
+  function computeStockPositionMetrics(sym, ownedData, currentPrice) {
+    const ownedShares = Number((ownedData && ownedData.shares) || 0);
+    const avgBuyPrice = Number((ownedData && ownedData.avgPrice) || 0);
+    const posType = (ownedData && ownedData.type === 'short') ? 'short' : 'long';
+    const takeProfit = Number((ownedData && ownedData.takeProfit) || 0);
+    const stopLoss = Number((ownedData && ownedData.stopLoss) || 0);
+    const costBasis = ownedShares * avgBuyPrice;
+    const marketNotional = ownedShares * currentPrice;
+    const estFee = ownedShares > 0 ? Math.max(5, Math.floor(marketNotional * 0.01)) : 0;
+
+    let totalWorth = 0;
+    if (ownedShares > 0) {
+      if (posType === 'short') {
+        const rawPnl = (avgBuyPrice - currentPrice) * ownedShares;
+        totalWorth = Math.max(0, costBasis + rawPnl);
+      } else {
+        totalWorth = marketNotional;
+      }
+    }
+    const netPayout = ownedShares > 0 ? Math.max(0, totalWorth - estFee) : 0;
+    const netProfit = ownedShares > 0 ? (netPayout - costBasis) : 0;
+    const profitPct = costBasis > 0 ? ((netProfit / costBasis) * 100) : 0;
+    const marginCallPrice = (ownedShares > 0 && posType === 'short') ? Math.ceil(avgBuyPrice * 1.50) : 0;
+
+    return {
+      ownedShares,
+      avgBuyPrice,
+      posType,
+      takeProfit,
+      stopLoss,
+      costBasis,
+      totalWorth,
+      estFee,
+      netPayout,
+      netProfit,
+      profitPct,
+      marginCallPrice
+    };
+  }
 
   function renderStocks(force = false) {
     const s = GameEngine.state;
@@ -7287,15 +7328,29 @@ const UIController = (() => {
       const changePct = ((currentPrice - prevPrice) / prevPrice) * 100;
       const isUp = currentPrice >= prevPrice;
 
-      const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0 };
-      const ownedShares = Number(ownedData.shares || 0);
-      const avgBuyPrice = Number(ownedData.avgPrice || 0);
-      const costBasis = ownedShares * avgBuyPrice;
-      const totalWorth = ownedShares * currentPrice;
-      const estFee = ownedShares > 0 ? Math.max(5, Math.floor(totalWorth * 0.01)) : 0;
-      const netPayout = Math.max(0, totalWorth - estFee);
-      const netProfit = ownedShares > 0 ? (netPayout - costBasis) : 0;
-      const profitPct = costBasis > 0 ? ((netProfit / costBasis) * 100) : 0;
+      const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 };
+      const metrics = computeStockPositionMetrics(sym, ownedData, currentPrice);
+      const {
+        ownedShares,
+        avgBuyPrice,
+        posType,
+        takeProfit,
+        stopLoss,
+        costBasis,
+        totalWorth,
+        netPayout,
+        netProfit,
+        profitPct,
+        marginCallPrice
+      } = metrics;
+
+      if (ownedShares > 0) {
+        stockTradeModes[sym] = posType;
+      } else if (!stockTradeModes[sym]) {
+        stockTradeModes[sym] = 'long';
+      }
+      const activeMode = stockTradeModes[sym];
+      const isShortMode = activeMode === 'short';
 
       const holdingCooldown = Number((s.stockCooldowns && s.stockCooldowns[sym]) || (s.stockHoldingCooldowns && s.stockHoldingCooldowns[sym]) || 0);
       const remHoldingSec = Math.max(0, Math.ceil((holdingCooldown - Date.now()) / 1000));
@@ -7303,17 +7358,25 @@ const UIController = (() => {
 
       const card = document.createElement('div');
       card.id = `stock-card-${sym}`;
-      card.className = `glass-panel p-5 rounded-xl border border-slate-800 flex flex-col justify-between`;
+      card.className = `glass-panel p-5 rounded-xl border ${ownedShares > 0 ? (posType === 'short' ? 'border-fuchsia-500/40' : 'border-emerald-500/30') : 'border-slate-800'} flex flex-col justify-between`;
 
-      const svgPath = generateSparklineSVG(prices);
-
+      const chartObj = generateSparklineSVG(prices, ownedShares > 0 ? { entry: avgBuyPrice, tp: takeProfit, sl: stopLoss } : null);
       const translatedStockName = window.currentLang === 'en' ? (translationDict[stock.name] || stock.name) : stock.name;
 
+      const posBadgeHtml = ownedShares > 0
+        ? (posType === 'short'
+          ? `<span class="px-2 py-0.5 text-[10px] rounded-full bg-fuchsia-500/20 text-fuchsia-300 border border-fuchsia-500/40 font-bold">📉 مركز بيع مكشوف (Short)</span>`
+          : `<span class="px-2 py-0.5 text-[10px] rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold">📈 مركز شراء صاعد (Long)</span>`)
+        : '';
+
       card.innerHTML = `
-        <div class="flex justify-between items-start mb-3">
+        <div class="flex justify-between items-start mb-2">
           <div>
-            <h4 class="text-md font-bold text-white">${translatedStockName}</h4>
-            <span class="numbers-font text-xs text-slate-500 font-bold block mt-1">${stock.symbol}</span>
+            <div class="flex items-center gap-2 flex-wrap">
+              <h4 class="text-md font-bold text-white">${translatedStockName}</h4>
+              ${posBadgeHtml}
+            </div>
+            <span class="numbers-font text-xs text-slate-500 font-bold block mt-0.5">${stock.symbol}</span>
           </div>
           <div class="text-left">
             <span id="stock-price-${sym}" class="numbers-font font-bold block ${isUp ? 'text-emerald-400 glow-emerald' : 'text-rose-400 glow-rose'}">${currentPrice} EGP</span>
@@ -7321,35 +7384,86 @@ const UIController = (() => {
           </div>
         </div>
 
-        <div class="w-full h-16 bg-slate-950/50 rounded-lg p-1 border border-slate-900/60 my-2 overflow-hidden">
+        <div class="relative w-full h-20 bg-slate-950/70 rounded-lg p-1.5 border border-slate-900/80 my-2 overflow-hidden">
           <svg viewBox="0 0 100 30" class="w-full h-full" preserveAspectRatio="none">
-            <path id="stock-svg-path-${sym}" d="${svgPath}" fill="none" stroke="${isUp ? '#10b981' : '#f43f5e'}" stroke-width="1.8" />
+            <line id="stock-svg-tp-${sym}" x1="0" x2="100" y1="${chartObj.tpY}" y2="${chartObj.tpY}" stroke="#10b981" stroke-width="0.7" stroke-dasharray="2,2" class="${chartObj.hasTp ? '' : 'hidden'}" />
+            <line id="stock-svg-entry-${sym}" x1="0" x2="100" y1="${chartObj.entryY}" y2="${chartObj.entryY}" stroke="#f59e0b" stroke-width="0.7" stroke-dasharray="1.5,1.5" class="${chartObj.hasEntry ? '' : 'hidden'}" />
+            <line id="stock-svg-sl-${sym}" x1="0" x2="100" y1="${chartObj.slY}" y2="${chartObj.slY}" stroke="#f43f5e" stroke-width="0.7" stroke-dasharray="2,2" class="${chartObj.hasSl ? '' : 'hidden'}" />
+            <path id="stock-svg-path-${sym}" d="${chartObj.path}" fill="none" stroke="${isUp ? '#10b981' : '#f43f5e'}" stroke-width="1.8" />
           </svg>
+          <div id="stock-chart-badges-${sym}" class="absolute top-1 left-1.5 right-1.5 flex justify-between items-center pointer-events-none text-[9px] font-bold">
+            <span id="stock-badge-tp-${sym}" class="${takeProfit > 0 ? '' : 'hidden'} px-1.5 py-0.2 rounded bg-emerald-950/90 text-emerald-300 border border-emerald-500/40 numbers-font">🎯 TP: ${takeProfit}</span>
+            <span id="stock-badge-sl-${sym}" class="${stopLoss > 0 ? '' : 'hidden'} px-1.5 py-0.2 rounded bg-rose-950/90 text-rose-300 border border-rose-500/40 numbers-font">🛑 SL: ${stopLoss}</span>
+          </div>
         </div>
 
-        <div class="text-xs text-slate-400 space-y-1.5 mb-3 border-t border-slate-800 pt-3 mt-1">
-          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Owned Shares:' : 'الأسهم المملوكة:'}</span><span id="stock-shares-${sym}" class="numbers-font text-white font-semibold">${ownedShares.toLocaleString()} ${window.currentLang === 'en' ? 'shares' : 'سهم'}</span></div>
-          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Avg Buy Price:' : 'متوسط سعر الشراء:'}</span><span id="stock-avg-${sym}" class="numbers-font">${avgBuyPrice} EGP</span></div>
-          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Invested Capital:' : 'رأس المال المستثمر:'}</span><span id="stock-cost-${sym}" class="numbers-font text-slate-300 font-medium">${costBasis.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Current Market Value:' : 'القيمة السوقية الحالية:'}</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
-          <div class="flex justify-between"><span>${window.currentLang === 'en' ? 'Net Cash on Sale:' : 'صافي الكاش عند البيع:'}</span><span id="stock-payout-${sym}" class="numbers-font text-cyan-400 font-bold">${netPayout.toLocaleString()} EGP</span></div>
+        <!-- Mode Switcher: Long vs Short -->
+        <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-950/90 border border-slate-800/90 rounded-xl mb-3">
+          <button type="button" id="btn-mode-long-${sym}" class="py-1.5 px-2 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 ${!isShortMode ? 'bg-emerald-600 text-white shadow' : 'text-slate-400 hover:text-white'}" ${ownedShares > 0 && posType === 'short' ? 'disabled title="أغلق مركز البيع المكشوف أولاً"' : ''}>
+            <span>📈 شراء صاعد (Long)</span>
+          </button>
+          <button type="button" id="btn-mode-short-${sym}" class="py-1.5 px-2 rounded-lg text-[11px] font-bold transition flex items-center justify-center gap-1 ${isShortMode ? 'bg-fuchsia-600 text-white shadow' : 'text-slate-400 hover:text-white'}" ${ownedShares > 0 && posType === 'long' ? 'disabled title="بع الأسهم المملوكة أولاً"' : ''}>
+            <span>📉 بيع مكشوف (Short)</span>
+          </button>
+        </div>
+
+        <div class="text-xs text-slate-400 space-y-1.5 mb-3 border-t border-slate-800 pt-2.5">
+          <div class="flex justify-between"><span>${posType === 'short' && ownedShares > 0 ? 'الأسهم المباعة مكشوفاً:' : 'الأسهم المملوكة:'}</span><span id="stock-shares-${sym}" class="numbers-font text-white font-semibold">${ownedShares.toLocaleString()} سهم</span></div>
+          <div class="flex justify-between"><span>${posType === 'short' && ownedShares > 0 ? 'متوسط سعر الدخول (Short):' : 'متوسط سعر الشراء:'}</span><span id="stock-avg-${sym}" class="numbers-font">${avgBuyPrice} EGP</span></div>
+          <div class="flex justify-between"><span>${posType === 'short' && ownedShares > 0 ? 'الضمان المحجوز (100% Margin):' : 'رأس المال المستثمر:'}</span><span id="stock-cost-${sym}" class="numbers-font text-slate-300 font-medium">${costBasis.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>القيمة الحالية للمركز:</span><span id="stock-worth-${sym}" class="numbers-font text-yellow-500 font-semibold">${totalWorth.toLocaleString()} EGP</span></div>
+          <div class="flex justify-between"><span>صافي الكاش عند الإغلاق:</span><span id="stock-payout-${sym}" class="numbers-font text-cyan-400 font-bold">${netPayout.toLocaleString()} EGP</span></div>
           <div class="flex justify-between border-t border-slate-800/60 pt-1">
-            <span>${window.currentLang === 'en' ? 'Net Realized Profit:' : 'صافي الربح الفعلي كاش:'}</span>
+            <span>صافي الربح / الخسارة:</span>
             <span id="stock-profit-${sym}" class="numbers-font font-black ${netProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">${netProfit >= 0 ? '+' : ''}${netProfit.toLocaleString()} EGP (${netProfit >= 0 ? '+' : ''}${profitPct.toFixed(1)}%)</span>
           </div>
-          <div class="flex justify-between text-[11px] text-slate-500 border-t border-slate-800/60 pt-1.5 mt-1"><span>${window.currentLang === 'en' ? 'Max Holding Limit:' : 'سقف تملك السهم:'}</span><span class="numbers-font text-slate-300 font-semibold">${(stock.maxShares || 50000).toLocaleString()} ${window.currentLang === 'en' ? 'shares' : 'سهم'}</span></div>
+          ${ownedShares > 0 && posType === 'short' ? `
+          <div class="flex justify-between text-[11px] text-fuchsia-300/90 bg-fuchsia-950/30 border border-fuchsia-500/20 rounded px-2 py-1 mt-1">
+            <span>🚨 سعر التصفية الإجبارية (+50%):</span>
+            <span class="numbers-font font-bold">${marginCallPrice} EGP</span>
+          </div>` : ''}
+          <div class="flex justify-between text-[11px] text-slate-500 border-t border-slate-800/60 pt-1.5 mt-1"><span>سقف المركز للشركة:</span><span class="numbers-font text-slate-300 font-semibold">${(stock.maxShares || 100000).toLocaleString()} سهم</span></div>
         </div>
-        <div class="mb-3 px-2.5 py-1.5 bg-slate-900/80 border border-slate-800 rounded-lg text-[10px] text-slate-400 flex flex-col gap-1">
-          <div class="flex items-center justify-between">
-            <span><i class="fa-solid fa-scale-balanced text-yellow-500/80 mr-1"></i> عمولة سمسرة 1%</span>
-            <span><i class="fa-solid fa-clock text-blue-400/80 mr-1"></i> حظر بيع 45ث</span>
+
+        <!-- Take-Profit / Stop-Loss Auto Orders Panel -->
+        <div class="mb-3 p-2.5 bg-slate-950/80 border ${takeProfit > 0 || stopLoss > 0 ? 'border-amber-500/40' : 'border-slate-800/90'} rounded-xl text-[11px]">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="font-bold text-slate-200 flex items-center gap-1">
+              <i class="fa-solid fa-crosshairs text-amber-400"></i>
+              <span>أوامر الإغلاق التلقائي (TP / SL)</span>
+            </span>
+            <span class="text-[10px] text-slate-500">${ownedShares > 0 ? (posType === 'short' ? 'بيع مكشوف Short' : 'شراء Long') : 'افتح صفقة أولاً'}</span>
           </div>
-          <div class="text-[9.5px] text-slate-500 leading-tight">
-             القيمة السوقية = رأس المال + الأرباح | الكاش عند البيع يخصم عمولة 1%
+          <div class="grid grid-cols-2 gap-2 mb-1.5">
+            <div>
+              <div class="flex justify-between items-center text-[10px] text-emerald-400 mb-0.5">
+                <span>🎯 جني ربح (TP)</span>
+                <div class="flex gap-0.5">
+                  <button type="button" data-tp-pct="0.05" class="btn-quick-tp px-1 bg-emerald-950/80 hover:bg-emerald-800 text-emerald-300 rounded border border-emerald-500/30 text-[9px]" ${ownedShares === 0 ? 'disabled' : ''}>+5%</button>
+                  <button type="button" data-tp-pct="0.10" class="btn-quick-tp px-1 bg-emerald-950/80 hover:bg-emerald-800 text-emerald-300 rounded border border-emerald-500/30 text-[9px]" ${ownedShares === 0 ? 'disabled' : ''}>+10%</button>
+                  <button type="button" data-tp-pct="0.20" class="btn-quick-tp px-1 bg-emerald-950/80 hover:bg-emerald-800 text-emerald-300 rounded border border-emerald-500/30 text-[9px]" ${ownedShares === 0 ? 'disabled' : ''}>+20%</button>
+                </div>
+              </div>
+              <input type="number" id="stock-tp-input-${sym}" value="${takeProfit > 0 ? takeProfit : ''}" placeholder="${ownedShares > 0 ? (posType === 'short' ? `< ${avgBuyPrice}` : `> ${avgBuyPrice}`) : 'السعر'}" class="glass-input w-full p-1.5 text-center text-xs rounded-lg numbers-font" min="1" step="1" ${ownedShares === 0 ? 'disabled' : ''}/>
+            </div>
+            <div>
+              <div class="flex justify-between items-center text-[10px] text-rose-400 mb-0.5">
+                <span>🛑 وقف خسارة (SL)</span>
+                <div class="flex gap-0.5">
+                  <button type="button" data-sl-pct="0.05" class="btn-quick-sl px-1 bg-rose-950/80 hover:bg-rose-800 text-rose-300 rounded border border-rose-500/30 text-[9px]" ${ownedShares === 0 ? 'disabled' : ''}>-5%</button>
+                  <button type="button" data-sl-pct="0.10" class="btn-quick-sl px-1 bg-rose-950/80 hover:bg-rose-800 text-rose-300 rounded border border-rose-500/30 text-[9px]" ${ownedShares === 0 ? 'disabled' : ''}>-10%</button>
+                </div>
+              </div>
+              <input type="number" id="stock-sl-input-${sym}" value="${stopLoss > 0 ? stopLoss : ''}" placeholder="${ownedShares > 0 ? (posType === 'short' ? `> ${avgBuyPrice}` : `< ${avgBuyPrice}`) : 'السعر'}" class="glass-input w-full p-1.5 text-center text-xs rounded-lg numbers-font" min="1" step="1" ${ownedShares === 0 ? 'disabled' : ''}/>
+            </div>
+          </div>
+          <div class="flex gap-1.5">
+            <button type="button" id="btn-save-orders-${sym}" class="flex-1 py-1 bg-amber-600/90 hover:bg-amber-500 text-slate-950 font-bold rounded-lg text-[10px] transition disabled:opacity-40" ${ownedShares === 0 ? 'disabled' : ''}>حفظ الأوامر التلقائية</button>
+            <button type="button" id="btn-clear-orders-${sym}" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg text-[10px] transition ${takeProfit > 0 || stopLoss > 0 ? '' : 'hidden'}">إلغاء</button>
           </div>
         </div>
 
-        <div class="grid grid-cols-2 gap-2 mb-2">
+        <div class="grid grid-cols-2 gap-2 mb-1">
           <div class="flex flex-col">
             <div class="flex gap-1 mb-1">
               <button data-pct="0.25" class="btn-pct-buy flex-1 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] text-slate-300 rounded font-semibold">25%</button>
@@ -7359,30 +7473,107 @@ const UIController = (() => {
             <input type="number" id="shares-buy-input-${sym}" placeholder="${window.currentLang ==='en' ?'Qty' :'الكمية'}" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
             <div id="stock-buy-calc-${sym}" class="text-[10px] text-slate-400 p-1.5 bg-slate-950/80 rounded border border-slate-800/80 mb-1.5 hidden flex flex-col gap-0.5">
               <div class="flex justify-between text-slate-300">
-                <span>قيمة الأسهم (${currentPrice} ج.م/سهم):</span>
+                <span>${isShortMode ? 'الضمان المحجوز' : 'قيمة الأسهم'} (${currentPrice} ج.م/سهم):</span>
                 <span id="stock-buy-gross-${sym}" class="numbers-font font-bold">0 EGP</span>
               </div>
               <div class="flex justify-between text-amber-400/90">
                 <span>عمولة سمسرة (1%):</span>
                 <span id="stock-buy-fee-${sym}" class="numbers-font">0 EGP</span>
               </div>
-              <div class="flex justify-between border-t border-slate-800 pt-0.5 mt-0.5 font-bold text-emerald-400">
+              <div class="flex justify-between border-t border-slate-800 pt-0.5 mt-0.5 font-bold ${isShortMode ? 'text-fuchsia-400' : 'text-emerald-400'}">
                 <span>إجمالي الخصم من الكاش:</span>
                 <span id="stock-buy-total-${sym}" class="numbers-font font-black">0 EGP</span>
               </div>
             </div>
-            <button id="btn-buy-shares-${sym}" class="py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition">${window.currentLang ==='en' ?'Buy Shares' :'شراء الأسهم'}</button>
+            <button id="btn-buy-shares-${sym}" class="py-2 ${isShortMode ? 'bg-fuchsia-600 hover:bg-fuchsia-700' : 'bg-emerald-600 hover:bg-emerald-700'} text-white rounded-lg text-xs font-bold transition">
+              ${isShortMode ? '📉 فتح بيع مكشوف (Short)' : '📈 شراء الأسهم (Long)'}
+            </button>
           </div>
           <div class="flex flex-col">
             <div class="flex gap-1 mb-1">
-              <button id="btn-sell-all-${sym}" class="w-full py-0.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[10px] text-rose-300 rounded font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" ${ownedShares === 0 || isLockedByHolding ? 'disabled' : ''}>${isLockedByHolding ? `⏳ حظر (${remHoldingSec}ث)` : (window.currentLang === 'en' ? ' Sell All' : ' بيع كل الأسهم')}</button>
+              <button id="btn-sell-all-${sym}" class="w-full py-0.5 bg-rose-950/60 hover:bg-rose-900/80 border border-rose-500/30 text-[10px] text-rose-300 rounded font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" ${ownedShares === 0 || isLockedByHolding ? 'disabled' : ''}>${isLockedByHolding ? `⏳ حظر (${remHoldingSec}ث)` : (posType === 'short' && ownedShares > 0 ? 'إغلاق كامل المركز (Short)' : 'بيع كل الأسهم')}</button>
             </div>
             <input type="number" id="shares-sell-input-${sym}" placeholder="${window.currentLang ==='en' ?'Qty' :'الكمية'}" class="glass-input w-full p-2 text-center text-xs rounded-lg mb-1.5" min="1" step="1"/>
-            <button id="btn-sell-shares-${sym}" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" ${ownedShares === 0 || isLockedByHolding ? 'disabled' : ''}>${isLockedByHolding ? `⏳ حظر بيع (${remHoldingSec}ث)` : (window.currentLang ==='en' ?'Sell Shares' :'بيع الأسهم')}</button>
+            <button id="btn-sell-shares-${sym}" class="py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-lg text-xs font-bold transition disabled:opacity-50 disabled:cursor-not-allowed" ${ownedShares === 0 || isLockedByHolding ? 'disabled' : ''}>${isLockedByHolding ? `⏳ حظر (${remHoldingSec}ث)` : (posType === 'short' && ownedShares > 0 ? 'إغلاق جزئي (Short)' : 'بيع الأسهم')}</button>
           </div>
         </div>`;
 
-      // Live Buy Calculator Helper
+      // Mode Switcher Listeners (Long vs Short)
+      const btnModeLong = card.querySelector(`#btn-mode-long-${sym}`);
+      const btnModeShort = card.querySelector(`#btn-mode-short-${sym}`);
+      if (btnModeLong) {
+        btnModeLong.addEventListener('click', () => {
+          if (ownedShares > 0 && posType === 'short') return;
+          stockTradeModes[sym] = 'long';
+          renderStocks(true);
+        });
+      }
+      if (btnModeShort) {
+        btnModeShort.addEventListener('click', () => {
+          if (ownedShares > 0 && posType === 'long') return;
+          stockTradeModes[sym] = 'short';
+          renderStocks(true);
+        });
+      }
+
+      // Quick TP / SL Percentage Buttons
+      card.querySelectorAll('.btn-quick-tp').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (ownedShares <= 0 || avgBuyPrice <= 0) return;
+          const pct = parseFloat(btn.getAttribute('data-tp-pct')) || 0.10;
+          const targetPrice = posType === 'short'
+            ? Math.max(1, Math.min(avgBuyPrice - 1, Math.round(avgBuyPrice * (1 - pct))))
+            : Math.max(avgBuyPrice + 1, Math.round(avgBuyPrice * (1 + pct)));
+          const tpInput = card.querySelector(`#stock-tp-input-${sym}`);
+          if (tpInput) tpInput.value = targetPrice;
+        });
+      });
+
+      card.querySelectorAll('.btn-quick-sl').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (ownedShares <= 0 || avgBuyPrice <= 0) return;
+          const pct = parseFloat(btn.getAttribute('data-sl-pct')) || 0.05;
+          const targetPrice = posType === 'short'
+            ? Math.min(Math.ceil(avgBuyPrice * 1.50), Math.max(avgBuyPrice + 1, Math.round(avgBuyPrice * (1 + pct))))
+            : Math.max(1, Math.min(avgBuyPrice - 1, Math.round(avgBuyPrice * (1 - pct))));
+          const slInput = card.querySelector(`#stock-sl-input-${sym}`);
+          if (slInput) slInput.value = targetPrice;
+        });
+      });
+
+      // Save TP / SL Orders
+      const saveOrdersBtn = card.querySelector(`#btn-save-orders-${sym}`);
+      if (saveOrdersBtn) {
+        saveOrdersBtn.addEventListener('click', async () => {
+          const tpInput = card.querySelector(`#stock-tp-input-${sym}`);
+          const slInput = card.querySelector(`#stock-sl-input-${sym}`);
+          const tpVal = tpInput && tpInput.value ? parseInt(tpInput.value, 10) : 0;
+          const slVal = slInput && slInput.value ? parseInt(slInput.value, 10) : 0;
+          try {
+            await GameEngine.setStockOrders(sym, tpVal, slVal);
+            showToast('أوامر البورصة التلقائية', `تم حفظ أوامر ${stock.name}:\n🎯 جني الربح: ${tpVal > 0 ? tpVal + ' ج.م' : 'غير مفعل'}\n🛑 وقف الخسارة: ${slVal > 0 ? slVal + ' ج.م' : 'غير مفعل'}`, 'success');
+            renderStocks(true);
+          } catch (err) {
+            showToast('خطأ في ضبط الأوامر', err.message, 'error');
+          }
+        });
+      }
+
+      // Clear TP / SL Orders
+      const clearOrdersBtn = card.querySelector(`#btn-clear-orders-${sym}`);
+      if (clearOrdersBtn) {
+        clearOrdersBtn.addEventListener('click', async () => {
+          try {
+            await GameEngine.setStockOrders(sym, 0, 0);
+            showToast('إلغاء الأوامر التلقائية', `تم إلغاء أوامر جني الربح ووقف الخسارة لسهم ${stock.name}.`, 'info');
+            renderStocks(true);
+          } catch (err) {
+            showToast('خطأ', err.message, 'error');
+          }
+        });
+      }
+
+      // Live Buy / Short Calculator Helper
       const updateBuyCalculator = () => {
         const input = card.querySelector(`#shares-buy-input-${sym}`);
         const calcBox = card.querySelector(`#stock-buy-calc-${sym}`);
@@ -7415,14 +7606,16 @@ const UIController = (() => {
         buyInputEl.addEventListener('change', updateBuyCalculator);
       }
 
-      // Percentage Buy Click Listeners
+      // Percentage Buy/Short Click Listeners
       card.querySelectorAll('.btn-pct-buy').forEach(pctBtn => {
         pctBtn.addEventListener('click', () => {
           const pct = parseFloat(pctBtn.getAttribute('data-pct'));
           const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
           const currP = prices[prices.length - 1];
           const availableCash = GameEngine.state.cash * pct;
-          const maxSharesPossible = Math.floor(availableCash / (currP * 1.01));
+          const byCash = Math.floor(availableCash / (currP * 1.01));
+          const maxAllowed = Math.max(0, (stock.maxShares || 100000) - ownedShares);
+          const maxSharesPossible = Math.min(byCash, maxAllowed);
           const input = card.querySelector(`#shares-buy-input-${sym}`);
           if (input) {
             input.value = maxSharesPossible > 0 ? maxSharesPossible : 1;
@@ -7431,15 +7624,16 @@ const UIController = (() => {
         });
       });
 
-      // Sell All Shares trigger
+      // Sell / Close All Shares trigger
       const sellAllBtn = card.querySelector(`#btn-sell-all-${sym}`);
       if (sellAllBtn) {
         sellAllBtn.addEventListener('click', async () => {
           try {
-            const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
-            if (owned.shares <= 0) throw new Error("لا تملك أي أسهم في هذه الشركة لبيعها.");
+            const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0, type: 'long' };
+            if (owned.shares <= 0) throw new Error("لا تملك أي مركز مفتوح في هذه الشركة لإغلاقه.");
             const prevAvgPrice = owned.avgPrice || 0;
             const sharesToSell = owned.shares;
+            const wasShort = owned.type === 'short';
             const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
             const currP = prices[prices.length - 1];
 
@@ -7447,36 +7641,38 @@ const UIController = (() => {
             sellAllBtn.textContent = 'جاري التنفيذ...';
 
             const res = await GameEngine.sellStock(sym, sharesToSell, currP);
-            const totalPayout = res.totalReturn || (res.price * res.shares);
+            const totalPayout = res.totalReturn !== undefined ? res.totalReturn : (res.price * res.shares);
             const costBasis = prevAvgPrice * sharesToSell;
             const profitOrLoss = totalPayout - costBasis;
             const fee = res.fee || Math.max(5, Math.floor((res.price * res.shares) * 0.01));
             const isWin = profitOrLoss >= 0;
 
-            const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
-            const detailsMsg = `تم بيع كامل الأسهم (${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م):
- رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
+            const title = isWin
+              ? (wasShort ? 'صفقة بيع مكشوف رابحة (Short)! ' : 'صفقة رابحة! استرداد رأس المال والأرباح ')
+              : (wasShort ? 'إغلاق بيع مكشوف بخسارة ' : 'تسييل أسهم (تصفية بخسارة) ');
+            const detailsMsg = `تم إغلاق كامل المركز (${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م):
+  ${wasShort ? 'الضمان المحجوز:' : 'رأس المال المسترد:'} ${costBasis.toLocaleString()} ج.م
 ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
- عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
- إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
+  عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
+  إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
 
             showToast(title, detailsMsg, isWin ? 'success' : 'info');
             if (res.capHit) {
               setTimeout(() => {
-                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (3,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
+                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (10,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
               }, 400);
             }
             renderStocks(true);
             renderStatsBar();
             if (typeof renderAll === 'function') renderAll();
           } catch (err) {
-            showToast('فشل البيع', err.message, 'error');
+            showToast('فشل الإغلاق', err.message, 'error');
             renderStocks(true);
           }
         });
       }
 
-      // Buy Shares trigger
+      // Buy (Long) or Open Short Shares trigger
       const buyBtn = card.querySelector(`#btn-buy-shares-${sym}`);
       if (buyBtn) {
         buyBtn.addEventListener('click', async () => {
@@ -7488,28 +7684,30 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             const currP = prices[prices.length - 1];
 
             buyBtn.disabled = true;
-            buyBtn.textContent = 'جاري الشراء...';
+            buyBtn.textContent = isShortMode ? 'جاري فتح Short...' : 'جاري الشراء...';
 
-            const res = await GameEngine.buyStock(sym, count, currP);
+            const res = isShortMode
+              ? await GameEngine.shortStock(sym, count, currP)
+              : await GameEngine.buyStock(sym, count, currP);
+
             input.value = '';
             const calcBox = card.querySelector(`#stock-buy-calc-${sym}`);
             if (calcBox) calcBox.classList.add('hidden');
-            const detailsMsg = `تم شراء ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م للسهم:
- إجمالي الأسهم: ${res.grossCost.toLocaleString()} ج.م
- عمولة سمسرة (1%): ${res.fee.toLocaleString()} ج.م
- إجمالي الخصم من الكاش: ${res.totalCost.toLocaleString()} ج.م`;
-            showToast('شراء أسهم ناجح', detailsMsg, 'success');
+            const detailsMsg = isShortMode
+              ? `تم فتح بيع مكشوف (Short) لعدد ${res.shares.toLocaleString()} سهم بسعر دخول ${res.price.toLocaleString()} ج.م:\n الضمان المحجوز (100%): ${res.grossCost.toLocaleString()} ج.م\n عمولة سمسرة (1%): ${res.fee.toLocaleString()} ج.م\n إجمالي الخصم: ${res.totalCost.toLocaleString()} ج.م`
+              : `تم شراء ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م للسهم:\n إجمالي الأسهم: ${res.grossCost.toLocaleString()} ج.م\n عمولة سمسرة (1%): ${res.fee.toLocaleString()} ج.م\n إجمالي الخصم من الكاش: ${res.totalCost.toLocaleString()} ج.م`;
+            showToast(isShortMode ? 'فتح صفقة بيع مكشوف (Short)' : 'شراء أسهم ناجح (Long)', detailsMsg, 'success');
             renderStocks(true);
             renderStatsBar();
             if (typeof renderAll === 'function') renderAll();
           } catch (err) {
-            showToast('فشل الشراء', err.message, 'error');
+            showToast('فشل التنفيذ', err.message, 'error');
             renderStocks(true);
           }
         });
       }
 
-      // Sell Shares trigger
+      // Partial Sell / Close Shares trigger
       const sellSharesBtn = card.querySelector(`#btn-sell-shares-${sym}`);
       if (sellSharesBtn) {
         sellSharesBtn.addEventListener('click', async () => {
@@ -7517,8 +7715,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           const count = parseInt(input.value);
           try {
             if (!count || count <= 0) throw new Error("يرجى إدخال عدد أسهم صحيح.");
-            const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0 };
+            const owned = GameEngine.state.stocks[sym] || { shares: 0, avgPrice: 0, type: 'long' };
             const prevAvgPrice = owned.avgPrice || 0;
+            const wasShort = owned.type === 'short';
             const prices = GameEngine.stockPrices[sym] || [stock.basePrice];
             const currP = prices[prices.length - 1];
 
@@ -7526,31 +7725,33 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
             sellSharesBtn.textContent = 'جاري التنفيذ...';
 
             const res = await GameEngine.sellStock(sym, count, currP);
-            const totalPayout = res.totalReturn || (res.price * res.shares);
+            const totalPayout = res.totalReturn !== undefined ? res.totalReturn : (res.price * res.shares);
             const costBasis = prevAvgPrice * res.shares;
             const profitOrLoss = totalPayout - costBasis;
             const fee = res.fee || Math.max(5, Math.floor((res.price * res.shares) * 0.01));
             const isWin = profitOrLoss >= 0;
 
             input.value = '';
-            const title = isWin ? 'صفقة رابحة! استرداد رأس المال والأرباح ' : 'تسييل أسهم (تصفية بخسارة) ';
-            const detailsMsg = `تم بيع ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م:
- رأس المال المسترد: ${costBasis.toLocaleString()} ج.م
+            const title = isWin
+              ? (wasShort ? 'صفقة بيع مكشوف رابحة (Short)! ' : 'صفقة رابحة! استرداد رأس المال والأرباح ')
+              : (wasShort ? 'إغلاق بيع مكشوف بخسارة ' : 'تسييل أسهم (تصفية بخسارة) ');
+            const detailsMsg = `تم إغلاق ${res.shares.toLocaleString()} سهم بسعر ${res.price.toLocaleString()} ج.م:
+  ${wasShort ? 'الضمان المحجوز:' : 'رأس المال المسترد:'} ${costBasis.toLocaleString()} ج.م
 ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.abs(profitOrLoss).toLocaleString()} ج.م
- عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
- إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
+  عمولة سمسرة (1%): -${fee.toLocaleString()} ج.م
+  إجمالي الكاش المضاف لمحفظتك: +${totalPayout.toLocaleString()} ج.م`;
 
             showToast(title, detailsMsg, isWin ? 'success' : 'info');
             if (res.capHit) {
               setTimeout(() => {
-                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (3,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
+                showToast('سقف أرباح البورصة اليومي', `تم تطبيق سقف الأرباح اليومي (10,000,000 ج.م). تم استرداد رأس مالك بالكامل وسيتجدد السقف غداً.`, 'warning');
               }, 400);
             }
             renderStocks(true);
             renderStatsBar();
             if (typeof renderAll === 'function') renderAll();
           } catch (err) {
-            showToast('فشل البيع', err.message, 'error');
+            showToast('فشل الإغلاق', err.message, 'error');
             renderStocks(true);
           }
         });
@@ -7569,7 +7770,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     if (s.dailyStockProfit && s.dailyStockProfit.date === today) {
       todayProfit = Number(s.dailyStockProfit.realizedProfit || 0);
     }
-    const cap = GameEngine.DAILY_STOCK_PROFIT_CAP || 3000000;
+    const cap = GameEngine.DAILY_STOCK_PROFIT_CAP || 10000000;
     const pct = Math.min(100, Math.round((todayProfit / cap) * 100));
 
     badgeText.textContent = `${todayProfit.toLocaleString()} / ${cap.toLocaleString()} ج.م (${pct}%)`;
@@ -7594,15 +7795,19 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       const changePct = ((currentPrice - prevPrice) / prevPrice) * 100;
       const isUp = currentPrice >= prevPrice;
 
-      const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0 };
-      const ownedShares = Number(ownedData.shares || 0);
-      const avgBuyPrice = Number(ownedData.avgPrice || 0);
-      const costBasis = ownedShares * avgBuyPrice;
-      const totalWorth = ownedShares * currentPrice;
-      const estFee = ownedShares > 0 ? Math.max(5, Math.floor(totalWorth * 0.01)) : 0;
-      const netPayout = Math.max(0, totalWorth - estFee);
-      const netProfit = ownedShares > 0 ? (netPayout - costBasis) : 0;
-      const profitPct = costBasis > 0 ? ((netProfit / costBasis) * 100) : 0;
+      const ownedData = s.stocks[sym] || { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 };
+      const {
+        ownedShares,
+        avgBuyPrice,
+        posType,
+        takeProfit,
+        stopLoss,
+        costBasis,
+        totalWorth,
+        netPayout,
+        netProfit,
+        profitPct
+      } = computeStockPositionMetrics(sym, ownedData, currentPrice);
 
       const priceEl = document.getElementById(`stock-price-${sym}`);
       if (priceEl) {
@@ -7616,10 +7821,29 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         changeEl.className = `numbers-font text-xs ${isUp ? 'text-emerald-500' : 'text-rose-500'} inline-block mt-0.5`;
       }
 
+      const chartObj = generateSparklineSVG(prices, ownedShares > 0 ? { entry: avgBuyPrice, tp: takeProfit, sl: stopLoss } : null);
       const svgPathEl = document.getElementById(`stock-svg-path-${sym}`);
       if (svgPathEl) {
-        svgPathEl.setAttribute('d', generateSparklineSVG(prices));
+        svgPathEl.setAttribute('d', chartObj.path);
         svgPathEl.setAttribute('stroke', isUp ? '#10b981' : '#f43f5e');
+      }
+      const tpLineEl = document.getElementById(`stock-svg-tp-${sym}`);
+      if (tpLineEl) {
+        tpLineEl.setAttribute('y1', chartObj.tpY);
+        tpLineEl.setAttribute('y2', chartObj.tpY);
+        tpLineEl.classList.toggle('hidden', !chartObj.hasTp);
+      }
+      const entryLineEl = document.getElementById(`stock-svg-entry-${sym}`);
+      if (entryLineEl) {
+        entryLineEl.setAttribute('y1', chartObj.entryY);
+        entryLineEl.setAttribute('y2', chartObj.entryY);
+        entryLineEl.classList.toggle('hidden', !chartObj.hasEntry);
+      }
+      const slLineEl = document.getElementById(`stock-svg-sl-${sym}`);
+      if (slLineEl) {
+        slLineEl.setAttribute('y1', chartObj.slY);
+        slLineEl.setAttribute('y2', chartObj.slY);
+        slLineEl.classList.toggle('hidden', !chartObj.hasSl);
       }
 
       const sharesEl = document.getElementById(`stock-shares-${sym}`);
@@ -7652,9 +7876,9 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         sellAllBtn.disabled = (ownedShares === 0 || isLockedByHolding);
         if (isLockedByHolding) {
           sellAllBtn.textContent = `⏳ حظر (${remHoldingSec}ث)`;
-          sellAllBtn.title = `فترة حظر البيع مؤقتة: متبقي ${remHoldingSec} ثانية`;
+          sellAllBtn.title = `فترة حظر الإغلاق مؤقتة: متبقي ${remHoldingSec} ثانية`;
         } else {
-          sellAllBtn.textContent = window.currentLang === 'en' ? ' Sell All' : ' بيع كل الأسهم';
+          sellAllBtn.textContent = (posType === 'short' && ownedShares > 0) ? 'إغلاق كامل المركز (Short)' : 'بيع كل الأسهم';
           sellAllBtn.title = '';
         }
       }
@@ -7663,10 +7887,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       if (sellBtn && !sellBtn.textContent.includes('جاري')) {
         sellBtn.disabled = (ownedShares === 0 || isLockedByHolding);
         if (isLockedByHolding) {
-          sellBtn.textContent = `⏳ حظر بيع (${remHoldingSec}ث)`;
-          sellBtn.title = `فترة حظر البيع مؤقتة: متبقي ${remHoldingSec} ثانية`;
+          sellBtn.textContent = `⏳ حظر (${remHoldingSec}ث)`;
+          sellBtn.title = `فترة حظر الإغلاق مؤقتة: متبقي ${remHoldingSec} ثانية`;
         } else {
-          sellBtn.textContent = window.currentLang === 'en' ? 'Sell Shares' : 'بيع الأسهم';
+          sellBtn.textContent = (posType === 'short' && ownedShares > 0) ? 'إغلاق جزئي (Short)' : 'بيع الأسهم';
           sellBtn.title = '';
         }
       }
@@ -7691,7 +7915,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       });
     }
 
-    // Update Live 15-Minute Candlestick Session Countdown Timer
+    // Update Live Candlestick Session Countdown Timer
     const sessionTimerEl = document.getElementById('stock-session-timer');
     if (sessionTimerEl && typeof GameEngine.getStockSessionTimeRemaining ==='function') {
       const remainingMs = GameEngine.getStockSessionTimeRemaining();
@@ -7702,24 +7926,43 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     }
   }
 
-  // Draw Line Charts inside SVG
-  function generateSparklineSVG(prices) {
-    if (prices.length < 2) return"M 0 15 L 100 15";
-    const min = Math.min(...prices);
-    const max = Math.max(...prices);
+  // Draw Line Charts & Target Lines inside SVG
+  function generateSparklineSVG(prices, targets = null) {
+    if (!prices || prices.length < 2) {
+      return { path: "M 0 15 L 100 15", entryY: 15, tpY: 5, slY: 25, hasEntry: false, hasTp: false, hasSl: false };
+    }
+    const allValues = [...prices];
+    const hasEntry = Boolean(targets && targets.entry > 0);
+    const hasTp = Boolean(targets && targets.tp > 0);
+    const hasSl = Boolean(targets && targets.sl > 0);
+    if (hasEntry) allValues.push(targets.entry);
+    if (hasTp) allValues.push(targets.tp);
+    if (hasSl) allValues.push(targets.sl);
+
+    const min = Math.min(...allValues);
+    const max = Math.max(...allValues);
     const range = max - min === 0 ? 1 : max - min;
 
     const width = 100;
     const height = 30;
+    const toY = (val) => Math.max(1.5, Math.min(28.5, height - ((val - min) / range) * (height - 6) - 3));
 
-    let path ="";
+    let path = "";
     prices.forEach((price, idx) => {
       const x = (idx / (prices.length - 1)) * width;
-      // Invert Y axis since SVG 0 is top
-      const y = height - ((price - min) / range) * (height - 6) - 3;
-      path +=`${idx === 0 ?'M' :'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
+      const y = toY(price);
+      path += `${idx === 0 ? 'M' : 'L'} ${x.toFixed(1)} ${y.toFixed(1)}`;
     });
-    return path;
+
+    return {
+      path,
+      entryY: hasEntry ? toY(targets.entry).toFixed(1) : 15,
+      tpY: hasTp ? toY(targets.tp).toFixed(1) : 5,
+      slY: hasSl ? toY(targets.sl).toFixed(1) : 25,
+      hasEntry,
+      hasTp,
+      hasSl
+    };
   }
 
   // --- Tab 7: Tax Authority & Fiscal Policy Panel ---

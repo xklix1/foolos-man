@@ -177,17 +177,17 @@ const GameEngine = (() => {
     orbital_station: { id:'orbital_station', name:'محطة مدارية فضائية خاصة', cost: 7820000000, rent: 3450000, appreciation: 0.0020 }
   };
 
-  const DAILY_STOCK_PROFIT_CAP = 3000000; // سقف الأرباح الرأسمالية اليومية من البورصة (3,000,000 ج.م)
+  const DAILY_STOCK_PROFIT_CAP = 10000000; // سقف الأرباح الرأسمالية اليومية من البورصة (10,000,000 ج.م)
 
   const STOCKS = {
-    COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.018, reversion: 0.015, floor: 32, ceiling: 46, dividend: 0.00015, maxShares: 50000, seed: 101 },
-    EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.020, reversion: 0.015, floor: 70, ceiling: 102, dividend: 0.00025, maxShares: 30000, seed: 202 },
-    ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.015, floor: 40, ceiling: 58, dividend: 0.00018, maxShares: 40000, seed: 303 },
-    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.035, reversion: 0.018, floor: 68, ceiling: 135, dividend: 0.00015, maxShares: 25000, seed: 457 },
-    CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.025, reversion: 0.022, floor: 105, ceiling: 150, dividend: 0.00035, maxShares: 20000, seed: 505 },
-    BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.040, reversion: 0.025, floor: 230, ceiling: 410, dividend: 0, maxShares: 5000, seed: 606 },
-    GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.012, reversion: 0.01, floor: 195, ceiling: 250, dividend: 0.0003, maxShares: 10000, seed: 707 },
-    AIX: { name:'صندوق الذكاء الاصطناعي العالمي', symbol:'AIX', basePrice: 380, volatility: 0.030, reversion: 0.02, floor: 300, ceiling: 470, dividend: 0.00025, maxShares: 8000, seed: 808 }
+    COMI: { name:'البنك التجاري الدولي', symbol:'COMI', basePrice: 38, volatility: 0.018, reversion: 0.015, floor: 32, ceiling: 46, dividend: 0.00015, maxShares: 100000, seed: 101 },
+    EAST: { name:'الشرقية للدخان', symbol:'EAST', basePrice: 85, volatility: 0.020, reversion: 0.015, floor: 70, ceiling: 102, dividend: 0.00025, maxShares: 60000, seed: 202 },
+    ETEL: { name:'المصرية للاتصالات', symbol:'ETEL', basePrice: 48, volatility: 0.018, reversion: 0.015, floor: 40, ceiling: 58, dividend: 0.00018, maxShares: 80000, seed: 303 },
+    FWRY: { name:'فوري للمدفوعات الإلكترونية', symbol:'FWRY', basePrice: 92, volatility: 0.035, reversion: 0.018, floor: 68, ceiling: 135, dividend: 0.00015, maxShares: 50000, seed: 457 },
+    CASH: { name:'صندوق الاستثمار التقني البديل', symbol:'CASH', basePrice: 125, volatility: 0.025, reversion: 0.022, floor: 105, ceiling: 150, dividend: 0.00035, maxShares: 40000, seed: 505 },
+    BITC: { name:'مؤشر البيتكوين والأصول الرقمية', symbol:'BITC', basePrice: 310, volatility: 0.040, reversion: 0.025, floor: 230, ceiling: 410, dividend: 0, maxShares: 10000, seed: 606 },
+    GOLD: { name:'صندوق سبائك الذهب الخالص', symbol:'GOLD', basePrice: 220, volatility: 0.012, reversion: 0.01, floor: 195, ceiling: 250, dividend: 0.0003, maxShares: 20000, seed: 707 },
+    AIX: { name:'صندوق الذكاء الاصطناعي العالمي', symbol:'AIX', basePrice: 380, volatility: 0.030, reversion: 0.02, floor: 300, ceiling: 470, dividend: 0.00025, maxShares: 16000, seed: 808 }
   };
 
   const CORP_PROJECTS = {
@@ -1159,14 +1159,14 @@ const GameEngine = (() => {
       orbital_station: 0
     },
     stocks: {
-      COMI: { shares: 0, avgPrice: 0 },
-      EAST: { shares: 0, avgPrice: 0 },
-      ETEL: { shares: 0, avgPrice: 0 },
-      FWRY: { shares: 0, avgPrice: 0 },
-      CASH: { shares: 0, avgPrice: 0 },
-      BITC: { shares: 0, avgPrice: 0 },
-      GOLD: { shares: 0, avgPrice: 0 },
-      AIX: { shares: 0, avgPrice: 0 }
+      COMI: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 },
+      EAST: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 },
+      ETEL: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 },
+      FWRY: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 },
+      CASH: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 },
+      BITC: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 },
+      GOLD: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 },
+      AIX: { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 }
     },
     inventory: {
       gold_pen: 0,
@@ -3206,6 +3206,8 @@ const GameEngine = (() => {
         updates.marketTicker = currentEv.title;
       }
     }
+    // Evaluate Take-Profit, Stop-Loss, & Short Margin Call every tick (including when 45s cooldown expires)
+    evaluateAutoStockOrders().catch(() => {});
 
     // 9. Random Life & Career Opportunities (Cooldown: 60 seconds, Balanced micro-rewards <= 1,000 EGP)
     const TIP_COOLDOWN_MS = 60 * 1000;
@@ -3350,7 +3352,10 @@ const GameEngine = (() => {
         const saved = dbState.stocks && dbState.stocks[sym];
         mergedStocks[sym] = {
           shares: (saved && saved.shares != null) ? saved.shares : 0,
-          avgPrice: (saved && saved.avgPrice != null) ? saved.avgPrice : 0
+          avgPrice: (saved && saved.avgPrice != null) ? saved.avgPrice : 0,
+          type: (saved && saved.type === 'short') ? 'short' : 'long',
+          takeProfit: (saved && saved.takeProfit != null) ? Number(saved.takeProfit) || 0 : 0,
+          stopLoss: (saved && saved.stopLoss != null) ? Number(saved.stopLoss) || 0 : 0
         };
       });
 
@@ -4580,12 +4585,15 @@ const GameEngine = (() => {
 
     // Guard: initialize stock slot if missing
     if (!state.stocks[sym]) {
-      state.stocks[sym] = { shares: 0, avgPrice: 0 };
+      state.stocks[sym] = { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 };
     }
 
-    // 1. Max Shares Cap Check
+    // 1. Max Shares Cap & Single-Direction Check
     const currentShares = state.stocks[sym].shares || 0;
-    const maxShares = stock.maxShares || 50000;
+    if (currentShares > 0 && state.stocks[sym].type === 'short') {
+      throw new Error('لديك صفقة بيع مكشوف (Short) مفتوحة على هذا السهم. يجب إغلاقها أولاً قبل فتح صفقة شراء صاعد (Long).');
+    }
+    const maxShares = stock.maxShares || 100000;
     if (currentShares + shares > maxShares) {
       const remainingCanBuy = Math.max(0, maxShares - currentShares);
       throw new Error(`تجاوزت الحد الأقصى للملكية في ${stock.name} (${maxShares.toLocaleString()} سهم). المتاح لك شراؤه: ${remainingCanBuy.toLocaleString()} سهم.`);
@@ -4621,7 +4629,7 @@ const GameEngine = (() => {
         state.stockCooldowns[sym] = (serverRes.result && serverRes.result.holdingCooldownUntil) || (getTrustedNow() + 45000);
         state.stockTradeCooldownUntil = getTrustedNow() + 3000;
         state.title = getAppropriateTitle(state.netWorth, state.xp);
-        recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بسعر ${currentPrice.toLocaleString()} ج.م للسهم بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
+        recordPlayerActivity('شراء أسهم (Long)',`شراء ${shares} سهم (${sym}) بسعر ${currentPrice.toLocaleString()} ج.م للسهم بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
         trackDailyQuestProgress('stock_trade', 1);
         if (typeof updateBalances === 'function') updateBalances();
         if (typeof UI !== 'undefined') {
@@ -4630,7 +4638,7 @@ const GameEngine = (() => {
           if (UI.updateDailyStockProfitBadge) try { UI.updateDailyStockProfitBadge(); } catch (_) {}
         }
         await forceSaveState(true);
-        return { shares, price: currentPrice, grossCost, fee, totalCost };
+        return { type: 'long', shares, price: currentPrice, grossCost, fee, totalCost };
       }
     }
 
@@ -4641,20 +4649,108 @@ const GameEngine = (() => {
     const newAvg = Math.floor(((currentShares * currentAvg) + grossCost) / newShares);
     state.stocks[sym].shares = newShares;
     state.stocks[sym].avgPrice = newAvg;
+    state.stocks[sym].type = 'long';
     state.stockCooldowns = state.stockCooldowns || {};
     state.stockCooldowns[sym] = getTrustedNow() + 45000;
     state.stockTradeCooldownUntil = getTrustedNow() + 3000;
 
-    recordPlayerActivity('شراء أسهم',`شراء ${shares} سهم (${sym}) بسعر ${currentPrice.toLocaleString()} ج.م للسهم بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
+    recordPlayerActivity('شراء أسهم (Long)',`شراء ${shares} سهم (${sym}) بسعر ${currentPrice.toLocaleString()} ج.م للسهم بإجمالي ${grossCost.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م`,'stock');
     trackDailyQuestProgress('stock_trade', 1);
     state.netWorth = calculateNetWorth();
     state.title = getAppropriateTitle(state.netWorth, state.xp);
     await forceSaveState(true);
-    return { shares, price: currentPrice, grossCost, fee, totalCost };
+    return { type: 'long', shares, price: currentPrice, grossCost, fee, totalCost };
   }
 
-  // Sell Stocks (with 1.0% Brokerage Commission, 10% Capital Gains Tax, & 45s Cooldown Check)
-  async function sellStock(sym, shares, quotedPrice = null) {
+  // Open / Add Short Selling Position (100% Cash Collateral + 1% Fee, Margin Call at +50%)
+  async function shortStock(sym, shares, quotedPrice = null) {
+    if (typeof navigator !== 'undefined' && navigator.onLine === false) {
+      throw new Error(" تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
+    }
+    const stock = STOCKS[sym];
+    if (!stock) throw new Error("رمز الشركة غير صالح.");
+    if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم يجب أن يكون عدداً صحيحاً موجباً.");
+
+    if (state.stockTradeCooldownUntil && getTrustedNow() < state.stockTradeCooldownUntil) {
+      const remSec = Math.ceil((state.stockTradeCooldownUntil - getTrustedNow()) / 1000);
+      throw new Error(`البورصة: نظام منع التداول فائق السرعة نشط. انتظر ${remSec} ثانية بين كل أمر تداول.`);
+    }
+
+    if (!state.stocks[sym]) {
+      state.stocks[sym] = { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 };
+    }
+
+    const currentShares = state.stocks[sym].shares || 0;
+    if (currentShares > 0 && (state.stocks[sym].type || 'long') !== 'short') {
+      throw new Error('لديك أسهم مملوكة (Long) في هذه الشركة. يجب بيعها أولاً قبل فتح صفقة بيع على المكشوف (Short).');
+    }
+
+    const maxShares = stock.maxShares || 100000;
+    if (currentShares + shares > maxShares) {
+      const remainingCanShort = Math.max(0, maxShares - currentShares);
+      throw new Error(`تجاوزت الحد الأقصى لصفقات البيع المكشوف في ${stock.name} (${maxShares.toLocaleString()} سهم). المتاح: ${remainingCanShort.toLocaleString()} سهم.`);
+    }
+
+    const history = stockPrices[sym];
+    const fallbackPrice = (history && history.length > 0) ? history[history.length - 1] : stock.basePrice;
+    const currentPrice = (Number(quotedPrice) > 0) ? Number(quotedPrice) : fallbackPrice;
+    const grossCollateral = currentPrice * shares;
+    const fee = Math.max(5, Math.floor(grossCollateral * 0.01));
+    const totalCost = grossCollateral + fee;
+
+    if (state.cash < totalCost) {
+      throw new Error(`رصيدك غير كافٍ لحجز ضمان البيع المكشوف (100% Margin). تحتاج: ${totalCost.toLocaleString()} EGP (شامل عمولة ${fee.toLocaleString()} EGP)`);
+    }
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
+      const serverRes = await ServerBridge.shortStock(sym, shares, currentPrice);
+      if (serverRes && serverRes.success) {
+        if (serverRes.stocks) state.stocks = serverRes.stocks;
+        if (serverRes.cash !== undefined) {
+          state.cash = serverRes.cash;
+          if (ServerBridge.notifyLocalSpend) {
+            ServerBridge.notifyLocalSpend(state.cash, state.bank, state.dirtyCash);
+          }
+        }
+        if (serverRes.dailyStockProfit) state.dailyStockProfit = serverRes.dailyStockProfit;
+        if (serverRes.netWorth !== undefined) state.netWorth = serverRes.netWorth;
+        state.stockCooldowns = state.stockCooldowns || {};
+        state.stockCooldowns[sym] = (serverRes.result && serverRes.result.holdingCooldownUntil) || (getTrustedNow() + 45000);
+        state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+        state.title = getAppropriateTitle(state.netWorth, state.xp);
+        recordPlayerActivity('بيع على المكشوف (Short)', `فتح مركز بيع مكشوف ${shares} سهم (${sym}) بسعر دخول ${currentPrice.toLocaleString()} ج.م (ضمان محجوز: ${grossCollateral.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م)`, 'stock');
+        trackDailyQuestProgress('stock_trade', 1);
+        if (typeof UI !== 'undefined') {
+          if (UI.renderStatsBar) try { UI.renderStatsBar(); } catch (_) {}
+          if (UI.renderStocks) try { UI.renderStocks(true); } catch (_) {}
+          if (UI.updateDailyStockProfitBadge) try { UI.updateDailyStockProfitBadge(); } catch (_) {}
+        }
+        await forceSaveState(true);
+        return { type: 'short', shares, price: currentPrice, grossCost: grossCollateral, fee, totalCost };
+      }
+    }
+
+    state.cash -= totalCost;
+    const currentAvg = state.stocks[sym].avgPrice || 0;
+    const newShares = currentShares + shares;
+    const newAvg = Math.floor(((currentShares * currentAvg) + grossCollateral) / newShares);
+    state.stocks[sym].shares = newShares;
+    state.stocks[sym].avgPrice = newAvg;
+    state.stocks[sym].type = 'short';
+    state.stockCooldowns = state.stockCooldowns || {};
+    state.stockCooldowns[sym] = getTrustedNow() + 45000;
+    state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+
+    recordPlayerActivity('بيع على المكشوف (Short)', `فتح مركز بيع مكشوف ${shares} سهم (${sym}) بسعر دخول ${currentPrice.toLocaleString()} ج.م (ضمان محجوز: ${grossCollateral.toLocaleString()} ج.م + عمولة ${fee.toLocaleString()} ج.م)`, 'stock');
+    trackDailyQuestProgress('stock_trade', 1);
+    state.netWorth = calculateNetWorth();
+    state.title = getAppropriateTitle(state.netWorth, state.xp);
+    await forceSaveState(true);
+    return { type: 'short', shares, price: currentPrice, grossCost: grossCollateral, fee, totalCost };
+  }
+
+  // Sell / Close Stock Position (Supports both Long & Short positions)
+  async function sellStock(sym, shares, quotedPrice = null, bypassCooldown = false) {
     if (typeof navigator !== 'undefined' && navigator.onLine === false) {
       throw new Error(" تداول وبورصة الأسهم تتطلب اتصالاً مباشراً بالإنترنت لتحديث أسعار السوق والتسوية اللحظية.");
     }
@@ -4663,14 +4759,14 @@ const GameEngine = (() => {
     if (shares <= 0 || !Number.isInteger(shares)) throw new Error("عدد الأسهم غير صالح.");
 
     // Anti-Spam Trade Cooldown (3 seconds)
-    if (state.stockTradeCooldownUntil && getTrustedNow() < state.stockTradeCooldownUntil) {
+    if (!bypassCooldown && state.stockTradeCooldownUntil && getTrustedNow() < state.stockTradeCooldownUntil) {
       const remSec = Math.ceil((state.stockTradeCooldownUntil - getTrustedNow()) / 1000);
       throw new Error(`البورصة: نظام منع التداول فائق السرعة نشط. انتظر ${remSec} ثانية بين كل أمر تداول.`);
     }
 
     // Guard: initialize if missing
     if (!state.stocks[sym]) {
-      state.stocks[sym] = { shares: 0, avgPrice: 0 };
+      state.stocks[sym] = { shares: 0, avgPrice: 0, type: 'long', takeProfit: 0, stopLoss: 0 };
     }
 
     const ownedShares = state.stocks[sym].shares || 0;
@@ -4681,53 +4777,73 @@ const GameEngine = (() => {
     // 1. Enforce 45s holding cooldown
     if (state.stockCooldowns && state.stockCooldowns[sym] && getTrustedNow() < state.stockCooldowns[sym]) {
       const remainingSec = Math.ceil((state.stockCooldowns[sym] - getTrustedNow()) / 1000);
-      throw new Error(`لوائح البورصة: يجب الاحتفاظ بالسهم لمدة 45 ثانية بعد الشراء قبل بيعه. متبقي: ${remainingSec} ثانية.`);
+      throw new Error(`لوائح البورصة: يجب الاحتفاظ بالمركز لمدة 45 ثانية بعد الفتح قبل الإغلاق. متبقي: ${remainingSec} ثانية.`);
     }
 
+    const posType = state.stocks[sym].type === 'short' ? 'short' : 'long';
     const history = stockPrices[sym];
     const fallbackPrice = (history && history.length > 0) ? history[history.length - 1] : stock.basePrice;
     const currentPrice = (Number(quotedPrice) > 0) ? Number(quotedPrice) : fallbackPrice;
-    const grossReturn = currentPrice * shares;
-    const fee = Math.max(5, Math.floor(grossReturn * 0.01)); // 1.0% عمولة سمسرة (مخفضة لتشجيع التداول)
+    const marketNotional = currentPrice * shares;
+    const fee = Math.max(5, Math.floor(marketNotional * 0.01)); // 1.0% عمولة سمسرة
 
-    // 2. Daily Realized Profit Cap (3,000,000 EGP per day) & Capital Gains
+    // 2. Daily Realized Profit Cap (10,000,000 EGP per day) & Capital Gains (Long + Short)
     const avgPrice = state.stocks[sym].avgPrice || 0;
     const costBasis = avgPrice * shares;
     let rawProfit = 0;
     let allowedProfit = 0;
     let capHit = false;
     let cappedSurplus = 0;
+    let netReturn = 0;
 
     ensureDailyStockTracking();
     const todayProfits = Number(state.dailyStockProfit.realizedProfit || 0);
     const remainingDailyCap = Math.max(0, DAILY_STOCK_PROFIT_CAP - todayProfits);
 
-    if (grossReturn > costBasis) {
-      rawProfit = grossReturn - costBasis;
-      if (rawProfit > remainingDailyCap) {
-        allowedProfit = remainingDailyCap;
-        capHit = true;
-        cappedSurplus = rawProfit - remainingDailyCap;
+    if (posType === 'short') {
+      const priceDiff = avgPrice - currentPrice;
+      if (priceDiff > 0) {
+        rawProfit = priceDiff * shares;
+        if (rawProfit > remainingDailyCap) {
+          allowedProfit = remainingDailyCap;
+          capHit = true;
+          cappedSurplus = rawProfit - remainingDailyCap;
+        } else {
+          allowedProfit = rawProfit;
+        }
+        netReturn = Math.max(0, costBasis + allowedProfit - fee);
       } else {
-        allowedProfit = rawProfit;
+        const rawLoss = (currentPrice - avgPrice) * shares;
+        rawProfit = -rawLoss;
+        netReturn = Math.max(0, costBasis - rawLoss - fee);
       }
-    }
-
-    let netReturn = 0;
-    if (grossReturn > costBasis) {
-      netReturn = Math.max(0, costBasis + allowedProfit - fee);
     } else {
-      netReturn = Math.max(0, grossReturn - fee);
+      if (marketNotional > costBasis) {
+        rawProfit = marketNotional - costBasis;
+        if (rawProfit > remainingDailyCap) {
+          allowedProfit = remainingDailyCap;
+          capHit = true;
+          cappedSurplus = rawProfit - remainingDailyCap;
+        } else {
+          allowedProfit = rawProfit;
+        }
+        netReturn = Math.max(0, costBasis + allowedProfit - fee);
+      } else {
+        rawProfit = marketNotional - costBasis;
+        netReturn = Math.max(0, marketNotional - fee);
+      }
     }
 
     // 3. Market Scanner Loss Shield (10% loss protection if trade was at a loss)
     let scannerCompensation = 0;
-    if (grossReturn < costBasis && state.inventory && state.inventory.market_scanner > 0) {
-      const tradeLoss = costBasis - grossReturn;
+    if (rawProfit < 0 && state.inventory && state.inventory.market_scanner > 0) {
+      const tradeLoss = Math.abs(rawProfit);
       const shieldPct = STORE_ITEMS.market_scanner ? STORE_ITEMS.market_scanner.value : 0.10;
       scannerCompensation = Math.floor(tradeLoss * shieldPct);
       netReturn += scannerCompensation;
     }
+
+    const grossReturn = posType === 'short' ? Math.max(0, costBasis + rawProfit) : marketNotional;
 
     // Server-Authoritative execution when online
     if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline()) {
@@ -4741,24 +4857,29 @@ const GameEngine = (() => {
         } else if (allowedProfit > 0) {
           state.dailyStockProfit.realizedProfit += allowedProfit;
         }
-        state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+        if (!bypassCooldown) {
+          state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+        }
         state.title = getAppropriateTitle(state.netWorth, state.xp);
 
-        let logDetails = `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+        const actionLabel = posType === 'short' ? 'إغلاق بيع مكشوف (Short)' : 'بيع أسهم (Long)';
+        let logDetails = `${actionLabel} ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
         if (capHit) {
           logDetails += ` [سقف الأرباح اليومي: تم احتساب ${allowedProfit.toLocaleString()} ج.م واسترداد رأس المال بالكامل]`;
         }
-        recordPlayerActivity('بيع أسهم', logDetails, 'stock');
+        recordPlayerActivity(actionLabel, logDetails, 'stock');
         trackDailyQuestProgress('stock_trade', 1);
         await forceSaveState(true);
         return {
+          type: posType,
           shares,
           price: currentPrice,
+          costBasis,
           grossReturn,
           fee,
           capitalGainsTax: 0,
           scannerCompensation,
-          totalReturn: netReturn,
+          totalReturn: (serverRes.result && serverRes.result.totalReturn !== undefined) ? serverRes.result.totalReturn : netReturn,
           rawProfit,
           allowedProfit,
           capHit,
@@ -4776,11 +4897,17 @@ const GameEngine = (() => {
     state.stocks[sym].shares = Math.max(0, (state.stocks[sym].shares || 0) - shares);
     if (state.stocks[sym].shares === 0) {
       state.stocks[sym].avgPrice = 0;
+      state.stocks[sym].type = 'long';
+      state.stocks[sym].takeProfit = 0;
+      state.stocks[sym].stopLoss = 0;
     }
     state.cash += netReturn;
-    state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+    if (!bypassCooldown) {
+      state.stockTradeCooldownUntil = getTrustedNow() + 3000;
+    }
 
-    let logDetails = `بيع ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
+    const actionLabel = posType === 'short' ? 'إغلاق بيع مكشوف (Short)' : 'بيع أسهم (Long)';
+    let logDetails = `${actionLabel} ${shares} سهم (${sym}) بصافي ${netReturn.toLocaleString()} ج.م (عمولة سمسرة: ${fee.toLocaleString()} ج.م)`;
     if (capHit) {
       logDetails += ` [سقف الأرباح اليومي: تم احتساب ${allowedProfit.toLocaleString()} ج.م واسترداد رأس المال بالكامل]`;
     }
@@ -4788,7 +4915,7 @@ const GameEngine = (() => {
       logDetails += ` [حماية الماسح الذكي عوّضت: +${scannerCompensation.toLocaleString()} ج.م]`;
     }
 
-    recordPlayerActivity('بيع أسهم', logDetails, 'stock');
+    recordPlayerActivity(actionLabel, logDetails, 'stock');
     trackDailyQuestProgress('stock_trade', 1);
     state._legitimateTransactionBypass = true;
     state.netWorth = calculateNetWorth();
@@ -4796,8 +4923,10 @@ const GameEngine = (() => {
 
     await forceSaveState(true);
     return {
+      type: posType,
       shares,
       price: currentPrice,
+      costBasis,
       grossReturn,
       fee,
       capitalGainsTax: 0,
@@ -4810,6 +4939,119 @@ const GameEngine = (() => {
       dailyProfitUsed: state.dailyStockProfit.realizedProfit,
       dailyProfitCap: DAILY_STOCK_PROFIT_CAP
     };
+  }
+
+  // Set or Clear Take-Profit & Stop-Loss Orders on an Active Stock Position
+  async function setStockOrders(sym, takeProfit = 0, stopLoss = 0) {
+    const stock = STOCKS[sym];
+    if (!stock) throw new Error('رمز السهم غير صالح.');
+    if (!state.stocks || !state.stocks[sym] || !(state.stocks[sym].shares > 0)) {
+      throw new Error('يجب أن تمتلك مركزاً مفتوحاً في هذا السهم أولاً لضبط أوامر جني الربح أو وقف الخسارة.');
+    }
+
+    const pos = state.stocks[sym];
+    const posType = pos.type === 'short' ? 'short' : 'long';
+    const avgPrice = Number(pos.avgPrice || stock.basePrice);
+    const tp = Math.max(0, Math.round(Number(takeProfit) || 0));
+    const sl = Math.max(0, Math.round(Number(stopLoss) || 0));
+
+    if (posType === 'long') {
+      if (tp > 0 && tp <= avgPrice) {
+        throw new Error(`سعر جني الربح (TP) لصفقة الشراء يجب أن يكون أعلى من متوسط سعر الدخول (${avgPrice} ج.م).`);
+      }
+      if (sl > 0 && sl >= avgPrice) {
+        throw new Error(`سعر وقف الخسارة (SL) لصفقة الشراء يجب أن يكون أقل من متوسط سعر الدخول (${avgPrice} ج.م).`);
+      }
+    } else {
+      const marginCallPrice = Math.ceil(avgPrice * 1.50);
+      if (tp > 0 && tp >= avgPrice) {
+        throw new Error(`سعر جني الربح (TP) للبيع المكشوف يجب أن يكون أقل من سعر الدخول (${avgPrice} ج.م).`);
+      }
+      if (sl > 0 && sl <= avgPrice) {
+        throw new Error(`سعر وقف الخسارة (SL) للبيع المكشوف يجب أن يكون أعلى من سعر الدخول (${avgPrice} ج.م).`);
+      }
+      if (sl > marginCallPrice) {
+        throw new Error(`سعر وقف الخسارة لا يمكن أن يتجاوز سعر التصفية الإجبارية Margin Call (${marginCallPrice} ج.م = +50%).`);
+      }
+    }
+
+    pos.takeProfit = tp;
+    pos.stopLoss = sl;
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline() && ServerBridge.setStockOrders) {
+      try {
+        await ServerBridge.setStockOrders(sym, tp, sl);
+      } catch (e) {
+        console.warn('[StockOrders] Server sync note:', e.message);
+      }
+    }
+
+    await forceSaveState(true);
+    return { symbol: sym, type: posType, takeProfit: tp, stopLoss: sl };
+  }
+
+  let _isEvaluatingAutoOrders = false;
+  async function evaluateAutoStockOrders() {
+    if (_isEvaluatingAutoOrders || !state || !state.stocks) return [];
+    const now = getTrustedNow();
+    const triggeredList = [];
+
+    for (const sym of Object.keys(STOCKS)) {
+      const pos = state.stocks[sym];
+      if (!pos || !(Number(pos.shares) > 0)) continue;
+
+      const holdingUntil = Number((state.stockCooldowns && state.stockCooldowns[sym]) || 0);
+      if (now < holdingUntil) continue; // Wait until 45s holding lock expires
+
+      const history = stockPrices[sym];
+      const currentPrice = (history && history.length > 0) ? history[history.length - 1] : STOCKS[sym].basePrice;
+      const posType = pos.type === 'short' ? 'short' : 'long';
+      const avgPrice = Number(pos.avgPrice || STOCKS[sym].basePrice);
+      const tp = Number(pos.takeProfit || 0);
+      const sl = Number(pos.stopLoss || 0);
+
+      let reason = null;
+      if (posType === 'short') {
+        const marginCallPrice = Math.ceil(avgPrice * 1.50);
+        if (currentPrice >= marginCallPrice) {
+          reason = 'margin_call';
+        } else if (tp > 0 && currentPrice <= tp) {
+          reason = 'take_profit';
+        } else if (sl > 0 && currentPrice >= sl) {
+          reason = 'stop_loss';
+        }
+      } else {
+        if (tp > 0 && currentPrice >= tp) {
+          reason = 'take_profit';
+        } else if (sl > 0 && currentPrice <= sl) {
+          reason = 'stop_loss';
+        }
+      }
+
+      if (reason) {
+        _isEvaluatingAutoOrders = true;
+        try {
+          const sharesToClose = Number(pos.shares);
+          const res = await sellStock(sym, sharesToClose, currentPrice, true);
+          triggeredList.push({ symbol: sym, stockName: STOCKS[sym].name, reason, ...res });
+          if (typeof UI !== 'undefined' && UI.showToast) {
+            const reasonTitle = reason === 'take_profit'
+              ? `🎯 تم تنفيذ أمر جني الأرباح التلقائي (${sym})`
+              : (reason === 'margin_call' ? `🚨 تصفية ضمان إجبارية Margin Call (${sym})` : `🛑 تم تنفيذ أمر وقف الخسارة التلقائي (${sym})`);
+            const netPnl = (res.totalReturn || 0) - (res.costBasis || 0);
+            const msg = `تم إغلاق مركز ${posType === 'short' ? 'البيع المكشوف (Short)' : 'الشراء (Long)'} (${sharesToClose.toLocaleString()} سهم) عند سعر ${currentPrice} ج.م.\nالصافي المسترد: ${(res.totalReturn || 0).toLocaleString()} ج.م (${netPnl >= 0 ? '+' : ''}${netPnl.toLocaleString()} ج.م)`;
+            UI.showToast(reasonTitle, msg, reason === 'take_profit' ? 'success' : 'warning');
+            if (UI.renderStocks) try { UI.renderStocks(true); } catch (_) {}
+            if (UI.renderStatsBar) try { UI.renderStatsBar(); } catch (_) {}
+          }
+        } catch (err) {
+          console.warn('[StockAutoOrder] Execution warning:', err.message);
+        } finally {
+          _isEvaluatingAutoOrders = false;
+        }
+      }
+    }
+    return triggeredList;
   }
 
   // Helper: Ensure daily stock profit tracking (enforces DAILY_STOCK_PROFIT_CAP per day)
@@ -9196,7 +9438,10 @@ const GameEngine = (() => {
     buyAsset,
     sellAsset,
     buyStock,
+    shortStock,
     sellStock,
+    setStockOrders,
+    evaluateAutoStockOrders,
     startInvestment,
     buyStoreItem,
     useStoreItem,
