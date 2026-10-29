@@ -197,6 +197,10 @@ async function adminRoutes(fastify, options) {
         });
       }
 
+      if (table === 'globals' && typeof fastify.invalidateSystemGlobalsCache === 'function') {
+        fastify.invalidateSystemGlobalsCache();
+      }
+
       // If an active player was modified, reset, banned, or deleted, sync/evict in sessionManager
       if (table === 'players' && sessionManager) {
         try {

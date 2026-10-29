@@ -4072,6 +4072,12 @@ var AppDB = (() => {
       return { active: false, enabled: false, message: '' };
     }
     try {
+      const rows = await _api('globals?id=eq.maintenance');
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
+        return rows[0].data;
+      }
+    } catch (_) {}
+    try {
       const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
       const res = await fetch(`${apiBase}/api/public/system-status`, { cache: 'no-store' })
         .catch(() => fetch('/api/public/system-status', { cache: 'no-store' }));
@@ -4131,25 +4137,18 @@ var AppDB = (() => {
       return { active: false, enabled: false, message: '', facebook_url: '' };
     }
     try {
-      const res = await fetch(
-        `${SUPABASE_URL}/rest/v1/globals?id=eq.standby_mode`,
-        {
-          method: 'GET',
-          cache: 'no-store',
-          headers: {
-            'apikey': SUPABASE_ANON_KEY,
-            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Pragma': 'no-cache',
-            'Expires': '0'
-          }
-        }
-      );
-      if (!res.ok) return { active: false, enabled: false, message: '', facebook_url: '' };
-      const rows = await res.json();
-      if (rows && rows.length > 0 && rows[0].data) {
+      const rows = await _api('globals?id=eq.standby_mode');
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].data) {
         return rows[0].data;
+      }
+    } catch (e) {}
+    try {
+      const apiBase = (typeof window !== 'undefined' && window.SERVER_API_URL) ? window.SERVER_API_URL.replace(/\/$/, '') : '';
+      const res = await fetch(`${apiBase}/api/public/system-status`, { cache: 'no-store' })
+        .catch(() => fetch('/api/public/system-status', { cache: 'no-store' }));
+      if (res && res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data && data.standby_mode) return data.standby_mode;
       }
     } catch (e) {}
     return { active: false, enabled: false, message: '', facebook_url: '' };

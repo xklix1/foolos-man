@@ -1657,6 +1657,10 @@ async function moderatorRoutes(fastify, options) {
         throw new Error('Failed to update standby_mode in globals table');
       }
 
+      if (typeof fastify.invalidateSystemGlobalsCache === 'function') {
+        fastify.invalidateSystemGlobalsCache();
+      }
+
       // Record to audit logs
       await logStaffAudit(
         request.modSession,

@@ -105,8 +105,21 @@ app.get('/api/status', async (request, reply) => {
   };
 });
 
-// GET /api/public/system-status (Instant unified status check for client watchdogs)
-app.get('/api/public/system-status', async (request, reply) => {
+// Cached live globals reader (2s TTL) for system-status & globals endpoints
+let _cachedSystemGlobals = null;
+let _cachedSystemGlobalsAt = 0;
+const SYSTEM_GLOBALS_TTL_MS = 2000;
+
+app.decorate('invalidateSystemGlobalsCache', () => {
+  _cachedSystemGlobalsAt = 0;
+});
+
+async function getLiveSystemGlobals() {
+  const now = Date.now();
+  if (_cachedSystemGlobals && (now - _cachedSystemGlobalsAt) < SYSTEM_GLOBALS_TTL_MS) {
+    return _cachedSystemGlobals;
+  }
+
   let dynamicReloadTs = 0;
   try {
     const vPath = path.join(__dirname, '../../version.json');
@@ -116,10 +129,9 @@ app.get('/api/public/system-status', async (request, reply) => {
     }
   } catch (_) {}
 
-  return {
-    success: true,
+  const result = {
     force_reload: {
-      timestamp: dynamicReloadTs || Date.now()
+      timestamp: dynamicReloadTs || now
     },
     maintenance: {
       active: Boolean(config.MAINTENANCE_MODE),
@@ -127,8 +139,64 @@ app.get('/api/public/system-status', async (request, reply) => {
       message: 'اللعبة تحت الصيانة حالياً. سنعود قريباً إن شاء الله 🛠️'
     },
     standby_mode: {
-      active: false
-    },
+      active: false,
+      enabled: false,
+      message: 'يجري حالياً التحضير النهائي ووضع الاستعداد قبل فتح الخوادم رسمياً لجميع اللاعبين.',
+      facebook_url: 'https://www.facebook.com'
+    }
+  };
+
+  if (process.env.NODE_ENV !== 'test') {
+    try {
+      const res = await dbService.resilientFetch('/rest/v1/globals?id=in.(force_reload,maintenance,standby_mode)&select=id,data');
+      if (res && res.ok) {
+        const rows = await res.json();
+        if (Array.isArray(rows)) {
+          for (const row of rows) {
+            if (!row || !row.id || !row.data) continue;
+            if (row.id === 'force_reload') {
+              const dbTs = Number(row.data.timestamp) || 0;
+              result.force_reload = {
+                ...row.data,
+                timestamp: Math.max(dynamicReloadTs, dbTs) || now
+              };
+            } else if (row.id === 'maintenance') {
+              const isMaint = Boolean(config.MAINTENANCE_MODE || row.data.active || row.data.enabled);
+              result.maintenance = {
+                ...row.data,
+                active: isMaint,
+                enabled: isMaint,
+                message: row.data.message || result.maintenance.message
+              };
+            } else if (row.id === 'standby_mode') {
+              const isStandby = Boolean(row.data.active || row.data.enabled);
+              result.standby_mode = {
+                ...row.data,
+                active: isStandby,
+                enabled: isStandby,
+                message: row.data.message || result.standby_mode.message,
+                facebook_url: row.data.facebook_url || result.standby_mode.facebook_url
+              };
+            }
+          }
+        }
+      }
+    } catch (_) {}
+  }
+
+  _cachedSystemGlobals = result;
+  _cachedSystemGlobalsAt = now;
+  return result;
+}
+
+// GET /api/public/system-status (Instant unified status check for client watchdogs)
+app.get('/api/public/system-status', async (request, reply) => {
+  const sys = await getLiveSystemGlobals();
+  return {
+    success: true,
+    force_reload: sys.force_reload,
+    maintenance: sys.maintenance,
+    standby_mode: sys.standby_mode,
     serverTime: Date.now()
   };
 });
@@ -136,23 +204,12 @@ app.get('/api/public/system-status', async (request, reply) => {
 // GET /api/public/globals (Serves public global configurations from cache/RAM)
 app.get('/api/public/globals', async (request, reply) => {
   const { id } = request.query || {};
-  let dynamicReloadTs = 0;
-  try {
-    const vPath = path.join(__dirname, '../../version.json');
-    if (fs.existsSync(vPath)) {
-      const v = JSON.parse(fs.readFileSync(vPath, 'utf8'));
-      dynamicReloadTs = Number(v.timestamp) || 0;
-    }
-  } catch (_) {}
+  const sys = await getLiveSystemGlobals();
 
   const globalsMap = {
-    force_reload: { timestamp: dynamicReloadTs || Date.now() },
-    maintenance: {
-      active: Boolean(config.MAINTENANCE_MODE),
-      enabled: Boolean(config.MAINTENANCE_MODE),
-      message: 'اللعبة تحت الصيانة حالياً. سنعود قريباً إن شاء الله 🛠️'
-    },
-    standby_mode: { active: false },
+    force_reload: sys.force_reload,
+    maintenance: sys.maintenance,
+    standby_mode: sys.standby_mode,
     airdrop: { active: false, timestamp: Date.now() },
     market_event: { active: false, timestamp: Date.now() },
     taxConfig: { rate: 0.05 },

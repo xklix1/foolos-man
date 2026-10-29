@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.39",
-  "build": 1792754800000,
-  "timestamp": 1792754800000,
-  "notes": "Elevate Space Station Gateway to 10B Net Worth milestone and 2.5B EGP construction cost.",
-  "releaseNotes": "رفع شروط تأسيس محطة الفضاء لفئة كبار المليارديرات: 10 مليار جنيه صافي ثروة مؤهل و 2.5 مليار جنيه رسوم ترخيص وتشييد نقداً."
+  "version": "v10.0.40",
+  "build": 1793312200000,
+  "timestamp": 1793312200000,
+  "notes": "Fix Standby Mode toggle and live system-status synchronization.",
+  "releaseNotes": "تفعيل وضع الاستعداد (Standby Mode) وإصلاح مزامنة زر وضع الاستعداد في لوحة الإدارة."
 }
