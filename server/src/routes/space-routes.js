@@ -370,15 +370,22 @@ async function spaceRoutes(fastify, options) {
     }
 
     // Prep & Fuel Cost
-    const prepCost = Number(model.prepCost || 0);
+    const fuelCost = Number(dest.fuelCost || model.prepCost || 0);
     const curCash = Number(s.cash || 0);
-    if (curCash < prepCost) {
+    const curBank = Number(s.bank || 0);
+    if (curCash + curBank < fuelCost) {
       return reply.code(400).send({
-        error: `رصيد الكاش غير كافٍ لتزويد الصاروخ بالوقود وتجهيز الإطلاق (${prepCost.toLocaleString()} ج.م)`
+        error: `رصيدك غير كافٍ لتزويد الصاروخ بالوقود وتجهيز الإطلاق (${fuelCost.toLocaleString()} ج.م)`
       });
     }
 
-    s.cash = curCash - prepCost;
+    if (curCash >= fuelCost) {
+      s.cash = curCash - fuelCost;
+    } else {
+      const rem = fuelCost - curCash;
+      s.cash = 0;
+      s.bank = Math.max(0, curBank - rem);
+    }
 
     const durationSeconds = calculateFlightDuration(destinationId, s.space);
     const now = Date.now();

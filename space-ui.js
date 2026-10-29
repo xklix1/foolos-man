@@ -73,9 +73,9 @@ window.SpaceUI = (() => {
       icon: 'fa-rocket text-sky-400',
       levels: {
         1: { name: 'منصة مدارية مفردة', cost: 0, desc: 'تشغيل وإطلاق صاروخ واحد فقط' },
-        2: { name: 'مجمع إطلاق ثنائي متطور', cost: 50000000, desc: 'إطلاق صاروخين في مهام استكشافية متزامنة' },
-        3: { name: 'مرفأ إطلاق كوكبي ثلاثي', cost: 180000000, desc: 'إطلاق 3 صواريخ في نفس الوقت لمختلف الكواكب' },
-        4: { name: 'محطة إطلاق خارقة CAT-IV', cost: 600000000, desc: 'إطلاق 4 صواريخ متزامنة لكافة أرجاء المجموعة الشمسية' }
+        2: { name: 'مجمع إطلاق ثنائي متطور', cost: 350000000, desc: 'إطلاق صاروخين في مهام استكشافية متزامنة' },
+        3: { name: 'مرفأ إطلاق كوكبي ثلاثي', cost: 1500000000, desc: 'إطلاق 3 صواريخ في نفس الوقت لمختلف الكواكب' },
+        4: { name: 'محطة إطلاق خارقة CAT-IV', cost: 5000000000, desc: 'إطلاق 4 صواريخ متزامنة لكافة أرجاء المجموعة الشمسية' }
       }
     },
     mission_control: {
@@ -83,9 +83,9 @@ window.SpaceUI = (() => {
       icon: 'fa-satellite-dish text-indigo-400',
       levels: {
         1: { name: 'هوائي تتبع راديوي أساسي', cost: 0, desc: 'توجيه وقياسات قياسية للرحلات' },
-        2: { name: 'شبكة أقمار اصطناعية تزامنية', cost: 35000000, desc: '-15% زمن استغراق كافة رحلات التنقيب' },
-        3: { name: 'حاسوب ملاحة كمومي فائق', cost: 120000000, desc: '-30% زمن استغراق كافة رحلات التنقيب' },
-        4: { name: 'نواة ذكاء اصطناعي للقفز الفضائي', cost: 450000000, desc: '-45% زمن استغراق كافة رحلات التنقيب' }
+        2: { name: 'شبكة أقمار اصطناعية تزامنية', cost: 250000000, desc: '-15% زمن استغراق كافة رحلات التنقيب' },
+        3: { name: 'حاسوب ملاحة كمومي فائق', cost: 1000000000, desc: '-30% زمن استغراق كافة رحلات التنقيب' },
+        4: { name: 'نواة ذكاء اصطناعي للقفز الفضائي', cost: 3500000000, desc: '-45% زمن استغراق كافة رحلات التنقيب' }
       }
     },
     ore_silo: {
@@ -93,9 +93,9 @@ window.SpaceUI = (() => {
       icon: 'fa-warehouse text-amber-400',
       levels: {
         1: { name: 'صوامع شحن مدارية (1,000 كجم)', cost: 0, desc: 'سعة استيعابية تصل إلى 1,000 كجم من المعادن' },
-        2: { name: 'مستودعات تخزين فراغي مبردة (5,000 كجم)', cost: 40000000, desc: 'سعة استيعابية تصل إلى 5,000 كجم من المعادن' },
-        3: { name: 'مجمع لوجستي كوكبي عملاق (20,000 كجم)', cost: 150000000, desc: 'سعة استيعابية تصل إلى 20,000 كجم من المعادن' },
-        4: { name: 'مخازن كمومية متعددة الأبعاد (100,000 كجم)', cost: 500000000, desc: 'سعة تخزينية أسطورية تصل إلى 100,000 كجم من المعادن' }
+        2: { name: 'مستودعات تخزين فراغي مبردة (5,000 كجم)', cost: 300000000, desc: 'سعة استيعابية تصل إلى 5,000 كجم من المعادن' },
+        3: { name: 'مجمع لوجستي كوكبي عملاق (20,000 كجم)', cost: 1200000000, desc: 'سعة استيعابية تصل إلى 20,000 كجم من المعادن' },
+        4: { name: 'مخازن كمومية متعددة الأبعاد (100,000 كجم)', cost: 4000000000, desc: 'سعة تخزينية أسطورية تصل إلى 100,000 كجم من المعادن' }
       }
     },
     ore_refinery: {
@@ -103,9 +103,9 @@ window.SpaceUI = (() => {
       icon: 'fa-atom text-emerald-400',
       levels: {
         1: { name: 'وحدات تفتيت ومغنطة أولية', cost: 0, desc: 'تنقية قياسية للمعادن المستخرجة' },
-        2: { name: 'أفران صهر بلازمية حرارية', cost: 45000000, desc: '+15% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
-        3: { name: 'مفاعلات فصل كهرومغناطيسي نانوية', cost: 160000000, desc: '+30% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
-        4: { name: 'محطة تنقية كمومية للأصول النادرة', cost: 550000000, desc: '+50% نقاء وقيمة المعادن المستخرجة في كل رحلة' }
+        2: { name: 'أفران صهر بلازمية حرارية', cost: 400000000, desc: '+15% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
+        3: { name: 'مفاعلات فصل كهرومغناطيسي نانوية', cost: 1800000000, desc: '+30% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
+        4: { name: 'محطة تنقية كمومية للأصول النادرة', cost: 6000000000, desc: '+50% نقاء وقيمة المعادن المستخرجة في كل رحلة' }
       }
     }
   };
@@ -115,10 +115,10 @@ window.SpaceUI = (() => {
       id: 'orion_probe',
       name: 'مسبار أوريون-1 الاستكشافي',
       tier: 1,
-      cost: 35000000,
-      cargoCapacity: 80,
+      cost: 100000000,
+      cargoCapacity: 500,
       allowedDestinations: ['moon'],
-      prepCost: 150000,
+      prepCost: 10000000,
       icon: 'fa-shuttle-space text-sky-400',
       color: 'sky',
       desc: 'مركبة استكشاف خفيفة ذاتية القيادة، مخصصة لمسح سطح القمر وجلب عينات الريجوليث والحديد.'
@@ -127,10 +127,10 @@ window.SpaceUI = (() => {
       id: 'falcon_star',
       name: 'صاروخ فالكون ستار التكتيكي',
       tier: 2,
-      cost: 180000000,
-      cargoCapacity: 350,
+      cost: 500000000,
+      cargoCapacity: 2500,
       allowedDestinations: ['moon', 'mars'],
-      prepCost: 650000,
+      prepCost: 50000000,
       icon: 'fa-rocket text-indigo-400',
       color: 'indigo',
       desc: 'صاروخ دفع هجين مجهز للوصول إلى كوكب المريخ وجلب خامات البلاتين والليثيوم الفضائي.'
@@ -139,10 +139,10 @@ window.SpaceUI = (() => {
       id: 'heavy_starship',
       name: 'سفينة التعدين Heavy Starship',
       tier: 3,
-      cost: 950000000,
-      cargoCapacity: 1600,
+      cost: 2000000000,
+      cargoCapacity: 10000,
       allowedDestinations: ['moon', 'mars', 'asteroid_belt'],
-      prepCost: 2500000,
+      prepCost: 150000000,
       icon: 'fa-meteor text-amber-400',
       color: 'amber',
       desc: 'عملاق التعدين في أعماق الفضاء، مجهز بدروع لاختراق حزام الكويكبات واستخراج أندر المعادن.'
@@ -151,10 +151,10 @@ window.SpaceUI = (() => {
       id: 'quantum_dreadnought',
       name: 'مدمرة التعدين Quantum Dreadnought',
       tier: 4,
-      cost: 4500000000,
-      cargoCapacity: 8500,
+      cost: 10000000000,
+      cargoCapacity: 50000,
       allowedDestinations: ['moon', 'mars', 'asteroid_belt', 'jupiter_europa'],
-      prepCost: 10000000,
+      prepCost: 500000000,
       icon: 'fa-star-of-david text-fuchsia-400',
       color: 'fuchsia',
       desc: 'درة التاج الفضائي بمحركات إيونية، قادرة على بلوغ أقمار المشتري واقتناص بلورات المادة المظلمة.'
@@ -167,7 +167,8 @@ window.SpaceUI = (() => {
       name: 'القمر (Moon)',
       sub: 'Mare Tranquillitatis',
       dist: '384 ألف كم',
-      baseSec: 1800,
+      baseSec: 43200, // 12 hours
+      fuelCost: 10000000,
       minTier: 1,
       badge: 'فئة 1 فأعلى',
       icon: 'fa-circle text-slate-300',
@@ -178,7 +179,8 @@ window.SpaceUI = (() => {
       name: 'كوكب المريخ (Mars)',
       sub: 'Olympus Mons',
       dist: '225 مليون كم',
-      baseSec: 5400,
+      baseSec: 86400, // 24 hours
+      fuelCost: 50000000,
       minTier: 2,
       badge: 'فئة 2 فأعلى',
       icon: 'fa-globe text-rose-500',
@@ -189,7 +191,8 @@ window.SpaceUI = (() => {
       name: 'حزام الكويكبات (Asteroid Belt)',
       sub: 'Psyche 16 Cluster',
       dist: '480 مليون كم',
-      baseSec: 12600,
+      baseSec: 172800, // 48 hours
+      fuelCost: 150000000,
       minTier: 3,
       badge: 'فئة 3 فأعلى',
       icon: 'fa-ring text-amber-500',
@@ -200,7 +203,8 @@ window.SpaceUI = (() => {
       name: 'أقمار المشتري (Jupiter / Europa)',
       sub: 'Subsurface Oceans',
       dist: '778 مليون كم',
-      baseSec: 25200,
+      baseSec: 259200, // 72 hours
+      fuelCost: 500000000,
       minTier: 4,
       badge: 'فئة 4 حصرياً',
       icon: 'fa-burst text-purple-400',
@@ -209,12 +213,12 @@ window.SpaceUI = (() => {
   };
 
   const ORES_META = {
-    regolith: { id: 'regolith', name: 'ريجوليث قمري', rarity: 'شائع', icon: 'fa-cubes text-slate-300', basePrice: 450, color: 'slate' },
-    iron: { id: 'iron', name: 'حديد نيزكي', rarity: 'شائع', icon: 'fa-shield-halved text-blue-400', basePrice: 1250, color: 'blue' },
-    platinum: { id: 'platinum', name: 'بلاتين كويكبي', rarity: 'نادر', icon: 'fa-gem text-cyan-300', basePrice: 7500, color: 'cyan' },
-    helium3: { id: 'helium3', name: 'هيليوم-3 كوني', rarity: 'نادر', icon: 'fa-atom text-amber-400', basePrice: 22000, color: 'amber' },
-    lithium: { id: 'lithium', name: 'ليثيوم فضائي', rarity: 'أسطوري', icon: 'fa-bolt text-yellow-300', basePrice: 55000, color: 'yellow' },
-    dark_matter: { id: 'dark_matter', name: 'بلورات المادة المظلمة', rarity: 'فائق الندرة', icon: 'fa-wand-magic-sparkles text-fuchsia-400', basePrice: 185000, color: 'fuchsia' }
+    regolith: { id: 'regolith', name: 'ريجوليث قمري', rarity: 'شائع', icon: 'fa-cubes text-slate-300', basePrice: 4500, color: 'slate' },
+    iron: { id: 'iron', name: 'حديد نيزكي', rarity: 'شائع', icon: 'fa-shield-halved text-blue-400', basePrice: 12500, color: 'blue' },
+    platinum: { id: 'platinum', name: 'بلاتين كويكبي', rarity: 'نادر', icon: 'fa-gem text-cyan-300', basePrice: 75000, color: 'cyan' },
+    helium3: { id: 'helium3', name: 'هيليوم-3 كوني', rarity: 'نادر', icon: 'fa-atom text-amber-400', basePrice: 220000, color: 'amber' },
+    lithium: { id: 'lithium', name: 'ليثيوم فضائي', rarity: 'أسطوري', icon: 'fa-bolt text-yellow-300', basePrice: 550000, color: 'yellow' },
+    dark_matter: { id: 'dark_matter', name: 'بلورات المادة المظلمة', rarity: 'فائق الندرة', icon: 'fa-wand-magic-sparkles text-fuchsia-400', basePrice: 1850000, color: 'fuchsia' }
   };
 
   const GOLD_MANAGERS_META = {
@@ -222,7 +226,7 @@ window.SpaceUI = (() => {
       tier: 1,
       name: 'د. ليام - مدير العمليات الفضائية',
       title: 'مدير الرحلات والملاحة المدارية',
-      goldCost: 150,
+      goldCost: 1000,
       badge: 'مدير عمليات',
       color: 'from-blue-600 to-sky-600',
       borderColor: 'border-sky-500/50',
@@ -233,7 +237,7 @@ window.SpaceUI = (() => {
       tier: 2,
       name: 'د. سارة - خبيرة الجيولوجيا الكونية',
       title: 'رئيسة مسح وتعدين الأجرام الفضائية',
-      goldCost: 300,
+      goldCost: 2500,
       badge: 'خبير جيولوجيا VIP',
       color: 'from-amber-600 to-yellow-500',
       borderColor: 'border-amber-500/50',
@@ -244,7 +248,7 @@ window.SpaceUI = (() => {
       tier: 3,
       name: 'الآدميرال فالكون - القائد العام للأسطول',
       title: 'القائد الأعلى لمنظومة استكشاف الفضاء',
-      goldCost: 600,
+      goldCost: 5000,
       badge: 'قائد الأسطول المداري',
       color: 'from-purple-600 to-fuchsia-600',
       borderColor: 'border-fuchsia-500/50',
@@ -430,8 +434,8 @@ window.SpaceUI = (() => {
     const curCash = Number(state.cash || 0);
     const curBank = Number(state.bank || 0);
     const curNetWorth = Number(state.netWorth || 0);
-    const cost = 25000000;
-    const reqNetWorth = 100000000;
+    const cost = 250000000;
+    const reqNetWorth = 1000000000;
     const hasFunds = (curCash + curBank) >= cost;
     const hasNetWorth = curNetWorth >= reqNetWorth;
 
@@ -493,7 +497,7 @@ window.SpaceUI = (() => {
                 </div>
               </div>
               <div>
-                ${hasNetWorth ? '<span class="text-xs font-bold text-emerald-400"><i class="fa-solid fa-check"></i> مؤهل</span>' : `<span class="text-xs font-bold text-slate-400 numbers-font">${Math.round(curNetWorth / 1000000)}M / 100M</span>`}
+                ${hasNetWorth ? '<span class="text-xs font-bold text-emerald-400"><i class="fa-solid fa-check"></i> مؤهل</span>' : `<span class="text-xs font-bold text-slate-400 numbers-font">${Math.round(curNetWorth / 1000000)}M / 1,000M</span>`}
               </div>
             </div>
           </div>
@@ -1469,11 +1473,11 @@ window.SpaceUI = (() => {
       </div>
       <div class="flex items-center justify-between">
         <span class="text-slate-400">تكلفة الوقود والتجهيز:</span>
-        <span class="font-black text-amber-400 numbers-font">${(model.prepCost || 0).toLocaleString()} ج.م</span>
+        <span class="font-black text-amber-400 numbers-font">${((dest.fuelCost || model.prepCost) || 0).toLocaleString()} ج.م</span>
       </div>
       <div class="flex items-center justify-between">
         <span class="text-slate-400">الزمن التقديري للرحلة:</span>
-        <span class="font-bold text-sky-300 numbers-font">${Math.round((dest.baseSec || 1800) / 60)} دقيقة</span>
+        <span class="font-bold text-sky-300 numbers-font">${(dest.baseSec >= 86400) ? ((dest.baseSec / 86400).toFixed(1).replace('.0', '') + ' يوم (' + (dest.baseSec / 3600) + ' ساعة)') : (Math.round((dest.baseSec || 43200) / 3600) + ' ساعة')}</span>
       </div>
     `;
 

@@ -7,8 +7,8 @@
 const { calculateNetWorth, getAppropriateTitle } = require('./net-worth-engine');
 
 const SPACE_CONFIG = {
-  unlockCost: 25000000, // 25M EGP construction cost
-  minNetWorthRequired: 100000000, // 100M Net Worth milestone to unlock
+  unlockCost: 250000000, // 250M EGP construction cost
+  minNetWorthRequired: 1000000000, // 1 Billion Net Worth milestone to unlock
 
   facilities: {
     launchpads: {
@@ -17,9 +17,9 @@ const SPACE_CONFIG = {
       icon: 'fa-solid fa-rocket text-sky-400',
       levels: {
         1: { name: 'منصة مدارية مفردة (منصة 1)', cost: 0, maxPads: 1, desc: 'تتيح تشغيل وإطلاق صاروخ واحد في نفس الوقت' },
-        2: { name: 'مجمع إطلاق ثنائي متطور (منصتان)', cost: 50000000, maxPads: 2, desc: 'تتيح إطلاق صاروخين في مهام استكشافية متزامنة' },
-        3: { name: 'مرفأ إطلاق كوكبي ثلاثي (3 منصات)', cost: 180000000, maxPads: 3, desc: 'تتيح إطلاق 3 صواريخ في نفس الوقت لمختلف الكواكب' },
-        4: { name: 'محطة إطلاق فضائية خارقة CAT-IV (4 منصات)', cost: 600000000, maxPads: 4, desc: 'تتيح إطلاق 4 صواريخ متزامنة لكافة أرجاء المجموعة الشمسية' }
+        2: { name: 'مجمع إطلاق ثنائي متطور (منصتان)', cost: 350000000, maxPads: 2, desc: 'تتيح إطلاق صاروخين في مهام استكشافية متزامنة' },
+        3: { name: 'مرفأ إطلاق كوكبي ثلاثي (3 منصات)', cost: 1500000000, maxPads: 3, desc: 'تتيح إطلاق 3 صواريخ في نفس الوقت لمختلف الكواكب' },
+        4: { name: 'محطة إطلاق فضائية خارقة CAT-IV (4 منصات)', cost: 5000000000, maxPads: 4, desc: 'تتيح إطلاق 4 صواريخ متزامنة لكافة أرجاء المجموعة الشمسية' }
       }
     },
     mission_control: {
@@ -28,9 +28,9 @@ const SPACE_CONFIG = {
       icon: 'fa-solid fa-satellite-dish text-indigo-400',
       levels: {
         1: { name: 'هوائي تتبع راديوي أساسي', cost: 0, timeReduction: 0, desc: 'توجيه وقياسات قياسية للرحلات' },
-        2: { name: 'شبكة أقمار اصطناعية تزامنية', cost: 35000000, timeReduction: 0.15, desc: '-15% زمن استغراق رحلات التنقيب الفضائية' },
-        3: { name: 'حاسوب ملاحة كمومي فائق', cost: 120000000, timeReduction: 0.30, desc: '-30% زمن استغراق رحلات التنقيب الفضائية' },
-        4: { name: 'نواة ذكاء اصطناعي للقفز الفضائي', cost: 450000000, timeReduction: 0.45, desc: '-45% زمن استغراق رحلات التنقيب الفضائية' }
+        2: { name: 'شبكة أقمار اصطناعية تزامنية', cost: 250000000, timeReduction: 0.15, desc: '-15% زمن استغراق رحلات التنقيب الفضائية' },
+        3: { name: 'حاسوب ملاحة كمومي فائق', cost: 1000000000, timeReduction: 0.30, desc: '-30% زمن استغراق رحلات التنقيب الفضائية' },
+        4: { name: 'نواة ذكاء اصطناعي للقفز الفضائي', cost: 3500000000, timeReduction: 0.45, desc: '-45% زمن استغراق رحلات التنقيب الفضائية' }
       }
     },
     ore_silo: {
@@ -39,9 +39,9 @@ const SPACE_CONFIG = {
       icon: 'fa-solid fa-warehouse text-amber-400',
       levels: {
         1: { name: 'صوامع شحن مدارية (1,000 كجم)', cost: 0, capacity: 1000, desc: 'سعة استيعابية تصل إلى 1,000 كجم من المعادن' },
-        2: { name: 'مستودعات تخزين فراغي مبردة (5,000 كجم)', cost: 40000000, capacity: 5000, desc: 'سعة استيعابية تصل إلى 5,000 كجم من المعادن' },
-        3: { name: 'مجمع لوجستي كوكبي عملاق (20,000 كجم)', cost: 150000000, capacity: 20000, desc: 'سعة استيعابية تصل إلى 20,000 كجم من المعادن' },
-        4: { name: 'مخازن كمومية متعددة الأبعاد (100,000 كجم)', cost: 500000000, capacity: 100000, desc: 'سعة تخزينية أسطورية تصل إلى 100,000 كجم من المعادن' }
+        2: { name: 'مستودعات تخزين فراغي مبردة (5,000 كجم)', cost: 300000000, capacity: 5000, desc: 'سعة استيعابية تصل إلى 5,000 كجم من المعادن' },
+        3: { name: 'مجمع لوجستي كوكبي عملاق (20,000 كجم)', cost: 1200000000, capacity: 20000, desc: 'سعة استيعابية تصل إلى 20,000 كجم من المعادن' },
+        4: { name: 'مخازن كمومية متعددة الأبعاد (100,000 كجم)', cost: 4000000000, capacity: 100000, desc: 'سعة تخزينية أسطورية تصل إلى 100,000 كجم من المعادن' }
       }
     },
     ore_refinery: {
@@ -50,9 +50,9 @@ const SPACE_CONFIG = {
       icon: 'fa-solid fa-atom text-emerald-400',
       levels: {
         1: { name: 'وحدات تفتيت ومغنطة أولية', cost: 0, yieldMultiplier: 1.0, desc: 'تنقية قياسية للمعادن المستخرجة' },
-        2: { name: 'أفران صهر بلازمية حرارية', cost: 45000000, yieldMultiplier: 1.15, desc: '+15% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
-        3: { name: 'مفاعلات فصل كهرومغناطيسي نانوية', cost: 160000000, yieldMultiplier: 1.30, desc: '+30% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
-        4: { name: 'محطة تنقية كمومية متطورة للأصول النادرة', cost: 550000000, yieldMultiplier: 1.50, desc: '+50% نقاء وقيمة المعادن المستخرجة في كل رحلة' }
+        2: { name: 'أفران صهر بلازمية حرارية', cost: 400000000, yieldMultiplier: 1.15, desc: '+15% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
+        3: { name: 'مفاعلات فصل كهرومغناطيسي نانوية', cost: 1800000000, yieldMultiplier: 1.30, desc: '+30% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
+        4: { name: 'محطة تنقية كمومية متطورة للأصول النادرة', cost: 6000000000, yieldMultiplier: 1.50, desc: '+50% نقاء وقيمة المعادن المستخرجة في كل رحلة' }
       }
     }
   },
@@ -62,11 +62,11 @@ const SPACE_CONFIG = {
       id: 'orion_probe',
       name: 'مسبار أوريون-1 الاستكشافي',
       tier: 1,
-      cost: 35000000,
-      cargoCapacity: 80, // 80 kg
+      cost: 100000000, // 100M EGP
+      cargoCapacity: 500, // 500 kg
       allowedDestinations: ['moon'],
-      prepCost: 150000,
-      prepSeconds: 60,
+      prepCost: 10000000, // 10M EGP
+      prepSeconds: 120,
       icon: 'fa-solid fa-shuttle-space text-sky-400',
       color: 'sky',
       desc: 'مركبة استكشاف خفيفة ذاتية القيادة، مثالية لمسح سطح القمر وجلب عينات الريجوليث والحديد النيزكي.'
@@ -75,11 +75,11 @@ const SPACE_CONFIG = {
       id: 'falcon_star',
       name: 'صاروخ فالكون ستار التكتيكي',
       tier: 2,
-      cost: 180000000,
-      cargoCapacity: 350, // 350 kg
+      cost: 500000000, // 500M EGP
+      cargoCapacity: 2500, // 2,500 kg
       allowedDestinations: ['moon', 'mars'],
-      prepCost: 650000,
-      prepSeconds: 120,
+      prepCost: 50000000, // 50M EGP
+      prepSeconds: 240,
       icon: 'fa-solid fa-rocket text-indigo-400',
       color: 'indigo',
       desc: 'صاروخ دفع هجين قابل للهبوط الذاتي، مجهز للوصول إلى كوكب المريخ وجلب خامات البلاتين والليثيوم الفضائي.'
@@ -88,11 +88,11 @@ const SPACE_CONFIG = {
       id: 'heavy_starship',
       name: 'سفينة التعدين الكوكبية Heavy Starship',
       tier: 3,
-      cost: 950000000,
-      cargoCapacity: 1600, // 1600 kg
+      cost: 2000000000, // 2 Billion EGP
+      cargoCapacity: 10000, // 10,000 kg
       allowedDestinations: ['moon', 'mars', 'asteroid_belt'],
-      prepCost: 2500000,
-      prepSeconds: 240,
+      prepCost: 150000000, // 150M EGP
+      prepSeconds: 480,
       icon: 'fa-solid fa-meteor text-amber-400',
       color: 'amber',
       desc: 'عملاق التعدين في أعماق الفضاء، مجهز بدروع مغناطيسية لاختراق حزام الكويكبات واستخراج أثمن المعادن النادرة.'
@@ -101,11 +101,11 @@ const SPACE_CONFIG = {
       id: 'quantum_dreadnought',
       name: 'مدمرة التعدين الكمومية Quantum Dreadnought',
       tier: 4,
-      cost: 4500000000,
-      cargoCapacity: 8500, // 8500 kg
+      cost: 10000000000, // 10 Billion EGP
+      cargoCapacity: 50000, // 50,000 kg
       allowedDestinations: ['moon', 'mars', 'asteroid_belt', 'jupiter_europa'],
-      prepCost: 10000000,
-      prepSeconds: 480,
+      prepCost: 500000000, // 500M EGP
+      prepSeconds: 900,
       icon: 'fa-solid fa-star-of-david text-fuchsia-400',
       color: 'fuchsia',
       desc: 'درة التاج الفضائي بمحركات إيونية عملاقة، قادرة على بلوغ أقمار المشتري السحيقة واقتناص بلورات المادة المظلمة والهيليوم-3.'
@@ -117,7 +117,8 @@ const SPACE_CONFIG = {
       id: 'moon',
       name: 'القمر (Moon - Mare Tranquillitatis)',
       distanceKm: '384,400 كم',
-      baseSeconds: 1800, // 30 minutes
+      baseSeconds: 43200, // 12 hours
+      fuelCost: 10000000, // 10M EGP
       minTier: 1,
       icon: 'fa-solid fa-circle text-slate-300',
       color: 'slate',
@@ -126,13 +127,14 @@ const SPACE_CONFIG = {
         iron: { weight: 0.30, minPct: 0.20, maxPct: 0.35 },
         helium3: { weight: 0.10, minPct: 0.05, maxPct: 0.15 }
       },
-      desc: 'أقرب الأجرام السماوية؛ رحلات سريعة ذات عائد مضمون في استخراج الريجوليث والحديد والغازات القمرية.'
+      desc: 'أقرب الأجرام السماوية؛ رحلة تستغرق 12 ساعة ذات عائد مضمون في استخراج الريجوليث والحديد والغازات القمرية.'
     },
     mars: {
       id: 'mars',
       name: 'كوكب المريخ (Mars - Olympus Mons)',
       distanceKm: '225,000,000 كم',
-      baseSeconds: 5400, // 90 minutes (1.5 hours)
+      baseSeconds: 86400, // 24 hours (1 full day)
+      fuelCost: 50000000, // 50M EGP
       minTier: 2,
       icon: 'fa-solid fa-globe text-rose-500',
       color: 'rose',
@@ -142,13 +144,14 @@ const SPACE_CONFIG = {
         platinum: { weight: 0.25, minPct: 0.15, maxPct: 0.35 },
         lithium: { weight: 0.20, minPct: 0.10, maxPct: 0.25 }
       },
-      desc: 'الكوكب الأحمر الغني بالعروق المعدنية النادرة والبلاتين الفضائي والليثيوم عالي الكثافة.'
+      desc: 'الكوكب الأحمر؛ رحلة تستغرق 24 ساعة للغوص في العروق المعدنية النادرة والبلاتين الفضائي والليثيوم عالي الكثافة.'
     },
     asteroid_belt: {
       id: 'asteroid_belt',
       name: 'حزام الكويكبات (Asteroid Belt - Psyche 16)',
       distanceKm: '480,000,000 كم',
-      baseSeconds: 12600, // 3.5 hours
+      baseSeconds: 172800, // 48 hours (2 days)
+      fuelCost: 150000000, // 150M EGP
       minTier: 3,
       icon: 'fa-solid fa-ring text-amber-500',
       color: 'amber',
@@ -158,13 +161,14 @@ const SPACE_CONFIG = {
         helium3: { weight: 0.20, minPct: 0.10, maxPct: 0.25 },
         iron: { weight: 0.10, minPct: 0.05, maxPct: 0.15 }
       },
-      desc: 'كنز المجموعة الشمسية العائم؛ كويكبات معدنية نقية تزخر بالبلاتين النادر وعناصر الاندماج النووي.'
+      desc: 'كنز المجموعة الشمسية العائم؛ رحلة تستغرق 48 ساعة لجلب أثمن كويكبات البلاتين النقي وعناصر الاندماج النووي.'
     },
     jupiter_europa: {
       id: 'jupiter_europa',
       name: 'أقمار المشتري السحيقة (Jupiter / Europa Deep Abyss)',
       distanceKm: '778,000,000 كم',
-      baseSeconds: 25200, // 7 hours
+      baseSeconds: 259200, // 72 hours (3 days)
+      fuelCost: 500000000, // 500M EGP (نصف مليار)
       minTier: 4,
       icon: 'fa-solid fa-burst text-purple-400',
       color: 'purple',
@@ -174,7 +178,7 @@ const SPACE_CONFIG = {
         lithium: { weight: 0.20, minPct: 0.15, maxPct: 0.30 },
         platinum: { weight: 0.15, minPct: 0.10, maxPct: 0.20 }
       },
-      desc: 'أعماق الفضاء السحيق؛ المصدر الحصري في المجرة لبلورات المادة المظلمة التي تدر مئات الملايين بالبورصة.'
+      desc: 'أعماق الفضاء السحيق؛ ملحمة استكشافية تدوم 3 أيام لاقتناص بلورات المادة المظلمة التي تدر عشرات المليارات.'
     }
   },
 
@@ -185,9 +189,9 @@ const SPACE_CONFIG = {
       rarity: 'شائع',
       rarityRank: 1,
       color: 'slate',
-      basePrice: 450,
-      minPrice: 320,
-      maxPrice: 650,
+      basePrice: 4500,
+      minPrice: 3200,
+      maxPrice: 6500,
       icon: 'fa-solid fa-cubes text-slate-300',
       desc: 'تربة قمرية غنية بالسيليكون والأكاسيد، تستخدم في بناء المستعمرات الفضائية والمفاعلات.'
     },
@@ -197,9 +201,9 @@ const SPACE_CONFIG = {
       rarity: 'شائع',
       rarityRank: 2,
       color: 'blue',
-      basePrice: 1250,
-      minPrice: 900,
-      maxPrice: 1800,
+      basePrice: 12500,
+      minPrice: 9000,
+      maxPrice: 18000,
       icon: 'fa-solid fa-shield-halved text-blue-400',
       desc: 'سبيكة حديدية كونية بالغة الصلابة ومقاومة للإشعاعات الكونية والحرارة الفائقة.'
     },
@@ -209,9 +213,9 @@ const SPACE_CONFIG = {
       rarity: 'نادر',
       rarityRank: 3,
       color: 'cyan',
-      basePrice: 7500,
-      minPrice: 5200,
-      maxPrice: 11000,
+      basePrice: 75000,
+      minPrice: 52000,
+      maxPrice: 110000,
       icon: 'fa-solid fa-gem text-cyan-300',
       desc: 'معدن نبيل فائق القيمة مطلوب بشدة من كبرى مصانع الأقمار الصناعية ومجمعات الشرائح الذكية.'
     },
@@ -221,9 +225,9 @@ const SPACE_CONFIG = {
       rarity: 'نادر',
       rarityRank: 4,
       color: 'amber',
-      basePrice: 22000,
-      minPrice: 15000,
-      maxPrice: 32000,
+      basePrice: 220000,
+      minPrice: 150000,
+      maxPrice: 320000,
       icon: 'fa-solid fa-atom text-amber-400',
       desc: 'نظير نظيف ووقود نووي اندماجي لا يقدر بثمن، يشغل محطات الطاقة العالمية والسفن المدارية.'
     },
@@ -233,9 +237,9 @@ const SPACE_CONFIG = {
       rarity: 'أسطوري',
       rarityRank: 5,
       color: 'yellow',
-      basePrice: 55000,
-      minPrice: 38000,
-      maxPrice: 85000,
+      basePrice: 550000,
+      minPrice: 380000,
+      maxPrice: 850000,
       icon: 'fa-solid fa-bolt text-yellow-300',
       desc: 'بلورات طاقة مشحونة فائقة التوصيل، تتيح شحن محركات الدفع الضوئي والمركبات العابرة للكواكب.'
     },
@@ -245,9 +249,9 @@ const SPACE_CONFIG = {
       rarity: 'فائق الندرة',
       rarityRank: 6,
       color: 'fuchsia',
-      basePrice: 185000,
-      minPrice: 130000,
-      maxPrice: 290000,
+      basePrice: 1850000,
+      minPrice: 1300000,
+      maxPrice: 2900000,
       icon: 'fa-solid fa-wand-magic-sparkles text-fuchsia-400',
       desc: 'أندر وأثمن مادة في الكون، لغز فيزيائي تشتريه مراكز أبحاث الفضاء والمليارديرات بأسعار فلكية.'
     }
@@ -259,7 +263,7 @@ const SPACE_CONFIG = {
       id: 'ops_director',
       name: 'د. ليام - مدير العمليات الفضائية',
       title: 'مدير الرحلات والملاحة المدارية',
-      goldCost: 150,
+      goldCost: 1000,
       timeDiscountPct: 20,
       yieldBonusPct: 0,
       sellBonusPct: 0,
@@ -275,7 +279,7 @@ const SPACE_CONFIG = {
       id: 'geology_expert',
       name: 'د. سارة - خبيرة الجيولوجيا الكونية',
       title: 'رئيسة مسح وتعدين الأجرام الفضائية',
-      goldCost: 300,
+      goldCost: 2500,
       timeDiscountPct: 0,
       yieldBonusPct: 25,
       sellBonusPct: 0,
@@ -291,7 +295,7 @@ const SPACE_CONFIG = {
       id: 'fleet_admiral',
       name: 'الآدميرال فالكون - القائد العام للأسطول',
       title: 'القائد الأعلى لمنظومة استكشاف الفضاء',
-      goldCost: 600,
+      goldCost: 5000,
       timeDiscountPct: 15,
       yieldBonusPct: 15,
       sellBonusPct: 15,

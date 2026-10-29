@@ -87,10 +87,10 @@ console.log('✅ Test 3 Passed: Facility and Gold Manager bonuses calculate accu
 
 // Test 4: Flight Duration Calculation with Reductions
 console.log('Test 4: Verify Flight Duration with Time Reductions...');
-// Moon base is 1800s. With 50% reduction, it should be 900s.
+// Moon base is 43200s (12h). With 50% reduction, it should be 21600s (6h).
 const moonDuration = calculateFlightDuration('moon', testSpace);
-assert.strictEqual(moonDuration, 900);
-console.log(`   - Moon Flight Duration with 50% speedup: ${moonDuration}s (${moonDuration / 60}m)`);
+assert.strictEqual(moonDuration, 21600);
+console.log(`   - Moon Flight Duration with 50% speedup: ${moonDuration}s (${moonDuration / 3600} hours)`);
 console.log('✅ Test 4 Passed: Flight durations respect active bonuses.\n');
 
 // Test 5: Ore Payload Generation & Silo Limit Checks
