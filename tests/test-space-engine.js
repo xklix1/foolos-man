@@ -66,15 +66,15 @@ testSpace.facilities.ore_silo = 2;
 testSpace.facilities.ore_refinery = 2;
 bonuses = getSpaceBonuses(testSpace);
 assert.strictEqual(bonuses.maxLaunchpads, 2);
-assert.strictEqual(bonuses.timeReductionPct, 15);
+assert.strictEqual(bonuses.timeReductionPct, 5);
 assert.strictEqual(bonuses.siloCapacity, 5000);
-assert.strictEqual(bonuses.yieldMultiplier, 1.15);
+assert.strictEqual(bonuses.yieldMultiplier, 1.04);
 
 // Hire VIP Gold Managers (Tier 1: Ops Director, Tier 3: Fleet Admiral)
 testSpace.hiredManagers = [1, 3];
 bonuses = getSpaceBonuses(testSpace);
-// Time reduction: 15% (facility) + 20% (mgr 1) + 15% (mgr 3) = 50%
-assert.strictEqual(bonuses.timeReductionPct, 50);
+// Time reduction: 5% (facility) + 20% (mgr 1) + 15% (mgr 3) = 40%
+assert.strictEqual(bonuses.timeReductionPct, 40);
 assert.strictEqual(bonuses.sellBonusPct, 15);
 assert.strictEqual(bonuses.autoPilot, true);
 console.log('   - Max Launchpads:', bonuses.maxLaunchpads);
@@ -87,10 +87,10 @@ console.log('✅ Test 3 Passed: Facility and Gold Manager bonuses calculate accu
 
 // Test 4: Flight Duration Calculation with Reductions
 console.log('Test 4: Verify Flight Duration with Time Reductions...');
-// Moon base is 43200s (12h). With 50% reduction, it should be 21600s (6h).
+// Moon base is 43200s (12h). With 40% reduction, it should be 25920s (7.2h).
 const moonDuration = calculateFlightDuration('moon', testSpace);
-assert.strictEqual(moonDuration, 21600);
-console.log(`   - Moon Flight Duration with 50% speedup: ${moonDuration}s (${moonDuration / 3600} hours)`);
+assert.strictEqual(moonDuration, 25920);
+console.log(`   - Moon Flight Duration with 40% speedup: ${moonDuration}s (${moonDuration / 3600} hours)`);
 console.log('✅ Test 4 Passed: Flight durations respect active bonuses.\n');
 
 // Test 5: Ore Payload Generation & Silo Limit Checks

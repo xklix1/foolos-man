@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.37",
-  "build": 1792753600000,
-  "timestamp": 1792753600000,
-  "notes": "Calibrated Space Exploration Hub to Hardcore Endgame Sink: balanced cargo, fuel costs, 3-21 day payback curve.",
-  "releaseNotes": "معايرة وموازنة محطة استكشاف وتعدين الفضاء كـ Endgame Sink متوازن: ضبط سعات الصواريخ ووقود الإطلاق وأسعار المعادن لتحقيق منحنى استرداد عادل ومدروس."
+  "version": "v10.0.38",
+  "build": 1792754200000,
+  "timestamp": 1792754200000,
+  "notes": "Rebalance space station facilities: 3 launchpad cap, realistic mission control (-5% to -15%) and refinery (+4% to +12%), preserve high VIP Gold Manager incentives.",
+  "releaseNotes": "موازنة تطويرات ومرافق محطة الفضاء: تحديد سقف 3 منصات إطلاق، وترشيد بونصات مركز القيادة ومعمل التكرير لمنع التضخم، مع الإبقاء على حوافز مديري الذهب السيادي VIP."
 }

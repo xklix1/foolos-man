@@ -17,9 +17,8 @@ const SPACE_CONFIG = {
       icon: 'fa-solid fa-rocket text-sky-400',
       levels: {
         1: { name: 'منصة مدارية مفردة (منصة 1)', cost: 0, maxPads: 1, desc: 'تتيح تشغيل وإطلاق صاروخ واحد في نفس الوقت' },
-        2: { name: 'مجمع إطلاق ثنائي متطور (منصتان)', cost: 350000000, maxPads: 2, desc: 'تتيح إطلاق صاروخين في مهام استكشافية متزامنة' },
-        3: { name: 'مرفأ إطلاق كوكبي ثلاثي (3 منصات)', cost: 1500000000, maxPads: 3, desc: 'تتيح إطلاق 3 صواريخ في نفس الوقت لمختلف الكواكب' },
-        4: { name: 'محطة إطلاق فضائية خارقة CAT-IV (4 منصات)', cost: 5000000000, maxPads: 4, desc: 'تتيح إطلاق 4 صواريخ متزامنة لكافة أرجاء المجموعة الشمسية' }
+        2: { name: 'مجمع إطلاق ثنائي متطور (منصتان)', cost: 1500000000, maxPads: 2, desc: 'تتيح إطلاق صاروخين في مهام استكشافية متزامنة' },
+        3: { name: 'مرفأ إطلاق كوكبي ثلاثي CAT-III (3 منصات)', cost: 15000000000, maxPads: 3, desc: 'إنجاز أسطوري فائق؛ يتيح إطلاق 3 صواريخ متزامنة لكافة أرجاء المجموعة الشمسية' }
       }
     },
     mission_control: {
@@ -28,9 +27,9 @@ const SPACE_CONFIG = {
       icon: 'fa-solid fa-satellite-dish text-indigo-400',
       levels: {
         1: { name: 'هوائي تتبع راديوي أساسي', cost: 0, timeReduction: 0, desc: 'توجيه وقياسات قياسية للرحلات' },
-        2: { name: 'شبكة أقمار اصطناعية تزامنية', cost: 250000000, timeReduction: 0.15, desc: '-15% زمن استغراق رحلات التنقيب الفضائية' },
-        3: { name: 'حاسوب ملاحة كمومي فائق', cost: 1000000000, timeReduction: 0.30, desc: '-30% زمن استغراق رحلات التنقيب الفضائية' },
-        4: { name: 'نواة ذكاء اصطناعي للقفز الفضائي', cost: 3500000000, timeReduction: 0.45, desc: '-45% زمن استغراق رحلات التنقيب الفضائية' }
+        2: { name: 'شبكة أقمار اصطناعية تزامنية', cost: 500000000, timeReduction: 0.05, desc: '-5% زمن استغراق رحلات التنقيب الفضائية' },
+        3: { name: 'حاسوب ملاحة كمومي فائق', cost: 2000000000, timeReduction: 0.10, desc: '-10% زمن استغراق رحلات التنقيب الفضائية' },
+        4: { name: 'نواة ذكاء اصطناعي للقفز الفضائي', cost: 6000000000, timeReduction: 0.15, desc: '-15% زمن استغراق رحلات التنقيب الفضائية' }
       }
     },
     ore_silo: {
@@ -50,9 +49,9 @@ const SPACE_CONFIG = {
       icon: 'fa-solid fa-atom text-emerald-400',
       levels: {
         1: { name: 'وحدات تفتيت ومغنطة أولية', cost: 0, yieldMultiplier: 1.0, desc: 'تنقية قياسية للمعادن المستخرجة' },
-        2: { name: 'أفران صهر بلازمية حرارية', cost: 400000000, yieldMultiplier: 1.15, desc: '+15% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
-        3: { name: 'مفاعلات فصل كهرومغناطيسي نانوية', cost: 1800000000, yieldMultiplier: 1.30, desc: '+30% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
-        4: { name: 'محطة تنقية كمومية متطورة للأصول النادرة', cost: 6000000000, yieldMultiplier: 1.50, desc: '+50% نقاء وقيمة المعادن المستخرجة في كل رحلة' }
+        2: { name: 'أفران صهر بلازمية حرارية', cost: 500000000, yieldMultiplier: 1.04, desc: '+4% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
+        3: { name: 'مفاعلات فصل كهرومغناطيسي نانوية', cost: 2500000000, yieldMultiplier: 1.08, desc: '+8% نقاء وقيمة المعادن المستخرجة في كل رحلة' },
+        4: { name: 'محطة تنقية كمومية متطورة للأصول النادرة', cost: 8000000000, yieldMultiplier: 1.12, desc: '+12% نقاء وقيمة المعادن المستخرجة في كل رحلة' }
       }
     }
   },
@@ -453,7 +452,7 @@ function getSpaceBonuses(spaceState) {
   if (!spaceState || typeof spaceState !== 'object') return bonuses;
 
   const fac = spaceState.facilities || {};
-  const padLvl = Math.max(1, Math.min(4, Number(fac.launchpads) || 1));
+  const padLvl = Math.max(1, Math.min(3, Number(fac.launchpads) || 1));
   const mcLvl = Math.max(1, Math.min(4, Number(fac.mission_control) || 1));
   const siloLvl = Math.max(1, Math.min(4, Number(fac.ore_silo) || 1));
   const refLvl = Math.max(1, Math.min(4, Number(fac.ore_refinery) || 1));
