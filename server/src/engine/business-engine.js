@@ -246,6 +246,28 @@ function fileTaxDeclaration(playerState) {
   };
 }
 
+function sellFranchise(playerState, key) {
+  const biz = BUSINESSES[key];
+  if (!biz) throw new Error("المشروع غير متوفر.");
+  const b = playerState.businesses && playerState.businesses[key];
+  if (!b || !b.isFranchise) throw new Error("المشروع ليس علامة تجارية مسجلة للبيع.");
+
+  const sellPayout = Math.floor(biz.cost * 45);
+  playerState.cash = (Number(playerState.cash) || 0) + sellPayout;
+  b.level = 0;
+  b.workers = 0;
+  b.isFranchise = false;
+  b.suppliesTicks = 0;
+
+  return {
+    success: true,
+    businessId: key,
+    payout: sellPayout,
+    cash: playerState.cash,
+    businesses: playerState.businesses
+  };
+}
+
 module.exports = {
   calculateSingleBusinessProfit,
   calculateAllBusinessesHourly,
@@ -255,5 +277,6 @@ module.exports = {
   getAfkManagerRenewalCost,
   launchMarketingCampaign,
   convertToFranchise,
+  sellFranchise,
   fileTaxDeclaration
 };

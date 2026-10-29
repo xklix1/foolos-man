@@ -11,7 +11,7 @@ const config = require('../config/env');
 const otpStore = new Map();
 
 // Periodic cleanup of expired OTPs every 2 minutes
-setInterval(() => {
+const otpCleanupTimer = setInterval(() => {
   const now = Date.now();
   for (const [email, entry] of otpStore.entries()) {
     if (entry.expiresAt < now) {
@@ -19,6 +19,7 @@ setInterval(() => {
     }
   }
 }, 2 * 60 * 1000);
+if (otpCleanupTimer.unref) otpCleanupTimer.unref();
 
 /**
  * Generates an Enterprise Ultra-Luxury Dark/Gold HTML email (Pure SVG Icons, Zero Emojis)

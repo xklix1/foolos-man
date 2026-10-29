@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.40",
-  "build": 1793312200000,
-  "timestamp": 1793312200000,
-  "notes": "Fix Standby Mode toggle and live system-status synchronization.",
-  "releaseNotes": "تفعيل وضع الاستعداد (Standby Mode) وإصلاح مزامنة زر وضع الاستعداد في لوحة الإدارة."
+  "version": "v10.0.41",
+  "build": 1793314400000,
+  "timestamp": 1793314400000,
+  "notes": "Comprehensive Server & Client Audit Fixes (Cashflow, Laundering, Careers, Quests, Investments, Space Net Worth).",
+  "releaseNotes": "تحديث شامل لمحرك السيرفر واللعبة: إصلاح تقييم وكالة الفضاء في صافي الثروة، استحقاق الودائع أونلاين، غسيل الأموال، ورديات العمل، التهريب، والمهام اليومية."
 }

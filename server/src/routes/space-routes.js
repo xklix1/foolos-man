@@ -158,9 +158,9 @@ async function spaceRoutes(fastify, options) {
 
     const cost = SPACE_CONFIG.unlockCost; // 25M EGP
 
-    if (curNetWorth < SPACE_CONFIG.minNetWorthRequired && (curCash + curBank < cost)) {
+    if (curNetWorth < SPACE_CONFIG.minNetWorthRequired) {
       return reply.code(400).send({
-        error: `يتطلب تأسيس محطة الفضاء ثروة إجمالية لا تقل عن ${SPACE_CONFIG.minNetWorthRequired.toLocaleString()} ج.م، أو توفير تكلفة بناء ${cost.toLocaleString()} ج.م!`
+        error: `يتطلب تأسيس محطة الفضاء ثروة إجمالية لا تقل عن ${SPACE_CONFIG.minNetWorthRequired.toLocaleString()} ج.م!`
       });
     }
 
@@ -183,6 +183,9 @@ async function spaceRoutes(fastify, options) {
     s.space.unlockedAt = Date.now();
     s.netWorth = calculateNetWorth(s);
     s.lastActiveTimestamp = Date.now();
+    session.lastServerCashSpendAt = Date.now();
+    session.lastServerBankActionAt = Date.now();
+    sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
 
@@ -241,6 +244,9 @@ async function spaceRoutes(fastify, options) {
     s.space.facilities[facilityId] = nextLvl;
     s.netWorth = calculateNetWorth(s);
     s.lastActiveTimestamp = Date.now();
+    session.lastServerCashSpendAt = Date.now();
+    session.lastServerBankActionAt = Date.now();
+    sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
 
@@ -312,6 +318,9 @@ async function spaceRoutes(fastify, options) {
     s.space.activeRockets.push(newRocket);
     s.netWorth = calculateNetWorth(s);
     s.lastActiveTimestamp = Date.now();
+    session.lastServerCashSpendAt = Date.now();
+    session.lastServerBankActionAt = Date.now();
+    sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
 
@@ -417,6 +426,9 @@ async function spaceRoutes(fastify, options) {
 
     s.space.stats.totalFlightsLaunched = (Number(s.space.stats.totalFlightsLaunched) || 0) + 1;
     s.lastActiveTimestamp = now;
+    session.lastServerCashSpendAt = now;
+    session.lastServerBankActionAt = now;
+    sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
 
@@ -575,6 +587,9 @@ async function spaceRoutes(fastify, options) {
       s.netWorth = calculateNetWorth(s);
       s.space.stats.totalRevenueEGP = (Number(s.space.stats.totalRevenueEGP) || 0) + totalRevenueEGP;
       s.lastActiveTimestamp = Date.now();
+      session.lastServerCashEarnAt = Date.now();
+      s.lastServerCashEarnAt = Date.now();
+      sessionManager.markDirty(session.username);
 
       await dbService.savePlayerState(session.username, s);
 

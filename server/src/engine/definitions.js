@@ -554,6 +554,31 @@ const SMUGGLING_VEHICLES = {
   ship: { id: 'ship', name: 'سفينة حاويات عملاقة', cost: 60000000, capacity: 1000 }
 };
 
+const SMUGGLING_CARGO_TYPES = {
+  safe: { id: 'safe', name: 'سبائك ذهب ومجوهرات', riskMod: -5, profitMult: 0.7778 },
+  medium: { id: 'medium', name: 'أجهزة وإلكترونيات', riskMod: 0, profitMult: 1.0 },
+  risky: { id: 'risky', name: 'تحف وآثار نادرة', riskMod: 10, profitMult: 1.4445 }
+};
+
+const SMUGGLING_ROUTES = {
+  dubai: { id: 'dubai', name: 'تهريب مجوهرات وذهب لـ دبي', requiredVehicles: ['speedboat'], durationTicks: 7200, baseYieldCash: 90000, baseRiskPct: 18, minNetWorth: 0 },
+  switzerland: { id: 'switzerland', name: 'تهريب تحف وسندات لـ سويسرا', requiredVehicles: ['plane'], durationTicks: 21600, baseYieldCash: 550000, baseRiskPct: 12, minNetWorth: 20000000 },
+  cayman: { id: 'cayman', name: 'غسيل ونقل أموال لـ جزر الكايمان', requiredVehicles: ['ship'], durationTicks: 43200, baseYieldCash: 2500000, baseRiskPct: 8, minNetWorth: 100000000 }
+};
+
+const JOBS = {
+  worker: { id: 'worker', name: 'عامل باليومية', salary: 7, xpReward: 2, xpNeeded: 0 },
+  cashier: { id: 'cashier', name: 'محاسب صندوق', salary: 14, xpReward: 4, xpNeeded: 153 },
+  accountant: { id: 'accountant', name: 'محاسب مالي قانوني', salary: 28, xpReward: 8, xpNeeded: 510 },
+  manager: { id: 'manager', name: 'مدير فرع وتطوير', salary: 58, xpReward: 14, xpNeeded: 1870 },
+  director: { id: 'director', name: 'مدير تنفيذي للمجموعة', salary: 110, xpReward: 24, xpNeeded: 5525 },
+  ceo: { id: 'ceo', name: 'رئيس مجلس الإدارة', salary: 210, xpReward: 38, xpNeeded: 15300 },
+  consultant: { id: 'consultant', name: 'مستشار اقتصادي ووزير سابق', salary: 370, xpReward: 60, xpNeeded: 38250 },
+  bank_governor: { id: 'bank_governor', name: 'محافظ البنك المركزي', salary: 635, xpReward: 95, xpNeeded: 102000 },
+  sovereign_head: { id: 'sovereign_head', name: 'رئيس صندوق الاستثمار السيادي', salary: 1100, xpReward: 140, xpNeeded: 238000 },
+  oligarch: { id: 'oligarch', name: 'إمبراطور كبار المستثمرين', salary: 1850, xpReward: 220, xpNeeded: 552500 }
+};
+
 module.exports = {
   BUSINESSES,
   ASSETS,
@@ -566,6 +591,9 @@ module.exports = {
   STORE_ITEMS,
   BLACK_MARKET,
   BLACK_MARKET_GEAR,
-  SMUGGLING_VEHICLES
+  SMUGGLING_VEHICLES,
+  SMUGGLING_CARGO_TYPES,
+  SMUGGLING_ROUTES,
+  JOBS
 };
 

@@ -7,6 +7,7 @@ const test = require('node:test');
 
 const app = require('../src/server');
 const config = require('../src/config/env');
+test.after(async () => { await app.close(); });
 
 test('Admin API — Rejection without or with invalid token', async () => {
   // 1. Missing token

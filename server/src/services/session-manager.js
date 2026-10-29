@@ -16,7 +16,7 @@ const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-eng
 const { calculateNetWorth, getAppropriateTitle } = require('../engine/net-worth-engine');
 const { AIRCRAFT_MODELS } = require('../engine/airport-engine');
 const { accrueAuthoritativeCashflow } = require('../engine/cashflow-engine');
-const { TRADE_COMMODITIES } = require('../engine/definitions');
+const { TRADE_COMMODITIES, BUSINESSES, JOBS, SMUGGLING_ROUTES, SMUGGLING_CARGO_TYPES } = require('../engine/definitions');
 
 class SessionManager {
   constructor() {
@@ -257,6 +257,57 @@ class SessionManager {
     const newLiquidTotal = incomingCash + incomingBank;
     const liquidJump = newLiquidTotal - prevLiquidTotal;
 
+    // Anchor daily tracking to official Cairo timezone (UTC+3)
+    const serverToday = (() => {
+      const d = new Date(Date.now() + (3 * 3600 * 1000));
+      return d.toISOString().split('T')[0];
+    })();
+    const sLimitsResetAt = Number(s.limitsResetAt || 0);
+    const cLimitsResetAck = Number(clientState.lastLimitsResetAck || 0);
+    const isAuthoritativeLimitsReset = (sLimitsResetAt > 0 && sLimitsResetAt > cLimitsResetAck);
+
+    // Synchronize Businesses (Preserve suppliesTicks and upgrades, and handle legitimate Franchise sales)
+    if (clientState.businesses && typeof clientState.businesses === 'object') {
+      s.businesses = s.businesses || {};
+      Object.keys(clientState.businesses).forEach(bk => {
+        const cBiz = clientState.businesses[bk];
+        if (cBiz && typeof cBiz === 'object') {
+          const sBiz = s.businesses[bk] || { level: 0, workers: 0, suppliesTicks: 0 };
+          // Handle legitimate sale of a server-verified Franchise
+          if (sBiz.isFranchise && !cBiz.isFranchise && Number(cBiz.level || 0) === 0 && BUSINESSES && BUSINESSES[bk] && !hasRecentServerCashEarn) {
+            const sellPayout = Math.floor(BUSINESSES[bk].cost * 45);
+            s.cash = (Number(s.cash) || 0) + sellPayout;
+            s.businesses[bk] = {
+              ...sBiz,
+              ...cBiz,
+              level: 0,
+              workers: 0,
+              isFranchise: false,
+              suppliesTicks: 0
+            };
+            return;
+          }
+          const lvl = Math.min(10, Math.max(Number(sBiz.level || 0), Number(cBiz.level || 0)));
+          const cTicks = Math.max(0, Number(cBiz.suppliesTicks || 0));
+          const sTicks = Math.max(0, Number(sBiz.suppliesTicks || 0));
+          const mergedTicks = Math.min(43200, Math.max(sTicks, cTicks));
+
+          s.businesses[bk] = {
+            ...sBiz,
+            ...cBiz,
+            level: lvl,
+            isFranchise: Boolean(sBiz.isFranchise || (isAdminGrant && cBiz.isFranchise)),
+            workers: Math.max(Number(sBiz.workers || 0), Number(cBiz.workers || 0)),
+            suppliesTicks: mergedTicks
+          };
+        }
+      });
+    }
+
+    // Accrue Server-Authoritative Net Cashflow into Bank (Businesses + Real Estate + Cars + Matured Investments + Careers)
+    // MUST run BEFORE bank/cash comparison so server bank reflects current-second passive accrual
+    const cfReport = accrueAuthoritativeCashflow(s, Date.now());
+
     // PHASE 3 PURE THIN-CLIENT LOCKDOWN:
     // Core wealth balances (cash, bank, dirtyCash, assets, ownedCars, stocks, gold, incomeVault)
     // are strictly Server-Authoritative.
@@ -274,19 +325,121 @@ class SessionManager {
       session._lastProcessedAdminTs = highestTs;
       s.adminModifiedTimestamp = highestTs;
     } else {
-      // STRICT SERVER-AUTHORITATIVE WEALTH LOCKDOWN:
-      // Core liquid wealth balances (cash, bank, dirtyCash, gold) are strictly Server-Authoritative.
-      // Untrusted client syncState calls cannot directly inject or overwrite these values.
-      // All bank gains derive from accrueAuthoritativeCashflow, /api/action/bank, or server transactions.
-      // All cash gains derive from /api/action/click, /api/action/bank, or server transactions.
+      // STRICT SERVER-AUTHORITATIVE WEALTH LOCKDOWN WITH VERIFIED MECHANIC RECONCILIATION:
 
-      // (a) Bank Balance: Crush any attempt by client to inject bank funds
+      // 1. Reconcile Dirty Cash & Money Laundering (dirtyCash -> bank)
+      if (clientState.dirtyCash !== undefined) {
+        const incomingDirty = Math.max(0, Number(clientState.dirtyCash) || 0);
+        const currentDirty = Math.max(0, Number(s.dirtyCash || 0));
+        if (incomingDirty < currentDirty) {
+          const dirtyDiff = currentDirty - incomingDirty;
+          if (incomingBank > Number(s.bank || 0)) {
+            const hasCryptoCleaner = Boolean(s.inventory && s.inventory.crypto_cleaner > 0);
+            const feeRate = hasCryptoCleaner ? 0.15 : 0.22;
+            const fee = Math.floor(dirtyDiff * feeRate);
+            const cleanedAmount = dirtyDiff - fee;
+            s.bank = (Number(s.bank) || 0) + cleanedAmount;
+            s.totalTaxesPaid = (Number(s.totalTaxesPaid) || 0) + fee;
+          }
+          s.dirtyCash = incomingDirty;
+        }
+      }
+
+      // 2. Reconcile Verified Job Shifts & Overtime Shifts (dailyWork -> bank)
+      if (clientState.dailyWork && typeof clientState.dailyWork === 'object' && !isAuthoritativeLimitsReset && JOBS) {
+        const cDate = String(clientState.dailyWork.date || '');
+        if (cDate === serverToday) {
+          const prevShifts = (s.dailyWork && s.dailyWork.date === serverToday) ? Math.min(100, Math.max(0, Number(s.dailyWork.shifts || 0))) : 0;
+          const prevOvertime = (s.dailyWork && s.dailyWork.date === serverToday) ? Math.min(15, Math.max(0, Number(s.dailyWork.overtimeShifts || 0))) : 0;
+          const nextShifts = Math.min(100, Math.max(prevShifts, Number(clientState.dailyWork.shifts || 0)));
+          const nextOvertime = Math.min(15, Math.max(prevOvertime, Number(clientState.dailyWork.overtimeShifts || 0)));
+          const deltaShifts = Math.max(0, nextShifts - prevShifts);
+          const deltaOvertime = Math.max(0, nextOvertime - prevOvertime);
+
+          if (deltaShifts > 0 || deltaOvertime > 0) {
+            const jobKey = String(clientState.jobId || s.jobId || 'worker');
+            const candidateJob = JOBS[jobKey] || JOBS.worker;
+            const currentXp = Math.max(Number(s.xp || 0), Number(clientState.xp || 0));
+            const verifiedJob = (currentXp >= Number(candidateJob.xpNeeded || 0)) ? candidateJob : (JOBS[s.jobId] || JOBS.worker);
+            const isEnergyActive = Boolean(s.inventory && s.inventory.energy_drink > 0);
+            const salaryMult = isEnergyActive ? 1.125 : 1.0;
+            const earnedFromWork = (Math.floor(verifiedJob.salary * salaryMult) * deltaShifts) + (Math.floor(verifiedJob.salary * 2.5 * salaryMult) * deltaOvertime);
+            s.bank = (Number(s.bank) || 0) + earnedFromWork;
+            s.dailyWork = { date: serverToday, shifts: nextShifts, overtimeShifts: nextOvertime };
+          }
+        }
+      }
+
+      // 3. Reconcile Verified Daily Quest Rewards (dailyQuests -> cash)
+      if (clientState.dailyQuests && typeof clientState.dailyQuests === 'object' && Array.isArray(clientState.dailyQuests.quests)) {
+        const cDate = String(clientState.dailyQuests.date || '');
+        if (cDate === serverToday) {
+          const maxQuestReward = Math.max(350, Math.round(350 + Math.min(35000, Math.sqrt(Math.max(0, Number(s.netWorth || 400))) * 1.2)));
+          const existingQuests = (s.dailyQuests && s.dailyQuests.date === serverToday && Array.isArray(s.dailyQuests.quests))
+            ? s.dailyQuests.quests
+            : [];
+          clientState.dailyQuests.quests.slice(0, 5).forEach(cq => {
+            if (!cq || !cq.id || !cq.claimed || !cq.completed) return;
+            const sq = existingQuests.find(q => q && q.id === cq.id);
+            if (!sq || !sq.claimed) {
+              const verifiedReward = Math.min(maxQuestReward, Math.max(0, Number(cq.cashReward || 350)));
+              s.cash = (Number(s.cash) || 0) + verifiedReward;
+            }
+          });
+          const wasGrandClaimed = Boolean(s.dailyQuests && s.dailyQuests.date === serverToday && s.dailyQuests.grandBonusClaimed);
+          const allFiveClaimed = clientState.dailyQuests.quests.length >= 5 && clientState.dailyQuests.quests.every(q => q && q.claimed);
+          if (clientState.dailyQuests.grandBonusClaimed && !wasGrandClaimed && allFiveClaimed) {
+            const grandReward = Math.min(maxQuestReward * 2, Math.max(700, Number(clientState.dailyQuests.quests[0]?.cashReward || 350) * 2));
+            s.cash = (Number(s.cash) || 0) + grandReward;
+          }
+        }
+      }
+
+      // 4. Reconcile Completed Smuggling Expeditions (activeSmugglingJobs -> cash)
+      if (Array.isArray(s.activeSmugglingJobs) && s.activeSmugglingJobs.length > 0 && Array.isArray(clientState.activeSmugglingJobs) && SMUGGLING_ROUTES) {
+        const clientJobIds = new Set(clientState.activeSmugglingJobs.map(j => j && j.id));
+        const wasCapturedToJail = Number(clientState.jailTimer || 0) > Number(s.jailTimer || 0);
+        s.activeSmugglingJobs.forEach(sJob => {
+          if (!sJob || clientJobIds.has(sJob.id)) return;
+          if (!wasCapturedToJail && Date.now() >= (Number(sJob.endTime || 0) - 10000)) {
+            const route = SMUGGLING_ROUTES[sJob.routeId];
+            const cargo = (SMUGGLING_CARGO_TYPES && SMUGGLING_CARGO_TYPES[sJob.cargoType]) || { profitMult: 1.0 };
+            if (route && s.smugglingFleet && s.smugglingFleet[sJob.vehicleType] > 0) {
+              const effectiveYield = Math.floor(route.baseYieldCash * (cargo.profitMult || 1.0));
+              s.cash = (Number(s.cash) || 0) + effectiveYield;
+            }
+          }
+        });
+      }
+
+      // 5. Reconcile Active Bank Loan Repayment (activeLoan -> null)
+      if (s.activeLoan && Number(s.activeLoan.totalDue || 0) > 0 && clientState.activeLoan === null) {
+        const due = Number(s.activeLoan.totalDue || 0);
+        const curCash = Number(s.cash || 0);
+        const curBank = Number(s.bank || 0);
+        if ((curCash + curBank) >= due) {
+          if (curCash >= due) {
+            s.cash = curCash - due;
+          } else {
+            const rem = due - curCash;
+            s.cash = 0;
+            s.bank = Math.max(0, curBank - rem);
+          }
+          s.activeLoan = null;
+        }
+      }
+
+      // (a) Bank Balance: Crush any attempt by client to inject unauthorized bank funds
       const currentBank = Number(s.bank || 0);
       const hasRecentAdminMod = (Date.now() - Number(s.adminModifiedTimestamp || 0)) < 60000;
       if (hasRecentAdminMod) {
         // Retain authoritative bank balance granted by admin topup
       } else if (incomingBank > currentBank) {
-        console.warn(`[Security Alert] Crushed unauthorized client bank inflation attempt for "${username}": Server=${currentBank.toLocaleString()} vs Injected=${incomingBank.toLocaleString()} (+${(incomingBank - currentBank).toLocaleString()})`);
+        const bankDiff = incomingBank - currentBank;
+        const driftTolerance = Math.max(5000, Math.ceil(((cfReport && cfReport.perSecond) || 0) * 15));
+        if (bankDiff > driftTolerance) {
+          console.warn(`[Security Alert] Crushed unauthorized client bank inflation attempt for "${username}": Server=${currentBank.toLocaleString()} vs Injected=${incomingBank.toLocaleString()} (+${bankDiff.toLocaleString()})`);
+        }
       }
 
       // (b) Cash Balance: Strictly preserve server cash during bank operations, server spends, authoritative earnings, or recent admin grants
@@ -294,18 +447,17 @@ class SessionManager {
       if (hasRecentBankAction || hasRecentServerCashSpend || hasRecentServerCashEarn || hasRecentAdminMod) {
         // Authoritative server balance is strictly locked against client sync interference
       } else if (incomingCash > currentCash) {
-        console.warn(`[Security Alert] Crushed unauthorized client cash inflation attempt for "${username}": Server=${currentCash.toLocaleString()} vs Injected=${incomingCash.toLocaleString()} (+${(incomingCash - currentCash).toLocaleString()})`);
+        const cashDiff = incomingCash - currentCash;
+        // Allow bounded random tip events (50 - 1,000 EGP max once every 3 minutes)
+        if (cashDiff > 0 && cashDiff <= 1000 && (Date.now() - Number(session.lastTipEventAt || 0) >= 180000)) {
+          s.cash = incomingCash;
+          session.lastTipEventAt = Date.now();
+        } else {
+          console.warn(`[Security Alert] Crushed unauthorized client cash inflation attempt for "${username}": Server=${currentCash.toLocaleString()} vs Injected=${incomingCash.toLocaleString()} (+${cashDiff.toLocaleString()})`);
+        }
       } else if (incomingCash < currentCash) {
         // Legitimate client cash spending (items, supplies, offline deductions)
         s.cash = incomingCash;
-      }
-
-      // (c) Dirty Cash deduction reconciliation:
-      if (clientState.dirtyCash !== undefined) {
-        const incomingDirty = Math.max(0, Number(clientState.dirtyCash) || 0);
-        if (incomingDirty <= Number(s.dirtyCash || 0)) {
-          s.dirtyCash = incomingDirty;
-        }
       }
 
       session.lastSyncTime = Date.now();
@@ -316,45 +468,17 @@ class SessionManager {
       }
     }
 
-    // Accrue Server-Authoritative Net Cashflow into Bank (Businesses + Real Estate + Cars + Bank Interest + Careers)
-    accrueAuthoritativeCashflow(s, Date.now());
-
     if (clientState.xp !== undefined) {
       s.xp = (isClientStale && !isAdminGrant) ? Math.max(Number(s.xp || 0), Number(clientState.xp) || 0) : (Number(clientState.xp) || 0);
     }
     if (clientState.title) s.title = String(clientState.title);
     if (clientState.jobId) s.jobId = String(clientState.jobId);
     if (clientState.jailTimer !== undefined) s.jailTimer = Number(clientState.jailTimer) || 0;
-    if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Number(clientState.totalTaxesPaid) || 0;
+    if (clientState.totalTaxesPaid !== undefined) s.totalTaxesPaid = Math.max(Number(s.totalTaxesPaid || 0), Number(clientState.totalTaxesPaid) || 0);
 
     // Ensure security fields are never stored in state
     delete s.pin;
     delete s.password;
-
-
-
-    // Synchronize Businesses (Preserve suppliesTicks and upgrades, never allowing stale zero to wipe supplies)
-    if (clientState.businesses && typeof clientState.businesses === 'object') {
-      s.businesses = s.businesses || {};
-      Object.keys(clientState.businesses).forEach(bk => {
-        const cBiz = clientState.businesses[bk];
-        if (cBiz && typeof cBiz === 'object') {
-          const sBiz = s.businesses[bk] || { level: 0, workers: 0, suppliesTicks: 0 };
-          const lvl = Math.max(Number(sBiz.level || 0), Number(cBiz.level || 0));
-          const cTicks = Math.max(0, Number(cBiz.suppliesTicks || 0));
-          const sTicks = Math.max(0, Number(sBiz.suppliesTicks || 0));
-          const mergedTicks = Math.min(43200, Math.max(sTicks, cTicks));
-
-          s.businesses[bk] = {
-            ...sBiz,
-            ...cBiz,
-            level: lvl,
-            workers: Math.max(Number(sBiz.workers || 0), Number(cBiz.workers || 0)),
-            suppliesTicks: mergedTicks
-          };
-        }
-      });
-    }
 
     // Agro Farm Tycoon (Officially open to all players)
     if (clientState.farm && typeof clientState.farm === 'object') {
@@ -511,12 +635,6 @@ class SessionManager {
     }
 
     // Synchronize modules (safeguarded against stale downgrades)
-    if (clientState.businesses && typeof clientState.businesses === 'object' && !isClientStale) {
-      // Don't overwrite existing non-empty businesses with an empty object
-      if (Object.keys(clientState.businesses).length > 0 || !s.businesses || Object.keys(s.businesses).length === 0) {
-        s.businesses = clientState.businesses;
-      }
-    }
     if (clientState.industry && typeof clientState.industry === 'object') {
       if (!s.industry || typeof s.industry !== 'object') s.industry = {};
       if (isAdminGrant) {
@@ -667,42 +785,31 @@ class SessionManager {
     if (clientState.itemDurations && typeof clientState.itemDurations === 'object') {
       s.itemDurations = clientState.itemDurations;
     }
-    if (clientState.smugglingFleet && typeof clientState.smugglingFleet === 'object') {
-      s.smugglingFleet = clientState.smugglingFleet;
-    }
     if (clientState.activeSmugglingJobs && typeof clientState.activeSmugglingJobs === 'object') {
       s.activeSmugglingJobs = clientState.activeSmugglingJobs;
     }
 
-    // Synchronize Banking Loans & Credit
+    // Synchronize Banking Loans & Credit (Only update existing loan or allow admin override; loans are disabled)
     if (clientState.activeLoan !== undefined) {
-      if (clientState.activeLoan && typeof clientState.activeLoan === 'object') {
+      if (isAdminGrant && clientState.activeLoan && typeof clientState.activeLoan === 'object') {
+        s.activeLoan = clientState.activeLoan;
+      } else if (s.activeLoan && clientState.activeLoan && typeof clientState.activeLoan === 'object') {
         s.activeLoan = {
-          amount: Math.max(0, Number(clientState.activeLoan.amount) || 0),
-          totalDue: Math.max(0, Number(clientState.activeLoan.totalDue) || 0),
-          ticksRemaining: Math.max(0, Number(clientState.activeLoan.ticksRemaining) || 0),
-          initialTicks: Math.max(0, Number(clientState.activeLoan.initialTicks) || 3600),
-          isDefaulted: Boolean(clientState.activeLoan.isDefaulted),
+          amount: Math.max(0, Number(s.activeLoan.amount) || 0),
+          totalDue: Math.max(Number(s.activeLoan.totalDue) || 0, Number(clientState.activeLoan.totalDue) || 0),
+          ticksRemaining: Math.min(Number(s.activeLoan.ticksRemaining) || 3600, Math.max(0, Number(clientState.activeLoan.ticksRemaining) || 0)),
+          initialTicks: Math.max(0, Number(s.activeLoan.initialTicks) || 3600),
+          isDefaulted: Boolean(s.activeLoan.isDefaulted || clientState.activeLoan.isDefaulted),
           latePenaltyTicks: Math.max(0, Number(clientState.activeLoan.latePenaltyTicks) || 0),
-          latePenaltyCount: Math.max(0, Number(clientState.activeLoan.latePenaltyCount) || 0)
+          latePenaltyCount: Math.max(Number(s.activeLoan.latePenaltyCount) || 0, Number(clientState.activeLoan.latePenaltyCount) || 0)
         };
-      } else {
+      } else if (isAdminGrant && clientState.activeLoan === null) {
         s.activeLoan = null;
       }
     }
     if (clientState.loanCooldownUntil !== undefined) {
       s.loanCooldownUntil = Number(clientState.loanCooldownUntil) || 0;
     }
-    // Anchor daily tracking to official Cairo timezone (UTC+3)
-    const serverToday = (() => {
-      const d = new Date(Date.now() + (3 * 3600 * 1000));
-      return d.toISOString().split('T')[0];
-    })();
-
-    // Check if server has an active authoritative reset for daily limits (exclusive to explicit limits reset)
-    const sLimitsResetAt = Number(s.limitsResetAt || 0);
-    const cLimitsResetAck = Number(clientState.lastLimitsResetAck || 0);
-    const isAuthoritativeLimitsReset = (sLimitsResetAt > 0 && sLimitsResetAt > cLimitsResetAck);
 
     if (clientState.dailyLoans && typeof clientState.dailyLoans === 'object') {
       s.dailyLoans = {

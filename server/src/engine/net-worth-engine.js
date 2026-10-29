@@ -176,6 +176,42 @@ function calculateNetWorth(playerState) {
     }
   }
 
+  // 8.5 Space Exploration Agency & Orbital Fleet valuation (سعر ترخيص وكالة الفضاء + المرافق + الصواريخ المملوكة)
+  if (playerState.space && playerState.space.unlocked) {
+    worth += 2500000000; // Base space agency unlock cost (2.5B EGP)
+    const sf = playerState.space.facilities || {};
+    const SPACE_FACILITY_COSTS = {
+      launchpads: { 1: 0, 2: 1500000000, 3: 15000000000 },
+      mission_control: { 1: 0, 2: 500000000, 3: 2000000000, 4: 6000000000 },
+      ore_silo: { 1: 0, 2: 300000000, 3: 1200000000, 4: 4000000000 },
+      ore_refinery: { 1: 0, 2: 500000000, 3: 2500000000, 4: 8000000000 }
+    };
+    if (typeof sf === 'object') {
+      Object.keys(sf).forEach(fKey => {
+        const lvl = Number(sf[fKey] || 0);
+        if (lvl >= 1 && SPACE_FACILITY_COSTS[fKey]) {
+          for (let i = 1; i <= lvl; i++) {
+            worth += Number(SPACE_FACILITY_COSTS[fKey][i] || 0);
+          }
+        }
+      });
+    }
+    const ROCKET_COSTS = {
+      orion_probe: 100000000,
+      falcon_star: 500000000,
+      heavy_starship: 2000000000,
+      quantum_dreadnought: 10000000000
+    };
+    if (Array.isArray(playerState.space.activeRockets)) {
+      playerState.space.activeRockets.forEach(r => {
+        const mId = r && (r.modelId || r.id);
+        if (mId && ROCKET_COSTS[mId]) {
+          worth += ROCKET_COSTS[mId];
+        }
+      });
+    }
+  }
+
   // 9. Deduct active bank loan liabilities (True Net Worth = Assets - Liabilities)
   if (playerState.activeLoan) {
     const loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);

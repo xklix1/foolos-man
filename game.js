@@ -1973,14 +1973,51 @@ const GameEngine = (() => {
       }
     }
 
+    // 8.5 Space Exploration Agency & Orbital Fleet (وكالة الفضاء والمرافق وأسطول الصواريخ)
+    let spaceTotal = 0;
+    if (playerState.space && playerState.space.unlocked) {
+      spaceTotal += 2500000000;
+      const sf = playerState.space.facilities || {};
+      const SPACE_FACILITY_COSTS = {
+        launchpads: { 1: 0, 2: 1500000000, 3: 15000000000 },
+        mission_control: { 1: 0, 2: 500000000, 3: 2000000000, 4: 6000000000 },
+        ore_silo: { 1: 0, 2: 300000000, 3: 1200000000, 4: 4000000000 },
+        ore_refinery: { 1: 0, 2: 500000000, 3: 2500000000, 4: 8000000000 }
+      };
+      if (typeof sf === 'object') {
+        Object.keys(sf).forEach(fKey => {
+          const lvl = Number(sf[fKey] || 0);
+          if (lvl >= 1 && SPACE_FACILITY_COSTS[fKey]) {
+            for (let i = 1; i <= lvl; i++) {
+              spaceTotal += Number(SPACE_FACILITY_COSTS[fKey][i] || 0);
+            }
+          }
+        });
+      }
+      const ROCKET_COSTS = {
+        orion_probe: 100000000,
+        falcon_star: 500000000,
+        heavy_starship: 2000000000,
+        quantum_dreadnought: 10000000000
+      };
+      if (Array.isArray(playerState.space.activeRockets)) {
+        playerState.space.activeRockets.forEach(r => {
+          const mId = r && (r.modelId || r.id);
+          if (mId && ROCKET_COSTS[mId]) {
+            spaceTotal += ROCKET_COSTS[mId];
+          }
+        });
+      }
+    }
+
     // 9. Liabilities: Active bank loan liabilities (True Net Worth = Assets - Liabilities)
     let loanDebt = 0;
     if (playerState.activeLoan) {
       loanDebt = Number(playerState.activeLoan.totalDue || playerState.activeLoan.amount || 0);
     }
 
-    // Comprehensive Net Worth: Liquid + Investments + Real Estate + Cars + Stocks + Industry + Trade + Farm + Airport - Loans
-    const total = Math.max(0, Math.floor(liquidTotal + investmentsTotal + assetsTotal + stocksTotal + industryTotal + tradeTotal + farmTotal + airportTotal - loanDebt));
+    // Comprehensive Net Worth: Liquid + Investments + Real Estate + Cars + Stocks + Industry + Trade + Farm + Airport + Space - Loans
+    const total = Math.max(0, Math.floor(liquidTotal + investmentsTotal + assetsTotal + stocksTotal + industryTotal + tradeTotal + farmTotal + airportTotal + spaceTotal - loanDebt));
 
     return {
       cash,
@@ -1996,6 +2033,7 @@ const GameEngine = (() => {
       tradeTotal,
       farmTotal,
       airportTotal,
+      spaceTotal,
       loanDebt,
       total
     };
@@ -2779,11 +2817,6 @@ const GameEngine = (() => {
       if (bizState.marketingTicks && bizState.marketingTicks > 0) {
         bizState.marketingTicks--;
         // No per-business cooldown — global daily cap of 5 is the throttle
-      }
-
-      // Decrement operating supplies timer (1 tick per second)
-      if (bizState.suppliesTicks && bizState.suppliesTicks > 0) {
-        bizState.suppliesTicks--;
       }
 
       const tickProfit = (breakdown.ownerProfit || 0) / 3600;
@@ -4281,6 +4314,9 @@ const GameEngine = (() => {
 
     recordPlayerActivity('بيع علامة تجارية',`بيع العلامة التجارية"${biz.name}" (استراتيجية خروج) بمبلغ ${sellPayout.toLocaleString()} EGP`,'business');
     state.netWorth = calculateNetWorth();
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline() && ServerBridge.sellFranchise) {
+      ServerBridge.sellFranchise(key).catch(() => {});
+    }
     forceSaveState(true);
     return { payout: sellPayout };
   }
@@ -5182,6 +5218,9 @@ const GameEngine = (() => {
     state.totalTaxesPaid = (state.totalTaxesPaid || 0) + fee;
     recordPlayerActivity('غسيل أموال',`غسيل ${amount.toLocaleString()} ج.م (ضريبة/عمولة ${Math.round(feeRate * 100)}% = ${fee.toLocaleString()} ج.م) وتحويل صافي ${cleanedAmount.toLocaleString()} ج.م إلى رصيد البنك النظيف`,'blackmarket');
     state.netWorth = calculateNetWorth();
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline() && ServerBridge.launderMoney) {
+      ServerBridge.launderMoney(amount).catch(() => {});
+    }
     forceSaveState(true);
     return {
       amount,

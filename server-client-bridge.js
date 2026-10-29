@@ -542,6 +542,17 @@ var ServerBridge = (() => {
     });
   }
 
+  async function launderMoney(amount) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    _lastBankActionTimestamp = Date.now();
+    const res = await _post('/api/action/black-market/launder', { username: _activeUsername, amount });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.dirtyCash !== undefined) s.dirtyCash = r.dirtyCash;
+      if (r.bank !== undefined) s.bank = r.bank;
+      if (typeof UI !== 'undefined' && UI.renderBlackMarketPanel) { try { UI.renderBlackMarketPanel(); } catch (_) {} }
+    });
+  }
+
   async function bribePolice() {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/black-market/bribe', { username: _activeUsername });
@@ -580,6 +591,16 @@ var ServerBridge = (() => {
       if (s.businesses && s.businesses[businessId]) {
         s.businesses[businessId].isFranchise = true;
       }
+      if (typeof UI !== 'undefined' && UI.renderBusinesses) { try { UI.renderBusinesses(true); } catch (_) {} }
+    });
+  }
+
+  async function sellFranchise(businessId) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    _lastServerEarnTimestamp = Date.now();
+    const res = await _post('/api/action/business/sell-franchise', { username: _activeUsername, businessId });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.businesses) s.businesses = r.businesses;
       if (typeof UI !== 'undefined' && UI.renderBusinesses) { try { UI.renderBusinesses(true); } catch (_) {} }
     });
   }
@@ -772,7 +793,7 @@ var ServerBridge = (() => {
             if (res.authoritativeState.cash !== undefined) {
               const localCash = Number(s.cash || 0);
               const serverCash = Number(res.authoritativeState.cash || 0);
-              const CLICK_TOLERANCE = 50000; // Small tolerance for rapid manual clicker tapping only
+              const CLICK_TOLERANCE = 0; // Server reconciles all legitimate earnings on sync-state
               if (isRecentSpend && localCash < serverCash) {
                 // Retain legitimate local cash deduction
               } else if (localCash > serverCash && (localCash - serverCash) <= CLICK_TOLERANCE) {
@@ -1722,6 +1743,8 @@ var ServerBridge = (() => {
     buyBlackMarketGear,
     runBlackMarketDeal,
     bribePolice,
+    launderMoney,
+    sellFranchise,
     buySmugglingVehicle,
     launchMarketingCampaign,
     convertToFranchise,

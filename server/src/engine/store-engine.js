@@ -349,10 +349,51 @@ function runBlackMarketDeal(state, dealId, serverNow = Date.now()) {
   }
 }
 
+function launderMoney(state, amount) {
+  if (Number(state.jailTimer || 0) > 0) {
+    throw new Error("أنت مسجون! لا يمكنك إدارة عمليات غسيل الأموال.");
+  }
+  const amt = Math.floor(Number(amount) || 0);
+  if (amt <= 0) {
+    throw new Error("يرجى إدخال مبلغ صحيح للغسيل.");
+  }
+
+  const availableDirty = Math.max(0, Number(state.dirtyCash || 0));
+  if (availableDirty <= 0) {
+    throw new Error("لا توجد أموال مشبوهة أو أرباح غير مشروعة في حوزتك لغسيلها حالياً.");
+  }
+  if (availableDirty < amt) {
+    throw new Error(`المبلغ المطلوب (${amt.toLocaleString()} ج.م) أكبر من رصيد الأموال غير المشروعة المتاحة (${availableDirty.toLocaleString()} ج.م).`);
+  }
+
+  const hasCryptoCleaner = Boolean(state.inventory && state.inventory.crypto_cleaner > 0);
+  const feeRate = hasCryptoCleaner ? 0.15 : 0.22;
+  const fee = Math.floor(amt * feeRate);
+  const cleanedAmount = amt - fee;
+
+  state.dirtyCash = Math.max(0, availableDirty - amt);
+  state.bank = (Number(state.bank) || 0) + cleanedAmount;
+  state.totalTaxesPaid = (Number(state.totalTaxesPaid) || 0) + fee;
+  state.netWorth = calculateNetWorth(state);
+
+  return {
+    success: true,
+    amount: amt,
+    fee,
+    feeRate: Math.round(feeRate * 100),
+    cleanedAmount,
+    dirtyCash: state.dirtyCash,
+    bank: state.bank,
+    cash: state.cash,
+    netWorth: state.netWorth
+  };
+}
+
 module.exports = {
   buyStoreItem,
   buyBlackMarketGear,
   bribePolice,
-  runBlackMarketDeal
+  runBlackMarketDeal,
+  launderMoney
 };
 

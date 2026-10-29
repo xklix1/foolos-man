@@ -26,6 +26,7 @@ const casinoEngine = require('../engine/casino-engine');
 const {
   launchMarketingCampaign,
   convertToFranchise,
+  sellFranchise,
   fileTaxDeclaration
 } = require('../engine/business-engine');
 
@@ -2721,6 +2722,22 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
+  // POST /api/action/black-market/launder
+  fastify.post('/api/action/black-market/launder', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { amount } = request.body || {};
+    try {
+      const res = storeEngine.launderMoney(session.state, amount);
+      session.lastServerBankActionAt = Date.now();
+      sessionManager.markDirty(session.username);
+      await sessionManager.forceSaveSession(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
   // POST /api/action/black-market/bribe
   fastify.post('/api/action/black-market/bribe', async (request, reply) => {
     const session = await resolveSession(request, reply);
@@ -2770,6 +2787,23 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     try {
       const res = convertToFranchise(session.state, businessId);
       sessionManager.markDirty(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
+  // POST /api/action/business/sell-franchise
+  fastify.post('/api/action/business/sell-franchise', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { businessId } = request.body || {};
+    try {
+      const res = sellFranchise(session.state, businessId);
+      session.lastServerCashEarnAt = Date.now();
+      session.state.lastServerCashEarnAt = Date.now();
+      sessionManager.markDirty(session.username);
+      await sessionManager.forceSaveSession(session.username);
       return reply.send({ success: true, ...res });
     } catch (err) {
       return reply.code(400).send({ error: err.message });

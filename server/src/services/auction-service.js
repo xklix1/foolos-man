@@ -111,7 +111,7 @@ class AuctionService {
 
   _startInternalTicker() {
     // 1-second background ticker to handle auto-triggers and timer sync
-    setInterval(() => {
+    const timer = setInterval(() => {
       const now = Date.now();
       if (this.state.status === 'SCHEDULED' && this.state.config.scheduledStartTime > 0) {
         if (now >= this.state.config.scheduledStartTime) {
@@ -120,6 +120,7 @@ class AuctionService {
         }
       }
     }, 1000);
+    if (timer.unref) timer.unref();
   }
 
   /**

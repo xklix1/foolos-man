@@ -557,6 +557,7 @@ async function sessionRoutes(fastify, options) {
           dailyStockProfit: activeSession.state.dailyStockProfit,
           farm: activeSession.state.farm,
           airport: activeSession.state.airport,
+          space: activeSession.state.space,
           lastLimitsResetAck: activeSession.state.lastLimitsResetAck || 0
         } : null,
         serverTime: Date.now()

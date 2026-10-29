@@ -78,7 +78,44 @@ function accrueAuthoritativeCashflow(playerState, serverNow = Date.now()) {
   const rawElapsed = Math.max(0, Math.floor((serverNow - lastTime) / 1000));
   const elapsedSeconds = Math.min(43200, rawElapsed); // Max 12 hours online delta
 
-  playerState.lastCashflowAccrualAt = serverNow;
+  if (elapsedSeconds > 0 && rawElapsed <= 43200) {
+    playerState.lastCashflowAccrualAt = lastTime + (elapsedSeconds * 1000);
+  } else if (!playerState.lastCashflowAccrualAt || rawElapsed > 43200) {
+    playerState.lastCashflowAccrualAt = serverNow;
+  }
+
+  // Mature any locked bank investments & certificates that completed while online
+  let maturedPayout = 0;
+  if (Array.isArray(playerState.investments) && playerState.investments.length > 0) {
+    const remainingInvestments = [];
+    playerState.investments.forEach(inv => {
+      if (!inv || inv.claimed === true || inv.matured === true) return;
+      const maturesAt = Number(inv.maturesAt || 0);
+      const isMatured = (maturesAt > 0 && serverNow >= maturesAt) ||
+                        (maturesAt <= 0 && typeof inv.ticksRemaining === 'number' && inv.ticksRemaining <= Math.max(1, elapsedSeconds));
+      if (isMatured) {
+        inv.claimed = true;
+        inv.matured = true;
+        const rate = Number(inv.rate || 0);
+        const amt = Number(inv.investedAmount || 0);
+        const payout = amt + Math.round(amt * rate);
+        maturedPayout += payout;
+        playerState.bank = (Number(playerState.bank) || 0) + payout;
+      } else {
+        if (maturesAt > 0) {
+          inv.ticksRemaining = Math.max(0, Math.ceil((maturesAt - serverNow) / 1000));
+        } else if (typeof inv.ticksRemaining === 'number' && elapsedSeconds > 0) {
+          inv.ticksRemaining = Math.max(0, inv.ticksRemaining - elapsedSeconds);
+        }
+        remainingInvestments.push(inv);
+      }
+    });
+    playerState.investments = remainingInvestments;
+    if (maturedPayout > 0) {
+      playerState.netWorth = calculateNetWorth(playerState);
+      playerState.title = getAppropriateTitle(playerState.netWorth, playerState.xp || 0);
+    }
+  }
 
   const hourlyRate = calculateAuthoritativeHourlyCashflow(playerState);
   const perSecond = hourlyRate / 3600;
@@ -88,12 +125,14 @@ function accrueAuthoritativeCashflow(playerState, serverNow = Date.now()) {
       elapsedSeconds: 0,
       hourlyRate,
       perSecond,
-      accrued: 0,
+      accrued: maturedPayout,
       bank: playerState.bank
     };
   }
 
-  const accrued = Math.floor(perSecond * elapsedSeconds);
+  const exactEarned = (Number(playerState._cashflowRemainder) || 0) + (perSecond * elapsedSeconds);
+  const accrued = Math.floor(exactEarned);
+  playerState._cashflowRemainder = Math.max(0, exactEarned - accrued);
 
   if (accrued > 0) {
     playerState.bank = (Number(playerState.bank) || 0) + accrued;
@@ -113,7 +152,7 @@ function accrueAuthoritativeCashflow(playerState, serverNow = Date.now()) {
     elapsedSeconds,
     hourlyRate,
     perSecond,
-    accrued,
+    accrued: accrued + maturedPayout,
     bank: playerState.bank
   };
 }
