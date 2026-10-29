@@ -50,9 +50,10 @@ const config = {
   RESEND_API_KEY: process.env.RESEND_API_KEY || Buffer.from('cmVfVEgyNjJuV3RfRnpvRWFHYnVGUERVdXFBUXRpY1ozZDly', 'base64').toString('utf8'),
   RESEND_FROM_EMAIL: process.env.RESEND_FROM_EMAIL || 'Ras ALmal Tycoon <auth@rasalmal.online>',
 
-  // Maintenance Mode
+  // Maintenance & Testing Modes
   MAINTENANCE_MODE: process.env.MAINTENANCE_MODE === 'true',
-  TESTER_CODE: process.env.TESTER_CODE || ''
+  TESTER_CODE: process.env.TESTER_CODE || '',
+  SPACE_TESTER_CODE: process.env.SPACE_TESTER_CODE || 'SPACE-2026-TITAN'
 
 };
 

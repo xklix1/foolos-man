@@ -311,6 +311,7 @@ app.post('/api/maintenance/verify', {
 app.register(require('./routes/session-routes'));
 app.register(require('./routes/action-routes'));
 app.register(require('./routes/airport-routes'));
+app.register(require('./routes/space-routes'));
 app.register(require('./routes/auction-routes'));
 app.register(require('./routes/museum-routes'));
 app.register(require('./routes/push-routes'));

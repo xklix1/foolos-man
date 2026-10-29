@@ -3138,6 +3138,14 @@ const UIController = (() => {
       renderTradePanel();
     } else if (tabId ==='industry') {
       renderIndustryPanel();
+    } else if (tabId ==='airport') {
+      if (window.AirportUI && typeof window.AirportUI.renderAirportPanel === 'function') {
+        window.AirportUI.renderAirportPanel();
+      }
+    } else if (tabId ==='space') {
+      if (window.SpaceUI && typeof window.SpaceUI.renderSpacePanel === 'function') {
+        window.SpaceUI.renderSpacePanel();
+      }
     } else if (tabId ==='farm' && isFarmTesterAccount()) {
       renderFarmPanel();
     } else if (tabId ==='investments') {
@@ -3818,6 +3826,11 @@ const UIController = (() => {
       case'airport':
         if (window.AirportUI && typeof window.AirportUI.renderAirportPanel === 'function') {
           window.AirportUI.renderAirportPanel();
+        }
+        break;
+      case'space':
+        if (window.SpaceUI && typeof window.SpaceUI.renderSpacePanel === 'function') {
+          window.SpaceUI.renderSpacePanel();
         }
         break;
       case'farm':

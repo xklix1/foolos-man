@@ -1269,6 +1269,16 @@ const GameEngine = (() => {
       laptop: { unlocked: false, level: 1, stars: 1 },
       pen: { unlocked: false, level: 1, stars: 1 },
       terminal: { unlocked: false, level: 1, stars: 1 }
+    },
+    space: {
+      unlocked: false,
+      unlockedAt: 0,
+      facilities: { launchpads: 1, mission_control: 1, ore_silo: 1, ore_refinery: 1 },
+      activeRockets: [],
+      activeFlights: [],
+      warehouse: { regolith: 0, iron: 0, platinum: 0, helium3: 0, lithium: 0, dark_matter: 0 },
+      hiredManagers: [],
+      stats: { totalFlightsLaunched: 0, totalFlightsCompleted: 0, totalOresMinedKg: 0, totalRevenueEGP: 0 }
     }
   };
 

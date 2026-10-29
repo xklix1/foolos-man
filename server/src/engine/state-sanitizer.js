@@ -107,6 +107,16 @@ const DEFAULT_STATE = {
     laptop: { unlocked: false, level: 1, stars: 1 },
     pen: { unlocked: false, level: 1, stars: 1 },
     terminal: { unlocked: false, level: 1, stars: 1 }
+  },
+  space: {
+    unlocked: false,
+    unlockedAt: 0,
+    facilities: { launchpads: 1, mission_control: 1, ore_silo: 1, ore_refinery: 1 },
+    activeRockets: [],
+    activeFlights: [],
+    warehouse: { regolith: 0, iron: 0, platinum: 0, helium3: 0, lithium: 0, dark_matter: 0 },
+    hiredManagers: [],
+    stats: { totalFlightsLaunched: 0, totalFlightsCompleted: 0, totalOresMinedKg: 0, totalRevenueEGP: 0 }
   }
 };
 
@@ -275,6 +285,31 @@ function sanitizePlayerState(dbRow) {
       ...DEFAULT_STATE.executiveGear,
       ...rawState.executiveGear
     };
+  }
+
+  // Space Exploration Hub Preservation
+  if (rawState.space && typeof rawState.space === 'object') {
+    cleanState.space = {
+      ...DEFAULT_STATE.space,
+      ...rawState.space,
+      facilities: {
+        ...(DEFAULT_STATE.space.facilities),
+        ...(rawState.space.facilities || {})
+      },
+      warehouse: {
+        ...(DEFAULT_STATE.space.warehouse),
+        ...(rawState.space.warehouse || {})
+      },
+      activeRockets: Array.isArray(rawState.space.activeRockets) ? rawState.space.activeRockets : [],
+      activeFlights: Array.isArray(rawState.space.activeFlights) ? rawState.space.activeFlights : [],
+      hiredManagers: Array.isArray(rawState.space.hiredManagers) ? rawState.space.hiredManagers : [],
+      stats: {
+        ...(DEFAULT_STATE.space.stats),
+        ...(rawState.space.stats || {})
+      }
+    };
+  } else {
+    cleanState.space = { ...DEFAULT_STATE.space };
   }
 
   // Device & Login Telemetry History (Authoritative)

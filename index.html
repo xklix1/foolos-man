@@ -2595,6 +2595,13 @@
               <span>مطار الطيران الدولي</span>
               <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold ml-auto border border-sky-500/30">جديد </span>
             </button>
+            <!-- Space Hub tab -->
+            <button id="nav-tab-space" data-tab="space"
+              class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-sky-300 transition duration-200 cursor-pointer">
+              <i class="fa-solid fa-shuttle-space w-4 text-center text-sky-400 text-sm"></i>
+              <span>محطة استكشاف الفضاء</span>
+              <span class="text-[9px] px-1.5 py-0.5 rounded bg-gradient-to-r from-sky-500/20 to-purple-500/20 text-sky-300 font-bold ml-auto border border-sky-500/30">جديد 🚀</span>
+            </button>
             <!-- Royal Auction tab -->
             <button id="nav-btn-auctions" type="button" onclick="if(window.RoyalAuction) window.RoyalAuction.openModal(); else window.UI?.showToast?.('جاري فتح قاعة المزاد...', 'info');"
               class="flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 text-xs font-bold hover:bg-slate-800/40 hover:text-amber-300 transition duration-200 cursor-pointer">
@@ -4292,6 +4299,11 @@
         </div>
       </section>
 
+      <!-- ==================== TAB: محطة استكشاف الفضاء ==================== -->
+      <section id="panel-space" class="game-panel hidden space-y-6">
+        <!-- Populated dynamically by window.SpaceUI.renderSpacePanel() -->
+      </section>
+
       <!-- ==================== TAB: المزرعة الاستثمارية ==================== -->
       <section id="panel-farm" class="game-panel hidden space-y-6">
 
@@ -5845,6 +5857,14 @@
           <i class="fa-solid fa-plane-departure w-5 text-center text-sky-400 text-sm"></i>
           <span>مطار الطيران الدولي</span>
           <span class="text-[9px] px-1.5 py-0.5 rounded bg-sky-500/20 text-sky-300 font-bold mr-auto border border-sky-500/30">جديد </span>
+        </button>
+
+        <!-- Space Hub mobile tab -->
+        <button id="nav-tab-space-mobile" data-tab="space"
+          class="nav-tab-btn flex w-full items-center gap-3 px-3.5 py-2.5 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-sky-300 text-xs font-bold transition duration-200 cursor-pointer">
+          <i class="fa-solid fa-shuttle-space w-5 text-center text-sky-400 text-sm"></i>
+          <span>محطة استكشاف الفضاء</span>
+          <span class="text-[9px] px-1.5 py-0.5 rounded bg-gradient-to-r from-sky-500/20 to-purple-500/20 text-sky-300 font-bold mr-auto border border-sky-500/30">جديد 🚀</span>
         </button>
 
         <!-- Royal Auctions mobile tab -->
