@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.38",
-  "build": 1792754200000,
-  "timestamp": 1792754200000,
-  "notes": "Rebalance space station facilities: 3 launchpad cap, realistic mission control (-5% to -15%) and refinery (+4% to +12%), preserve high VIP Gold Manager incentives.",
-  "releaseNotes": "موازنة تطويرات ومرافق محطة الفضاء: تحديد سقف 3 منصات إطلاق، وترشيد بونصات مركز القيادة ومعمل التكرير لمنع التضخم، مع الإبقاء على حوافز مديري الذهب السيادي VIP."
+  "version": "v10.0.39",
+  "build": 1792754800000,
+  "timestamp": 1792754800000,
+  "notes": "Elevate Space Station Gateway to 10B Net Worth milestone and 2.5B EGP construction cost.",
+  "releaseNotes": "رفع شروط تأسيس محطة الفضاء لفئة كبار المليارديرات: 10 مليار جنيه صافي ثروة مؤهل و 2.5 مليار جنيه رسوم ترخيص وتشييد نقداً."
 }
