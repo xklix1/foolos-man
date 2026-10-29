@@ -3145,6 +3145,19 @@ const UIController = (() => {
     } else if (tabId ==='space') {
       if (window.SpaceUI && typeof window.SpaceUI.renderSpacePanel === 'function') {
         window.SpaceUI.renderSpacePanel();
+      } else {
+        const existingScript = document.getElementById('script-space-ui');
+        if (!existingScript) {
+          const s = document.createElement('script');
+          s.id = 'script-space-ui';
+          s.src = 'space-ui.js?v=' + (window._CLIENT_VERSION || Date.now());
+          s.onload = () => {
+            if (window.SpaceUI && typeof window.SpaceUI.renderSpacePanel === 'function') {
+              window.SpaceUI.renderSpacePanel();
+            }
+          };
+          document.head.appendChild(s);
+        }
       }
     } else if (tabId ==='farm' && isFarmTesterAccount()) {
       renderFarmPanel();
@@ -3831,6 +3844,16 @@ const UIController = (() => {
       case'space':
         if (window.SpaceUI && typeof window.SpaceUI.renderSpacePanel === 'function') {
           window.SpaceUI.renderSpacePanel();
+        } else if (!document.getElementById('script-space-ui')) {
+          const s = document.createElement('script');
+          s.id = 'script-space-ui';
+          s.src = 'space-ui.js?v=' + (window._CLIENT_VERSION || Date.now());
+          s.onload = () => {
+            if (window.SpaceUI && typeof window.SpaceUI.renderSpacePanel === 'function') {
+              window.SpaceUI.renderSpacePanel();
+            }
+          };
+          document.head.appendChild(s);
         }
         break;
       case'farm':

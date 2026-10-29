@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.34",
-  "build": 1792752000000,
-  "timestamp": 1792752000000,
-  "notes": "Route ALL client read queries (players, globals, mailbox) through authoritative server read proxy, eliminate direct PostgREST calls in getMaintenanceStatus.",
-  "releaseNotes": "تحويل كافة قراءات الواجهة (اللاعبين، الإعدادات، الصيانة) بالكامل إلى سيرفر اللعبة الموثوق، وإنهاء أي اتصال مباشر بقاعدة البيانات من المتصفح."
+  "version": "v10.0.35",
+  "build": 1792752100000,
+  "timestamp": 1792752100000,
+  "notes": "Add Space Exploration Hub with launchpads, reusable rockets, planetary mining, and tester access code gate.",
+  "releaseNotes": "إطلاق محطة استكشاف وتعدين الفضاء مع منصات الإطلاق والصواريخ القابلة لإعادة الاستخدام والبورصة اليومية للمعادن."
 }

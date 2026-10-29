@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.34';
+    window._CLIENT_VERSION = 'v10.0.35';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.34';
+      const CURRENT_APP_BUILD = 'v10.0.35';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.34">
+  <link rel="stylesheet" href="app.css?v=v10.0.35">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -4301,7 +4301,17 @@
 
       <!-- ==================== TAB: محطة استكشاف الفضاء ==================== -->
       <section id="panel-space" class="game-panel hidden space-y-6">
-        <!-- Populated dynamically by window.SpaceUI.renderSpacePanel() -->
+        <div class="relative overflow-hidden rounded-3xl bg-slate-900/80 border border-sky-500/30 p-10 text-center shadow-2xl">
+          <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-sky-500/20 border border-sky-500/40 flex items-center justify-center text-sky-400 text-2xl shadow-lg">
+            <i class="fa-solid fa-shuttle-space animate-pulse"></i>
+          </div>
+          <h3 class="text-lg font-black text-white mb-2">محطة استكشاف وتعدين الفضاء</h3>
+          <p class="text-xs text-slate-400 mb-4">جاري تهيئة واجهة المحطة الفضائية وبورصة المعادن...</p>
+          <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-sky-400">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>جاري الاتصال بالنظام الفضائي...</span>
+          </div>
+        </div>
       </section>
 
       <!-- ==================== TAB: المزرعة الاستثمارية ==================== -->
@@ -8496,7 +8506,8 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.34"></script>
+  <script src="core.bundle.js?v=v10.0.35"></script>
+  <script src="space-ui.js?v=v10.0.35"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
