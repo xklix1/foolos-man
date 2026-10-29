@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.36",
-  "build": 1792752200000,
-  "timestamp": 1792752200000,
-  "notes": "Rebalance Space Exploration Hub to Billionaire Tier: 10x costs, 12h-72h planetary expeditions, high-yield mineral commodities, and 1k-5k Gold VIP managers.",
-  "releaseNotes": "موازنة وتوسيع محطة الفضاء لفئة كبار المليارديرات: رفع الأسعار وتكاليف الصواريخ حتى 10 مليار، وتمديد رحلات الكواكب من 12 ساعة حتى 3 أيام بأرباح تعدين أسطورية."
+  "version": "v10.0.37",
+  "build": 1792753600000,
+  "timestamp": 1792753600000,
+  "notes": "Calibrated Space Exploration Hub to Hardcore Endgame Sink: balanced cargo, fuel costs, 3-21 day payback curve.",
+  "releaseNotes": "معايرة وموازنة محطة استكشاف وتعدين الفضاء كـ Endgame Sink متوازن: ضبط سعات الصواريخ ووقود الإطلاق وأسعار المعادن لتحقيق منحنى استرداد عادل ومدروس."
 }

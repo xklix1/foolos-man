@@ -63,9 +63,9 @@ const SPACE_CONFIG = {
       name: 'مسبار أوريون-1 الاستكشافي',
       tier: 1,
       cost: 100000000, // 100M EGP
-      cargoCapacity: 500, // 500 kg
+      cargoCapacity: 800, // 800 kg
       allowedDestinations: ['moon'],
-      prepCost: 10000000, // 10M EGP
+      prepCost: 5000000, // 5M EGP
       prepSeconds: 120,
       icon: 'fa-solid fa-shuttle-space text-sky-400',
       color: 'sky',
@@ -76,9 +76,9 @@ const SPACE_CONFIG = {
       name: 'صاروخ فالكون ستار التكتيكي',
       tier: 2,
       cost: 500000000, // 500M EGP
-      cargoCapacity: 2500, // 2,500 kg
+      cargoCapacity: 1500, // 1,500 kg
       allowedDestinations: ['moon', 'mars'],
-      prepCost: 50000000, // 50M EGP
+      prepCost: 30000000, // 30M EGP
       prepSeconds: 240,
       icon: 'fa-solid fa-rocket text-indigo-400',
       color: 'indigo',
@@ -89,9 +89,9 @@ const SPACE_CONFIG = {
       name: 'سفينة التعدين الكوكبية Heavy Starship',
       tier: 3,
       cost: 2000000000, // 2 Billion EGP
-      cargoCapacity: 10000, // 10,000 kg
+      cargoCapacity: 3500, // 3,500 kg
       allowedDestinations: ['moon', 'mars', 'asteroid_belt'],
-      prepCost: 150000000, // 150M EGP
+      prepCost: 100000000, // 100M EGP
       prepSeconds: 480,
       icon: 'fa-solid fa-meteor text-amber-400',
       color: 'amber',
@@ -102,9 +102,9 @@ const SPACE_CONFIG = {
       name: 'مدمرة التعدين الكمومية Quantum Dreadnought',
       tier: 4,
       cost: 10000000000, // 10 Billion EGP
-      cargoCapacity: 50000, // 50,000 kg
+      cargoCapacity: 7000, // 7,000 kg
       allowedDestinations: ['moon', 'mars', 'asteroid_belt', 'jupiter_europa'],
-      prepCost: 500000000, // 500M EGP
+      prepCost: 400000000, // 400M EGP
       prepSeconds: 900,
       icon: 'fa-solid fa-star-of-david text-fuchsia-400',
       color: 'fuchsia',
@@ -118,7 +118,7 @@ const SPACE_CONFIG = {
       name: 'القمر (Moon - Mare Tranquillitatis)',
       distanceKm: '384,400 كم',
       baseSeconds: 43200, // 12 hours
-      fuelCost: 10000000, // 10M EGP
+      fuelCost: 5000000, // 5M EGP
       minTier: 1,
       icon: 'fa-solid fa-circle text-slate-300',
       color: 'slate',
@@ -134,7 +134,7 @@ const SPACE_CONFIG = {
       name: 'كوكب المريخ (Mars - Olympus Mons)',
       distanceKm: '225,000,000 كم',
       baseSeconds: 86400, // 24 hours (1 full day)
-      fuelCost: 50000000, // 50M EGP
+      fuelCost: 30000000, // 30M EGP
       minTier: 2,
       icon: 'fa-solid fa-globe text-rose-500',
       color: 'rose',
@@ -151,7 +151,7 @@ const SPACE_CONFIG = {
       name: 'حزام الكويكبات (Asteroid Belt - Psyche 16)',
       distanceKm: '480,000,000 كم',
       baseSeconds: 172800, // 48 hours (2 days)
-      fuelCost: 150000000, // 150M EGP
+      fuelCost: 100000000, // 100M EGP
       minTier: 3,
       icon: 'fa-solid fa-ring text-amber-500',
       color: 'amber',
@@ -168,7 +168,7 @@ const SPACE_CONFIG = {
       name: 'أقمار المشتري السحيقة (Jupiter / Europa Deep Abyss)',
       distanceKm: '778,000,000 كم',
       baseSeconds: 259200, // 72 hours (3 days)
-      fuelCost: 500000000, // 500M EGP (نصف مليار)
+      fuelCost: 400000000, // 400M EGP
       minTier: 4,
       icon: 'fa-solid fa-burst text-purple-400',
       color: 'purple',
@@ -178,7 +178,7 @@ const SPACE_CONFIG = {
         lithium: { weight: 0.20, minPct: 0.15, maxPct: 0.30 },
         platinum: { weight: 0.15, minPct: 0.10, maxPct: 0.20 }
       },
-      desc: 'أعماق الفضاء السحيق؛ ملحمة استكشافية تدوم 3 أيام لاقتناص بلورات المادة المظلمة التي تدر عشرات المليارات.'
+      desc: 'أعماق الفضاء السحيق؛ ملحمة استكشافية تدوم 3 أيام لاقتناص بلورات المادة المظلمة التي تدر أرباحاً بالمليارات.'
     }
   },
 
@@ -189,9 +189,9 @@ const SPACE_CONFIG = {
       rarity: 'شائع',
       rarityRank: 1,
       color: 'slate',
-      basePrice: 4500,
-      minPrice: 3200,
-      maxPrice: 6500,
+      basePrice: 8000,
+      minPrice: 6000,
+      maxPrice: 11000,
       icon: 'fa-solid fa-cubes text-slate-300',
       desc: 'تربة قمرية غنية بالسيليكون والأكاسيد، تستخدم في بناء المستعمرات الفضائية والمفاعلات.'
     },
@@ -201,9 +201,9 @@ const SPACE_CONFIG = {
       rarity: 'شائع',
       rarityRank: 2,
       color: 'blue',
-      basePrice: 12500,
-      minPrice: 9000,
-      maxPrice: 18000,
+      basePrice: 24000,
+      minPrice: 18000,
+      maxPrice: 32000,
       icon: 'fa-solid fa-shield-halved text-blue-400',
       desc: 'سبيكة حديدية كونية بالغة الصلابة ومقاومة للإشعاعات الكونية والحرارة الفائقة.'
     },
@@ -213,9 +213,9 @@ const SPACE_CONFIG = {
       rarity: 'نادر',
       rarityRank: 3,
       color: 'cyan',
-      basePrice: 75000,
-      minPrice: 52000,
-      maxPrice: 110000,
+      basePrice: 55000,
+      minPrice: 40000,
+      maxPrice: 75000,
       icon: 'fa-solid fa-gem text-cyan-300',
       desc: 'معدن نبيل فائق القيمة مطلوب بشدة من كبرى مصانع الأقمار الصناعية ومجمعات الشرائح الذكية.'
     },
@@ -225,9 +225,9 @@ const SPACE_CONFIG = {
       rarity: 'نادر',
       rarityRank: 4,
       color: 'amber',
-      basePrice: 220000,
-      minPrice: 150000,
-      maxPrice: 320000,
+      basePrice: 150000,
+      minPrice: 110000,
+      maxPrice: 210000,
       icon: 'fa-solid fa-atom text-amber-400',
       desc: 'نظير نظيف ووقود نووي اندماجي لا يقدر بثمن، يشغل محطات الطاقة العالمية والسفن المدارية.'
     },
@@ -237,9 +237,9 @@ const SPACE_CONFIG = {
       rarity: 'أسطوري',
       rarityRank: 5,
       color: 'yellow',
-      basePrice: 550000,
-      minPrice: 380000,
-      maxPrice: 850000,
+      basePrice: 240000,
+      minPrice: 170000,
+      maxPrice: 340000,
       icon: 'fa-solid fa-bolt text-yellow-300',
       desc: 'بلورات طاقة مشحونة فائقة التوصيل، تتيح شحن محركات الدفع الضوئي والمركبات العابرة للكواكب.'
     },
@@ -249,9 +249,9 @@ const SPACE_CONFIG = {
       rarity: 'فائق الندرة',
       rarityRank: 6,
       color: 'fuchsia',
-      basePrice: 1850000,
-      minPrice: 1300000,
-      maxPrice: 2900000,
+      basePrice: 450000,
+      minPrice: 320000,
+      maxPrice: 650000,
       icon: 'fa-solid fa-wand-magic-sparkles text-fuchsia-400',
       desc: 'أندر وأثمن مادة في الكون، لغز فيزيائي تشتريه مراكز أبحاث الفضاء والمليارديرات بأسعار فلكية.'
     }

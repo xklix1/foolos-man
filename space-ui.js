@@ -116,9 +116,9 @@ window.SpaceUI = (() => {
       name: 'مسبار أوريون-1 الاستكشافي',
       tier: 1,
       cost: 100000000,
-      cargoCapacity: 500,
+      cargoCapacity: 800,
       allowedDestinations: ['moon'],
-      prepCost: 10000000,
+      prepCost: 5000000,
       icon: 'fa-shuttle-space text-sky-400',
       color: 'sky',
       desc: 'مركبة استكشاف خفيفة ذاتية القيادة، مخصصة لمسح سطح القمر وجلب عينات الريجوليث والحديد.'
@@ -128,9 +128,9 @@ window.SpaceUI = (() => {
       name: 'صاروخ فالكون ستار التكتيكي',
       tier: 2,
       cost: 500000000,
-      cargoCapacity: 2500,
+      cargoCapacity: 1500,
       allowedDestinations: ['moon', 'mars'],
-      prepCost: 50000000,
+      prepCost: 30000000,
       icon: 'fa-rocket text-indigo-400',
       color: 'indigo',
       desc: 'صاروخ دفع هجين مجهز للوصول إلى كوكب المريخ وجلب خامات البلاتين والليثيوم الفضائي.'
@@ -140,9 +140,9 @@ window.SpaceUI = (() => {
       name: 'سفينة التعدين Heavy Starship',
       tier: 3,
       cost: 2000000000,
-      cargoCapacity: 10000,
+      cargoCapacity: 3500,
       allowedDestinations: ['moon', 'mars', 'asteroid_belt'],
-      prepCost: 150000000,
+      prepCost: 100000000,
       icon: 'fa-meteor text-amber-400',
       color: 'amber',
       desc: 'عملاق التعدين في أعماق الفضاء، مجهز بدروع لاختراق حزام الكويكبات واستخراج أندر المعادن.'
@@ -152,9 +152,9 @@ window.SpaceUI = (() => {
       name: 'مدمرة التعدين Quantum Dreadnought',
       tier: 4,
       cost: 10000000000,
-      cargoCapacity: 50000,
+      cargoCapacity: 7000,
       allowedDestinations: ['moon', 'mars', 'asteroid_belt', 'jupiter_europa'],
-      prepCost: 500000000,
+      prepCost: 400000000,
       icon: 'fa-star-of-david text-fuchsia-400',
       color: 'fuchsia',
       desc: 'درة التاج الفضائي بمحركات إيونية، قادرة على بلوغ أقمار المشتري واقتناص بلورات المادة المظلمة.'
@@ -168,7 +168,7 @@ window.SpaceUI = (() => {
       sub: 'Mare Tranquillitatis',
       dist: '384 ألف كم',
       baseSec: 43200, // 12 hours
-      fuelCost: 10000000,
+      fuelCost: 5000000,
       minTier: 1,
       badge: 'فئة 1 فأعلى',
       icon: 'fa-circle text-slate-300',
@@ -180,7 +180,7 @@ window.SpaceUI = (() => {
       sub: 'Olympus Mons',
       dist: '225 مليون كم',
       baseSec: 86400, // 24 hours
-      fuelCost: 50000000,
+      fuelCost: 30000000,
       minTier: 2,
       badge: 'فئة 2 فأعلى',
       icon: 'fa-globe text-rose-500',
@@ -192,7 +192,7 @@ window.SpaceUI = (() => {
       sub: 'Psyche 16 Cluster',
       dist: '480 مليون كم',
       baseSec: 172800, // 48 hours
-      fuelCost: 150000000,
+      fuelCost: 100000000,
       minTier: 3,
       badge: 'فئة 3 فأعلى',
       icon: 'fa-ring text-amber-500',
@@ -204,7 +204,7 @@ window.SpaceUI = (() => {
       sub: 'Subsurface Oceans',
       dist: '778 مليون كم',
       baseSec: 259200, // 72 hours
-      fuelCost: 500000000,
+      fuelCost: 400000000,
       minTier: 4,
       badge: 'فئة 4 حصرياً',
       icon: 'fa-burst text-purple-400',
@@ -213,12 +213,12 @@ window.SpaceUI = (() => {
   };
 
   const ORES_META = {
-    regolith: { id: 'regolith', name: 'ريجوليث قمري', rarity: 'شائع', icon: 'fa-cubes text-slate-300', basePrice: 4500, color: 'slate' },
-    iron: { id: 'iron', name: 'حديد نيزكي', rarity: 'شائع', icon: 'fa-shield-halved text-blue-400', basePrice: 12500, color: 'blue' },
-    platinum: { id: 'platinum', name: 'بلاتين كويكبي', rarity: 'نادر', icon: 'fa-gem text-cyan-300', basePrice: 75000, color: 'cyan' },
-    helium3: { id: 'helium3', name: 'هيليوم-3 كوني', rarity: 'نادر', icon: 'fa-atom text-amber-400', basePrice: 220000, color: 'amber' },
-    lithium: { id: 'lithium', name: 'ليثيوم فضائي', rarity: 'أسطوري', icon: 'fa-bolt text-yellow-300', basePrice: 550000, color: 'yellow' },
-    dark_matter: { id: 'dark_matter', name: 'بلورات المادة المظلمة', rarity: 'فائق الندرة', icon: 'fa-wand-magic-sparkles text-fuchsia-400', basePrice: 1850000, color: 'fuchsia' }
+    regolith: { id: 'regolith', name: 'ريجوليث قمري', rarity: 'شائع', icon: 'fa-cubes text-slate-300', basePrice: 8000, color: 'slate' },
+    iron: { id: 'iron', name: 'حديد نيزكي', rarity: 'شائع', icon: 'fa-shield-halved text-blue-400', basePrice: 24000, color: 'blue' },
+    platinum: { id: 'platinum', name: 'بلاتين كويكبي', rarity: 'نادر', icon: 'fa-gem text-cyan-300', basePrice: 55000, color: 'cyan' },
+    helium3: { id: 'helium3', name: 'هيليوم-3 كوني', rarity: 'نادر', icon: 'fa-atom text-amber-400', basePrice: 150000, color: 'amber' },
+    lithium: { id: 'lithium', name: 'ليثيوم فضائي', rarity: 'أسطوري', icon: 'fa-bolt text-yellow-300', basePrice: 240000, color: 'yellow' },
+    dark_matter: { id: 'dark_matter', name: 'بلورات المادة المظلمة', rarity: 'فائق الندرة', icon: 'fa-wand-magic-sparkles text-fuchsia-400', basePrice: 450000, color: 'fuchsia' }
   };
 
   const GOLD_MANAGERS_META = {
