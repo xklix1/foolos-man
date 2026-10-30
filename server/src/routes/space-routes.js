@@ -441,6 +441,76 @@ async function spaceRoutes(fastify, options) {
     };
   });
 
+  // 5b. POST /api/space/speedup-flight (Speedup active space mission with Gold - 1 Gold per 10 Minutes)
+  fastify.post('/api/space/speedup-flight', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const s = session.state;
+
+    if (!s.space || !s.space.unlocked || !Array.isArray(s.space.activeFlights)) {
+      return reply.code(400).send({ error: 'لا توجد رحلات فضائية نشطة حالياً.' });
+    }
+
+    const { flightId, rocketId } = request.body || {};
+    const flight = s.space.activeFlights.find(f => f && (f.id === flightId || f.rocketId === rocketId));
+    if (!flight) {
+      return reply.code(404).send({ error: 'الرحلة الفضائية المحددة غير موجودة أو تم تحصيلها مسبقاً.' });
+    }
+
+    const now = Date.now();
+    const arrivalTime = Number(flight.arrivalTime || 0);
+    const remSec = Math.max(0, Math.ceil((arrivalTime - now) / 1000));
+    if (remSec <= 0) {
+      return reply.code(400).send({ error: 'الرحلة الفضائية وصلت بالفعل وهبط الصاروخ وجاهز للتحصيل!' });
+    }
+
+    // Universal Game Rule: 1 Gold per 10 minutes (600 seconds)
+    const goldCost = Math.max(1, Math.ceil(remSec / 600));
+    const curGold = Math.max(0, Number(s.gold || 0));
+
+    if (curGold < goldCost) {
+      return reply.code(400).send({
+        error: `رصيدك من الذهب غير كافٍ! تحتاج إلى ${goldCost.toLocaleString()} ذهبة لتسريع الوقت المتبقي (${Math.ceil(remSec / 60)} دقيقة). رصيدك الحالي: ${curGold.toLocaleString()} ذهبة.`
+      });
+    }
+
+    s.gold = curGold - goldCost;
+    flight.arrivalTime = 0;
+    flight.speedupGold = goldCost;
+
+    const rocket = (s.space.activeRockets || []).find(r => r && r.id === flight.rocketId);
+    if (rocket && rocket.flight) {
+      rocket.flight.arrivalTime = 0;
+      rocket.flight.speedupGold = goldCost;
+    }
+
+    s.lastActiveTimestamp = now;
+    sessionManager.markDirty(session.username);
+
+    try {
+      const dbBase = dbService.url;
+      const headers = dbService.getHeaders();
+      await fetch(`${dbBase}/rest/v1/players?username=eq.${encodeURIComponent(session.username)}`, {
+        method: 'PATCH',
+        headers: headers,
+        body: JSON.stringify({ gold: s.gold })
+      });
+    } catch (e) {
+      fastify.log.warn(`[Space] Failed direct gold column sync on speedup for ${session.username}: ${e.message}`);
+    }
+
+    await dbService.savePlayerState(session.username, s);
+
+    return {
+      success: true,
+      message: `⚡ تم تفعيل الدفع الكمومي الفائق مقابل ${goldCost.toLocaleString()} ذهبة! هبط الصاروخ فورياً وجاهز لتفريغ الشحنة.`,
+      gold: s.gold,
+      goldCost,
+      flight,
+      space: s.space
+    };
+  });
+
   // 6. POST /api/space/claim (Claim payload after rocket returns)
   fastify.post('/api/space/claim', async (request, reply) => {
     const session = await resolveSession(request, reply);

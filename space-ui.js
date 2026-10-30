@@ -298,6 +298,8 @@ window.SpaceUI = (() => {
       const progressEl = document.getElementById(`space-prog-bar-${flt.id}`);
       const timerEl = document.getElementById(`space-prog-timer-${flt.id}`);
       const claimBtn = document.getElementById(`btn-claim-space-${flt.id}`);
+      const speedupBtn = document.getElementById(`btn-speedup-space-${flt.id}`);
+      const speedupCostEl = document.getElementById(`space-speedup-cost-${flt.id}`);
 
       const totalSec = Math.max(1, flt.durationSeconds || 60);
       const remMs = Math.max(0, flt.arrivalTime - now);
@@ -311,16 +313,19 @@ window.SpaceUI = (() => {
 
       if (remSec <= 0) {
         if (timerEl) timerEl.innerHTML = '<span class="text-emerald-400 font-bold flex items-center gap-1"><i class="fa-solid fa-check"></i> هبط الصاروخ بنجاح!</span>';
+        if (speedupBtn) speedupBtn.style.display = 'none';
         if (claimBtn) {
           claimBtn.disabled = false;
-          claimBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-          claimBtn.classList.add('animate-pulse');
+          claimBtn.className = 'w-full py-3 rounded-2xl font-black text-xs transition cursor-pointer flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 shadow-xl shadow-emerald-500/20 animate-pulse';
+          claimBtn.innerHTML = '<i class="fa-solid fa-boxes-packing"></i> <span>استلام وتفريغ حمولة المعادن بالمخزن</span>';
         }
       } else {
         const m = Math.floor(remSec / 60);
         const sec = remSec % 60;
         const timeStr = `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
         if (timerEl) timerEl.textContent = `متبقي: ${timeStr} (${Math.round(pct)}%)`;
+        const dynamicCost = Math.max(1, Math.ceil(remSec / 600));
+        if (speedupCostEl) speedupCostEl.textContent = `تسريع فوري بالذهب (${dynamicCost} ذهبة)`;
       }
     });
   }
@@ -665,6 +670,7 @@ window.SpaceUI = (() => {
         const remMs = Math.max(0, flight.arrivalTime - now);
         const remSec = Math.ceil(remMs / 1000);
         const isReady = remSec <= 0;
+        const currentSpeedupCost = Math.max(1, Math.ceil(remSec / 600));
 
         html += `
           <div class="relative overflow-hidden rounded-3xl bg-slate-900/90 border border-sky-500/40 p-5 shadow-xl space-y-4">
@@ -724,17 +730,27 @@ window.SpaceUI = (() => {
               </div>
             </div>
 
-            <!-- Claim Button -->
-            <button id="btn-claim-space-${flight.id}" onclick="window.SpaceUI.claimPayload('${flight.id}')"
-              ${!isReady ? 'disabled' : ''}
-              class="w-full py-3 rounded-2xl font-black text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
-                isReady
-                  ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 shadow-xl shadow-emerald-500/20 animate-pulse'
-                  : 'bg-slate-800/80 text-slate-500 cursor-not-allowed border border-slate-800'
-              }">
-              <i class="fa-solid fa-boxes-packing"></i>
-              <span>${isReady ? 'استلام وتفريغ حمولة المعادن بالمخزن' : 'جاري التنقيب والعودة...'}</span>
-            </button>
+            <!-- Action Buttons (Gold Speedup + Claim) -->
+            <div class="space-y-2">
+              ${!isReady ? `
+                <button id="btn-speedup-space-${flight.id}" onclick="window.SpaceUI.speedupFlight('${flight.id}')"
+                  class="w-full py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-500 to-amber-600 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs shadow-lg shadow-amber-500/20 transition active:scale-[0.98] cursor-pointer flex items-center justify-center gap-2">
+                  <i class="fa-solid fa-bolt"></i>
+                  <span id="space-speedup-cost-${flight.id}">تسريع فوري بالذهب (${currentSpeedupCost} ذهبة)</span>
+                </button>
+              ` : ''}
+
+              <button id="btn-claim-space-${flight.id}" onclick="window.SpaceUI.claimPayload('${flight.id}')"
+                ${!isReady ? 'disabled' : ''}
+                class="w-full py-3 rounded-2xl font-black text-xs transition cursor-pointer flex items-center justify-center gap-2 ${
+                  isReady
+                    ? 'bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 shadow-xl shadow-emerald-500/20 animate-pulse'
+                    : 'bg-slate-800/80 text-slate-500 cursor-not-allowed border border-slate-800'
+                }">
+                <i class="fa-solid fa-boxes-packing"></i>
+                <span>${isReady ? 'استلام وتفريغ حمولة المعادن بالمخزن' : 'جاري التنقيب والعودة...'}</span>
+              </button>
+            </div>
           </div>
         `;
       } else {
@@ -1292,6 +1308,46 @@ window.SpaceUI = (() => {
     }
   }
 
+  async function speedupFlight(flightId) {
+    const btn = document.getElementById(`btn-speedup-space-${flightId}`);
+    const s = (window.GameEngine && window.GameEngine.state) || {};
+    const space = s.space || {};
+    const flt = (space.activeFlights || []).find(f => f && f.id === flightId);
+    if (!flt) return;
+
+    const now = getTrustedNow();
+    const remSec = Math.max(0, Math.ceil((flt.arrivalTime - now) / 1000));
+    if (remSec <= 0) {
+      renderSpacePanel();
+      return;
+    }
+
+    const goldCost = Math.max(1, Math.ceil(remSec / 600));
+    const curGold = Math.max(0, Number(s.gold || 0));
+    if (curGold < goldCost) {
+      showSpaceToast(`رصيدك من الذهب غير كافٍ! تحتاج إلى ${goldCost} ذهبة (رصيدك: ${curGold} ذهبة).`, 'error');
+      return;
+    }
+
+    if (btn) {
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> جاري التسريع الفوري...';
+    }
+
+    try {
+      const res = await callSpaceApi('/api/space/speedup-flight', { flightId });
+      showSpaceToast(res.message || `تم تسريع الرحلة الفضائية بنجاح مقابل ${goldCost} ذهبة!`, 'success');
+      updateLocalPlayerState(res);
+      renderSpacePanel();
+    } catch (err) {
+      showSpaceToast(err.message, 'error');
+      if (btn) {
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-bolt"></i> <span id="space-speedup-cost-${flightId}">تسريع فوري بالذهب (${goldCost} ذهبة)</span>`;
+      }
+    }
+  }
+
   async function claimPayload(flightId) {
     if (_claimingRockets.has(flightId)) return;
     _claimingRockets.add(flightId);
@@ -1559,6 +1615,7 @@ window.SpaceUI = (() => {
     handleUnlockStation,
     handleUpgradeFacility,
     handleBuyRocket,
+    speedupFlight,
     claimPayload,
     handleSellOre,
     handleHireGoldManager,
