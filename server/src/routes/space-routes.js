@@ -137,17 +137,6 @@ async function spaceRoutes(fastify, options) {
     if (!session) return;
     const s = session.state;
 
-    // Strict Tester Lock Enforcement
-    const { testerCode } = request.body || {};
-    const uName = String(session.username || '').toLowerCase();
-    const isAdmin = session.isAdmin || uName === 'khaled' || uName === 'خالد';
-
-    if (!isAdmin && !isTesterCodeValid(testerCode)) {
-      return reply.code(403).send({
-        error: '🔒 محطة الفضاء قيد الاختبار التجريبي المغلق حالياً! يلزم إدخال كود التيسترز لفك القفل.'
-      });
-    }
-
     if (s.space && s.space.unlocked) {
       return reply.code(400).send({ error: 'محطة استكشاف الفضاء مفعلة بالفعل لديك!' });
     }

@@ -427,12 +427,6 @@ window.SpaceUI = (() => {
     const state = (window.GameEngine && window.GameEngine.state) || {};
     const space = state.space;
 
-    // Check Tester Authorization first
-    if (!isTesterAuthorized(state)) {
-      renderTesterLockGate(container, state);
-      return;
-    }
-
     if (!space || !space.unlocked) {
       renderUnlockGateway(container, state);
       return;
@@ -469,9 +463,6 @@ window.SpaceUI = (() => {
                 <span class="w-2 h-2 rounded-full bg-sky-400 animate-ping"></span>
                 محطة استكشاف وتعدين الفضاء الكوني
               </div>
-              <button onclick="window.SpaceUI.relockTesterAccess()" class="px-2.5 py-1 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-black cursor-pointer transition flex items-center gap-1" title="إعادة قفل الوصول التجريبي">
-                <i class="fa-solid fa-lock"></i> <span>إعادة القفل</span>
-              </button>
             </div>
             <h2 class="text-2xl sm:text-4xl font-black text-white tracking-wide">
               دشّن محطتك المدارية وانطلق لغزو الكواكب 🌌
@@ -547,9 +538,6 @@ window.SpaceUI = (() => {
                 <div class="flex items-center gap-2">
                   <h2 class="text-xl sm:text-2xl font-black text-white">محطة رأس المال لاستكشاف الفضاء</h2>
                   <span class="px-2.5 py-0.5 rounded-full bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-[10px] font-black uppercase">نشطة 100%</span>
-                  <button onclick="window.SpaceUI.relockTesterAccess()" class="px-2 py-0.5 rounded-full bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 text-[10px] font-black cursor-pointer transition flex items-center gap-1" title="إعادة قفل الوصول التجريبي">
-                    <i class="fa-solid fa-lock"></i> <span>إعادة القفل</span>
-                  </button>
                 </div>
                 <p class="text-xs text-slate-400 mt-0.5">منظومة الإطلاق المداري وتعدين المعادن الكونية وبورصة السلع اليومية</p>
               </div>
@@ -1280,8 +1268,7 @@ window.SpaceUI = (() => {
     }
 
     try {
-      const testerCode = localStorage.getItem('rasalmal_space_tester_code') || 'SPACE-2026-TITAN';
-      const res = await callSpaceApi('/api/space/unlock', { testerCode });
+      const res = await callSpaceApi('/api/space/unlock', {});
       showSpaceToast(res.message || 'تم تدشين المحطة بنجاح!', 'success');
       updateLocalPlayerState(res);
       renderSpacePanel();
