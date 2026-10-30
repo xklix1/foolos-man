@@ -286,6 +286,16 @@ window.SpaceUI = (() => {
     }, 1000);
   }
 
+  function formatSpaceHours(sec) {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = sec % 60;
+    if (h > 0) {
+      return `${h} ساعة و ${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+    }
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')} دقيقة`;
+  }
+
   function updateFlightTimers() {
     const s = (window.GameEngine && window.GameEngine.state) || {};
     const space = s.space;
@@ -320,9 +330,7 @@ window.SpaceUI = (() => {
           claimBtn.innerHTML = '<i class="fa-solid fa-boxes-packing"></i> <span>استلام وتفريغ حمولة المعادن بالمخزن</span>';
         }
       } else {
-        const m = Math.floor(remSec / 60);
-        const sec = remSec % 60;
-        const timeStr = `${m.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
+        const timeStr = formatSpaceHours(remSec);
         if (timerEl) timerEl.textContent = `متبقي: ${timeStr} (${Math.round(pct)}%)`;
         const dynamicCost = Math.max(1, Math.ceil(remSec / 600));
         if (speedupCostEl) speedupCostEl.textContent = `تسريع فوري بالذهب (${dynamicCost} ذهبة)`;
@@ -705,7 +713,7 @@ window.SpaceUI = (() => {
               <div class="flex items-center justify-between text-[11px] font-bold text-slate-400">
                 <span>مسار الرحلة والتنظير</span>
                 <span id="space-prog-timer-${flight.id}" class="numbers-font font-black text-sky-300">
-                  ${isReady ? 'هبط الصاروخ' : `متبقي: ${Math.round(remSec / 60)} دقيقة`}
+                  ${isReady ? 'هبط الصاروخ' : `متبقي: ${formatSpaceHours(remSec)}`}
                 </span>
               </div>
               <div class="w-full bg-slate-950 h-3 rounded-full overflow-hidden p-0.5 border border-slate-800">
@@ -1472,7 +1480,7 @@ window.SpaceUI = (() => {
           <select id="select-space-dest" onchange="window.SpaceUI.updateLaunchModalPreview()"
             class="w-full px-4 py-3 bg-slate-950 border border-slate-700 focus:border-sky-500 rounded-xl text-xs font-bold text-white outline-none">
             ${Object.values(DESTINATIONS_META).map(d => {
-              return `<option value="${d.id}">🪐 ${d.name} (${d.dist} • ${Math.round(d.baseSec / 60)} دقيقة)</option>`;
+              return `<option value="${d.id}">🪐 ${d.name} (${d.dist} • ${Math.round(d.baseSec / 3600)} ساعة)</option>`;
             }).join('')}
           </select>
         </div>
@@ -1532,7 +1540,7 @@ window.SpaceUI = (() => {
       </div>
       <div class="flex items-center justify-between">
         <span class="text-slate-400">الزمن التقديري للرحلة:</span>
-        <span class="font-bold text-sky-300 numbers-font">${(dest.baseSec >= 86400) ? ((dest.baseSec / 86400).toFixed(1).replace('.0', '') + ' يوم (' + (dest.baseSec / 3600) + ' ساعة)') : (Math.round((dest.baseSec || 43200) / 3600) + ' ساعة')}</span>
+        <span class="font-bold text-sky-300 numbers-font">${Math.round((dest.baseSec || 43200) / 3600)} ساعة</span>
       </div>
     `;
 

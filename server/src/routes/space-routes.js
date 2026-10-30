@@ -432,9 +432,10 @@ async function spaceRoutes(fastify, options) {
 
     await dbService.savePlayerState(session.username, s);
 
+    const durationHours = Number((durationSeconds / 3600).toFixed(1));
     return {
       success: true,
-      message: `🚀 تم إطلاق "${rocket.name}" بنجاح نحو ${dest.name}! وقت الوصول المتوقع بعد ${Math.round(durationSeconds / 60)} دقيقة.`,
+      message: `🚀 تم إطلاق "${rocket.name}" بنجاح نحو ${dest.name}! وقت الوصول المتوقع بعد ${durationHours} ساعة.`,
       flight: flight,
       space: s.space,
       cash: s.cash
@@ -469,8 +470,9 @@ async function spaceRoutes(fastify, options) {
     const curGold = Math.max(0, Number(s.gold || 0));
 
     if (curGold < goldCost) {
+      const remHours = Number((remSec / 3600).toFixed(1));
       return reply.code(400).send({
-        error: `رصيدك من الذهب غير كافٍ! تحتاج إلى ${goldCost.toLocaleString()} ذهبة لتسريع الوقت المتبقي (${Math.ceil(remSec / 60)} دقيقة). رصيدك الحالي: ${curGold.toLocaleString()} ذهبة.`
+        error: `رصيدك من الذهب غير كافٍ! تحتاج إلى ${goldCost.toLocaleString()} ذهبة لتسريع الوقت المتبقي (${remHours} ساعة). رصيدك الحالي: ${curGold.toLocaleString()} ذهبة.`
       });
     }
 
