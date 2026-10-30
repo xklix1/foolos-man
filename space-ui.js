@@ -434,7 +434,7 @@ window.SpaceUI = (() => {
     const curBank = Number(state.bank || 0);
     const curNetWorth = Number(state.netWorth || 0);
     const cost = 2500000000;
-    const reqNetWorth = 10000000000;
+    const reqNetWorth = 5000000000;
     const hasFunds = (curCash + curBank) >= cost;
     const hasNetWorth = curNetWorth >= reqNetWorth;
 
@@ -496,7 +496,7 @@ window.SpaceUI = (() => {
                 </div>
               </div>
               <div>
-                ${hasNetWorth ? '<span class="text-xs font-bold text-emerald-400"><i class="fa-solid fa-check"></i> مؤهل</span>' : `<span class="text-xs font-bold text-slate-400 numbers-font">${Math.round(curNetWorth / 1000000)}M / 10,000M</span>`}
+                ${hasNetWorth ? '<span class="text-xs font-bold text-emerald-400"><i class="fa-solid fa-check"></i> مؤهل</span>' : `<span class="text-xs font-bold text-slate-400 numbers-font">${Math.round(curNetWorth / 1000000)}M / 5,000M</span>`}
               </div>
             </div>
           </div>

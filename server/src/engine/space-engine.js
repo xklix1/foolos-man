@@ -8,7 +8,7 @@ const { calculateNetWorth, getAppropriateTitle } = require('./net-worth-engine')
 
 const SPACE_CONFIG = {
   unlockCost: 2500000000, // 2.5 Billion EGP construction cost
-  minNetWorthRequired: 10000000000, // 10 Billion Net Worth milestone to unlock
+  minNetWorthRequired: 5000000000, // 5 Billion Net Worth milestone to unlock
 
   facilities: {
     launchpads: {
