@@ -13,6 +13,164 @@ const { sanitizePlayerState } = require('../engine/state-sanitizer');
 const { calculateAuthoritativeOfflineProgress } = require('../engine/offline-engine');
 const { calculateNetWorth } = require('../engine/net-worth-engine');
 const { AIRCRAFT_MODELS, AIRPORT_FACILITIES, CONTROL_TOWER_CONFIG, calculateDutyFreeAccumulated, calculateTransitAccumulated } = require('../engine/airport-engine');
+const { SPACE_CONFIG, createInitialSpaceState, calculateDailyOrePrices, getSpaceBonuses } = require('../engine/space-engine');
+
+function buildEnrichedSpace(state, now = Date.now()) {
+  const sp = (state && state.space && typeof state.space === 'object') ? state.space : createInitialSpaceState();
+  const isUnlocked = Boolean(sp.unlocked);
+  const f = sp.facilities || {};
+  const padLvl = Math.max(1, Math.min(3, Number(f.launchpads || 1)));
+  const mcLvl = Math.max(1, Math.min(4, Number(f.mission_control || 1)));
+  const siloLvl = Math.max(1, Math.min(4, Number(f.ore_silo || 1)));
+  const refLvl = Math.max(1, Math.min(4, Number(f.ore_refinery || 1)));
+
+  const padCfg = SPACE_CONFIG.facilities.launchpads.levels[padLvl] || {};
+  const mcCfg = SPACE_CONFIG.facilities.mission_control.levels[mcLvl] || {};
+  const siloCfg = SPACE_CONFIG.facilities.ore_silo.levels[siloLvl] || {};
+  const refCfg = SPACE_CONFIG.facilities.ore_refinery.levels[refLvl] || {};
+
+  let totalFacilitiesCost = 0;
+  for (let l = 2; l <= padLvl; l++) totalFacilitiesCost += (SPACE_CONFIG.facilities.launchpads.levels[l]?.cost || 0);
+  for (let l = 2; l <= mcLvl; l++) totalFacilitiesCost += (SPACE_CONFIG.facilities.mission_control.levels[l]?.cost || 0);
+  for (let l = 2; l <= siloLvl; l++) totalFacilitiesCost += (SPACE_CONFIG.facilities.ore_silo.levels[l]?.cost || 0);
+  for (let l = 2; l <= refLvl; l++) totalFacilitiesCost += (SPACE_CONFIG.facilities.ore_refinery.levels[l]?.cost || 0);
+
+  const bonuses = getSpaceBonuses(sp);
+  const dailyRates = calculateDailyOrePrices(now).prices || {};
+  const sellMultiplier = 1 + (bonuses.sellBonusPct / 100);
+
+  const activeFlightsRaw = Array.isArray(sp.activeFlights) ? sp.activeFlights : [];
+  const activeFlightsList = activeFlightsRaw.filter(Boolean).map(flt => {
+    const dest = SPACE_CONFIG.destinations[flt.destinationId] || {};
+    const model = SPACE_CONFIG.rocketModels[flt.modelId] || {};
+    const arrivalTime = Number(flt.arrivalTime || 0);
+    const durationSeconds = Math.max(1, Number(flt.durationSeconds || 3600));
+    const remSec = Math.max(0, Math.ceil((arrivalTime - now) / 1000));
+    const isReady = remSec <= 0;
+    const elapsedSec = Math.max(0, durationSeconds - remSec);
+    const progressPct = isReady ? 100 : Math.min(99, Math.max(1, Math.round((elapsedSec / durationSeconds) * 100)));
+    let payloadWeightKg = 0;
+    let payloadEstValue = 0;
+    Object.entries(flt.payload || {}).forEach(([oreKey, qty]) => {
+      const q = Math.max(0, Number(qty) || 0);
+      payloadWeightKg += q;
+      const p = dailyRates[oreKey]?.price || SPACE_CONFIG.ores[oreKey]?.basePrice || 0;
+      payloadEstValue += Math.round(q * p * sellMultiplier);
+    });
+
+    return {
+      id: flt.id,
+      rocketId: flt.rocketId,
+      rocketName: flt.rocketName || model.name || 'صاروخ فضائي',
+      modelId: flt.modelId,
+      modelName: model.name || flt.modelId,
+      padId: Number(flt.padId || 1),
+      destinationId: flt.destinationId,
+      destinationName: flt.destinationName || dest.name || flt.destinationId,
+      launchedAt: Number(flt.launchedAt || 0),
+      durationSeconds,
+      arrivalTime,
+      remSec,
+      isReady,
+      progressPct,
+      payload: flt.payload || {},
+      payloadWeightKg,
+      payloadEstValue
+    };
+  });
+
+  let totalFleetCost = 0;
+  const rocketsList = (Array.isArray(sp.activeRockets) ? sp.activeRockets : []).filter(Boolean).map(r => {
+    const mCfg = SPACE_CONFIG.rocketModels[r.modelId] || {};
+    const cost = Number(mCfg.cost || 0);
+    totalFleetCost += cost;
+    const activeFlight = activeFlightsList.find(f => f.rocketId === r.id) || null;
+    return {
+      id: r.id,
+      modelId: r.modelId,
+      modelName: mCfg.name || r.modelId,
+      name: r.name || mCfg.name || 'صاروخ فضائي',
+      tier: mCfg.tier || 1,
+      cargoCapacity: mCfg.cargoCapacity || 800,
+      cost,
+      icon: mCfg.icon || 'fa-solid fa-rocket text-sky-400',
+      purchasedAt: Number(r.purchasedAt || 0),
+      status: activeFlight ? 'in_flight' : 'ready',
+      activeFlight
+    };
+  });
+
+  const warehouse = sp.warehouse || {};
+  let warehouseTotalKg = 0;
+  let warehouseMarketValue = 0;
+  const oresList = Object.entries(SPACE_CONFIG.ores).map(([oreKey, oreDef]) => {
+    const qty = Math.max(0, Number(warehouse[oreKey] || 0));
+    const todayPrice = dailyRates[oreKey]?.price || oreDef.basePrice;
+    const changePct = dailyRates[oreKey]?.changePct || 0;
+    const estValue = Math.round(qty * todayPrice * sellMultiplier);
+    warehouseTotalKg += qty;
+    warehouseMarketValue += estValue;
+    return {
+      id: oreKey,
+      name: oreDef.name,
+      rarity: oreDef.rarity,
+      color: oreDef.color,
+      icon: oreDef.icon,
+      qty,
+      todayPrice,
+      changePct,
+      estValue
+    };
+  });
+
+  const hiredManagersRaw = Array.isArray(sp.hiredManagers) ? sp.hiredManagers : [];
+  const managersList = Object.values(SPACE_CONFIG.goldManagers).map(mgr => ({
+    tier: mgr.tier,
+    id: mgr.id,
+    name: mgr.name,
+    title: mgr.title,
+    badge: mgr.badge,
+    goldCost: mgr.goldCost,
+    desc: mgr.desc,
+    isHired: hiredManagersRaw.includes(mgr.tier)
+  }));
+
+  const baseLicenseCost = isUnlocked ? SPACE_CONFIG.unlockCost : 0;
+
+  return {
+    unlocked: isUnlocked,
+    unlockedAt: Number(sp.unlockedAt || 0),
+    valuation: {
+      baseLicenseValue: baseLicenseCost,
+      facilitiesValue: isUnlocked ? totalFacilitiesCost : 0,
+      fleetValue: isUnlocked ? totalFleetCost : 0,
+      warehouseMarketValue,
+      totalSpaceCapital: isUnlocked ? (baseLicenseCost + totalFacilitiesCost + totalFleetCost) : 0
+    },
+    bonuses,
+    facilities: {
+      launchpads: { level: padLvl, maxLevel: 3, name: padCfg.name || 'منصة مدارية', maxPads: padCfg.maxPads || 1 },
+      mission_control: { level: mcLvl, maxLevel: 4, name: mcCfg.name || 'مركز قيادة', timeReductionPct: Math.round((mcCfg.timeReduction || 0) * 100) },
+      ore_silo: { level: siloLvl, maxLevel: 4, name: siloCfg.name || 'مستودع خام', capacity: siloCfg.capacity || 1000 },
+      ore_refinery: { level: refLvl, maxLevel: 4, name: refCfg.name || 'معمل تكرير', yieldBonusPct: Math.round(((refCfg.yieldMultiplier || 1) - 1) * 100) }
+    },
+    managers: managersList,
+    warehouse: {
+      totalKg: warehouseTotalKg,
+      capacityKg: bonuses.siloCapacity,
+      marketValue: warehouseMarketValue,
+      ores: oresList
+    },
+    rockets: rocketsList,
+    activeFlights: activeFlightsList,
+    stats: {
+      totalFlightsLaunched: Number(sp.stats?.totalFlightsLaunched || 0),
+      totalFlightsCompleted: Number(sp.stats?.totalFlightsCompleted || 0),
+      totalOresMinedKg: Number(sp.stats?.totalOresMinedKg || 0),
+      totalRevenueEGP: Number(sp.stats?.totalRevenueEGP || 0)
+    }
+  };
+}
 
 const CHAT_IMAGES_DIR = path.resolve(__dirname, '../../../uploads/chat_images');
 try {
@@ -1423,6 +1581,9 @@ async function moderatorRoutes(fastify, options) {
 
         // Aviation & Airport
         airport: enrichedAirport,
+
+        // Space Exploration & Orbital Station
+        space: buildEnrichedSpace(state, now),
 
         // Farm & Agriculture
         farm: state.farm || null,
@@ -3613,6 +3774,224 @@ async function moderatorRoutes(fastify, options) {
       });
     } catch (err) {
       fastify.log.error(err, '[Delete Staff Task Error]');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
+   * POST /api/mod/space/control
+   * Full administrative inspection & control over a player's Space Station
+   */
+  fastify.post('/space/control', { preHandler: [requireModAuth] }, async (request, reply) => {
+    try {
+      const { targetUser, subAction, facilityId, level, modelId, customName, rocketId, flightId, oreId, amount, unlocked } = request.body || {};
+      if (!targetUser || typeof targetUser !== 'string') {
+        return reply.status(400).send({ error: 'Bad Request', message: 'اسم اللاعب المستهدف مطلوب.' });
+      }
+      if (!subAction || typeof subAction !== 'string') {
+        return reply.status(400).send({ error: 'Bad Request', message: 'نوع العملية مطلوب.' });
+      }
+
+      const target = targetUser.trim();
+      const targetLower = target.toLowerCase();
+      const sKey = serviceKey();
+      const ts = Date.now();
+
+      const pRes = await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}&select=*`, {
+        headers: { 'apikey': sKey, 'Authorization': `Bearer ${sKey}` }
+      });
+      const rows = await pRes.json();
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return reply.status(404).send({ error: 'Not Found', message: `اللاعب "${target}" غير موجود.` });
+      }
+
+      const pDoc = rows[0];
+      const pState = (typeof pDoc.state === 'object' && pDoc.state) ? pDoc.state : {};
+      if (!pState.space || typeof pState.space !== 'object') {
+        pState.space = createInitialSpaceState();
+      }
+      if (!pState.space.facilities) {
+        pState.space.facilities = { launchpads: 1, mission_control: 1, ore_silo: 1, ore_refinery: 1 };
+      }
+      if (!Array.isArray(pState.space.activeRockets)) pState.space.activeRockets = [];
+      if (!Array.isArray(pState.space.activeFlights)) pState.space.activeFlights = [];
+      if (!pState.space.warehouse) {
+        pState.space.warehouse = { regolith: 0, iron: 0, platinum: 0, helium3: 0, lithium: 0, dark_matter: 0 };
+      }
+      if (!pState.space.stats) {
+        pState.space.stats = { totalFlightsLaunched: 0, totalFlightsCompleted: 0, totalOresMinedKg: 0, totalRevenueEGP: 0 };
+      }
+
+      let actionDesc = '';
+      const auditDetails = { subAction };
+
+      switch (subAction) {
+        case 'toggle_unlock': {
+          const nextState = unlocked !== undefined ? Boolean(unlocked) : !pState.space.unlocked;
+          pState.space.unlocked = nextState;
+          if (nextState && !pState.space.unlockedAt) {
+            pState.space.unlockedAt = ts;
+          }
+          actionDesc = nextState ? 'فتح وتفعيل محطة الفضاء للاعب إدارياً' : 'قفل وتعليق محطة الفضاء للاعب إدارياً';
+          auditDetails.unlocked = nextState;
+          break;
+        }
+
+        case 'reset_station': {
+          pState.space = createInitialSpaceState();
+          actionDesc = 'تصفير وإعادة ضبط محطة الفضاء بالكامل للاعب';
+          break;
+        }
+
+        case 'set_facility_level': {
+          const facDef = SPACE_CONFIG.facilities[facilityId];
+          if (!facDef) {
+            return reply.status(400).send({ error: 'Bad Request', message: 'المرفق المحدد غير صالح.' });
+          }
+          const maxLvl = Object.keys(facDef.levels).length;
+          const targetLvl = Math.max(1, Math.min(maxLvl, parseInt(level, 10) || 1));
+          pState.space.facilities[facilityId] = targetLvl;
+          pState.space.unlocked = true;
+          actionDesc = `تعديل مستوى "${facDef.name}" إلى المستوى ${targetLvl}`;
+          auditDetails.facilityId = facilityId;
+          auditDetails.level = targetLvl;
+          break;
+        }
+
+        case 'add_rocket': {
+          const model = SPACE_CONFIG.rocketModels[modelId];
+          if (!model) {
+            return reply.status(400).send({ error: 'Bad Request', message: 'طراز الصاروخ غير صالح.' });
+          }
+          const newRocket = {
+            id: 'rkt_' + ts + '_' + Math.random().toString(36).substr(2, 4),
+            modelId: model.id,
+            name: (customName && String(customName).trim()) ? String(customName).trim().substring(0, 30) : model.name,
+            purchasedAt: ts,
+            status: 'ready',
+            flight: null
+          };
+          pState.space.unlocked = true;
+          pState.space.activeRockets.push(newRocket);
+          actionDesc = `إضافة صاروخ "${newRocket.name}" (${model.name}) لأسطول اللاعب`;
+          auditDetails.modelId = modelId;
+          auditDetails.rocketId = newRocket.id;
+          break;
+        }
+
+        case 'remove_rocket': {
+          const rIdx = pState.space.activeRockets.findIndex(r => r && r.id === rocketId);
+          if (rIdx === -1) {
+            return reply.status(404).send({ error: 'Not Found', message: 'الصاروخ غير موجود في أسطول اللاعب.' });
+          }
+          const removed = pState.space.activeRockets[rIdx];
+          pState.space.activeRockets.splice(rIdx, 1);
+          pState.space.activeFlights = pState.space.activeFlights.filter(f => f && f.rocketId !== rocketId);
+          actionDesc = `حذف الصاروخ "${removed.name || removed.modelId}" من أسطول اللاعب`;
+          auditDetails.rocketId = rocketId;
+          break;
+        }
+
+        case 'land_flight': {
+          const flt = pState.space.activeFlights.find(f => f && f.id === flightId);
+          if (!flt) {
+            return reply.status(404).send({ error: 'Not Found', message: 'الرحلة الفضائية غير موجودة.' });
+          }
+          flt.arrivalTime = 0;
+          const rkt = pState.space.activeRockets.find(r => r && r.id === flt.rocketId);
+          if (rkt && rkt.flight) rkt.flight.arrivalTime = 0;
+          actionDesc = `إنهاء وهبوط فوري للرحلة الفضائية (${flt.rocketName} -> ${flt.destinationName})`;
+          auditDetails.flightId = flightId;
+          break;
+        }
+
+        case 'cancel_flight': {
+          const fIdx = pState.space.activeFlights.findIndex(f => f && f.id === flightId);
+          if (fIdx === -1) {
+            return reply.status(404).send({ error: 'Not Found', message: 'الرحلة الفضائية غير موجودة.' });
+          }
+          const flt = pState.space.activeFlights[fIdx];
+          pState.space.activeFlights.splice(fIdx, 1);
+          const rkt = pState.space.activeRockets.find(r => r && r.id === flt.rocketId);
+          if (rkt) {
+            rkt.status = 'ready';
+            rkt.flight = null;
+          }
+          actionDesc = `إلغاء الرحلة الفضائية (${flt.rocketName}) وإعادة الصاروخ للحظيرة`;
+          auditDetails.flightId = flightId;
+          break;
+        }
+
+        case 'set_ore': {
+          if (oreId === 'clear_all') {
+            Object.keys(SPACE_CONFIG.ores).forEach(k => {
+              pState.space.warehouse[k] = 0;
+            });
+            actionDesc = 'تصفير مستودع المعادن الفضائية بالكامل للاعب';
+          } else {
+            const oreDef = SPACE_CONFIG.ores[oreId];
+            if (!oreDef) {
+              return reply.status(400).send({ error: 'Bad Request', message: 'نوع المعدن الفضائي غير صالح.' });
+            }
+            const cleanQty = Math.max(0, Math.floor(Number(amount) || 0));
+            pState.space.warehouse[oreId] = cleanQty;
+            actionDesc = `تعديل رصيد "${oreDef.name}" في مستودع الفضاء إلى ${cleanQty.toLocaleString('en-US')} كجم`;
+            auditDetails.oreId = oreId;
+            auditDetails.amount = cleanQty;
+          }
+          break;
+        }
+
+        default:
+          return reply.status(400).send({ error: 'Bad Request', message: `عملية غير مدعومة: ${subAction}` });
+      }
+
+      const updatedNetWorth = calculateNetWorth(pState);
+      pState.netWorth = updatedNetWorth;
+      pState.adminModifiedTimestamp = ts;
+
+      await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}`, {
+        method: 'PATCH',
+        headers: {
+          'apikey': sKey,
+          'Authorization': `Bearer ${sKey}`,
+          'Content-Type': 'application/json',
+          'Prefer': 'return=minimal'
+        },
+        body: JSON.stringify({
+          state: pState,
+          net_worth: updatedNetWorth,
+          admin_modified_timestamp: ts
+        })
+      });
+
+      if (sessionManager) {
+        const session = sessionManager.getSession(targetLower);
+        if (session && session.state) {
+          session.state.space = JSON.parse(JSON.stringify(pState.space));
+          session.state.netWorth = updatedNetWorth;
+          session.state.adminModifiedTimestamp = ts;
+          session._lastProcessedAdminTs = ts;
+          session.dirty = false;
+        }
+      }
+
+      await logStaffAudit(
+        request.modSession,
+        pDoc.username,
+        `space_${subAction}`,
+        actionDesc,
+        auditDetails
+      );
+
+      return reply.send({
+        success: true,
+        message: actionDesc,
+        space: buildEnrichedSpace(pState, ts),
+        netWorth: updatedNetWorth
+      });
+    } catch (err) {
+      fastify.log.error(err, '[Mod Space Control Error]');
       return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
     }
   });

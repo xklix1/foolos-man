@@ -526,6 +526,9 @@
         <button onclick="switchInspectTab('airport')" id="itab_airport" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
           <i class="fa-solid fa-plane ml-1"></i> المطار
         </button>
+        <button onclick="switchInspectTab('space')" id="itab_space" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
+          <i class="fa-solid fa-shuttle-space text-fuchsia-400 ml-1"></i> الفضاء
+        </button>
         <button onclick="switchInspectTab('farm')" id="itab_farm" class="px-3 sm:px-3.5 py-2 rounded-xl font-bold bg-slate-800 hover:bg-slate-700 text-slate-300 whitespace-nowrap shrink-0 transition">
           <i class="fa-solid fa-wheat-awn text-emerald-400 ml-1"></i> المزرعة
         </button>
@@ -833,6 +836,13 @@
           <h3 class="text-xs font-bold text-slate-300">بيانات المطار وخطوط الطيران:</h3>
           <div id="p_airportInfo" class="space-y-3">
             <!-- Airport Data -->
+          </div>
+        </div>
+
+        <!-- Tab: Space Exploration & Orbital Station (محطة الفضاء) -->
+        <div id="tabContent_space" class="hidden space-y-4">
+          <div id="p_spaceInfo" class="space-y-4">
+            <!-- Space Station Data & Controls -->
           </div>
         </div>
 
@@ -2686,6 +2696,9 @@
       // Tab 4: Airport & Aviation Tycoon
       renderAirportDetails(p.airport);
 
+      // Tab: Space Exploration & Orbital Station (محطة الفضاء)
+      renderSpaceDetails(p.space || (p.state && p.state.space), p.username);
+
       // Tab: Agro Farm Tycoon (المزرعة الاستثمارية)
       renderFarmDetails(p.farm);
 
@@ -3489,6 +3502,461 @@
       container.innerHTML = html;
     }
 
+    // ================= SPACE STATION & ORBITAL MINING INSPECTOR + FULL CONTROLS =================
+    const SPACE_ORES_DICT = {
+      regolith: { name: 'خام الريجوليث القمري', rarity: 'شائع', icon: 'fa-cubes text-slate-300', basePrice: 8000 },
+      iron: { name: 'الحديد النيزكي الصلب', rarity: 'شائع', icon: 'fa-shield-halved text-blue-400', basePrice: 24000 },
+      platinum: { name: 'بلاتين الكويكبات الفضائي', rarity: 'نادر', icon: 'fa-gem text-cyan-300', basePrice: 55000 },
+      helium3: { name: 'هيليوم-3 الكوني النقي', rarity: 'نادر', icon: 'fa-atom text-amber-400', basePrice: 150000 },
+      lithium: { name: 'الليثيوم الفضائي المشع', rarity: 'أسطوري', icon: 'fa-bolt text-yellow-300', basePrice: 240000 },
+      dark_matter: { name: 'بلورات المادة المظلمة', rarity: 'فائق الندرة', icon: 'fa-wand-magic-sparkles text-fuchsia-400', basePrice: 450000 }
+    };
+
+    const SPACE_ROCKETS_DICT = {
+      orion_probe: { id: 'orion_probe', name: 'مسبار أوريون-1 الاستكشافي', tier: 1, cargoCapacity: 800, cost: 100000000, icon: 'fa-shuttle-space text-sky-400' },
+      falcon_star: { id: 'falcon_star', name: 'صاروخ فالكون ستار التكتيكي', tier: 2, cargoCapacity: 1500, cost: 500000000, icon: 'fa-rocket text-indigo-400' },
+      heavy_starship: { id: 'heavy_starship', name: 'سفينة التعدين الكوكبية Heavy Starship', tier: 3, cargoCapacity: 3500, cost: 2000000000, icon: 'fa-meteor text-amber-400' },
+      quantum_dreadnought: { id: 'quantum_dreadnought', name: 'مدمرة التعدين الكمومية Quantum Dreadnought', tier: 4, cargoCapacity: 7000, cost: 10000000000, icon: 'fa-jet-fighter-up text-fuchsia-400' }
+    };
+
+    async function executeModSpaceAction(payload) {
+      const targetUser = payload.targetUser || (inspectingPlayer && inspectingPlayer.username);
+      if (!targetUser) return;
+
+      try {
+        const res = await fetch(`${API_BASE}/space/control`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentModToken}`
+          },
+          body: JSON.stringify({ ...payload, targetUser })
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) {
+          showToast(data.message || data.error || 'تعذر تنفيذ الإجراء على محطة الفضاء', 'error');
+          return;
+        }
+        showToast(data.message || 'تم تحديث محطة الفضاء بنجاح!', 'success');
+        if (inspectingPlayer && String(inspectingPlayer.username).toLowerCase() === String(targetUser).toLowerCase()) {
+          inspectingPlayer.space = data.space;
+          if (data.netWorth !== undefined) {
+            inspectingPlayer.netWorth = data.netWorth;
+            const nwEl = document.getElementById('p_networth');
+            if (nwEl) nwEl.textContent = fmtMoney(data.netWorth);
+          }
+          renderSpaceDetails(data.space, targetUser);
+        }
+      } catch (err) {
+        showToast('فشل الاتصال بالخادم: ' + err.message, 'error');
+      }
+    }
+
+    function renderSpaceDetails(spaceInput, username) {
+      const container = document.getElementById('p_spaceInfo');
+      if (!container) return;
+
+      const targetUser = username || (inspectingPlayer && inspectingPlayer.username) || '';
+      const sp = (spaceInput && typeof spaceInput === 'object') ? spaceInput : { unlocked: false };
+      const isUnlocked = Boolean(sp.unlocked);
+
+      const val = sp.valuation || {
+        baseLicenseValue: isUnlocked ? 2500000000 : 0,
+        facilitiesValue: 0,
+        fleetValue: 0,
+        warehouseMarketValue: 0,
+        totalSpaceCapital: isUnlocked ? 2500000000 : 0
+      };
+
+      const fac = sp.facilities || {};
+      const launchpads = (typeof fac.launchpads === 'object' && fac.launchpads) ? fac.launchpads : { level: Number(fac.launchpads || 1), maxLevel: 3, name: 'منصات الإطلاق الفضائية', maxPads: Number(fac.launchpads || 1) };
+      const missionControl = (typeof fac.mission_control === 'object' && fac.mission_control) ? fac.mission_control : { level: Number(fac.mission_control || 1), maxLevel: 4, name: 'مركز القيادة والتحكم المداري', timeReductionPct: 0 };
+      const oreSilo = (typeof fac.ore_silo === 'object' && fac.ore_silo) ? fac.ore_silo : { level: Number(fac.ore_silo || 1), maxLevel: 4, name: 'مستودع وخزانات الخام الفضائي', capacity: 1000 };
+      const oreRefinery = (typeof fac.ore_refinery === 'object' && fac.ore_refinery) ? fac.ore_refinery : { level: Number(fac.ore_refinery || 1), maxLevel: 4, name: 'معمل تكرير وتنقية الخام الفضائي', yieldBonusPct: 0 };
+
+      const rockets = Array.isArray(sp.rockets) ? sp.rockets : (Array.isArray(sp.activeRockets) ? sp.activeRockets.map(r => {
+        const m = SPACE_ROCKETS_DICT[r.modelId] || {};
+        return {
+          ...r,
+          modelName: m.name || r.modelId,
+          tier: m.tier || 1,
+          cargoCapacity: m.cargoCapacity || 800,
+          cost: m.cost || 0,
+          icon: m.icon || 'fa-rocket text-sky-400'
+        };
+      }) : []);
+
+      const activeFlights = Array.isArray(sp.activeFlights) ? sp.activeFlights : [];
+      const stats = sp.stats || { totalFlightsLaunched: 0, totalFlightsCompleted: 0, totalOresMinedKg: 0, totalRevenueEGP: 0 };
+
+      const wh = sp.warehouse || {};
+      const oresList = Array.isArray(wh.ores) ? wh.ores : Object.entries(SPACE_ORES_DICT).map(([k, def]) => {
+        const qty = Math.max(0, Number(wh[k] || 0));
+        return {
+          id: k,
+          name: def.name,
+          rarity: def.rarity,
+          icon: def.icon,
+          qty,
+          todayPrice: def.basePrice,
+          estValue: qty * def.basePrice
+        };
+      });
+      const totalKg = wh.totalKg !== undefined ? Number(wh.totalKg) : oresList.reduce((acc, o) => acc + o.qty, 0);
+      const capacityKg = wh.capacityKg !== undefined ? Number(wh.capacityKg) : (oreSilo.capacity || 1000);
+      const whMarketVal = wh.marketValue !== undefined ? Number(wh.marketValue) : oresList.reduce((acc, o) => acc + o.estValue, 0);
+
+      const managers = Array.isArray(sp.managers) ? sp.managers : [
+        { tier: 1, name: 'د. ليام - مدير العمليات الفضائية', badge: 'مدير العمليات (-20% وقت)', isHired: Array.isArray(sp.hiredManagers) && sp.hiredManagers.includes(1) },
+        { tier: 2, name: 'د. سارة - خبيرة الجيولوجيا الكونية', badge: 'خبير جيولوجيا (+25% حصيلة)', isHired: Array.isArray(sp.hiredManagers) && sp.hiredManagers.includes(2) },
+        { tier: 3, name: 'الآدميرال فالكون - القائد العام للأسطول', badge: 'قائد الأسطول (Auto-Pilot +15%)', isHired: Array.isArray(sp.hiredManagers) && sp.hiredManagers.includes(3) }
+      ];
+
+      const facilityCardsMeta = [
+        {
+          id: 'launchpads',
+          title: 'منصات الإطلاق الفضائية',
+          icon: 'fa-rocket text-sky-400',
+          level: launchpads.level || 1,
+          maxLevel: 3,
+          subName: launchpads.name || 'منصة مدارية',
+          perkText: `أقصى رحلات متزامنة: ${launchpads.maxPads || launchpads.level || 1} منصات`
+        },
+        {
+          id: 'mission_control',
+          title: 'مركز القيادة والتحكم',
+          icon: 'fa-satellite-dish text-indigo-400',
+          level: missionControl.level || 1,
+          maxLevel: 4,
+          subName: missionControl.name || 'مركز قيادة',
+          perkText: `تقليص زمن الرحلات: -${missionControl.timeReductionPct || 0}%`
+        },
+        {
+          id: 'ore_silo',
+          title: 'مستودع الخام الفضائي',
+          icon: 'fa-warehouse text-amber-400',
+          level: oreSilo.level || 1,
+          maxLevel: 4,
+          subName: oreSilo.name || 'صوامع شحن',
+          perkText: `السعة الاستيعابية: ${(oreSilo.capacity || 1000).toLocaleString('en-US')} كجم`
+        },
+        {
+          id: 'ore_refinery',
+          title: 'معمل تكرير الخام الفضائي',
+          icon: 'fa-atom text-emerald-400',
+          level: oreRefinery.level || 1,
+          maxLevel: 4,
+          subName: oreRefinery.name || 'معمل تكرير',
+          perkText: `بونص نقاء المعادن: +${oreRefinery.yieldBonusPct || 0}%`
+        }
+      ];
+
+      container.innerHTML = `
+        <!-- 1. Space Station Header, Valuation & Master Admin Controls -->
+        <div class="glass-panel p-4 rounded-2xl border ${isUnlocked ? 'border-fuchsia-500/40 bg-gradient-to-r from-fuchsia-950/30 via-slate-900/70 to-indigo-950/30' : 'border-slate-800 bg-slate-900/50'} space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-11 h-11 rounded-2xl ${isUnlocked ? 'bg-fuchsia-500/20 border border-fuchsia-500/40 text-fuchsia-300' : 'bg-slate-800 text-slate-500'} flex items-center justify-center text-xl">
+                <i class="fa-solid fa-shuttle-space"></i>
+              </div>
+              <div>
+                <h4 class="text-sm font-black text-white flex items-center gap-2 flex-wrap">
+                  <span>محطة استكشاف وتعدين الفضاء الكوني</span>
+                  <span class="text-[10px] px-2.5 py-0.5 rounded-full font-bold ${isUnlocked ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40' : 'bg-rose-500/20 text-rose-300 border border-rose-500/40'}">
+                    ${isUnlocked ? 'مفعلة ونشطة 100%' : 'غير مفعلة / مقفلة'}
+                  </span>
+                </h4>
+                <div class="text-[11px] text-slate-400 mt-0.5">إدارة وفحص المرافق المدارية، أسطول الصواريخ، الرحلات النشطة، ومستودع المعادن الفضائية</div>
+              </div>
+            </div>
+
+            <!-- Master Station Control Buttons -->
+            <div class="flex items-center gap-2 flex-wrap">
+              <button type="button" onclick="executeModSpaceAction({ subAction: 'toggle_unlock', unlocked: ${!isUnlocked} })"
+                class="px-3.5 py-2 rounded-xl font-black text-xs transition cursor-pointer flex items-center gap-1.5 shadow-md ${
+                  isUnlocked
+                    ? 'bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-slate-950 border border-amber-500/40'
+                    : 'bg-emerald-600 hover:bg-emerald-500 text-slate-950 shadow-emerald-600/20'
+                }">
+                <i class="fa-solid ${isUnlocked ? 'fa-lock' : 'fa-unlock-keyhole'}"></i>
+                <span>${isUnlocked ? 'قفل المحطة مؤقتاً' : 'فتح وتفعيل المحطة للاعب'}</span>
+              </button>
+
+              <button type="button" onclick="if(confirm('هل أنت متأكد من تصفير محطة الفضاء بالكامل لهذا اللاعب (حذف الصواريخ والمرافق والمعادن)؟')) executeModSpaceAction({ subAction: 'reset_station' })"
+                class="px-3 py-2 rounded-xl bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 font-black text-xs transition cursor-pointer flex items-center gap-1.5">
+                <i class="fa-solid fa-trash-can"></i>
+                <span>تصفير المحطة بالكامل</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Valuation & Key Metrics Grid -->
+          <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
+            <div class="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">إجمالي رأس مال المحطة</span>
+              <span class="font-black text-emerald-400 numbers-font text-sm">${fmtMoney(val.totalSpaceCapital || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">شامل التأسيس + المرافق + الأسطول</span>
+            </div>
+            <div class="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">قيمة أسطول الصواريخ</span>
+              <span class="font-bold text-sky-300 numbers-font text-sm">${fmtMoney(val.fleetValue || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">${rockets.length} صواريخ (${activeFlights.length} في مهمة)</span>
+            </div>
+            <div class="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">القيمة السوقية للمخزن</span>
+              <span class="font-bold text-amber-300 numbers-font text-sm">${fmtMoney(whMarketVal || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">${totalKg.toLocaleString('en-US')} / ${capacityKg.toLocaleString('en-US')} كجم</span>
+            </div>
+            <div class="bg-slate-900/70 p-2.5 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400 block">إجمالي مبيعات المعادن</span>
+              <span class="font-bold text-fuchsia-300 numbers-font text-sm">${fmtMoney(stats.totalRevenueEGP || 0)}</span>
+              <span class="text-[9px] text-slate-500 block">${stats.totalFlightsCompleted || 0} رحلة منجزة (${(stats.totalOresMinedKg || 0).toLocaleString('en-US')} كجم)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. Facilities Inspection & Instant Level Controls -->
+        <div class="space-y-2">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+              <i class="fa-solid fa-sliders text-sky-400"></i>
+              <span>المرافق المدارية الـ 4 والتحكم الفوري بالمستوى:</span>
+            </h4>
+            <span class="text-[10px] text-slate-400">اضغط على رقم المستوى لتعيينه فوراً للاعب</span>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+            ${facilityCardsMeta.map(fItem => {
+              let lvlBtns = '';
+              for (let l = 1; l <= fItem.maxLevel; l++) {
+                const isCur = l === fItem.level;
+                lvlBtns += `
+                  <button type="button" onclick="executeModSpaceAction({ subAction: 'set_facility_level', facilityId: '${fItem.id}', level: ${l} })"
+                    class="flex-1 py-1 rounded-lg font-black text-[10px] transition cursor-pointer ${
+                      isCur
+                        ? 'bg-sky-500 text-slate-950 shadow-sm shadow-sky-500/30'
+                        : 'bg-slate-900 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800'
+                    }">
+                    L${l}
+                  </button>
+                `;
+              }
+              return `
+                <div class="glass-card p-3 rounded-xl border border-slate-800 flex flex-col justify-between space-y-2">
+                  <div class="space-y-1">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-white flex items-center gap-1.5 text-[11px]">
+                        <i class="fa-solid ${fItem.icon}"></i>
+                        <span>${fItem.title}</span>
+                      </span>
+                      <span class="px-1.5 py-0.5 rounded text-[10px] bg-sky-500/20 text-sky-300 font-bold">مستوى ${fItem.level}/${fItem.maxLevel}</span>
+                    </div>
+                    <div class="text-[10px] text-slate-300 font-medium truncate">${escapeHtml(fItem.subName)}</div>
+                    <div class="text-[10px] text-emerald-300 font-bold">${fItem.perkText}</div>
+                  </div>
+                  <div class="flex items-center gap-1 pt-1.5 border-t border-slate-800/80">
+                    ${lvlBtns}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </div>
+
+        <!-- 3. VIP Gold Managers Status (Read-Only Overview) -->
+        <div class="glass-card p-3 rounded-xl border border-slate-800 bg-slate-900/50 space-y-2 text-xs">
+          <div class="text-[11px] font-bold text-amber-300 flex items-center gap-1.5">
+            <i class="fa-solid fa-user-astronaut text-amber-400"></i>
+            <span>حالة مديري الذهب VIP في محطة اللاعب:</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            ${managers.map(m => `
+              <div class="p-2 rounded-lg border ${m.isHired ? 'border-emerald-500/40 bg-emerald-950/20' : 'border-slate-800 bg-slate-950/50'} flex items-center justify-between gap-2">
+                <div class="truncate">
+                  <div class="font-bold text-white text-[11px] truncate">${escapeHtml(m.name)}</div>
+                  <div class="text-[10px] text-slate-400 truncate">${escapeHtml(m.badge || '')}</div>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-[9px] font-black shrink-0 ${m.isHired ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-500'}">
+                  ${m.isHired ? 'موظف نشط' : 'غير موظف'}
+                </span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <!-- 4. Rocket Fleet & Active Missions + Add/Remove/Land Controls -->
+        <div class="glass-card p-3.5 rounded-2xl border border-sky-500/30 bg-slate-900/60 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+            <div>
+              <h4 class="text-xs font-black text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-rocket text-sky-400"></i>
+                <span>أسطول الصواريخ والرحلات الفضائية (${rockets.length}):</span>
+              </h4>
+              <p class="text-[10px] text-slate-400">إضافة أو حذف الصواريخ، أو إنهاء/إلغاء الرحلات الفضائية الجارية فوراً</p>
+            </div>
+
+            <!-- Quick Add Rocket Bar -->
+            <div class="flex items-center gap-1.5 flex-wrap">
+              <select id="mod_space_add_rocket_select" class="bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1.5 text-[11px] font-bold text-white outline-none focus:border-sky-400">
+                <option value="orion_probe">Tier 1 — مسبار أوريون-1 (800 كجم)</option>
+                <option value="falcon_star">Tier 2 — فالكون ستار (1,500 كجم)</option>
+                <option value="heavy_starship">Tier 3 — Heavy Starship (3,500 كجم)</option>
+                <option value="quantum_dreadnought">Tier 4 — Quantum Dreadnought (7,000 كجم)</option>
+              </select>
+              <button type="button" onclick="executeModSpaceAction({ subAction: 'add_rocket', modelId: document.getElementById('mod_space_add_rocket_select').value })"
+                class="px-3 py-1.5 rounded-lg bg-sky-600 hover:bg-sky-500 text-slate-950 font-black text-[11px] transition cursor-pointer flex items-center gap-1 shadow-md">
+                <i class="fa-solid fa-plus"></i>
+                <span>إضافة صاروخ للأسطول</span>
+              </button>
+            </div>
+          </div>
+
+          ${rockets.length === 0 ? `
+            <div class="text-xs text-slate-500 py-5 text-center rounded-xl bg-slate-950/50 border border-slate-800/80">
+              لا يمتلك اللاعب أي صواريخ في حظيرة الفضاء حالياً.
+            </div>
+          ` : `
+            <div class="space-y-2.5">
+              ${rockets.map(r => {
+                const flt = r.activeFlight || activeFlights.find(f => f && f.rocketId === r.id) || null;
+                const isInFlight = Boolean(flt);
+                const isReadyToClaim = flt && (flt.isReady || Number(flt.remSec || 0) <= 0);
+                const remHours = flt ? (Number(flt.remSec || 0) / 3600).toFixed(1) : '0';
+
+                return `
+                  <div class="p-3 rounded-xl bg-slate-950/80 border ${isInFlight ? 'border-sky-500/40' : 'border-slate-800'} space-y-2 text-xs">
+                    <div class="flex flex-wrap items-center justify-between gap-2">
+                      <div class="flex items-center gap-2.5">
+                        <div class="w-9 h-9 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-base">
+                          <i class="fa-solid ${escapeHtml(r.icon || 'fa-rocket text-sky-400')}"></i>
+                        </div>
+                        <div>
+                          <div class="font-black text-white flex items-center gap-1.5 flex-wrap">
+                            <span>${escapeHtml(r.name || r.modelName)}</span>
+                            <span class="text-[9px] px-1.5 py-0.5 rounded bg-slate-800 text-sky-300 border border-slate-700 font-mono">Tier ${r.tier || 1}</span>
+                            <span class="text-[9px] px-2 py-0.5 rounded-full font-bold ${
+                              !isInFlight
+                                ? 'bg-slate-800 text-slate-400'
+                                : (isReadyToClaim ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 animate-pulse' : 'bg-sky-500/20 text-sky-300 border border-sky-500/30')
+                            }">
+                              ${!isInFlight ? 'جاهز بالحظيرة' : (isReadyToClaim ? 'هبط وجاهز لتفريغ الشحنة' : `في مهمة نحو ${escapeHtml(flt.destinationName)}`)}
+                            </span>
+                          </div>
+                          <div class="text-[10px] text-slate-400 mt-0.5">
+                            الطراز: ${escapeHtml(r.modelName)} | سعة الحمولة: <strong class="text-slate-200 numbers-font">${(r.cargoCapacity || 800).toLocaleString('en-US')} كجم</strong> | القيمة: <strong class="text-emerald-400 numbers-font">${fmtMoney(r.cost || 0)}</strong>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div class="flex items-center gap-1.5">
+                        ${isInFlight && !isReadyToClaim ? `
+                          <button type="button" onclick="executeModSpaceAction({ subAction: 'land_flight', flightId: '${flt.id}' })"
+                            class="px-2.5 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-slate-950 border border-emerald-500/40 font-black text-[10px] transition cursor-pointer flex items-center gap-1" title="إنهاء وقت الرحلة وهبوط الصاروخ فوراً">
+                            <i class="fa-solid fa-bolt"></i>
+                            <span>هبوط فوري</span>
+                          </button>
+                        ` : ''}
+                        ${isInFlight ? `
+                          <button type="button" onclick="if(confirm('إلغاء هذه الرحلة الفضائية وإعادة الصاروخ للحظيرة؟')) executeModSpaceAction({ subAction: 'cancel_flight', flightId: '${flt.id}' })"
+                            class="px-2.5 py-1.5 rounded-lg bg-amber-600/20 hover:bg-amber-600 text-amber-300 hover:text-slate-950 border border-amber-500/40 font-black text-[10px] transition cursor-pointer flex items-center gap-1" title="إلغاء الرحلة">
+                            <i class="fa-solid fa-ban"></i>
+                            <span>إلغاء الرحلة</span>
+                          </button>
+                        ` : ''}
+                        <button type="button" onclick="if(confirm('هل أنت متأكد من حذف هذا الصاروخ من أسطول اللاعب؟')) executeModSpaceAction({ subAction: 'remove_rocket', rocketId: '${r.id}' })"
+                          class="px-2.5 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 font-black text-[10px] transition cursor-pointer flex items-center gap-1" title="حذف الصاروخ نهائياً">
+                          <i class="fa-solid fa-trash"></i>
+                          <span>حذف</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    ${isInFlight ? `
+                      <div class="p-2.5 rounded-xl bg-slate-900/90 border border-sky-500/20 space-y-2">
+                        <div class="flex items-center justify-between text-[11px]">
+                          <span class="text-slate-300 font-bold flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-dot text-rose-400"></i>
+                            <span>منصة (${flt.padId || 1}) • الوجهة: <strong class="text-white">${escapeHtml(flt.destinationName)}</strong></span>
+                          </span>
+                          <span class="text-sky-300 font-black numbers-font text-[10px]">
+                            ${isReadyToClaim ? 'وصلت الشحنة (100%)' : `متبقي: ${remHours} ساعة (${flt.progressPct || 50}%)`}
+                          </span>
+                        </div>
+                        <div class="w-full bg-slate-950 h-2 rounded-full overflow-hidden border border-slate-800">
+                          <div class="h-full bg-gradient-to-r from-sky-500 via-indigo-500 to-fuchsia-500 rounded-full" style="width: ${flt.progressPct || (isReadyToClaim ? 100 : 50)}%"></div>
+                        </div>
+                        <div class="flex flex-wrap items-center justify-between gap-2 pt-1 text-[10px]">
+                          <div class="flex items-center gap-1.5 flex-wrap">
+                            <span class="text-slate-400 font-bold">الحمولة المكتشفة:</span>
+                            ${Object.entries(flt.payload || {}).map(([oreKey, qty]) => {
+                              const oMeta = SPACE_ORES_DICT[oreKey] || { name: oreKey, icon: 'fa-cubes text-slate-300' };
+                              return `<span class="px-2 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-200 font-bold"><i class="fa-solid ${oMeta.icon} ml-1"></i>${oMeta.name}: <strong class="text-sky-400 numbers-font">${qty} كجم</strong></span>`;
+                            }).join('')}
+                          </div>
+                          ${flt.payloadEstValue ? `<span class="text-emerald-400 font-black numbers-font">القيمة التقديرية للشحنة: ${fmtMoney(flt.payloadEstValue)}</span>` : ''}
+                        </div>
+                      </div>
+                    ` : ''}
+                  </div>
+                `;
+              }).join('')}
+            </div>
+          `}
+        </div>
+
+        <!-- 5. Orbital Mineral Warehouse & Direct Balance Editor -->
+        <div class="glass-card p-3.5 rounded-2xl border border-amber-500/30 bg-slate-900/60 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+            <div>
+              <h4 class="text-xs font-black text-white flex items-center gap-1.5">
+                <i class="fa-solid fa-warehouse text-amber-400"></i>
+                <span>مستودع المعادن الفضائية الـ 6 وتعديل الأرصدة (${totalKg.toLocaleString('en-US')} / ${capacityKg.toLocaleString('en-US')} كجم):</span>
+              </h4>
+              <p class="text-[10px] text-slate-400">يمكنك تعديل رصيد أي معدن بالكيلوجرام مباشرة أو تصفير المستودع بالكامل</p>
+            </div>
+            <button type="button" onclick="if(confirm('هل أنت متأكد من تصفير كافة المعادن المخزنة في مستودع الفضاء لهذا اللاعب؟')) executeModSpaceAction({ subAction: 'set_ore', oreId: 'clear_all' })"
+              class="px-3 py-1.5 rounded-lg bg-rose-600/20 hover:bg-rose-600 text-rose-300 hover:text-white border border-rose-500/40 font-black text-[11px] transition cursor-pointer flex items-center gap-1">
+              <i class="fa-solid fa-broom"></i>
+              <span>تصفير المستودع بالكامل</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 text-xs">
+            ${oresList.map(o => `
+              <div class="p-3 rounded-xl bg-slate-950/80 border border-slate-800 flex flex-col justify-between space-y-2.5">
+                <div class="flex items-start justify-between gap-2">
+                  <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-slate-900 border border-slate-800 flex items-center justify-center text-sm">
+                      <i class="fa-solid ${o.icon}"></i>
+                    </div>
+                    <div>
+                      <div class="font-bold text-white text-[11px]">${escapeHtml(o.name)}</div>
+                      <div class="text-[10px] text-slate-400">سعر اليوم: <span class="text-amber-300 font-bold numbers-font">${fmtMoney(o.todayPrice)}/كجم</span></div>
+                    </div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[9px] bg-slate-900 text-slate-300 border border-slate-800 font-bold">${escapeHtml(o.rarity || '')}</span>
+                </div>
+
+                <div class="flex items-center justify-between text-[11px] bg-slate-900/70 px-2.5 py-1.5 rounded-lg border border-slate-800/80">
+                  <span class="text-slate-400">الرصيد: <strong class="text-sky-300 font-black numbers-font">${o.qty.toLocaleString('en-US')} كجم</strong></span>
+                  <span class="text-emerald-400 font-bold numbers-font">${fmtMoney(o.estValue || 0)}</span>
+                </div>
+
+                <div class="flex items-center gap-1.5">
+                  <input type="number" id="mod_ore_input_${o.id}" min="0" value="${o.qty}" placeholder="الكمية بالكجم"
+                    class="w-full bg-slate-900 border border-slate-700 focus:border-amber-400 rounded-lg px-2.5 py-1 text-xs font-mono font-bold text-white outline-none">
+                  <button type="button" onclick="executeModSpaceAction({ subAction: 'set_ore', oreId: '${o.id}', amount: document.getElementById('mod_ore_input_${o.id}').value })"
+                    class="px-3 py-1 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-[11px] transition cursor-pointer shrink-0">
+                    حفظ
+                  </button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
     // ================= AGRO FARM TYCOON RENDERING =================
     // ==========================================
     // Trade & Cargo Hub (الاستيراد والتصدير) Inspector Logic
@@ -4246,6 +4714,18 @@
       }
       report += `\n`;
 
+      report += ` [6.5] محطة استكشاف الفضاء (SPACE STATION):\n`;
+      if (p.space && p.space.unlocked) {
+        const spRockets = Array.isArray(p.space.rockets) ? p.space.rockets.length : (Array.isArray(p.space.activeRockets) ? p.space.activeRockets.length : 0);
+        const spFlights = Array.isArray(p.space.activeFlights) ? p.space.activeFlights.length : 0;
+        const spCap = p.space.valuation?.totalSpaceCapital || 0;
+        const spWhVal = p.space.warehouse?.marketValue || 0;
+        report += ` • حالة المحطة: نشطة | إجمالي رأس المال: ${fmtMoney(spCap)} | الصواريخ: ${spRockets} (${spFlights} في مهمة) | قيمة مخزن المعادن: ${fmtMoney(spWhVal)}\n`;
+      } else {
+        report += ` • لم يقم بتفعيل محطة الفضاء.\n`;
+      }
+      report += `\n`;
+
       report += ` [7] المزرعة الاستثمارية والإنتاج الزراعي (AGRO FARM TYCOON):\n`;
       if (p.farm && p.farm.unlocked) {
         const f = p.farm;
@@ -4788,7 +5268,7 @@
         modChatPollInterval = null;
       }
 
-      ['economy', 'activity', 'notes', 'businesses', 'stocks', 'airport', 'farm', 'trade', 'collectibles', 'transfers', 'chat', 'moderation', 'logins'].forEach(t => {
+      ['economy', 'activity', 'notes', 'businesses', 'stocks', 'airport', 'space', 'farm', 'trade', 'collectibles', 'transfers', 'chat', 'moderation', 'logins'].forEach(t => {
         const btn = document.getElementById(`itab_${t}`);
         const content = document.getElementById(`tabContent_${t}`);
         if (!btn || !content) return;
