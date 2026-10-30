@@ -1581,6 +1581,13 @@ window.SpaceUI = (() => {
       if (res.bank !== undefined) liveState.bank = res.bank;
       if (res.gold !== undefined) liveState.gold = res.gold;
       if (res.netWorth !== undefined) liveState.netWorth = res.netWorth;
+      if (res.activityLogEntry) {
+        if (!Array.isArray(liveState.activityLog)) liveState.activityLog = [];
+        if (!liveState.activityLog.some(item => item && item.id && item.id === res.activityLogEntry.id)) {
+          liveState.activityLog.unshift(res.activityLogEntry);
+          if (liveState.activityLog.length > 1000) liveState.activityLog.length = 1000;
+        }
+      }
       if (typeof window.renderHeader === 'function') window.renderHeader();
       if (window.AppDB && typeof window.AppDB.save === 'function') {
         try { window.AppDB.save(); } catch (_) {}

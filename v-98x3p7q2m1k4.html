@@ -735,6 +735,10 @@
                 </button>
                 <button onclick="filterPlayerActivity('transfer')" id="actFilter_transfer" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">الحوالات</button>
                 <button onclick="filterPlayerActivity('stocks')" id="actFilter_stocks" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">البورصة</button>
+                <button onclick="filterPlayerActivity('space')" id="actFilter_space" class="px-2.5 py-1 rounded-lg bg-slate-800 text-sky-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-sky-500/20">
+                  <i class="fa-solid fa-shuttle-space text-sky-400"></i>
+                  <span>الفضاء</span>
+                </button>
                 <button onclick="filterPlayerActivity('gameplay')" id="actFilter_gameplay" class="px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition">العمليات والألعاب</button>
               </div>
 
@@ -5006,7 +5010,7 @@
 
     function filterPlayerActivity(category) {
       currentActCategory = category;
-      ['all', 'notes', 'admin_grant', 'banking', 'transfer', 'stocks', 'gameplay'].forEach(c => {
+      ['all', 'notes', 'admin_grant', 'banking', 'transfer', 'stocks', 'space', 'gameplay'].forEach(c => {
         const b = document.getElementById(`actFilter_${c}`);
         if (b) {
           if (c === category) {
@@ -5014,13 +5018,17 @@
               ? 'px-2.5 py-1 rounded-lg bg-yellow-500 text-slate-950 font-black transition flex items-center gap-1 shadow-md shadow-yellow-500/20'
               : (c === 'banking'
                   ? 'px-2.5 py-1 rounded-lg bg-teal-600 text-white font-bold transition flex items-center gap-1 shadow-md shadow-teal-600/20'
-                  : 'px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition');
+                  : (c === 'space'
+                      ? 'px-2.5 py-1 rounded-lg bg-sky-600 text-white font-bold transition flex items-center gap-1 shadow-md shadow-sky-600/20'
+                      : 'px-2.5 py-1 rounded-lg bg-cyan-600 text-white font-bold transition'));
           } else {
             b.className = (c === 'notes')
               ? 'px-2.5 py-1 rounded-lg bg-slate-800 text-yellow-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-yellow-500/20'
               : (c === 'banking'
                   ? 'px-2.5 py-1 rounded-lg bg-slate-800 text-teal-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-teal-500/20'
-                  : 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition');
+                  : (c === 'space'
+                      ? 'px-2.5 py-1 rounded-lg bg-slate-800 text-sky-300 font-bold hover:bg-slate-700 transition flex items-center gap-1 border border-sky-500/20'
+                      : 'px-2.5 py-1 rounded-lg bg-slate-800 text-slate-300 font-bold hover:bg-slate-700 transition'));
           }
         }
       });
@@ -5088,7 +5096,11 @@
 
       // 1. Filter by category
       if (currentActCategory !== 'all') {
-        filtered = filtered.filter(f => f.category === currentActCategory);
+        if (currentActCategory === 'gameplay') {
+          filtered = filtered.filter(f => ['gameplay', 'business', 'businesses', 'work', 'assets', 'trade', 'casino', 'blackmarket', 'store', 'reward', 'space'].includes(f.category));
+        } else {
+          filtered = filtered.filter(f => f.category === currentActCategory);
+        }
       }
 
       // 2. Filter by date or full month (30 days)
@@ -5187,10 +5199,14 @@
         } else if (item.category === 'transfer') {
           icon = 'fa-money-bill-transfer text-emerald-400';
           catBadge = `<span class="px-1.5 py-0.2 rounded bg-emerald-950/50 text-emerald-300 border border-emerald-800/40 font-medium">حوالة مالية</span>`;
-        } else if (item.category === 'stocks') {
+        } else if (item.category === 'stocks' || item.category === 'stock') {
           icon = 'fa-chart-line text-cyan-400';
           catBadge = `<span class="px-1.5 py-0.2 rounded bg-cyan-950/50 text-cyan-300 border border-cyan-800/40 font-medium">بورصة وأسهم</span>`;
-        } else if (item.category === 'businesses') {
+        } else if (item.category === 'space') {
+          icon = 'fa-shuttle-space text-sky-400';
+          cardBg = 'border border-sky-500/40 bg-gradient-to-r from-sky-950/30 via-slate-900 to-indigo-950/20 shadow-sm shadow-sky-950/20';
+          catBadge = `<span class="px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-bold border border-sky-500/40 text-[9px]"><i class="fa-solid fa-shuttle-space text-[8px] ml-0.5"></i> محطة الفضاء</span>`;
+        } else if (item.category === 'businesses' || item.category === 'business') {
           icon = 'fa-building text-amber-400';
         }
 
@@ -5219,9 +5235,10 @@
           `);
         }
         if (item.gold) {
+          const isGoldPositive = (item.category === 'admin_grant' || item.category === 'admin') ? true : Boolean(isPos);
           amountBlocks.push(`
-            <span class="font-black numbers-font text-xs text-yellow-300 block">
-              +${Number(item.gold).toLocaleString()} ذهبة 
+            <span class="font-black numbers-font text-xs ${isGoldPositive ? 'text-yellow-300' : 'text-amber-400'} block">
+              ${isGoldPositive ? '+' : '-'}${Number(item.gold).toLocaleString()} ذهبة 
             </span>
           `);
         }

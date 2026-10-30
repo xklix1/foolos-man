@@ -92,6 +92,24 @@ async function spaceRoutes(fastify, options) {
     return session;
   }
 
+  // Helper to record player space station actions into authoritative state.activityLog
+  function recordSpaceActivity(s, action, details, extra = {}) {
+    if (!Array.isArray(s.activityLog)) s.activityLog = [];
+    const entry = {
+      id: 'spc_log_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6),
+      timestamp: Date.now(),
+      action,
+      details,
+      category: 'space',
+      cash: Math.max(0, Math.round(Number(s.cash || 0))),
+      bank: Math.max(0, Math.round(Number(s.bank || 0))),
+      ...extra
+    };
+    s.activityLog.unshift(entry);
+    if (s.activityLog.length > 3500) s.activityLog.length = 3500;
+    return entry;
+  }
+
   // 0. POST /api/space/verify-code (Verify Secret Tester Access Code)
   fastify.post('/api/space/verify-code', async (request, reply) => {
     const { code } = request.body || {};
@@ -174,6 +192,12 @@ async function spaceRoutes(fastify, options) {
     s.lastActiveTimestamp = Date.now();
     session.lastServerCashSpendAt = Date.now();
     session.lastServerBankActionAt = Date.now();
+    const activityLogEntry = recordSpaceActivity(
+      s,
+      'تأسيس محطة استكشاف الفضاء 🚀',
+      `تدشين وتأسيس محطة الفضاء المدارية وترخيص الإطلاق بتكلفة ${cost.toLocaleString()} ج.م`,
+      { amount: cost, isPositive: false }
+    );
     sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
@@ -184,7 +208,8 @@ async function spaceRoutes(fastify, options) {
       space: s.space,
       cash: s.cash,
       bank: s.bank,
-      netWorth: s.netWorth
+      netWorth: s.netWorth,
+      activityLogEntry
     };
   });
 
@@ -235,6 +260,12 @@ async function spaceRoutes(fastify, options) {
     s.lastActiveTimestamp = Date.now();
     session.lastServerCashSpendAt = Date.now();
     session.lastServerBankActionAt = Date.now();
+    const activityLogEntry = recordSpaceActivity(
+      s,
+      `ترقية مرفق فضائي (${facility.name}) 🛠️`,
+      `ترقية "${facility.name}" في محطة الفضاء إلى المستوى ${nextLvl} (${facility.levels[nextLvl].name}) بتكلفة ${cost.toLocaleString()} ج.م`,
+      { amount: cost, isPositive: false }
+    );
     sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
@@ -245,7 +276,8 @@ async function spaceRoutes(fastify, options) {
       space: s.space,
       cash: s.cash,
       bank: s.bank,
-      netWorth: s.netWorth
+      netWorth: s.netWorth,
+      activityLogEntry
     };
   });
 
@@ -309,6 +341,12 @@ async function spaceRoutes(fastify, options) {
     s.lastActiveTimestamp = Date.now();
     session.lastServerCashSpendAt = Date.now();
     session.lastServerBankActionAt = Date.now();
+    const activityLogEntry = recordSpaceActivity(
+      s,
+      `شراء صاروخ فضائي (${newRocket.name}) 🚀`,
+      `شراء مركبة "${newRocket.name}" (الفئة ${model.tier} • سعة ${model.cargoCapacity} كجم) وضمها لأسطول الفضاء بتكلفة ${cost.toLocaleString()} ج.م`,
+      { amount: cost, isPositive: false }
+    );
     sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
@@ -320,7 +358,8 @@ async function spaceRoutes(fastify, options) {
       space: s.space,
       cash: s.cash,
       bank: s.bank,
-      netWorth: s.netWorth
+      netWorth: s.netWorth,
+      activityLogEntry
     };
   });
 
@@ -417,17 +456,25 @@ async function spaceRoutes(fastify, options) {
     s.lastActiveTimestamp = now;
     session.lastServerCashSpendAt = now;
     session.lastServerBankActionAt = now;
+    const durationHours = Number((durationSeconds / 3600).toFixed(1));
+    const activityLogEntry = recordSpaceActivity(
+      s,
+      `إطلاق رحلة فضائية (${dest.name}) 🪐`,
+      `إطلاق الصاروخ (${rocket.name}) من منصة #${assignedPad} نحو ${dest.name} لمدة ${durationHours} ساعة بتكلفة وقود وتجهيز ${fuelCost.toLocaleString()} ج.م`,
+      { amount: fuelCost, isPositive: false }
+    );
     sessionManager.markDirty(session.username);
 
     await dbService.savePlayerState(session.username, s);
 
-    const durationHours = Number((durationSeconds / 3600).toFixed(1));
     return {
       success: true,
       message: `🚀 تم إطلاق "${rocket.name}" بنجاح نحو ${dest.name}! وقت الوصول المتوقع بعد ${durationHours} ساعة.`,
       flight: flight,
       space: s.space,
-      cash: s.cash
+      cash: s.cash,
+      bank: s.bank,
+      activityLogEntry
     };
   });
 
@@ -476,6 +523,12 @@ async function spaceRoutes(fastify, options) {
     }
 
     s.lastActiveTimestamp = now;
+    const activityLogEntry = recordSpaceActivity(
+      s,
+      `تسريع رحلة فضائية بالذهب ⚡`,
+      `تسريع مهمة الصاروخ (${flight.rocketName}) المتجهة إلى ${flight.destinationName} والهبوط الفوري مقابل ${goldCost.toLocaleString()} ذهبة`,
+      { gold: goldCost, isPositive: false }
+    );
     sessionManager.markDirty(session.username);
 
     try {
@@ -498,7 +551,8 @@ async function spaceRoutes(fastify, options) {
       gold: s.gold,
       goldCost,
       flight,
-      space: s.space
+      space: s.space,
+      activityLogEntry
     };
   });
 
@@ -569,6 +623,17 @@ async function spaceRoutes(fastify, options) {
       s.space.stats.totalFlightsCompleted = (Number(s.space.stats.totalFlightsCompleted) || 0) + 1;
       s.space.stats.totalOresMinedKg = (Number(s.space.stats.totalOresMinedKg) || 0) + payloadTotalWeight;
       s.lastActiveTimestamp = now;
+      const payloadSummary = Object.entries(flight.payload || {})
+        .filter(([, w]) => Number(w) > 0)
+        .map(([k, w]) => `${SPACE_CONFIG.ores[k]?.name || k}: ${Number(w).toLocaleString()} كجم`)
+        .join('، ');
+      const activityLogEntry = recordSpaceActivity(
+        s,
+        `استلام شحنة معادن فضائية (${flight.destinationName}) 🛰️`,
+        `عودة الصاروخ (${flight.rocketName}) من ${flight.destinationName} وتفريغ ${payloadTotalWeight.toLocaleString()} كجم بالمستودع (${payloadSummary || 'خامات فضائية'})`,
+        { isPositive: true }
+      );
+      sessionManager.markDirty(session.username);
 
       await dbService.savePlayerState(session.username, s);
 
@@ -576,7 +641,8 @@ async function spaceRoutes(fastify, options) {
         success: true,
         message: `🛰️ تم تفريغ وتخزين شحنة المعادن (${payloadTotalWeight} كجم) بنجاح في مستودع المحطة!`,
         claimedPayload: flight.payload,
-        space: s.space
+        space: s.space,
+        activityLogEntry
       };
     } finally {
       _spaceClaimLocks.delete(lockKey);
@@ -650,6 +716,15 @@ async function spaceRoutes(fastify, options) {
       s.lastActiveTimestamp = Date.now();
       session.lastServerCashEarnAt = Date.now();
       s.lastServerCashEarnAt = Date.now();
+      const soldSummary = Object.entries(soldBreakdown)
+        .map(([k, info]) => `${SPACE_CONFIG.ores[k]?.name || k}: ${Number(info.qty).toLocaleString()} كجم`)
+        .join('، ');
+      const activityLogEntry = recordSpaceActivity(
+        s,
+        `بيع معادن ببورصة الفضاء 💰`,
+        `بيع خامات فضائية (${soldSummary}) في البورصة اليومية مقابل عائد إجمالي +${totalRevenueEGP.toLocaleString()} ج.م`,
+        { amount: totalRevenueEGP, isPositive: true }
+      );
       sessionManager.markDirty(session.username);
 
       await dbService.savePlayerState(session.username, s);
@@ -661,7 +736,9 @@ async function spaceRoutes(fastify, options) {
         soldBreakdown: soldBreakdown,
         space: s.space,
         cash: s.cash,
-        netWorth: s.netWorth
+        bank: s.bank,
+        netWorth: s.netWorth,
+        activityLogEntry
       };
     } finally {
       _spaceSellLocks.delete(lockKey);
@@ -700,6 +777,13 @@ async function spaceRoutes(fastify, options) {
     s.gold = playerGold - manager.goldCost;
     s.space.hiredManagers.push(manager.tier);
     s.lastActiveTimestamp = Date.now();
+    const activityLogEntry = recordSpaceActivity(
+      s,
+      `توظيف مدير فضاء VIP (${manager.name}) 👑`,
+      `التعاقد الدائم مع "${manager.name}" (${manager.title}) في محطة الفضاء مقابل ${manager.goldCost.toLocaleString()} ذهبة`,
+      { gold: manager.goldCost, isPositive: false }
+    );
+    sessionManager.markDirty(session.username);
 
     // Persist gold to players table row directly as well
     try {
@@ -721,7 +805,8 @@ async function spaceRoutes(fastify, options) {
       message: `👑 تم توظيف "${manager.name}" بنجاح! مزايا الإدارة الفضائية أصبحت فعالة الآن.`,
       manager: manager,
       space: s.space,
-      gold: s.gold
+      gold: s.gold,
+      activityLogEntry
     };
   });
 }

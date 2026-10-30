@@ -1237,13 +1237,71 @@ async function moderatorRoutes(fastify, options) {
           title: l.title || l.action || 'نشاط داخل اللعبة',
           desc: l.desc || l.description || l.message || l.details || '',
           amount: l.amount || l.delta || l.value || null,
-          isPositive: Boolean(l.isPositive || (l.amount && l.amount > 0)),
+          gold: l.gold || null,
+          isPositive: l.isPositive !== undefined ? Boolean(l.isPositive) : Boolean(l.amount && l.amount > 0),
           timestamp: ts,
           source: 'state_log',
           cash: l.cash !== undefined && l.cash !== null ? Number(l.cash) : null,
           bank: l.bank !== undefined && l.bank !== null ? Number(l.bank) : null
         });
       });
+
+      // A2. Synthesize any historical Space Station milestones not already present in rawLogs
+      if (state.space && state.space.unlocked) {
+        const sp = state.space;
+        const hasNearSpaceLog = (targetTs) => {
+          if (!targetTs) return true;
+          return rawLogs.some(l => l && l.category === 'space' && Math.abs(Number(l.timestamp || 0) - Number(targetTs)) < 10000);
+        };
+
+        if (sp.unlockedAt && !hasNearSpaceLog(sp.unlockedAt)) {
+          masterFeed.push({
+            id: `spc_syn_unlock_${sp.unlockedAt}`,
+            category: 'space',
+            title: 'تأسيس محطة استكشاف الفضاء 🚀',
+            desc: `تدشين وتأسيس محطة الفضاء المدارية وترخيص الإطلاق بتكلفة ${(SPACE_CONFIG.unlockCost || 2500000000).toLocaleString()} ج.م`,
+            amount: SPACE_CONFIG.unlockCost || 2500000000,
+            isPositive: false,
+            timestamp: Number(sp.unlockedAt),
+            source: 'space_telemetry'
+          });
+        }
+
+        if (Array.isArray(sp.activeRockets)) {
+          sp.activeRockets.forEach(r => {
+            if (!r || !r.purchasedAt || hasNearSpaceLog(r.purchasedAt)) return;
+            const mDef = SPACE_CONFIG.rocketModels[r.modelId] || {};
+            masterFeed.push({
+              id: `spc_syn_rkt_${r.id || r.purchasedAt}`,
+              category: 'space',
+              title: `شراء صاروخ فضائي (${r.name || mDef.name || r.modelId}) 🚀`,
+              desc: `شراء مركبة "${r.name || mDef.name}" (الفئة ${mDef.tier || 1} • سعة ${mDef.cargoCapacity || 800} كجم) وضمها لأسطول الفضاء`,
+              amount: mDef.cost || null,
+              isPositive: false,
+              timestamp: Number(r.purchasedAt),
+              source: 'space_telemetry'
+            });
+          });
+        }
+
+        if (Array.isArray(sp.activeFlights)) {
+          sp.activeFlights.forEach(flt => {
+            if (!flt || !flt.launchedAt || hasNearSpaceLog(flt.launchedAt)) return;
+            const dDef = SPACE_CONFIG.destinations[flt.destinationId] || {};
+            const durHrs = Number(((flt.durationSeconds || 43200) / 3600).toFixed(1));
+            masterFeed.push({
+              id: `spc_syn_flt_${flt.id || flt.launchedAt}`,
+              category: 'space',
+              title: `إطلاق رحلة فضائية (${flt.destinationName || dDef.name || flt.destinationId}) 🪐`,
+              desc: `إطلاق الصاروخ (${flt.rocketName}) من منصة #${flt.padId || 1} نحو ${flt.destinationName || dDef.name} لمدة ${durHrs} ساعة`,
+              amount: dDef.fuelCost || null,
+              isPositive: false,
+              timestamp: Number(flt.launchedAt),
+              source: 'space_telemetry'
+            });
+          });
+        }
+      }
 
       // B. Transfers injected into feed
       playerTransfers.forEach(t => {
@@ -3950,6 +4008,18 @@ async function moderatorRoutes(fastify, options) {
       pState.netWorth = updatedNetWorth;
       pState.adminModifiedTimestamp = ts;
 
+      if (!Array.isArray(pState.activityLog)) pState.activityLog = [];
+      pState.activityLog.unshift({
+        id: `mod_spc_${ts}_${Math.random().toString(36).substring(2, 6)}`,
+        timestamp: ts,
+        action: `تدخل إداري في محطة الفضاء (${request.modSession?.name || 'مراقب'}) 🚀`,
+        details: actionDesc,
+        category: 'space',
+        cash: Math.max(0, Math.round(Number(pState.cash || 0))),
+        bank: Math.max(0, Math.round(Number(pState.bank || 0)))
+      });
+      if (pState.activityLog.length > 3500) pState.activityLog = pState.activityLog.slice(0, 3500);
+
       await modDbFetch(`${config.SUPABASE_URL}/rest/v1/players?username=ilike.${encodeURIComponent(target)}`, {
         method: 'PATCH',
         headers: {
@@ -3969,6 +4039,7 @@ async function moderatorRoutes(fastify, options) {
         const session = sessionManager.getSession(targetLower);
         if (session && session.state) {
           session.state.space = JSON.parse(JSON.stringify(pState.space));
+          session.state.activityLog = pState.activityLog;
           session.state.netWorth = updatedNetWorth;
           session.state.adminModifiedTimestamp = ts;
           session._lastProcessedAdminTs = ts;
