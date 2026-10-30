@@ -154,7 +154,7 @@ window.SpaceUI = (() => {
       cargoCapacity: 7000,
       allowedDestinations: ['moon', 'mars', 'asteroid_belt', 'jupiter_europa'],
       prepCost: 400000000,
-      icon: 'fa-star-of-david text-fuchsia-400',
+      icon: 'fa-jet-fighter-up text-fuchsia-400',
       color: 'fuchsia',
       desc: 'درة التاج الفضائي بمحركات إيونية، قادرة على بلوغ أقمار المشتري واقتناص بلورات المادة المظلمة.'
     }

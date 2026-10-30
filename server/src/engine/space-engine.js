@@ -105,7 +105,7 @@ const SPACE_CONFIG = {
       allowedDestinations: ['moon', 'mars', 'asteroid_belt', 'jupiter_europa'],
       prepCost: 400000000, // 400M EGP
       prepSeconds: 900,
-      icon: 'fa-solid fa-star-of-david text-fuchsia-400',
+      icon: 'fa-solid fa-jet-fighter-up text-fuchsia-400',
       color: 'fuchsia',
       desc: 'درة التاج الفضائي بمحركات إيونية عملاقة، قادرة على بلوغ أقمار المشتري السحيقة واقتناص بلورات المادة المظلمة والهيليوم-3.'
     }
