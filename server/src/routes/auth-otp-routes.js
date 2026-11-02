@@ -410,22 +410,93 @@ module.exports = async function authOtpRoutes(fastify, opts) {
       const rawPin = String(pin || (playerRow && playerRow.pin) || '').trim();
       const hashedPin = crypto.createHash('sha256').update(rawPin).digest('hex');
 
-      const incomingState = (playerRow && playerRow.state && typeof playerRow.state === 'object') ? playerRow.state : {};
+      // Referral bonus evaluation on register
+      let refBonusCash = 0;
+      let referrerUsername = '';
+      const rawRefCode = (typeof referralCode === 'string' ? referralCode.trim() : (incomingState.referredByCode || '')).toUpperCase();
+      if (rawRefCode) {
+        try {
+          const refFetch = await dbService.resilientFetch(`/rest/v1/players?state->>referralCode=eq.${encodeURIComponent(rawRefCode)}&select=username,bank,net_worth,state`);
+          if (refFetch.ok) {
+            const refRows = await refFetch.json();
+            if (Array.isArray(refRows) && refRows.length > 0 && refRows[0].username.toLowerCase() !== cleanUsername.toLowerCase()) {
+              const referrer = refRows[0];
+              referrerUsername = referrer.username;
+              refBonusCash = 1000000;
+
+              // Credit referrer 50,000 EGP
+              const refBank = Number(referrer.bank || 0) + 50000;
+              const refNet = Number(referrer.net_worth || 0) + 50000;
+              const rState = (typeof referrer.state === 'object' && referrer.state) ? { ...referrer.state } : {};
+              rState.bank = refBank;
+              rState.netWorth = refNet;
+              rState.adminModifiedTimestamp = Date.now() + 120000;
+              if (!Array.isArray(rState.activities)) rState.activities = [];
+              rState.activities.unshift({
+                title: 'مكافأة دعوة صديق جديد',
+                description: `قام اللاعب @${cleanUsername} بالتسجيل بكود دعوتك وتم إيداع +50,000 ج.م في حسابك البنكي!`,
+                category: 'reward',
+                timestamp: Date.now()
+              });
+              if (rState.activities.length > 50) rState.activities.length = 50;
+
+              await dbService.resilientFetch(`/rest/v1/players?username=eq.${encodeURIComponent(referrer.username)}`, {
+                method: 'PATCH',
+                body: JSON.stringify({
+                  bank: refBank,
+                  net_worth: refNet,
+                  state: rState
+                })
+              });
+
+              if (sessionManager && typeof sessionManager.getSession === 'function') {
+                const rSess = sessionManager.getSession(referrer.username);
+                if (rSess && rSess.state) {
+                  rSess.state.bank = refBank;
+                  rSess.state.netWorth = refNet;
+                  rSess.state.adminModifiedTimestamp = Date.now() + 120000;
+                }
+              }
+
+              // Send in-game mailbox notification
+              await dbService.resilientFetch('/rest/v1/mailbox', {
+                method: 'POST',
+                body: JSON.stringify({
+                  sender: 'النظام المصرفي',
+                  recipient: referrer.username,
+                  type: 'system_reward',
+                  payload: {
+                    title: 'مكافأة دعوة صديق جديد 🎉',
+                    message: `قام اللاعب @${cleanUsername} بالتسجيل باستخدام كود دعوتك! تم إيداع 50,000 ج.م في حسابك البنكي.`,
+                    reward: 50000,
+                    timestamp: Date.now()
+                  },
+                  status: 'unread',
+                  created_at: Date.now()
+                })
+              }).catch(() => {});
+            }
+          }
+        } catch (rErr) {
+          request.log.warn({ rErr }, 'Warning crediting referrer in register OTP');
+        }
+      }
+
       const cleanState = {
         ...incomingState,
         username: cleanUsername,
         pin: hashedPin,
         email: cleanEmail,
-        cash: Number(incomingState.cash || 500000),
+        cash: Number(incomingState.cash || 500000) + refBonusCash,
         bank: Number(incomingState.bank || 500000),
         dirtyCash: 0,
-        netWorth: Number(incomingState.netWorth || 1000000),
+        netWorth: Number(incomingState.netWorth || 1000000) + refBonusCash,
         xp: 0,
         title: incomingState.title || 'عامل مبتدئ',
         jobId: incomingState.jobId || 'worker',
         referralCode: incomingState.referralCode || `REF-${cleanUsername.substring(0, 3).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
-        referredBy: incomingState.referredBy || '',
-        referredByCode: incomingState.referredByCode || (typeof referralCode === 'string' ? referralCode.trim() : ''),
+        referredBy: referrerUsername || incomingState.referredBy || '',
+        referredByCode: rawRefCode || incomingState.referredByCode || '',
         createdAt: now,
         lastSeen: now
       };

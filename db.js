@@ -1329,13 +1329,45 @@ var AppDB = (() => {
       }
     } catch (e) {}
 
+    const regBonusCash = referrerUsername ? 1000000 : 0;
+    const initialCash = 500000 + regBonusCash;
+    const initialNetWorth = 1000000 + regBonusCash;
+
+    // Credit referrer 50,000 EGP if registering with a valid referral code
+    if (referrerUsername) {
+      try {
+        const refRows = await _api(`players?username=eq.${encodeURIComponent(referrerUsername)}&select=username,bank,net_worth,state`);
+        if (refRows && refRows.length > 0) {
+          const refUser = refRows[0];
+          const newRefBank = Number(refUser.bank || 0) + 50000;
+          const newRefNet = Number(refUser.net_worth || 0) + 50000;
+          const rSt = (typeof refUser.state === 'object' && refUser.state) ? { ...refUser.state } : {};
+          rSt.bank = newRefBank;
+          rSt.netWorth = newRefNet;
+          rSt.adminModifiedTimestamp = Date.now() + 120000;
+          await _api(`players?username=eq.${encodeURIComponent(referrerUsername)}`, {
+            method: 'PATCH',
+            body: JSON.stringify({ bank: newRefBank, net_worth: newRefNet, state: rSt })
+          });
+          await sendMail('النظام المصرفي', referrerUsername, 'system_reward', {
+            title: 'مكافأة دعوة صديق جديد 🎉',
+            message: `قام اللاعب @${u} بالتسجيل باستخدام كود دعوتك! تم إيداع 50,000 ج.م في حسابك البنكي.`,
+            reward: 50000,
+            timestamp: Date.now()
+          });
+        }
+      } catch (rfErr) {
+        console.warn('[Register] Credit referrer notice:', rfErr.message);
+      }
+    }
+
     const newPlayerRow = {
       username: u,
       pin: hashed,
-      cash: 500000,
+      cash: initialCash,
       bank: 500000,
       dirty_cash: 0,
-      net_worth: 1000000,
+      net_worth: initialNetWorth,
       xp: 0,
       title:'عامل مبتدئ',
       job_id:'worker',
@@ -1348,10 +1380,10 @@ var AppDB = (() => {
         username: u,
         pin: hashed,
         email: cleanEmail,
-        cash: 500000,
+        cash: initialCash,
         bank: 500000,
         dirtyCash: 0,
-        netWorth: 1000000,
+        netWorth: initialNetWorth,
         xp: 0,
         title:'عامل مبتدئ',
         jobId:'worker',
@@ -1712,7 +1744,7 @@ var AppDB = (() => {
           });
         }
 
-        const grossWealth = cash + bank + dirty + assetsVal;
+        const grossWealth = Math.max(Number(r.net_worth || s.netWorth || 0), (cash + bank + dirty + assetsVal));
         const selfEarned = Math.max(0, grossWealth - transfersReceived);
         const isQualified = selfEarned >= 5000000;
         const isClaimed = claimedUsers.includes(r.username);

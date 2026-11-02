@@ -1832,6 +1832,23 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         })
       });
 
+      // Sync sessionManager in-memory cache if active
+      if (sessionManager && typeof sessionManager.getSession === 'function') {
+        const refSess = sessionManager.getSession(referrer.username);
+        if (refSess && refSess.state) {
+          refSess.state.bank = refBank;
+          refSess.state.netWorth = refNet;
+          refSess.state.adminModifiedTimestamp = Date.now() + 120000;
+        }
+        const invSess = sessionManager.getSession(cleanUser);
+        if (invSess && invSess.state) {
+          invSess.state.cash = newCash;
+          invSess.state.netWorth = newNetWorth;
+          invSess.state.referredBy = referrer.username;
+          invSess.state.referredByCode = cleanCode;
+        }
+      }
+
       // 5. Send in-game mailbox notification
       await dbService.resilientFetch('/rest/v1/mailbox', {
         method: 'POST',
