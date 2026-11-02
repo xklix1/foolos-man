@@ -530,6 +530,28 @@ https://rasalmal.online
   <script>
     let currentFormat = 'feed';
 
+    // Support clean screenshot capture without UI toolbars
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('export') === 'clean') {
+      document.addEventListener('DOMContentLoaded', () => {
+        const tb = document.getElementById('studio-toolbar');
+        if (tb) tb.style.display = 'none';
+        const adSec = document.getElementById('ad-copy-section');
+        if (adSec) adSec.style.display = 'none';
+        const notice = document.querySelector('main > div.w-full.text-center');
+        if (notice) notice.style.display = 'none';
+        const wrapper = document.getElementById('poster-scale-wrapper');
+        if (wrapper) {
+          wrapper.style.height = 'auto';
+          wrapper.style.overflow = 'visible';
+        }
+        const container = document.getElementById('poster-container');
+        if (container) {
+          container.style.transform = 'none';
+        }
+      });
+    }
+
     function switchFormat(fmt) {
       currentFormat = fmt;
       const container = document.getElementById('poster-container');
@@ -646,3 +668,4 @@ https://rasalmal.online
   </script>
 </body>
 </html>
+
