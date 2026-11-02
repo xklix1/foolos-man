@@ -558,7 +558,11 @@ async function sessionRoutes(fastify, options) {
           farm: activeSession.state.farm,
           airport: activeSession.state.airport,
           space: activeSession.state.space,
-          lastLimitsResetAck: activeSession.state.lastLimitsResetAck || 0
+          lastLimitsResetAck: activeSession.state.lastLimitsResetAck || 0,
+          referralCode: activeSession.state.referralCode || '',
+          referredBy: activeSession.state.referredBy || '',
+          referredByCode: activeSession.state.referredByCode || '',
+          claimedReferralTiers: activeSession.state.claimedReferralTiers || []
         } : null,
         serverTime: Date.now()
       };

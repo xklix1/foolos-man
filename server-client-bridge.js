@@ -888,6 +888,15 @@ var ServerBridge = (() => {
           if (res.authoritativeState.lastLimitsResetAck !== undefined) {
             s.lastLimitsResetAck = Number(res.authoritativeState.lastLimitsResetAck || 0);
           }
+          if (res.authoritativeState.referralCode) {
+            s.referralCode = res.authoritativeState.referralCode;
+          }
+          if (res.authoritativeState.referredBy) {
+            s.referredBy = res.authoritativeState.referredBy;
+          }
+          if (res.authoritativeState.referredByCode) {
+            s.referredByCode = res.authoritativeState.referredByCode;
+          }
 
           if (typeof UI !== 'undefined' && typeof UI.renderStatsBar === 'function') {
             try { UI.renderStatsBar(); } catch (_) {}

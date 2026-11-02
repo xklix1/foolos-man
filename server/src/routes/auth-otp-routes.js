@@ -498,7 +498,7 @@ module.exports = async function authOtpRoutes(fastify, opts) {
         xp: 0,
         title: incomingState.title || 'عامل مبتدئ',
         jobId: incomingState.jobId || 'worker',
-        referralCode: incomingState.referralCode || `REF-${cleanUsername.substring(0, 3).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+        referralCode: incomingState.referralCode || require('../engine/state-sanitizer').generateReferralCode(cleanUsername),
         referredBy: referrerUsername || incomingState.referredBy || '',
         referredByCode: rawRefCode || incomingState.referredByCode || '',
         createdAt: now,

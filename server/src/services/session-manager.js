@@ -1040,6 +1040,22 @@ class SessionManager {
       s.afkManagerExpiresAt = Number(clientState.afkManagerExpiresAt) || 0;
     }
 
+    // Referral System State Synchronization (Persistent code & binding)
+    if (clientState.referralCode && typeof clientState.referralCode === 'string') {
+      if (!s.referralCode) {
+        s.referralCode = clientState.referralCode.trim().toUpperCase();
+      }
+    }
+    if (clientState.referredBy && !s.referredBy) {
+      s.referredBy = String(clientState.referredBy).trim();
+    }
+    if (clientState.referredByCode && !s.referredByCode) {
+      s.referredByCode = String(clientState.referredByCode).trim().toUpperCase();
+    }
+    if (Array.isArray(clientState.claimedReferralTiers)) {
+      s.claimedReferralTiers = Array.from(new Set([...(s.claimedReferralTiers || []), ...clientState.claimedReferralTiers]));
+    }
+
     // Telegram Reward Claim Integrity Shield (Once true, NEVER reverts to false)
     if (s.telegramClaimed || s.telegramRewardClaimed) {
       s.telegramClaimed = true;

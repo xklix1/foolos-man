@@ -26368,7 +26368,14 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     if (!activeUser) return;
 
     // Render my referral code
-    const myCode = GameEngine.state.referralCode || GameEngine.generateReferralCode(activeUser);
+    let myCode = GameEngine.state.referralCode;
+    if (!myCode) {
+      myCode = GameEngine.generateReferralCode(activeUser);
+      GameEngine.state.referralCode = myCode;
+      if (typeof GameEngine.forceSaveState === 'function') {
+        GameEngine.forceSaveState(true);
+      }
+    }
     const codeEl = document.getElementById('ref-modal-my-code');
     if (codeEl) codeEl.textContent = myCode;
 
@@ -26393,6 +26400,12 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
 
   function renderReferralModal(report) {
     if (!report) report = { totalInvited: 0, qualifiedCount: 0, pendingCount: 0, claimableCount: 0, claimableGold: 0, claimedCount: 0, invitees: [] };
+
+    if (report && report.referralCode) {
+      const codeEl = document.getElementById('ref-modal-my-code');
+      if (codeEl) codeEl.textContent = report.referralCode;
+      if (GameEngine.state) GameEngine.state.referralCode = report.referralCode;
+    }
 
     // Stats
     const totalEl = document.getElementById('ref-modal-stat-total');

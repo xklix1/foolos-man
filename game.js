@@ -4109,11 +4109,17 @@ const GameEngine = (() => {
   }
 
   function generateReferralCode(username) {
-    if (!username) return 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-    const clean = username.replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+    if (!username) return 'REF-VIP777';
+    const clean = String(username).replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
     const prefix = clean.length >= 2 ? clean : 'RF';
-    const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-    return `REF-${prefix}${rand}`;
+    let hash = 0;
+    const str = String(username).toLowerCase();
+    for (let i = 0; i < str.length; i++) {
+      hash = ((hash << 5) - hash) + str.charCodeAt(i);
+      hash |= 0;
+    }
+    const codeSuffix = Math.abs(hash).toString(36).substring(0, 4).toUpperCase().padStart(4, '0');
+    return `REF-${prefix}${codeSuffix}`;
   }
 
   const REFERRAL_MILESTONES = {

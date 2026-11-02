@@ -4,7 +4,25 @@
  * conforms to the authoritative schema with all required keys.
  */
 
+function generateReferralCode(username) {
+  if (!username) return 'REF-VIP777';
+  const clean = String(username).replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+  const prefix = clean.length >= 2 ? clean : 'RF';
+  let hash = 0;
+  const str = String(username).toLowerCase();
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) - hash) + str.charCodeAt(i);
+    hash |= 0;
+  }
+  const codeSuffix = Math.abs(hash).toString(36).substring(0, 4).toUpperCase().padStart(4, '0');
+  return `REF-${prefix}${codeSuffix}`;
+}
+
 const DEFAULT_STATE = {
+  referralCode: '',
+  referredBy: '',
+  referredByCode: '',
+  claimedReferralTiers: [],
   cash: 500000,
   bank: 500000,
   dirtyCash: 0,
@@ -372,6 +390,18 @@ function sanitizePlayerState(dbRow) {
     };
   }
 
+  // Referral System Preservation (Persistent, stable across reloads & deterministic)
+  if (rawState.referralCode && typeof rawState.referralCode === 'string') {
+    cleanState.referralCode = rawState.referralCode.trim().toUpperCase();
+  } else if (cleanState.username && cleanState.username !== 'unknown') {
+    cleanState.referralCode = generateReferralCode(cleanState.username);
+  } else {
+    cleanState.referralCode = '';
+  }
+  cleanState.referredBy = String(rawState.referredBy || '').trim();
+  cleanState.referredByCode = String(rawState.referredByCode || '').trim().toUpperCase();
+  cleanState.claimedReferralTiers = Array.isArray(rawState.claimedReferralTiers) ? rawState.claimedReferralTiers : [];
+
   // Device & Login Telemetry History (Authoritative)
   cleanState.loginHistory = Array.isArray(rawState.loginHistory) ? rawState.loginHistory : [];
   cleanState.lastLoginIp = rawState.lastLoginIp || null;
@@ -387,5 +417,6 @@ function sanitizePlayerState(dbRow) {
 
 module.exports = {
   DEFAULT_STATE,
-  sanitizePlayerState
+  sanitizePlayerState,
+  generateReferralCode
 };

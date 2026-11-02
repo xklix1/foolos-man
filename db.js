@@ -1391,7 +1391,18 @@ var AppDB = (() => {
         initial_device: fp,
         referralCode: (window.GameEngine && typeof window.GameEngine.generateReferralCode === 'function')
           ? window.GameEngine.generateReferralCode(u)
-          : `REF-${u.substring(0, 3).toUpperCase()}${Math.random().toString(36).substring(2, 6).toUpperCase()}`,
+          : (() => {
+              const clean = String(u).replace(/[^a-zA-Z0-9]/g, '').substring(0, 3).toUpperCase();
+              const prefix = clean.length >= 2 ? clean : 'RF';
+              let hash = 0;
+              const str = String(u).toLowerCase();
+              for (let i = 0; i < str.length; i++) {
+                hash = ((hash << 5) - hash) + str.charCodeAt(i);
+                hash |= 0;
+              }
+              const codeSuffix = Math.abs(hash).toString(36).substring(0, 4).toUpperCase().padStart(4, '0');
+              return `REF-${prefix}${codeSuffix}`;
+            })(),
         referredBy: referrerUsername,
         referredByCode: referrerCodeValid,
         transfersReceivedTotal: 0,

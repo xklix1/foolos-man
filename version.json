@@ -1,7 +1,7 @@
 {
   "version": "v10.0.46",
-  "build": 1793657000000,
-  "timestamp": 1793657000000,
-  "notes": "Fix OTP registration verification 500 internal server error; Launch Player-to-Player (P2P) Free Trading Market with secure escrow, price bounding, partial purchasing, and Market Vault.",
-  "releaseNotes": "إصلاح فوري للتحقق من رمز OTP وإنشاء الحسابات الجديدة؛ وإطلاق بورصة وسوق التجارة الحرة بين اللاعبين (P2P) مع نظام الضمان المالي وخزينة السوق."
+  "build": 1793658200000,
+  "timestamp": 1793658200000,
+  "notes": "Fix referral code persistence: ensure referralCode is deterministic, permanent per user, and properly preserved across session syncs and page reloads.",
+  "releaseNotes": "تثبيت كود الدعوة نهائياً: أصبح كود الدعوة ثابتاً ودائماً لكل لاعب ولا يتغير إطلاقاً عند تحديث الصفحة أو تسجيل الدخول من جديد."
 }
