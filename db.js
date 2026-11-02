@@ -1494,7 +1494,6 @@ var AppDB = (() => {
     }
 
     // Hardware check: verify device does not have other accounts
-    // Admins are exempt — they routinely test multiple accounts during development
     const isAdmin = !!(s && s.isAdmin);
     if (!isAdmin) {
       const fp = await DeviceFingerprint.getFingerprint();
@@ -1507,8 +1506,44 @@ var AppDB = (() => {
       }
     }
 
-    // Lookup referrer player in DB
-    const refRows = await _api(`players?state->>referralCode=eq.${encodeURIComponent(code)}&select=username,state`);
+    // Attempt ServerBridge first for authoritative service-role updates
+    if (typeof window !== 'undefined' && window.ServerBridge && typeof window.ServerBridge.isServerOnline === 'function' && window.ServerBridge.isServerOnline() && typeof window.ServerBridge.bindReferral === 'function') {
+      try {
+        const srvRes = await window.ServerBridge.bindReferral(u, code);
+        if (srvRes && srvRes.success) {
+          s.referredBy = srvRes.referrer;
+          s.referredByCode = code;
+          s.cash = (Number(s.cash) || 0) + 1000000;
+          if (window.GameEngine && window.GameEngine.state) {
+            window.GameEngine.state.cash = s.cash;
+            window.GameEngine.state.referredBy = srvRes.referrer;
+            window.GameEngine.state.referredByCode = code;
+            if (typeof window.GameEngine.calculateNetWorth === 'function') {
+              window.GameEngine.state.netWorth = window.GameEngine.calculateNetWorth();
+            }
+            if (typeof window.GameEngine.recordPlayerActivity === 'function') {
+              window.GameEngine.recordPlayerActivity('مكافأة التسجيل عبر صديق', `استخدام كود الصديق @${srvRes.referrer} والحصول على مكافأة ترحيبية +1,000,000 ج.م كاش!`, 'reward');
+            }
+          }
+          await savePlayerState(u, s, true);
+          return {
+            success: true,
+            referrer: srvRes.referrer,
+            code: code,
+            addedCash: 1000000
+          };
+        } else if (srvRes && srvRes.error) {
+          throw new Error(srvRes.error);
+        }
+      } catch (bridgeErr) {
+        if (bridgeErr && bridgeErr.message && !bridgeErr.message.includes('HTTP 502') && !bridgeErr.message.includes('Failed to fetch')) {
+          throw bridgeErr;
+        }
+      }
+    }
+
+    // Direct Database Fallback
+    const refRows = await _api(`players?state->>referralCode=eq.${encodeURIComponent(code)}&select=username,bank,net_worth,state`);
     if (!refRows || refRows.length === 0) {
       throw new Error("كود الدعوة المدخل غير موجود. يرجى التأكد من الرمز وإعادة المحاولة.");
     }
@@ -1518,14 +1553,66 @@ var AppDB = (() => {
       throw new Error("لا يمكنك إدخال كود الدعوة الخاص بك!");
     }
 
+    // 1. Invitee (u) gets 1,000,000 EGP cash!
+    s.cash = (Number(s.cash) || 0) + 1000000;
     s.referredBy = referrer.username;
     s.referredByCode = code;
+
+    if (window.GameEngine && window.GameEngine.state) {
+      window.GameEngine.state.cash = s.cash;
+      window.GameEngine.state.referredBy = referrer.username;
+      window.GameEngine.state.referredByCode = code;
+      if (typeof window.GameEngine.calculateNetWorth === 'function') {
+        window.GameEngine.state.netWorth = window.GameEngine.calculateNetWorth();
+        s.netWorth = window.GameEngine.state.netWorth;
+      }
+      if (typeof window.GameEngine.recordPlayerActivity === 'function') {
+        window.GameEngine.recordPlayerActivity('مكافأة التسجيل عبر صديق', `استخدام كود الصديق @${referrer.username} والحصول على مكافأة ترحيبية +1,000,000 ج.م كاش!`, 'reward');
+      }
+    }
+
+    // 2. Inviter (referrer) gets 50,000 EGP deposited to bank!
+    try {
+      const refBank = Number(referrer.bank || 0) + 50000;
+      const refNetWorth = Number(referrer.net_worth || 0) + 50000;
+      const rState = (typeof referrer.state === 'object' && referrer.state) ? { ...referrer.state } : {};
+      rState.bank = refBank;
+      rState.netWorth = refNetWorth;
+      if (!Array.isArray(rState.activities)) rState.activities = [];
+      rState.activities.unshift({
+        title: 'مكافأة دعوة صديق جديد',
+        description: `قام اللاعب @${u} باستخدام كود دعوتك وتم إيداع +50,000 ج.م في حسابك البنكي!`,
+        category: 'reward',
+        timestamp: Date.now()
+      });
+      if (rState.activities.length > 50) rState.activities.length = 50;
+
+      await _api(`players?username=eq.${encodeURIComponent(referrer.username)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          bank: refBank,
+          net_worth: refNetWorth,
+          state: rState
+        })
+      });
+
+      // Send in-game mailbox notification
+      await sendMail('النظام المصرفي', referrer.username, 'system_reward', {
+        title: 'مكافأة دعوة صديق جديد 🎉',
+        message: `قام اللاعب @${u} باستخدام كود دعوتك بنجاح! تم إيداع 50,000 ج.م في حسابك البنكي.`,
+        reward: 50000,
+        timestamp: Date.now()
+      });
+    } catch (rErr) {
+      console.warn('[Referral] Direct credit to referrer notice:', rErr.message);
+    }
 
     await savePlayerState(u, s, true);
     return {
       success: true,
       referrer: referrer.username,
-      code: code
+      code: code,
+      addedCash: 1000000
     };
   }
 
@@ -1598,7 +1685,9 @@ var AppDB = (() => {
 
       const invitees = [];
       let qualifiedCount = 0;
+      let claimableCount = 0;
 
+      const claimedUsers = Array.isArray(myState && myState.claimedReferralUsers) ? myState.claimedReferralUsers : [];
       const ASSET_VALS = { apartment: 25000, office: 85000, mansion: 320000, skyline_tower: 1200000, luxury_resort: 4500000, mega_yacht: 15000000, private_island: 50000000, orbital_station: 250000000 };
 
       (rows || []).forEach(r => {
@@ -1625,9 +1714,15 @@ var AppDB = (() => {
 
         const grossWealth = cash + bank + dirty + assetsVal;
         const selfEarned = Math.max(0, grossWealth - transfersReceived);
-        const isQualified = selfEarned >= 250000;
+        const isQualified = selfEarned >= 5000000;
+        const isClaimed = claimedUsers.includes(r.username);
 
-        if (isQualified) qualifiedCount++;
+        if (isQualified) {
+          qualifiedCount++;
+          if (!isClaimed) {
+            claimableCount++;
+          }
+        }
 
         const createdMs = Number(r.created_at || s.createdAt || Date.now());
         const ageMs = Math.max(0, Date.now() - createdMs);
@@ -1646,6 +1741,8 @@ var AppDB = (() => {
           transfersReceived,
           selfEarned,
           isQualified,
+          isClaimed,
+          progressPct: Math.min(100, Math.floor((selfEarned / 5000000) * 100)),
           createdAt: createdMs,
           accountAgeText: ageText,
           devices
@@ -1657,11 +1754,14 @@ var AppDB = (() => {
         totalInvited: invitees.length,
         qualifiedCount,
         pendingCount: invitees.length - qualifiedCount,
+        claimableCount,
+        claimableGold: claimableCount * 3,
+        claimedCount: invitees.filter(i => i.isClaimed).length,
         invitees
       };
     } catch (err) {
       console.warn('[DB] getReferralReport error:', err.message);
-      return { referralCode: '', totalInvited: 0, qualifiedCount: 0, pendingCount: 0, invitees: [] };
+      return { referralCode: '', totalInvited: 0, qualifiedCount: 0, pendingCount: 0, claimableCount: 0, claimableGold: 0, claimedCount: 0, invitees: [] };
     }
   }
 

@@ -5506,7 +5506,7 @@ const UIController = (() => {
         } else if (action ==='half') {
           input.value = Math.max(100, Math.floor(currentVal / 2));
         } else if (action ==='max') {
-          input.value = Math.max(100, Math.min(userCash, 50000000));
+          input.value = Math.max(100, Math.min(userCash, 10000000));
         }
 
         // Add subtle tactile bump animation
@@ -6008,8 +6008,8 @@ const UIController = (() => {
           ? GameEngine.state.username 
           : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
         const isOwnerKhaled = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-        if (!isOwnerKhaled && amount > 50000000) {
-          throw new Error(" الحد الأقصى للتحويل البنكي الواحد هو 50,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
+        if (!isOwnerKhaled && amount > 10000000) {
+          throw new Error(" الحد الأقصى للتحويل البنكي الواحد هو 10,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.");
         }
 
         if (!pin) {
@@ -14927,7 +14927,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
           const curCash = Number(GameEngine.state.cash) || 0;
           const curBank = Number(GameEngine.state.bank) || 0;
           const totalAvail = curCash + curBank;
-          inputEl.value = isOwnerKhaled ? Math.max(0, Math.floor(totalAvail)) : Math.min(50000000, Math.max(0, Math.floor(totalAvail)));
+          inputEl.value = isOwnerKhaled ? Math.max(0, Math.floor(totalAvail)) : Math.min(10000000, Math.max(0, Math.floor(totalAvail)));
         } else {
           inputEl.value = parseInt(amtType, 10);
         }
@@ -17465,8 +17465,8 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       ? GameEngine.state.username 
       : ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || (typeof localStorage !== 'undefined' ? (localStorage.getItem('rasalmal_active_session_user') || localStorage.getItem('username')) : '') || '');
     const isOwnerKhaled = Boolean(GameEngine.state && GameEngine.state.isAdmin);
-    if (!isOwnerKhaled && amt > 50000000) {
-      showToast('سقف التحويل اليومي', ' الحد الأقصى للتحويل البنكي الواحد هو 50,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
+    if (!isOwnerKhaled && amt > 10000000) {
+      showToast('سقف التحويل اليومي', ' الحد الأقصى للتحويل البنكي الواحد هو 10,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.', 'warning');
       return;
     }
 
@@ -26305,8 +26305,10 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         GameEngine.forceSaveState(true);
       }
 
-      showToast('نجاح ربط الكود ', `تم ربط حسابك بكود الدعوة "${res.code}" (المُوصي: ${res.referrer}) وحفظ ذلك فوراً بالسيرفر!`, 'success');
+      showToast('🎉 مرحباً بك في رأس المال!', `تم ربط كود صديقك @${res.referrer} بنجاح! حصلت على 1,000,000 ج.م كاش ترحيبي، وتم إيداع 50,000 ج.م في حساب صديقك!`, 'success');
       playMenuSound('upgrade');
+      updateHUD();
+      renderStatsBar();
 
       await refreshReferralData();
     } catch (err) {
@@ -26317,6 +26319,29 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
         btn.disabled = false;
         btn.textContent = 'تأكيد الكود';
       }
+    }
+  }
+
+  async function claimAllReferralGoldRewards() {
+    const btn = document.getElementById('btn-claim-all-referrals');
+    const btnText = document.getElementById('ref-claim-btn-text');
+    try {
+      playMenuSound('click');
+      if (btn) {
+        btn.disabled = true;
+        if (btnText) btnText.innerHTML = '<i class="fa-solid fa-spinner animate-spin"></i> جاري استلام الذهب...';
+      }
+      const res = await GameEngine.claimAllReferralGoldRewards();
+      showToast('تهانينا! 🎉', `تم استلام +${res.goldEarned} قطع ذهب نقي بنجاح عن دعوة (${res.count} أصدقاء وصلوا لـ 5 مليون ثروة)!`, 'success');
+      playMenuSound('upgrade');
+      updateHUD();
+      renderStatsBar();
+      await refreshReferralData();
+    } catch (err) {
+      showToast('استلام الذهب', err.message || 'تعذر استلام مكافأة الذهب.', 'warning');
+      playMenuSound('back');
+    } finally {
+      if (btn) btn.disabled = false;
     }
   }
 
@@ -26363,16 +26388,96 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
   }
 
   function renderReferralModal(report) {
-    if (!report) report = { totalInvited: 0, qualifiedCount: 0, pendingCount: 0, invitees: [] };
+    if (!report) report = { totalInvited: 0, qualifiedCount: 0, pendingCount: 0, claimableCount: 0, claimableGold: 0, claimedCount: 0, invitees: [] };
 
     // Stats
     const totalEl = document.getElementById('ref-modal-stat-total');
     const qualEl = document.getElementById('ref-modal-stat-qualified');
     const pendEl = document.getElementById('ref-modal-stat-pending');
+    const goldEl = document.getElementById('ref-modal-stat-gold');
 
     if (totalEl) totalEl.textContent = (report.totalInvited || 0).toLocaleString();
     if (qualEl) qualEl.textContent = (report.qualifiedCount || 0).toLocaleString();
     if (pendEl) pendEl.textContent = (report.pendingCount || 0).toLocaleString();
+    if (goldEl) {
+      const g = report.claimableGold || 0;
+      goldEl.innerHTML = `<i class="fa-solid fa-coins text-amber-400 text-xs"></i> ${g.toLocaleString()}`;
+    }
+
+    // Claim Button
+    const claimBtn = document.getElementById('btn-claim-all-referrals');
+    const claimBtnText = document.getElementById('ref-claim-btn-text');
+    if (claimBtn && claimBtnText) {
+      const g = report.claimableGold || 0;
+      if (g > 0) {
+        claimBtn.disabled = false;
+        claimBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        claimBtn.classList.add('cursor-pointer', 'animate-pulse');
+        claimBtnText.textContent = `استلام كل المكافآت المتاحة (+${g} ذهب) 🎉`;
+      } else {
+        claimBtn.disabled = true;
+        claimBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        claimBtn.classList.remove('cursor-pointer', 'animate-pulse');
+        claimBtnText.textContent = 'لا توجد مكافآت ذهب جاهزة للاستلام (0 ذهب)';
+      }
+    }
+
+    // Render Invited Friends List
+    const listEl = document.getElementById('ref-invitees-list');
+    if (listEl) {
+      const invitees = Array.isArray(report.invitees) ? report.invitees : [];
+      if (invitees.length === 0) {
+        listEl.innerHTML = `
+          <div class="p-6 text-center text-slate-500 text-xs">
+            <i class="fa-solid fa-users text-2xl mb-2 text-slate-600 block"></i>
+            <span class="font-bold block text-slate-400 mb-1">لم تقم بدعوة أي أصدقاء بعد</span>
+            <span>شارك كود دعوتك مع أصدقائك للحصول على 50 ألف فورية + 3 قطع ذهب عند وصولهم لـ 5 مليون ثروة!</span>
+          </div>`;
+      } else {
+        listEl.innerHTML = invitees.map(inv => {
+          const statusBadge = inv.isClaimed
+            ? `<span class="px-2 py-0.5 rounded-md bg-slate-800/80 border border-slate-700 text-slate-400 text-[10px] font-bold flex items-center gap-1">
+                 <i class="fa-solid fa-check-double text-slate-400 text-[9px]"></i> تم استلام 3 ذهب
+               </span>`
+            : inv.isQualified
+            ? `<span class="px-2 py-0.5 rounded-md bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 text-[10px] font-black flex items-center gap-1 animate-pulse shadow-sm shadow-emerald-500/30">
+                 <i class="fa-solid fa-coins text-amber-400 text-[9px]"></i> مؤهل (+3 ذهب جاهزة)
+               </span>`
+            : `<span class="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[10px] font-bold flex items-center gap-1">
+                 <i class="fa-solid fa-hourglass-half text-amber-400 text-[9px]"></i> قيد التجميع (${inv.progressPct}%)
+               </span>`;
+
+          const barColor = inv.isQualified
+            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
+            : 'bg-gradient-to-r from-indigo-500 to-cyan-400';
+
+          return `
+            <div class="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 hover:border-slate-700/80 transition space-y-2">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-2">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-500/20 border border-indigo-500/40 text-indigo-400 flex items-center justify-center font-bold text-xs shrink-0">
+                    <i class="fa-solid fa-user"></i>
+                  </div>
+                  <div>
+                    <span class="font-black text-xs text-white block">@${inv.username}</span>
+                    <span class="text-[10px] text-slate-400 font-mono">${inv.accountAgeText}</span>
+                  </div>
+                </div>
+                <div>${statusBadge}</div>
+              </div>
+              <div>
+                <div class="flex justify-between text-[10px] text-slate-400 mb-1">
+                  <span>الثروة الذاتية: <strong class="text-white font-mono numbers-font">${inv.selfEarned.toLocaleString()} EGP</strong></span>
+                  <span class="font-mono numbers-font ${inv.isQualified ? 'text-emerald-400 font-bold' : 'text-slate-400'}">${inv.progressPct}% (الهدف 5M)</span>
+                </div>
+                <div class="w-full h-1.5 rounded-full bg-slate-900 border border-slate-800 overflow-hidden">
+                  <div class="h-full ${barColor} transition-all duration-500" style="width: ${inv.progressPct}%;"></div>
+                </div>
+              </div>
+            </div>`;
+        }).join('');
+      }
+    }
   }
 
   function renderPlayerInventory() {
@@ -26886,6 +26991,7 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     copyReferralCode,
     submitFriendReferralCode,
     claimReferralMilestone,
+    claimAllReferralGoldRewards,
     refreshReferralData,
     renderPlayerInventory,
     useInventoryItem,

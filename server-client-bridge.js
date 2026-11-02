@@ -976,6 +976,17 @@ var ServerBridge = (() => {
   /**
    * Executes an authoritative server-mediated wire transfer between players
    */
+  /**
+   * Authoritatively binds a friend's referral code via server proxy
+   */
+  async function bindReferral(username, code) {
+    if (!username || !code) throw new Error('بيانات الربط غير مكتملة.');
+    return await _post('/api/action/bind-referral', {
+      username: String(username).trim(),
+      code: String(code).trim().toUpperCase()
+    });
+  }
+
   async function executeWireTransfer(sender, recipient, amount, pin) {
     if (!sender || !recipient || !amount || !pin) {
       throw new Error('بيانات التحويل غير مكتملة.');
@@ -1794,6 +1805,7 @@ var ServerBridge = (() => {
     getBankCooldownRemaining,
     claimBankInterest,
     changePin,
+    bindReferral,
     executeWireTransfer,
     notifyWireTransfer,
     sendTransferRequest,

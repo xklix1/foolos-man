@@ -1274,8 +1274,8 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
 
     const isExempt = cleanSender.toLowerCase() === 'khaled';
-    if (!isExempt && amt > 50000000) {
-      return reply.code(400).send({ success: false, error: ' الحد الأقصى للتحويل البنكي الواحد هو 50,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.' });
+    if (!isExempt && amt > 10000000) {
+      return reply.code(400).send({ success: false, error: ' الحد الأقصى للتحويل البنكي الواحد هو 10,000,000 ج.م لحماية الاقتصاد ومنع التلاعب.' });
     }
 
     if (!cleanPin) {
@@ -1308,7 +1308,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const sUrl = config.SUPABASE_URL || 'http://127.0.0.1:8000';
     const sKey = config.SUPABASE_SERVICE_ROLE_KEY || config.SUPABASE_ANON_KEY;
 
-    // ── 24-Hour Cumulative Wire Transfer Limit Check (50,000,000 EGP) ──
+    // ── 24-Hour Cumulative Wire Transfer Limit Check (10,000,000 EGP) ──
     let dailySent = 0;
     if (!isExempt) {
       try {
@@ -1318,11 +1318,11 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
         if (tfRes.ok) {
           const pastTransfers = await tfRes.json();
           dailySent = Array.isArray(pastTransfers) ? pastTransfers.reduce((sum, t) => sum + (Number(t.amount) || 0), 0) : 0;
-          if ((dailySent + amt) > 50000000) {
-            const remaining = Math.max(0, 50000000 - dailySent);
+          if ((dailySent + amt) > 10000000) {
+            const remaining = Math.max(0, 10000000 - dailySent);
             return reply.code(400).send({
               success: false,
-              error: `🚫 تجاوزت الحد الأقصى اليومي المسموح به للتحويلات المصرفية (50,000,000 ج.م خلال 24 ساعة). المتبقي لك اليوم: ${remaining.toLocaleString('ar-EG')} ج.م.`
+              error: `🚫 تجاوزت الحد الأقصى اليومي المسموح به للتحويلات المصرفية (10,000,000 ج.م خلال 24 ساعة). المتبقي لك اليوم: ${remaining.toLocaleString('ar-EG')} ج.م.`
             });
           }
         }
@@ -1390,9 +1390,9 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
       // If the RPC failed due to network, Nginx 403, or legacy limit, execute the authoritative self-healing transfer!
       if (!rpcHandled) {
-        fastify.log.warn(`[WireTransfer] Database stored procedure unavailable or failed (${lastRpcError}). Executing authoritative 50M self-healing transfer for ${cleanSender} -> ${cleanRecipient}...`);
+        fastify.log.warn(`[WireTransfer] Database stored procedure unavailable or failed (${lastRpcError}). Executing authoritative 10M self-healing transfer for ${cleanSender} -> ${cleanRecipient}...`);
 
-        // --- AUTHORITATIVE 50M SELF-HEALING TRANSFER EXECUTION ---
+        // --- AUTHORITATIVE 10M SELF-HEALING TRANSFER EXECUTION ---
         // 1. Verify PIN against session or database
         let effectivePin = senderSession.pin;
         let dbSender = null;
@@ -1735,6 +1735,132 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     } catch (err) {
       fastify.log.error(err);
       return reply.code(500).send({ success: false, error: 'فشل معالجة طلب التحويل: ' + err.message });
+    }
+  });
+
+  // 15.6 POST /api/action/bind-referral (Authoritative Referral Code Binding - 1M to invitee & 50k to referrer)
+  fastify.post('/api/action/bind-referral', {
+    schema: {
+      body: {
+        type: 'object',
+        required: ['username', 'code'],
+        properties: {
+          username: { type: 'string' },
+          code: { type: 'string' }
+        }
+      }
+    }
+  }, async (request, reply) => {
+    const { username, code } = request.body || {};
+    const cleanUser = String(username || '').trim();
+    const cleanCode = String(code || '').trim().toUpperCase();
+
+    if (!cleanUser || !cleanCode) {
+      return reply.code(400).send({ success: false, error: 'اسم المستخدم وكود الدعوة مطلوبان.' });
+    }
+
+    try {
+      // 1. Fetch invitee
+      const invitee = await dbService.getPlayerByUsername(cleanUser);
+      if (!invitee) {
+        return reply.code(404).send({ success: false, error: 'تعذر العثور على حسابك في الخادم.' });
+      }
+
+      const invState = (typeof invitee.state === 'object' && invitee.state) ? { ...invitee.state } : {};
+      if (invState.referredBy || invState.referredByCode) {
+        return reply.code(400).send({ success: false, error: `لقد قمت بإدخال كود دعوة صديق من قبل ("${invState.referredBy}"), ولا يمكن تغييره.` });
+      }
+
+      if (invState.referralCode && invState.referralCode.toUpperCase() === cleanCode) {
+        return reply.code(400).send({ success: false, error: 'لا يمكنك إدخال كود الدعوة الخاص بك!' });
+      }
+
+      // 2. Fetch referrer by referralCode
+      const queryUrl = `/rest/v1/players?state->>referralCode=eq.${encodeURIComponent(cleanCode)}&select=username,bank,net_worth,state`;
+      const refFetch = await dbService.resilientFetch(queryUrl);
+      if (!refFetch.ok) {
+        return reply.code(500).send({ success: false, error: 'تعذر التحقق من كود الدعوة في الخادم.' });
+      }
+      const refRows = await refFetch.json();
+      if (!Array.isArray(refRows) || refRows.length === 0) {
+        return reply.code(400).send({ success: false, error: 'كود الدعوة المدخل غير موجود. يرجى التأكد من الرمز وإعادة المحاولة.' });
+      }
+
+      const referrer = refRows[0];
+      if (referrer.username.toLowerCase() === cleanUser.toLowerCase()) {
+        return reply.code(400).send({ success: false, error: 'لا يمكنك إدخال كود الدعوة الخاص بك!' });
+      }
+
+      // 3. Update invitee: +1,000,000 cash, referredBy, referredByCode
+      const newCash = Number(invitee.cash || 0) + 1000000;
+      const newNetWorth = Number(invitee.net_worth || 0) + 1000000;
+      invState.cash = newCash;
+      invState.netWorth = newNetWorth;
+      invState.referredBy = referrer.username;
+      invState.referredByCode = cleanCode;
+
+      await dbService.resilientFetch(`/rest/v1/players?username=eq.${encodeURIComponent(cleanUser)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          cash: newCash,
+          net_worth: newNetWorth,
+          state: invState
+        })
+      });
+
+      // 4. Update referrer: +50,000 bank, net_worth
+      const refBank = Number(referrer.bank || 0) + 50000;
+      const refNet = Number(referrer.net_worth || 0) + 50000;
+      const rState = (typeof referrer.state === 'object' && referrer.state) ? { ...referrer.state } : {};
+      rState.bank = refBank;
+      rState.netWorth = refNet;
+      if (!Array.isArray(rState.activities)) rState.activities = [];
+      rState.activities.unshift({
+        title: 'مكافأة دعوة صديق جديد',
+        description: `قام اللاعب @${cleanUser} باستخدام كود دعوتك وتم إيداع +50,000 ج.م في حسابك البنكي!`,
+        category: 'reward',
+        timestamp: Date.now()
+      });
+      if (rState.activities.length > 50) rState.activities.length = 50;
+
+      await dbService.resilientFetch(`/rest/v1/players?username=eq.${encodeURIComponent(referrer.username)}`, {
+        method: 'PATCH',
+        body: JSON.stringify({
+          bank: refBank,
+          net_worth: refNet,
+          state: rState
+        })
+      });
+
+      // 5. Send in-game mailbox notification
+      await dbService.resilientFetch('/rest/v1/mailbox', {
+        method: 'POST',
+        body: JSON.stringify({
+          sender: 'النظام المصرفي',
+          recipient: referrer.username,
+          type: 'system_reward',
+          payload: {
+            title: 'مكافأة دعوة صديق جديد 🎉',
+            message: `قام اللاعب @${cleanUser} باستخدام كود دعوتك بنجاح! تم إيداع 50,000 ج.م في حسابك البنكي.`,
+            reward: 50000,
+            timestamp: Date.now()
+          },
+          status: 'unread',
+          created_at: Date.now()
+        })
+      }).catch(err => fastify.log.warn(`[Referral] Mailbox notification error: ${err.message}`));
+
+      return reply.send({
+        success: true,
+        referrer: referrer.username,
+        code: cleanCode,
+        newCash,
+        newNetWorth,
+        bonusAwarded: 1000000
+      });
+    } catch (err) {
+      fastify.log.error('[BindReferral Error]', err);
+      return reply.code(500).send({ success: false, error: err.message });
     }
   });
 

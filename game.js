@@ -1204,6 +1204,7 @@ const GameEngine = (() => {
     referredByCode: '',
     transfersReceivedTotal: 0,
     claimedReferralTiers: [],
+    claimedReferralUsers: [],
     tradeCompany: {
       warehouseCapacity: 10,
       warehouse: {},
@@ -4124,6 +4125,50 @@ const GameEngine = (() => {
       reward: tier.reward,
       totalCash: state.cash,
       claimedTiers: state.claimedReferralTiers
+    };
+  }
+
+  async function claimAllReferralGoldRewards() {
+    if (!activeUsername) throw new Error("لا توجد جلسة لاعب نشطة.");
+    
+    // Refresh referral report from DB
+    const rep = await AppDB.getReferralReport(activeUsername);
+    if (!rep || !Array.isArray(rep.invitees)) {
+      throw new Error("تعذر جلب تقرير الدعوات حالياً.");
+    }
+
+    state.claimedReferralUsers = state.claimedReferralUsers || [];
+    
+    // Find all qualified users that haven't been claimed yet (Self-earned >= 5,000,000)
+    const eligibleInvitees = rep.invitees.filter(i => i.isQualified && !state.claimedReferralUsers.includes(i.username));
+    
+    if (eligibleInvitees.length === 0) {
+      throw new Error("لا توجد مكافآت ذهب جاهزة للاستلام حالياً. يجب أن يصل الصديق المدعو إلى 5,000,000 ج.م ثروة ذاتية ليمنحك 3 ذهبات.");
+    }
+
+    const count = eligibleInvitees.length;
+    const goldToAdd = count * 3;
+
+    eligibleInvitees.forEach(i => {
+      state.claimedReferralUsers.push(i.username);
+    });
+
+    state.gold = (Number(state.gold) || 0) + goldToAdd;
+
+    const names = eligibleInvitees.map(i => `@${i.username}`).join('، ');
+    recordPlayerActivity(
+      'مكافأة دعوة الأصدقاء',
+      `استلام ${goldToAdd} قطع ذهب عن إنجاز (${count} أصدقاء وصلوا لـ 5 مليون ثروة: ${names})!`,
+      'reward'
+    );
+
+    forceSaveState(true);
+
+    return {
+      count,
+      goldEarned: goldToAdd,
+      totalGold: state.gold,
+      claimedUsers: state.claimedReferralUsers
     };
   }
 
@@ -9583,6 +9628,7 @@ const GameEngine = (() => {
     generateReferralCode,
     REFERRAL_MILESTONES,
     claimReferralMilestone,
+    claimAllReferralGoldRewards,
     
     // New V2: Cars and Smuggling Exports
     CAR_TEMPLATES,
