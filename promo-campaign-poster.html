@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>البوستر الدعائي الرسمي • لعبة رأس المال | Ras ALmal Tycoon</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900;1000&family=Changa:wght@700;800;900&family=Tajawal:wght@500;700;800;900&family=Orbitron:wght@700;800;900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Cairo', 'Tajawal', sans-serif;
+    }
+    body {
+      background: #020617;
+      color: #f8fafc;
+      overflow-x: hidden;
+    }
+    .font-changa {
+      font-family: 'Changa', 'Cairo', sans-serif;
+    }
+    .font-en {
+      font-family: 'Orbitron', 'Cairo', sans-serif;
+    }
+    .glow-gold {
+      text-shadow: 0 0 25px rgba(245, 158, 11, 0.7), 0 0 50px rgba(217, 119, 6, 0.4);
+    }
+    .glow-cyan {
+      text-shadow: 0 0 20px rgba(6, 182, 212, 0.7);
+    }
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .glass-gold {
+      background: linear-gradient(135deg, rgba(245, 158, 11, 0.12), rgba(15, 23, 42, 0.92));
+      backdrop-filter: blur(20px);
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+    .gold-gradient-text {
+      background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #d97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .cyan-gradient-text {
+      background: linear-gradient(135deg, #a5f3fc 0%, #06b6d4 50%, #0284c7 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .radial-cyber {
+      background: radial-gradient(circle at 50% 0%, rgba(245, 158, 11, 0.18) 0%, rgba(99, 102, 241, 0.12) 35%, rgba(2, 6, 23, 0.98) 80%);
+    }
+
+    /* Standard Poster Canvas Sizes */
+    #poster-container {
+      transition: all 0.3s ease;
+      transform-origin: top center;
+    }
+    .format-feed {
+      width: 1080px;
+      min-height: 1440px;
+    }
+    .format-story {
+      width: 1080px;
+      min-height: 1920px;
+    }
+    .format-landscape {
+      width: 1200px;
+      min-height: 675px;
+    }
+
+    @keyframes pulseGlow {
+      0%, 100% { opacity: 0.4; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.05); }
+    }
+    .ambient-glow {
+      animation: pulseGlow 5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="radial-cyber min-h-screen text-slate-100 selection:bg-amber-500 selection:text-black">
+
+  <!-- ==================== STUDIO CONTROLS TOOLBAR (NOT EXPORTED) ==================== -->
+  <header id="studio-toolbar" class="sticky top-0 z-50 glass-panel border-b border-slate-800/80 px-4 py-3 shadow-2xl">
+    <div class="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-3">
+      
+      <!-- Brand & Title -->
+      <div class="flex items-center gap-3">
+        <a href="https://rasalmal.online" class="flex items-center gap-2 group">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-300 p-0.5 shadow-lg shadow-amber-500/20 group-hover:scale-105 transition">
+            <img src="assets/logo.jpg" alt="Logo" class="w-full h-full rounded-[10px] object-cover">
+          </div>
+          <div>
+            <h1 class="font-black text-sm text-white group-hover:text-amber-400 transition flex items-center gap-1.5">
+              <span>رأس المال • استوديو الإعلانات</span>
+              <span class="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">Ad Studio</span>
+            </h1>
+            <p class="text-[11px] text-slate-400">بوسترات تسويقية عالية الجودة جاهزة للحملات الممولة</p>
+          </div>
+        </a>
+      </div>
+
+      <!-- Format Switchers -->
+      <div class="flex items-center bg-slate-900/90 rounded-2xl p-1 border border-slate-800 text-xs font-bold">
+        <button id="btn-format-feed" onclick="switchFormat('feed')" class="px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black shadow transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-brands fa-instagram"></i>
+          <span>منشور بوست (4:5)</span>
+        </button>
+        <button id="btn-format-story" onclick="switchFormat('story')" class="px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-mobile-screen"></i>
+          <span>ستوري وريلز وتيك توك (9:16)</span>
+        </button>
+        <button id="btn-format-landscape" onclick="switchFormat('landscape')" class="px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-brands fa-facebook"></i>
+          <span>بانر فيسبوك ومواقع (16:9)</span>
+        </button>
+      </div>
+
+      <!-- Export Actions -->
+      <div class="flex items-center gap-2">
+        <button onclick="scrollToAdCopy()" class="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold text-xs transition flex items-center gap-1.5 cursor-pointer">
+          <i class="fa-solid fa-copy text-amber-400"></i>
+          <span>نصوص الإعلان الجاهزة</span>
+        </button>
+
+        <button id="btn-download-poster" onclick="downloadPosterImage()" class="px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black text-xs transition shadow-lg shadow-amber-500/25 flex items-center gap-2 cursor-pointer active:scale-95">
+          <i class="fa-solid fa-download text-sm"></i>
+          <span>تحميل البوستر عالي الدقة (PNG)</span>
+        </button>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- ==================== MAIN WORKSPACE ==================== -->
+  <main class="max-w-7xl mx-auto px-4 py-8 flex flex-col items-center gap-10">
+
+    <!-- Scale notice for mobile viewers -->
+    <div class="w-full text-center">
+      <p class="text-xs text-slate-400 inline-flex items-center gap-2 bg-slate-900/60 border border-slate-800 px-4 py-1.5 rounded-full">
+        <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+        <span>البوستر مصمم بأبعاد احترافية للتصدير بجودة خرافية (1080p). انقر على "تحميل البوستر" لحفظه كصورة جاهزة للإعلان.</span>
+      </p>
+    </div>
+
+    <!-- Scaled Canvas Wrapper -->
+    <div id="poster-scale-wrapper" class="w-full flex justify-center overflow-hidden">
+      
+      <!-- =================================================================== -->
+      <!-- THE EXPORTABLE POSTER CANVAS (This element is rendered to PNG)      -->
+      <!-- =================================================================== -->
+      <div id="poster-container" class="format-feed relative bg-gradient-to-b from-slate-950 via-[#030816] to-[#01040f] border-2 border-amber-500/40 rounded-[36px] shadow-[0_0_100px_rgba(245,158,11,0.25)] overflow-hidden p-8 sm:p-12 space-y-8 select-none">
+        
+        <!-- Ambient Glowing Lights in Canvas -->
+        <div class="absolute -top-40 -left-40 w-[550px] h-[550px] bg-amber-500/20 rounded-full blur-[140px] pointer-events-none ambient-glow"></div>
+        <div class="absolute top-1/3 -right-40 w-[550px] h-[550px] bg-cyan-500/18 rounded-full blur-[140px] pointer-events-none ambient-glow" style="animation-delay: 2.5s;"></div>
+        <div class="absolute -bottom-40 left-1/3 w-[550px] h-[550px] bg-indigo-600/20 rounded-full blur-[140px] pointer-events-none ambient-glow" style="animation-delay: 1.2s;"></div>
+
+        <!-- Watermark / Grid Lines -->
+        <div class="absolute inset-0 opacity-[0.03] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:24px_24px]"></div>
+
+        <!-- TOP BAR: Brand Identity & Verified Badge -->
+        <div class="relative z-10 flex items-center justify-between border-b border-slate-800/80 pb-6">
+          <div class="flex items-center gap-4">
+            <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 p-0.5 shadow-xl shadow-amber-500/30">
+              <img src="assets/official-logo.jpg" alt="Logo" class="w-full h-full rounded-[14px] object-cover">
+            </div>
+            <div>
+              <div class="flex items-center gap-2">
+                <h2 class="text-2xl font-black font-changa text-white tracking-wide">رأس المال | <span class="gold-gradient-text">Ras ALmal</span></h2>
+                <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
+              </div>
+              <p class="text-xs font-bold text-slate-300">أقوى محاكي استثمار وتجارة وإمبراطورية أعمال في الوطن العربي</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2 px-4 py-2 rounded-2xl bg-gradient-to-r from-amber-500/15 to-yellow-500/10 border border-amber-500/40 text-amber-300 text-xs font-black shadow-lg shadow-amber-500/10">
+            <i class="fa-solid fa-crown text-amber-400 text-sm"></i>
+            <span>مجانية بالكامل • العب فوراً</span>
+          </div>
+        </div>
+
+        <!-- HERO SECTION: Big Catchy Hook & Visual Asset -->
+        <div class="relative z-10 grid grid-cols-1 md:grid-cols-12 gap-8 items-center">
+          
+          <!-- Left/Main: Powerful Copy Hook -->
+          <div class="md:col-span-7 space-y-4">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-cyan-500/15 border border-cyan-500/30 text-cyan-300 text-xs font-black">
+              <i class="fa-solid fa-fire text-amber-400 animate-pulse"></i>
+              <span>من كشك قهوة.. إلى عرش المليارات وناطحات السحاب!</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl font-black font-changa leading-[1.25] text-white">
+              ابـنِ إمبراطوريتك واصعد لقائمة <span class="gold-gradient-text glow-gold">توب 10 لأغنى أثرياء العرب!</span> 👑
+            </h1>
+
+            <p class="text-slate-300 text-sm sm:text-base leading-relaxed font-medium">
+              عالم اقتصادي حي، شركات حقيقية، بورصة أسهم ومضاربة لحظية، أساطيل شحن بحرية، مطار دولي، وتعدين فضائي.. هل تملك الذكاء المالي الكافي لتصبح الملياردير القادم؟
+            </p>
+
+            <!-- Instant Highlights Pills -->
+            <div class="flex flex-wrap gap-2 pt-2">
+              <span class="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-chart-line text-emerald-400"></i> بورصة حية وأسهم
+              </span>
+              <span class="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-plane-departure text-cyan-400"></i> مطار وأسطول طائرات
+              </span>
+              <span class="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-shuttle-space text-purple-400"></i> تعدين فضاء وصواريخ
+              </span>
+              <span class="px-3 py-1 rounded-xl bg-slate-900/80 border border-slate-700 text-xs font-bold text-slate-200 flex items-center gap-1.5">
+                <i class="fa-solid fa-ship text-amber-400"></i> استيراد وتصدير دولي
+              </span>
+            </div>
+          </div>
+
+          <!-- Right: Hero Visual Art -->
+          <div class="md:col-span-5 relative">
+            <div class="relative rounded-3xl overflow-hidden border-2 border-amber-500/40 shadow-2xl shadow-amber-500/20 group">
+              <img src="assets/ras_almal_ad_hero.jpg" alt="Ras ALmal Tycoon Visual" class="w-full h-auto object-cover transform group-hover:scale-105 transition duration-700">
+              
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950 via-transparent to-transparent"></div>
+              
+              <!-- Floating Live Stats Badge -->
+              <div class="absolute bottom-3 left-3 right-3 glass-panel p-3 rounded-2xl border border-amber-500/30 flex items-center justify-between">
+                <div>
+                  <span class="text-[10px] text-slate-400 font-bold block">مكافأة الانضمام الترحيبية</span>
+                  <span class="text-sm font-black gold-gradient-text">+1,000,000 ج.م كاش سائل</span>
+                </div>
+                <div class="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-400 flex items-center justify-center text-lg">
+                  <i class="fa-solid fa-sack-dollar"></i>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- 8 CORE KILLER FEATURES GRID -->
+        <div class="relative z-10 space-y-4">
+          <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+            <h3 class="text-xl font-black font-changa text-white flex items-center gap-2">
+              <i class="fa-solid fa-cubes-stacked text-amber-400"></i>
+              <span>أبرز مميزات وعوالم اللعبة الملحمية</span>
+            </h3>
+            <span class="text-xs text-slate-400 font-bold">كل هذا وأكثر ينتظرك داخل اللعبة</span>
+          </div>
+
+          <div class="grid grid-cols-2 md:grid-cols-4 gap-3.5">
+
+            <!-- Card 1: 18+ Businesses -->
+            <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-amber-500/40 transition space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-building-wheat"></i>
+              </div>
+              <h4 class="font-black text-sm text-white">18+ نشاط تجاري حقيقي</h4>
+              <p class="text-[11px] text-slate-300 leading-snug">من كافيهات وفنادق لشركات برمجيات وسيرفرات AI وناطحات سحاب.</p>
+            </div>
+
+            <!-- Card 2: Stock Market -->
+            <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-emerald-500/40 transition space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-chart-line"></i>
+              </div>
+              <h4 class="font-black text-sm text-white">بورصة وتداول لحظي</h4>
+              <p class="text-[11px] text-slate-300 leading-snug">مضاربة بأسهم حية، توزيع أرباح دورية، وصناديق استثمار بنكية مغلقة.</p>
+            </div>
+
+            <!-- Card 3: Megafactory Industry -->
+            <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-cyan-500/40 transition space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-industry"></i>
+              </div>
+              <h4 class="font-black text-sm text-white">مجمع الصناعات الكبرى</h4>
+              <p class="text-[11px] text-slate-300 leading-snug">خطوط إنتاج سيارات، معالجات كوانتم، وبتروكيماويات تصدر للعالم.</p>
+            </div>
+
+            <!-- Card 4: Global Shipping Fleet -->
+            <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-blue-500/40 transition space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-blue-500/15 border border-blue-500/30 text-blue-400 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-ship"></i>
+              </div>
+              <h4 class="font-black text-sm text-white">استيراد وتصدير بحري</h4>
+              <p class="text-[11px] text-slate-300 leading-snug">سفن حاويات وبواخر في أعالي البحار ومستودعات جمركية ضخمة.</p>
+            </div>
+
+            <!-- Card 5: International Airport -->
+            <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-indigo-500/40 transition space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-400 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-plane-up"></i>
+              </div>
+              <h4 class="font-black text-sm text-white">مطار العاصمة الدولي</h4>
+              <p class="text-[11px] text-slate-300 leading-snug">مدارج وصالات كبار الشخصيات والأسواق الحرة وأساطيل طائرات حديثة.</p>
+            </div>
+
+            <!-- Card 6: Space Mining -->
+            <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-purple-500/40 transition space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-purple-500/15 border border-purple-500/30 text-purple-400 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-rocket"></i>
+              </div>
+              <h4 class="font-black text-sm text-white">محطة تعدين الفضاء</h4>
+              <p class="text-[11px] text-slate-300 leading-snug">إطلاق صواريخ لتعدين الكويكبات واستخراج البلاتين والمادة المظلمة.</p>
+            </div>
+
+            <!-- Card 7: Live Wire Transfers -->
+            <div class="glass-panel p-4 rounded-2xl border border-slate-800/80 hover:border-teal-500/40 transition space-y-2">
+              <div class="w-10 h-10 rounded-xl bg-teal-500/15 border border-teal-500/30 text-teal-400 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-money-bill-transfer"></i>
+              </div>
+              <h4 class="font-black text-sm text-white">تحويلات بنكية لحظية</h4>
+              <p class="text-[11px] text-slate-300 leading-snug">حوّل كاش لأصدقائك بـ PIN سري وتنافس على عرش توب 10 الأثرياء.</p>
+            </div>
+
+            <!-- Card 8: Referral & Real Gold -->
+            <div class="glass-gold p-4 rounded-2xl border-2 border-amber-500/50 hover:border-amber-400 transition space-y-2 shadow-lg shadow-amber-500/10">
+              <div class="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/40 text-amber-300 flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-coins"></i>
+              </div>
+              <h4 class="font-black text-sm text-amber-300">مكافآت ذهب خالص</h4>
+              <p class="text-[11px] text-slate-200 leading-snug">اكسب 3 قطع ذهب عن كل صديق تدعوه، و1,000,000 كاش لكل لاعب جديد!</p>
+            </div>
+
+          </div>
+        </div>
+
+        <!-- BOTTOM CALL TO ACTION & ACCESS BANNER -->
+        <div class="relative z-10 glass-gold rounded-3xl p-6 sm:p-8 border-2 border-amber-500/50 flex flex-col md:flex-row items-center justify-between gap-6 shadow-2xl shadow-amber-500/20">
+          
+          <div class="space-y-2 text-center md:text-right">
+            <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-xs font-black border border-emerald-500/30">
+              <i class="fa-solid fa-bolt"></i>
+              <span>لا تحتاج لتحميل أو تنزيل ملفات • تلعب عبر المتصفح فوراً</span>
+            </div>
+            <h3 class="text-2xl sm:text-3xl font-black font-changa text-white">
+              جاهز تبدأ رحلتك نحو أول مليار؟ 🚀
+            </h3>
+            <p class="text-xs sm:text-sm text-slate-300 font-medium">
+              العب مجاناً الآن على أي هاتف (iPhone / Android) أو كمبيوتر برابط مباشر بنقرة واحدة!
+            </p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-4 shrink-0">
+            <!-- URL Card / QR Code Representation -->
+            <div class="bg-slate-950/80 border border-amber-500/40 rounded-2xl px-6 py-3.5 text-center shadow-lg">
+              <span class="text-[10px] text-slate-400 font-bold block mb-1">الرابط الرسمي المباشر</span>
+              <span class="text-lg sm:text-xl font-black font-en text-amber-400 tracking-wider">rasalmal.online</span>
+            </div>
+
+            <!-- Big Glowing Action Button -->
+            <div class="px-8 py-4 rounded-2xl bg-gradient-to-r from-amber-500 via-yellow-400 to-amber-500 text-slate-950 font-black font-changa text-lg shadow-xl shadow-amber-500/30 flex items-center gap-3">
+              <span>انطلق للعبة الآن</span>
+              <i class="fa-solid fa-arrow-left text-base"></i>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- FOOTER: Copyright & Trust -->
+        <div class="relative z-10 flex flex-wrap items-center justify-between text-xs text-slate-400 border-t border-slate-800/80 pt-4">
+          <div class="flex items-center gap-3">
+            <span>© 2026 رأس المال • جميع الحقوق محفوظة</span>
+            <span class="text-slate-600">•</span>
+            <span class="text-emerald-400 font-bold"><i class="fa-solid fa-shield-halved"></i> آمنة وسريعة 100%</span>
+          </div>
+          <div class="flex items-center gap-2 text-slate-300 font-bold">
+            <span>متوافقة مع متصفحات الموبايل والكمبيوتر</span>
+            <i class="fa-brands fa-chrome text-amber-400"></i>
+            <i class="fa-brands fa-safari text-blue-400"></i>
+            <i class="fa-brands fa-android text-emerald-400"></i>
+            <i class="fa-brands fa-apple text-slate-200"></i>
+          </div>
+        </div>
+
+      </div>
+      <!-- =================================================================== -->
+      <!-- END POSTER CANVAS                                                  -->
+      <!-- =================================================================== -->
+
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- AD COPYWRITING TOOLBOX (READY-TO-USE FOR AD CAMPAIGNS)               -->
+    <!-- =================================================================== -->
+    <section id="ad-copy-section" class="w-full max-w-5xl glass-panel rounded-3xl p-6 sm:p-10 border border-amber-500/30 space-y-8 shadow-2xl">
+      
+      <div class="text-center space-y-2 border-b border-slate-800 pb-6">
+        <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-black">
+          <i class="fa-solid fa-bullhorn text-amber-400"></i>
+          <span>حملات إعلانية جاهزة للنشر بنقرة واحدة</span>
+        </div>
+        <h2 class="text-2xl sm:text-3xl font-black font-changa text-white">
+          نصوص إعلانية مدروسة ومجربة لفيسبوك وتيك توك وإنستغرام 🔥
+        </h2>
+        <p class="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
+          انسخ النص المناسب لحملتك الإعلانية الممولة وضعه مباشرة مع البوستر الذي قمت بتحميله لتحقيق أعلى معدل نقرات وتحويلات (High CTR & Conversion).
+        </p>
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+        <!-- Copy Option 1: Facebook / Instagram Feed Ad (Ambition Hook) -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3 relative group hover:border-amber-500/40 transition">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full bg-blue-500/15 text-blue-300 font-bold text-xs border border-blue-500/30 flex items-center gap-1.5">
+              <i class="fa-brands fa-facebook"></i> فيسبوك وإنستغرام (طموح وتحدي)
+            </span>
+            <button onclick="copyAdText('copy-1')" class="px-3 py-1 rounded-xl bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-copy"></i>
+              <span>نسخ الإعلان</span>
+            </button>
+          </div>
+
+          <div id="copy-1" class="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 text-xs leading-relaxed text-slate-200 select-all font-sans whitespace-pre-line">
+من كشك شاي وعربة قهوة.. إلى عرش المليارات وناطحات السحاب! 👑💰
+
+هل تملك الذكاء المالي الكافي لتتصدر قائمة "توب 10" لأغنى أثرياء الوطن العربي؟
+
+🔥 لعبة "رأس المال" - أضخم محاكي استثمار وتجارة وإدارة أعمال واقعي 100%:
+✅ 18+ مشروع حقيقي (كافيهات، شركات برمجيات، فنادق، أبراج).
+✅ بورصة أسهم حية ومضاربة لحظية مع توزيع أرباح دورية.
+✅ مجمعات صناعية عملاقة (سيارات، رقائق ذكاء اصطناعي، بتروكيماويات).
+✅ أساطيل شحن بحري واستيراد وتصدير لموانئ دبي وبرلين وطوكيو.
+✅ مطار العاصمة الدولي وتسيير رحلات VIP حول العالم.
+✅ محطة فضاء لإطلاق الصواريخ وتعدين كويكبات الفضاء النادرة!
+✅ تحويلات بنكية فورية بكود سري بين اللاعبين.
+
+🎁 هدية ترحيبية فورية: احصل على 1,000,000 كاش سائل فور تسجيلك لبدء أول مشروع لك!
+⚡ بدون تحميل وبدون إعلانات مزعجة - العب فوراً عبر المتصفح مجاناً:
+👇 ادخل الآن وابدأ إمبراطوريتك:
+https://rasalmal.online
+          </div>
+        </div>
+
+        <!-- Copy Option 2: Short TikTok / Reels Script & Caption -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3 relative group hover:border-cyan-500/40 transition">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full bg-cyan-500/15 text-cyan-300 font-bold text-xs border border-cyan-500/30 flex items-center gap-1.5">
+              <i class="fa-brands fa-tiktok"></i> تيك توك وريلز وشورتس (سريع وحماسي)
+            </span>
+            <button onclick="copyAdText('copy-2')" class="px-3 py-1 rounded-xl bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-copy"></i>
+              <span>نسخ الإعلان</span>
+            </button>
+          </div>
+
+          <div id="copy-2" class="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 text-xs leading-relaxed text-slate-200 select-all font-sans whitespace-pre-line">
+لو بدأت بـ 1,000 جنيه في جيبك.. تقدر توصل لـ 1,000,000,000 وتتصدر قائمة أغنى أثرياء العرب؟ 🤑🔥
+
+لعبة "رأس المال" قلبت الموازين:
+تبدأ بمشروع صغير، تشتري أسهم في البورصة، تصدّر حاويات بحرية، تبني مطار خاص، وتطلع الفضاء تعدّن بلاتين! 🚀
+
+🎁 كل لاعب جديد بياخد 1 مليون جنيه كاش ترحيبي أول ما يدخل!
+واكسب 3 قطع ذهب خالص عن كل واحد من صحابك يوصل 5 مليون ثروة! 🏆
+
+مش محتاجة تنزل أي حاجة.. ادخل والعب فوراً من موبايلك:
+🔗 الرابط: rasalmal.online
+          </div>
+        </div>
+
+        <!-- Copy Option 3: Telegram & WhatsApp Viral Broadcast -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3 relative group hover:border-emerald-500/40 transition">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-300 font-bold text-xs border border-emerald-500/30 flex items-center gap-1.5">
+              <i class="fa-brands fa-telegram"></i> قنوات تليجرام ورسائل واتساب
+            </span>
+            <button onclick="copyAdText('copy-3')" class="px-3 py-1 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-copy"></i>
+              <span>نسخ الإعلان</span>
+            </button>
+          </div>
+
+          <div id="copy-3" class="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 text-xs leading-relaxed text-slate-200 select-all font-sans whitespace-pre-line">
+🚨 لكل عشاق ألعاب التجارة والبيزنس ومحاكاة الثراء!
+
+تم إطلاق التحديث الملكي للعبة "رأس المال | Ras ALmal Tycoon" 👑
+أول محاكي أعمال عربي متكامل بدون أي إعلانات مزعجة:
+- افتح مشاريعك ووظف عمالك
+- ضارب في البورصة واشترِ ذهب
+- صدّر شحنات بحرية بملايين الجنيهات
+- ابنِ مطارك الدولي واغزو الفضاء
+
+🎁 كود ترحيبي للكل: 1,000,000 جنيه فوراً في حسابك!
+العب الآن مجاناً من أي جهاز بنقرة واحدة:
+👇👇👇
+https://rasalmal.online
+          </div>
+        </div>
+
+        <!-- Copy Option 4: Catchy One-Liners & CTAs for Google / Meta Ads -->
+        <div class="glass-panel p-5 rounded-2xl border border-slate-800 space-y-3 relative group hover:border-purple-500/40 transition">
+          <div class="flex items-center justify-between">
+            <span class="px-3 py-1 rounded-full bg-purple-500/15 text-purple-300 font-bold text-xs border border-purple-500/30 flex items-center gap-1.5">
+              <i class="fa-solid fa-bolt"></i> عناوين وأزرار نقر سريعة (Headlines & CTAs)
+            </span>
+            <button onclick="copyAdText('copy-4')" class="px-3 py-1 rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 border border-purple-500/40 text-xs font-bold transition flex items-center gap-1 cursor-pointer">
+              <i class="fa-solid fa-copy"></i>
+              <span>نسخ العناوين</span>
+            </button>
+          </div>
+
+          <div id="copy-4" class="bg-slate-950/70 p-4 rounded-xl border border-slate-800/80 text-xs leading-relaxed text-slate-200 select-all font-sans whitespace-pre-line">
+🔹 العناوين الرئيسية المقترحة (Headlines):
+1. ابنِ إمبراطوريتك الآن • من كشك قهوة لعرش المليارات 👑
+2. هل تقدر تنافس على قائمة توب 10 لأغنى أثرياء العرب؟ 💰
+3. أقوى لعبة محاكاة بيزنس وبورصة عربية مجانية بدون تحميل 🚀
+4. استلم 1,000,000 جنيه كاش فور تسجيلك وابدأ مشروعك الأول!
+
+🔹 أزرار الدعوة لاتخاذ إجراء (Call To Action):
+- [ العب مجاناً الآن ]
+- [ ابدأ إمبراطوريتك ]
+- [ استلم المليون كاش ]
+- [ ادخل البورصة الآن ]
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- ==================== JAVASCRIPT LOGIC ==================== -->
+  <script>
+    let currentFormat = 'feed';
+
+    function switchFormat(fmt) {
+      currentFormat = fmt;
+      const container = document.getElementById('poster-container');
+      const btnFeed = document.getElementById('btn-format-feed');
+      const btnStory = document.getElementById('btn-format-story');
+      const btnLandscape = document.getElementById('btn-format-landscape');
+
+      // Reset classes
+      container.classList.remove('format-feed', 'format-story', 'format-landscape');
+      [btnFeed, btnStory, btnLandscape].forEach(btn => {
+        btn.className = 'px-3 py-1.5 rounded-xl text-slate-400 hover:text-white transition flex items-center gap-1.5 cursor-pointer';
+      });
+
+      const activeClass = 'px-3 py-1.5 rounded-xl bg-amber-500 text-slate-950 font-black shadow transition flex items-center gap-1.5 cursor-pointer';
+
+      if (fmt === 'story') {
+        container.classList.add('format-story');
+        btnStory.className = activeClass;
+      } else if (fmt === 'landscape') {
+        container.classList.add('format-landscape');
+        btnLandscape.className = activeClass;
+      } else {
+        container.classList.add('format-feed');
+        btnFeed.className = activeClass;
+      }
+
+      autoScalePoster();
+    }
+
+    function autoScalePoster() {
+      const container = document.getElementById('poster-container');
+      const wrapper = document.getElementById('poster-scale-wrapper');
+      if (!container || !wrapper) return;
+
+      const availWidth = Math.min(window.innerWidth - 32, 1100);
+      const targetWidth = container.offsetWidth || (currentFormat === 'landscape' ? 1200 : 1080);
+      const scale = Math.min(1, availWidth / targetWidth);
+
+      container.style.transform = `scale(${scale})`;
+      wrapper.style.height = `${(container.offsetHeight * scale) + 20}px`;
+    }
+
+    async function downloadPosterImage() {
+      const btn = document.getElementById('btn-download-poster');
+      const container = document.getElementById('poster-container');
+      const originalTransform = container.style.transform;
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin text-sm"></i> <span>جاري إنشاء الصورة بدقة فائقة...</span>`;
+
+        container.style.transform = 'none';
+        await document.fonts.ready;
+
+        // Give a moment for layout reflow
+        await new Promise(r => setTimeout(r, 150));
+
+        const canvas = await html2canvas(container, {
+          scale: 2, // 2x Retina Resolution
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#020617',
+          logging: false
+        });
+
+        const link = document.createElement('a');
+        link.download = `rasalmal-promo-poster-${currentFormat}-${Date.now()}.png`;
+        link.href = canvas.toDataURL('image/png');
+        link.click();
+
+        btn.innerHTML = `<i class="fa-solid fa-check text-emerald-950"></i> <span>تم تحميل البوستر بنجاح!</span>`;
+        setTimeout(() => {
+          btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> <span>تحميل البوستر عالي الدقة (PNG)</span>`;
+          btn.disabled = false;
+        }, 3000);
+      } catch (err) {
+        alert('حدث خطأ أثناء تحميل الصورة: ' + err.message);
+        btn.disabled = false;
+        btn.innerHTML = `<i class="fa-solid fa-download text-sm"></i> <span>تحميل البوستر عالي الدقة (PNG)</span>`;
+      } finally {
+        container.style.transform = originalTransform;
+      }
+    }
+
+    function copyAdText(elementId) {
+      const el = document.getElementById(elementId);
+      if (!el) return;
+      const text = el.innerText || el.textContent;
+      navigator.clipboard.writeText(text).then(() => {
+        alert('تم نسخ نص الإعلان بنجاح! يمكنك لصقه مباشرة في إعلانك المممول.');
+      }).catch(() => {
+        // Fallback
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        alert('تم نسخ نص الإعلان بنجاح!');
+      });
+    }
+
+    function scrollToAdCopy() {
+      const sec = document.getElementById('ad-copy-section');
+      if (sec) sec.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    window.addEventListener('resize', autoScalePoster);
+    window.addEventListener('DOMContentLoaded', () => {
+      autoScalePoster();
+      // Ensure images load before scaling calculation
+      window.onload = autoScalePoster;
+    });
+  </script>
+</body>
+</html>
