@@ -1,7 +1,7 @@
 {
   "version": "v10.0.46",
-  "build": 1793661500000,
-  "timestamp": 1793661500000,
-  "notes": "Synchronize trade container reference prices to match exact import/export company values (e.g. fashion brands 6,000 EGP).",
-  "releaseNotes": "مزامنة الأسعار الاسترشادية لحاويات الاستيراد والتصدير في سوق التجارة لتطابق بدقة أسعار شركة التجارة الرسمية (مثلاً الأزياء 6,000 ج.م)."
+  "build": 1793662000000,
+  "timestamp": 1793662000000,
+  "notes": "Comprehensive audit and synchronization of all P2P market catalog reference prices across commodities, minerals, crops, livestock, aircraft, and space rockets.",
+  "releaseNotes": "مزامنة وتدقيق شامل لجميع أسعار السوق المرجعية: تطابق كامل 100% بين محاصيل المزرعة، خامات الفضاء، طائرات المطار، صواريخ الفضاء، وحاويات التجارة."
 }

@@ -46,14 +46,17 @@ const MARKET_ITEM_CATALOG = {
     dates: { name: 'نخيل تمور المجدول', icon: 'fa-tree text-emerald-500', basePrice: 2450, stackable: true },
     saffron: { name: 'الزعفران الإمبراطوري', icon: 'fa-spa text-purple-400', basePrice: 9800, stackable: true },
     milk: { name: 'حليب أبقار طازج', icon: 'fa-glass-water text-slate-100', basePrice: 45, stackable: true },
-    eggs: { name: 'بيض دواجن مزارع', icon: 'fa-egg text-amber-200', basePrice: 20, stackable: true },
-    compost: { name: 'سماد عضوي عالي الجودة', icon: 'fa-recycle text-emerald-400', basePrice: 15, stackable: true },
+    eggs: { name: 'بيض دواجن مزارع', icon: 'fa-egg text-amber-200', basePrice: 15, stackable: true },
+    compost: { name: 'سماد عضوي عالي الجودة', icon: 'fa-recycle text-emerald-400', basePrice: 10, stackable: true },
     flour_bread: { name: 'سلة مخبوزات ودقيق فاخر', icon: 'fa-bread-slice text-amber-400', basePrice: 35, stackable: true },
     tomato_paste: { name: 'صلصة معلبة وكاتشب تصدير', icon: 'fa-jar text-rose-400', basePrice: 142, stackable: true },
-    strawberry_jam: { name: 'مربى فراولة عضوية', icon: 'fa-bowl-food text-red-400', basePrice: 720, stackable: true },
-    coffee_roasted: { name: 'بن عربي محمص ومطحون', icon: 'fa-fire-burner text-amber-600', basePrice: 2850, stackable: true },
-    luxury_dates_box: { name: 'صندوق تمور مجدول VIP', icon: 'fa-box-open text-emerald-300', basePrice: 14500, stackable: true },
-    saffron_extract: { name: 'خلاصة زعفران ملكي مركزة', icon: 'fa-flask text-purple-300', basePrice: 58000, stackable: true }
+    strawberry_jam: { name: 'مربى فراولة عضوية', icon: 'fa-bowl-food text-red-400', basePrice: 555, stackable: true },
+    premium_coffee: { name: 'عبوة بن مختص Specialty', icon: 'fa-box-open text-yellow-500', basePrice: 2300, stackable: true },
+    coffee_roasted: { name: 'عبوة بن مختص Specialty', icon: 'fa-fire-burner text-amber-600', basePrice: 2300, stackable: true },
+    stuffed_dates: { name: 'تمور ملكية بالمكسرات', icon: 'fa-gift text-emerald-300', basePrice: 11500, stackable: true },
+    luxury_dates_box: { name: 'تمور ملكية بالمكسرات', icon: 'fa-box-open text-emerald-300', basePrice: 11500, stackable: true },
+    saffron_essence: { name: 'مستخلص الزعفران الصافي', icon: 'fa-vial text-purple-300', basePrice: 34500, stackable: true },
+    saffron_extract: { name: 'مستخلص الزعفران الصافي', icon: 'fa-flask text-purple-300', basePrice: 34500, stackable: true }
   },
 
   // 4. Airport Aircraft (طائرات المطار الدولي)
