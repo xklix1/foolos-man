@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.42",
-  "build": 1793316600000,
-  "timestamp": 1793316600000,
-  "notes": "Stock Exchange Pro Upgrade: Short Selling, Take-Profit/Stop-Loss Auto Orders, Chart Target Lines, 10M Daily Cap & 2x Max Shares.",
-  "releaseNotes": "تطوير شامل لبورصة الأسهم: إضافة البيع على المكشوف (Short Selling)، أوامر جني الأرباح ووقف الخسارة التلقائية (TP/SL) على الشارت، مضاعفة سقف الأسهم 2x، ورفع سقف الربح اليومي إلى 10 مليون ج.م."
+  "version": "v10.0.43",
+  "build": 1793638576241,
+  "timestamp": 1793638576241,
+  "notes": "Business Empire 12h Supplies Upgrade: individual 12h top-up button for each project & bulk 12h supply.",
+  "releaseNotes": "تحديث إدارة الأعمال: إضافة زر توريد 12 ساعة لكل مشروع بمفرده، وزر التوريد الشامل لكافة المشاريع دفعة واحدة، مع الخصم الذكي المزدوج."
 }

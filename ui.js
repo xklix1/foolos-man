@@ -4682,12 +4682,23 @@ const UIController = (() => {
           supplyTime.className ="text-[10px] text-rose-300 font-bold";
           supplyTime.textContent = window.currentLang === 'en' ? 'Profit: 0 EGP — Supply goods to resume production' : 'الأرباح: 0 ج.م — يجب توريد بضاعة لإعادة تشغيل المشروع';
 
+          const btnSupply12h = document.getElementById(`btn-supply-12h-${key}`);
+          const btnSupply12hText = document.getElementById(`biz-supply-12h-btn-text-${key}`);
+          const supply12hCostEmpty = supplyCost * 12;
+
           if (btnSupplyText) {
             btnSupplyText.textContent = window.currentLang === 'en' ? `+1h Supplies (${supplyCost.toLocaleString()} EGP)` : `توريد +1 ساعة (${supplyCost.toLocaleString()} EGP)`;
           }
           if (btnSupply) {
             btnSupply.classList.remove('opacity-70', 'cursor-not-allowed');
             btnSupply.classList.add('cursor-pointer');
+          }
+          if (btnSupply12hText) {
+            btnSupply12hText.textContent = window.currentLang === 'en' ? `+12h Full (${supply12hCostEmpty.toLocaleString()} EGP)` : `توريد 12 ساعة (${supply12hCostEmpty.toLocaleString()} EGP)`;
+          }
+          if (btnSupply12h) {
+            btnSupply12h.classList.remove('opacity-60', 'cursor-not-allowed');
+            btnSupply12h.classList.add('cursor-pointer');
           }
         }
       }
@@ -27720,3 +27731,94 @@ if (typeof window !== 'undefined' && !window._IS_ADMIN_PAGE && !document.querySe
   } else {
     initMobileAdaptiveHeaderScroll();
   }
+
+  // Global Event Delegation for Business Supply Actions (12h bulk, 1h bulk, individual 12h, individual 1h)
+  document.addEventListener('click', (e) => {
+    // 1. Bulk 12h Supply
+    const bulk12h = e.target.closest('#btn-bulk-supply-12h');
+    if (bulk12h) {
+      e.preventDefault();
+      try {
+        const res = GameEngine.supplyAllBusinesses(12);
+        showToast(
+          window.currentLang === 'en' ? 'Bulk Supply Complete' : 'توريد شامل ناجح',
+          window.currentLang === 'en'
+            ? `Supplied 12h max stock to all ${res.count} businesses for ${res.cost.toLocaleString()} EGP!`
+            : `تم توريد وإكمال المخزون لـ 12 ساعة لجميع المشاريع (${res.count} مشروع) بتكلفة إجمالية ${res.cost.toLocaleString()} EGP!`,
+          'success'
+        );
+        renderBusinesses(true);
+        renderStatsBar();
+      } catch (err) {
+        showToast(window.currentLang === 'en' ? 'Notice' : 'تنبيه', err.message, 'warning');
+      }
+      return;
+    }
+
+    // 2. Bulk 1h Supply
+    const bulk1h = e.target.closest('#btn-bulk-supply-1h');
+    if (bulk1h) {
+      e.preventDefault();
+      try {
+        const res = GameEngine.supplyAllBusinesses(1);
+        showToast(
+          window.currentLang === 'en' ? 'Bulk Supply Complete' : 'توريد شامل ناجح',
+          window.currentLang === 'en'
+            ? `Supplied 1h stock to all ${res.count} businesses for ${res.cost.toLocaleString()} EGP!`
+            : `تم توريد ساعة واحدة لجميع المشاريع (${res.count} مشروع) بتكلفة إجمالية ${res.cost.toLocaleString()} EGP!`,
+          'success'
+        );
+        renderBusinesses(true);
+        renderStatsBar();
+      } catch (err) {
+        showToast(window.currentLang === 'en' ? 'Notice' : 'تنبيه', err.message, 'warning');
+      }
+      return;
+    }
+
+    // 3. Individual Business 12h Top-up
+    const btn12h = e.target.closest('[id^="btn-supply-12h-"]');
+    if (btn12h) {
+      e.preventDefault();
+      const key = btn12h.id.replace('btn-supply-12h-', '');
+      const biz = GameEngine.BUSINESSES && GameEngine.BUSINESSES[key];
+      try {
+        const res = GameEngine.supplyBusiness(key, 12);
+        showToast(
+          window.currentLang === 'en' ? 'Supplies Topped Up' : 'توريد 12 ساعة ناجح',
+          window.currentLang === 'en'
+            ? `Topped up supplies for "${biz?.name || key}" to 12 hours (+${res.addedHours}h) for ${res.cost.toLocaleString()} EGP!`
+            : `تم إكمال وتوريد بضاعة لمشروع "${biz?.name || key}" حتى 12 ساعة (+${res.addedHours} س) بتكلفة ${res.cost.toLocaleString()} EGP!`,
+          'success'
+        );
+        renderBusinesses(true);
+        renderStatsBar();
+      } catch (err) {
+        showToast(window.currentLang === 'en' ? 'Notice' : 'تنبيه', err.message, 'warning');
+      }
+      return;
+    }
+
+    // 4. Individual Business 1h Supply
+    const btn1h = e.target.closest('[id^="btn-supply-"]');
+    if (btn1h && !btn1h.id.includes('-12h-')) {
+      e.preventDefault();
+      const key = btn1h.id.replace('btn-supply-', '');
+      const biz = GameEngine.BUSINESSES && GameEngine.BUSINESSES[key];
+      try {
+        const res = GameEngine.supplyBusiness(key, 1);
+        showToast(
+          window.currentLang === 'en' ? 'Supplies Restocked' : 'توريد ناجح',
+          window.currentLang === 'en'
+            ? `Supplied goods to "${biz?.name || key}" for ${res.cost.toLocaleString()} EGP (+1h)!`
+            : `تم توريد خامات وبضاعة لمشروع "${biz?.name || key}" بتكلفة ${res.cost.toLocaleString()} EGP (+1 ساعة)!`,
+          'success'
+        );
+        renderBusinesses(true);
+        renderStatsBar();
+      } catch (err) {
+        showToast(window.currentLang === 'en' ? 'Notice' : 'تنبيه', err.message, 'warning');
+      }
+      return;
+    }
+  });
