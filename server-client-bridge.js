@@ -446,8 +446,30 @@ var ServerBridge = (() => {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/trade/buy-cargo', { username: _activeUsername, commodityId, quantity });
     return _reconcileGenericActionResponse(res, (s, r) => {
-      if (r.tradeCompany) s.tradeCompany = r.tradeCompany;
+      if (r.tradeCompany) {
+        if (!s.tradeCompany) {
+          s.tradeCompany = r.tradeCompany;
+        } else {
+          s.tradeCompany.warehouseCapacity = r.tradeCompany.warehouseCapacity || s.tradeCompany.warehouseCapacity;
+          s.tradeCompany.warehouse = s.tradeCompany.warehouse || {};
+          if (r.tradeCompany.warehouse && typeof r.tradeCompany.warehouse === 'object') {
+            Object.keys(r.tradeCompany.warehouse).forEach(k => {
+              s.tradeCompany.warehouse[k] = Math.max(Number(s.tradeCompany.warehouse[k] || 0), Number(r.tradeCompany.warehouse[k] || 0));
+            });
+          }
+          if (Array.isArray(r.tradeCompany.activeImports)) {
+            s.tradeCompany.activeImports = s.tradeCompany.activeImports || [];
+            const localMap = new Map(s.tradeCompany.activeImports.map(o => [String(o.id), o]));
+            r.tradeCompany.activeImports.forEach(rOrd => {
+              if (rOrd && rOrd.id && !localMap.has(String(rOrd.id))) {
+                s.tradeCompany.activeImports.push(rOrd);
+              }
+            });
+          }
+        }
+      }
       if (typeof UI !== 'undefined' && UI.renderTradeCompanyPanel) { try { UI.renderTradeCompanyPanel(); } catch (_) {} }
+      if (typeof UI !== 'undefined' && UI.renderTradePanel) { try { UI.renderTradePanel(); } catch (_) {} }
     });
   }
 
@@ -455,8 +477,11 @@ var ServerBridge = (() => {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/trade/upgrade-warehouse', { username: _activeUsername });
     return _reconcileGenericActionResponse(res, (s, r) => {
-      if (r.tradeCompany) s.tradeCompany = r.tradeCompany;
+      if (r.tradeCompany && s.tradeCompany) {
+        s.tradeCompany.warehouseCapacity = Math.max(Number(s.tradeCompany.warehouseCapacity || 10), Number(r.tradeCompany.warehouseCapacity || 10));
+      }
       if (typeof UI !== 'undefined' && UI.renderTradeCompanyPanel) { try { UI.renderTradeCompanyPanel(); } catch (_) {} }
+      if (typeof UI !== 'undefined' && UI.renderTradePanel) { try { UI.renderTradePanel(); } catch (_) {} }
     });
   }
 
@@ -464,7 +489,13 @@ var ServerBridge = (() => {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/trade/claim-export', { username: _activeUsername, exportId });
     return _reconcileGenericActionResponse(res, (s, r) => {
-      if (r.tradeCompany) s.tradeCompany = r.tradeCompany;
+      if (r.tradeCompany && s.tradeCompany) {
+        s.tradeCompany.totalProfitEarned = Math.max(Number(s.tradeCompany.totalProfitEarned || 0), Number(r.tradeCompany.totalProfitEarned || 0));
+        s.tradeCompany.totalShipmentsCompleted = Math.max(Number(s.tradeCompany.totalShipmentsCompleted || 0), Number(r.tradeCompany.totalShipmentsCompleted || 0));
+        if (Array.isArray(s.tradeCompany.activeExports)) {
+          s.tradeCompany.activeExports = s.tradeCompany.activeExports.filter(e => String(e.id) !== String(exportId));
+        }
+      }
       if (typeof UI !== 'undefined' && UI.renderTradePanel) { try { UI.renderTradePanel(); } catch (_) {} }
       if (typeof UI !== 'undefined' && UI.renderTradeCompanyPanel) { try { UI.renderTradeCompanyPanel(); } catch (_) {} }
     });

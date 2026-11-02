@@ -2343,6 +2343,53 @@ var AppDB = (() => {
 
             srvTc.totalProfitEarned = Math.max(Number(srvTc.totalProfitEarned || 0), Number(locTc.totalProfitEarned || 0));
             srvTc.totalShipmentsCompleted = Math.max(Number(srvTc.totalShipmentsCompleted || 0), Number(locTc.totalShipmentsCompleted || 0));
+
+            // CRITICAL FIX: Merge warehouse cargo containers so containers NEVER disappear on secondary devices or after background server ticks
+            if (!srvTc.warehouse || typeof srvTc.warehouse !== 'object') srvTc.warehouse = {};
+            if (locTc.warehouse && typeof locTc.warehouse === 'object') {
+              Object.keys(locTc.warehouse).forEach(cId => {
+                const locQty = Math.max(0, Number(locTc.warehouse[cId]) || 0);
+                const srvQty = Math.max(0, Number(srvTc.warehouse[cId]) || 0);
+                if (locQty > srvQty) {
+                  srvTc.warehouse[cId] = locQty;
+                  shouldSyncCloud = true;
+                }
+              });
+            }
+
+            // Merge active imports: preserve in-flight imports by ID so shipments are never lost
+            if (!Array.isArray(srvTc.activeImports)) srvTc.activeImports = [];
+            if (Array.isArray(locTc.activeImports)) {
+              const srvMap = new Map(srvTc.activeImports.map(i => [String(i.id), i]));
+              locTc.activeImports.forEach(locImp => {
+                if (!locImp || !locImp.id) return;
+                const sImp = srvMap.get(String(locImp.id));
+                if (!sImp) {
+                  srvTc.activeImports.push(locImp);
+                  shouldSyncCloud = true;
+                } else if (locImp.arrived && !sImp.arrived) {
+                  sImp.arrived = true;
+                  shouldSyncCloud = true;
+                }
+              });
+            }
+
+            // Merge active exports: preserve in-flight exports by ID so cargo isn't lost in limbo
+            if (!Array.isArray(srvTc.activeExports)) srvTc.activeExports = [];
+            if (Array.isArray(locTc.activeExports)) {
+              const srvExpMap = new Map(srvTc.activeExports.map(e => [String(e.id), e]));
+              locTc.activeExports.forEach(locExp => {
+                if (!locExp || !locExp.id || locExp.claimed) return;
+                const sExp = srvExpMap.get(String(locExp.id));
+                if (!sExp) {
+                  srvTc.activeExports.push(locExp);
+                  shouldSyncCloud = true;
+                } else if (locExp.delivered && !sExp.delivered) {
+                  sExp.delivered = true;
+                  shouldSyncCloud = true;
+                }
+              });
+            }
           }
         }
 

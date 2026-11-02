@@ -24,7 +24,18 @@ const DEFAULT_STATE = {
   dailyInvestments: { date: '', count: 0 },
   dailyStockProfit: { date: '', realizedProfit: 0 },
   dailyQuests: null,
-  tradeCompany: null,
+  tradeCompany: {
+    warehouseCapacity: 10,
+    warehouse: {},
+    activeImports: [],
+    activeExports: [],
+    totalProfitEarned: 0,
+    totalShipmentsCompleted: 0,
+    dailyTradeProfit: 0,
+    dailyExportedContainers: 0,
+    dailyExportsCount: {},
+    dailyTradeResetAt: 0
+  },
   activeLoan: null,
   loanCooldownUntil: 0,
   workCooldownUntil: 0,
@@ -310,6 +321,35 @@ function sanitizePlayerState(dbRow) {
     };
   } else {
     cleanState.space = { ...DEFAULT_STATE.space };
+  }
+
+  // Trade Company & Warehouse Cargo Preservation
+  if (rawState.tradeCompany && typeof rawState.tradeCompany === 'object') {
+    cleanState.tradeCompany = {
+      warehouseCapacity: Math.min(50, Math.max(10, Number(rawState.tradeCompany.warehouseCapacity) || 10)),
+      warehouse: (rawState.tradeCompany.warehouse && typeof rawState.tradeCompany.warehouse === 'object') ? rawState.tradeCompany.warehouse : {},
+      activeImports: Array.isArray(rawState.tradeCompany.activeImports) ? rawState.tradeCompany.activeImports : [],
+      activeExports: Array.isArray(rawState.tradeCompany.activeExports) ? rawState.tradeCompany.activeExports : [],
+      totalProfitEarned: Math.max(0, Number(rawState.tradeCompany.totalProfitEarned) || 0),
+      totalShipmentsCompleted: Math.max(0, Number(rawState.tradeCompany.totalShipmentsCompleted) || 0),
+      dailyTradeProfit: Math.max(0, Number(rawState.tradeCompany.dailyTradeProfit) || 0),
+      dailyExportedContainers: Math.max(0, Number(rawState.tradeCompany.dailyExportedContainers) || 0),
+      dailyExportsCount: (rawState.tradeCompany.dailyExportsCount && typeof rawState.tradeCompany.dailyExportsCount === 'object') ? rawState.tradeCompany.dailyExportsCount : {},
+      dailyTradeResetAt: Number(rawState.tradeCompany.dailyTradeResetAt) || 0
+    };
+  } else {
+    cleanState.tradeCompany = {
+      warehouseCapacity: 10,
+      warehouse: {},
+      activeImports: [],
+      activeExports: [],
+      totalProfitEarned: 0,
+      totalShipmentsCompleted: 0,
+      dailyTradeProfit: 0,
+      dailyExportedContainers: 0,
+      dailyExportsCount: {},
+      dailyTradeResetAt: 0
+    };
   }
 
   // Device & Login Telemetry History (Authoritative)

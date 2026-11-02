@@ -682,7 +682,11 @@ class SessionManager {
       } else {
         // Dual Lockdown: warehouseCapacity is server-authoritative.
         if (clientState.tradeCompany.warehouse && typeof clientState.tradeCompany.warehouse === 'object') {
-          s.tradeCompany.warehouse = clientState.tradeCompany.warehouse;
+          s.tradeCompany.warehouse = s.tradeCompany.warehouse || {};
+          const clientKeys = Object.keys(clientState.tradeCompany.warehouse);
+          if (clientKeys.length > 0) {
+            s.tradeCompany.warehouse = clientState.tradeCompany.warehouse;
+          }
         }
         if (Array.isArray(clientState.tradeCompany.activeExports)) {
           s.tradeCompany.activeExports = clientState.tradeCompany.activeExports;

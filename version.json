@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.44",
-  "build": 1793638990000,
-  "timestamp": 1793638990000,
-  "notes": "Referral System Rework: 3 Gold per 5M self-earned invitee, 1M starter cash, 50k inviter bonus. Daily Wire Transfer limit lowered to 10M EGP.",
-  "releaseNotes": "ريورك شامل لنظام الدعوات: مكافأة 3 قطع ذهب لكل صديق يصل لـ 5 مليون ثروة ذاتية، 1 مليون كاش ترحيبي للمدعو، 50 ألف للداعي، وتخفيض سقف التحويل اليومي لـ 10 مليون ج.م."
+  "version": "v10.0.45",
+  "build": 1793649990000,
+  "timestamp": 1793649990000,
+  "notes": "Fix Import/Export container disappearance: deep reconciliation for warehouse and in-flight cargo, immediate arrival persistence, server state sanitizer hardening.",
+  "releaseNotes": "إصلاح شامل لجمرك ومستودعات الاستيراد والتصدير: منع اختفاء الحاويات نهائياً، دمج ذكي للشحنات العالقة والمخزون بين الأجهزة والسيرفر، وحفظ فوري للحاويات الواصلة."
 }

@@ -3617,6 +3617,33 @@ const GameEngine = (() => {
             const isLocalRecent = (locTs >= srvTs - 60000);
             if (!state.tradeCompany || typeof state.tradeCompany !== 'object' || isLocalRecent) {
               state.tradeCompany = JSON.parse(JSON.stringify(localS.tradeCompany));
+            } else {
+              const locTc = localS.tradeCompany;
+              const sTc = state.tradeCompany;
+              if (!sTc.warehouse || typeof sTc.warehouse !== 'object') sTc.warehouse = {};
+              if (locTc.warehouse && typeof locTc.warehouse === 'object') {
+                Object.keys(locTc.warehouse).forEach(k => {
+                  const locQ = Number(locTc.warehouse[k]) || 0;
+                  const curQ = Number(sTc.warehouse[k]) || 0;
+                  if (locQ > curQ) sTc.warehouse[k] = locQ;
+                });
+              }
+              if (Array.isArray(locTc.activeImports)) {
+                if (!Array.isArray(sTc.activeImports)) sTc.activeImports = [];
+                locTc.activeImports.forEach(locImp => {
+                  if (locImp && locImp.id && !sTc.activeImports.some(i => String(i.id) === String(locImp.id))) {
+                    sTc.activeImports.push(locImp);
+                  }
+                });
+              }
+              if (Array.isArray(locTc.activeExports)) {
+                if (!Array.isArray(sTc.activeExports)) sTc.activeExports = [];
+                locTc.activeExports.forEach(locExp => {
+                  if (locExp && locExp.id && !locExp.claimed && !sTc.activeExports.some(e => String(e.id) === String(locExp.id))) {
+                    sTc.activeExports.push(locExp);
+                  }
+                });
+              }
             }
           }
         } catch (e) {}
@@ -6646,12 +6673,17 @@ const GameEngine = (() => {
 
     // Auto-resolve any arrived imports and deliver exports
     const nowMs = getTrustedNow();
+    let hasTradeArrivals = false;
     state.tradeCompany.activeImports.forEach(imp => {
       if (!imp.arrived && nowMs >= imp.arrivalTime) {
         imp.arrived = true;
         state.tradeCompany.warehouse[imp.commodityId] = (state.tradeCompany.warehouse[imp.commodityId] || 0) + imp.quantity;
+        hasTradeArrivals = true;
       }
     });
+    if (hasTradeArrivals) {
+      forceSaveState(true);
+    }
 
     // Auto-prune arrived imports older than 30 minutes to prevent visual clutter and phantom states
     if (Array.isArray(state.tradeCompany.activeImports) && state.tradeCompany.activeImports.length > 0) {
