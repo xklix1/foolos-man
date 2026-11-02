@@ -6332,7 +6332,7 @@ const GameEngine = (() => {
   }
 
   // Business: Supply stock and inventory materials (gives 1 hour per shipment, stackable up to 12 hours)
-  function supplyBusiness(key) {
+  function supplyBusiness(key, hours = 1) {
     const biz = BUSINESSES[key];
     if (!biz) throw new Error("المشروع غير متوفر.");
     if (!state.businesses[key] || state.businesses[key].level <= 0) {
@@ -6341,22 +6341,48 @@ const GameEngine = (() => {
     const bizState = state.businesses[key];
     const currentTicks = Math.max(0, Number(bizState.suppliesTicks) || 0);
     const MAX_SUPPLIES_TICKS = 43200; // 12 hours = 12 * 3600 seconds
-    const SUPPLY_INCREMENT_TICKS = 3600; // 1 hour per shipment = 3600 seconds
+    const SUPPLY_INCREMENT_TICKS = 3600; // 1 hour = 3600 seconds
 
     if (currentTicks >= MAX_SUPPLIES_TICKS) {
       throw new Error("وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!");
     }
 
-    const supplyCost = getBusinessSupplyCost(key, bizState);
-    if ((Number(state.bank) || 0) < supplyCost) {
-      throw new Error(`رصيدك في البنك لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(state.bank) || 0).toLocaleString()} EGP`);
+    const hourlyCost = getBusinessSupplyCost(key, bizState);
+    let ticksToAdd = SUPPLY_INCREMENT_TICKS;
+    let supplyCost = hourlyCost;
+
+    const is12Hours = (hours === 12 || hours === '12' || hours === 'max');
+    if (is12Hours) {
+      const missingTicks = Math.max(0, MAX_SUPPLIES_TICKS - currentTicks);
+      if (missingTicks <= 0) {
+        throw new Error("المخزون ممتلئ بالكامل (12 ساعة)!");
+      }
+      supplyCost = Math.round(hourlyCost * (missingTicks / 3600));
+      ticksToAdd = missingTicks;
     }
 
-    state.bank = (Number(state.bank) || 0) - supplyCost;
-    bizState.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
+    const curBank = Number(state.bank || 0);
+    const curCash = Number(state.cash || 0);
+    const totalFunds = curBank + curCash;
+
+    if (totalFunds < supplyCost) {
+      throw new Error(`رصيدك الإجمالي (بنك + كاش) لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${totalFunds.toLocaleString()} EGP`);
+    }
+
+    // Smart Wallet Deduction: Bank first, remaining from Cash
+    if (curBank >= supplyCost) {
+      state.bank = curBank - supplyCost;
+    } else {
+      const rem = supplyCost - curBank;
+      state.bank = 0;
+      state.cash = Math.max(0, curCash - rem);
+    }
+
+    bizState.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + ticksToAdd);
 
     const totalHours = (bizState.suppliesTicks / 3600).toFixed(1);
-    recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد شحنة بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م من الحساب البنكي (+1 ساعة تشغيل، الإجمالي المكدس: ${totalHours} ساعة)`,'business');
+    const addedHoursStr = (ticksToAdd / 3600).toFixed(1);
+    recordPlayerActivity('توريد بضاعة ومستلزمات',`توريد بضاعة لمشروع "${biz.name}" بتكلفة ${supplyCost.toLocaleString()} ج.م (+${addedHoursStr} ساعة تشغيل، الإجمالي المكدس: ${totalHours} ساعة)`,'business');
     state.netWorth = calculateNetWorth();
     trackDailyQuestProgress('biz_upgrade', 1);
 
@@ -6365,7 +6391,7 @@ const GameEngine = (() => {
       if (ServerBridge.notifyLocalSpend) {
         ServerBridge.notifyLocalSpend(state.cash, state.bank, state.dirtyCash);
       }
-      ServerBridge.supplyBusiness(key).then(res => {
+      ServerBridge.supplyBusiness(key, hours).then(res => {
         if (res && res.success) {
           if (res.bank !== undefined) state.bank = res.bank;
           if (res.cash !== undefined) state.cash = res.cash;
@@ -6381,7 +6407,77 @@ const GameEngine = (() => {
     return {
       cost: supplyCost,
       suppliesTicks: bizState.suppliesTicks,
-      hoursStacked: totalHours
+      hoursStacked: totalHours,
+      addedHours: addedHoursStr
+    };
+  }
+
+  function supplyAllBusinesses(hours = 12) {
+    if (!state.businesses || typeof state.businesses !== 'object') {
+      throw new Error("لا توجد مشاريع قائمة لديك.");
+    }
+    const MAX_SUPPLIES_TICKS = 43200;
+    const is12Hours = (hours === 12 || hours === '12' || hours === 'max');
+    let totalCost = 0;
+    const targets = [];
+
+    Object.keys(state.businesses).forEach(k => {
+      const b = state.businesses[k];
+      if (b && b.level > 0 && (b.suppliesTicks || 0) < MAX_SUPPLIES_TICKS) {
+        const currentTicks = Math.max(0, Number(b.suppliesTicks) || 0);
+        const hourlyCost = getBusinessSupplyCost(k, b);
+        let ticksToAdd = 3600;
+        let cost = hourlyCost;
+        if (is12Hours) {
+          const missingTicks = MAX_SUPPLIES_TICKS - currentTicks;
+          cost = Math.round(hourlyCost * (missingTicks / 3600));
+          ticksToAdd = missingTicks;
+        }
+        totalCost += cost;
+        targets.push({ k, b, ticksToAdd, cost });
+      }
+    });
+
+    if (targets.length === 0) {
+      throw new Error("جميع مشاريعك مخزونها مكتمل بالكامل (12 ساعة)!");
+    }
+
+    const curBank = Number(state.bank || 0);
+    const curCash = Number(state.cash || 0);
+    const totalFunds = curBank + curCash;
+
+    if (totalFunds < totalCost) {
+      throw new Error(`رصيدك الإجمالي (بنك + كاش) لا يكفي لتوريد كافة المشاريع. المطلوب: ${totalCost.toLocaleString()} EGP — المتوفر لديك: ${totalFunds.toLocaleString()} EGP`);
+    }
+
+    if (curBank >= totalCost) {
+      state.bank = curBank - totalCost;
+    } else {
+      const rem = totalCost - curBank;
+      state.bank = 0;
+      state.cash = Math.max(0, curCash - rem);
+    }
+
+    targets.forEach(({ b, ticksToAdd }) => {
+      b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, (b.suppliesTicks || 0) + ticksToAdd);
+    });
+
+    recordPlayerActivity('توريد شامل للمشاريع', `توريد بضاعة شامل لـ (${targets.length}) مشروع دفعة واحدة بتكلفة إجمالية ${totalCost.toLocaleString()} ج.م (${is12Hours ? '12 ساعة كاملة' : 'ساعة واحدة'})`, 'business');
+    state.netWorth = calculateNetWorth();
+
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.buySupplies) {
+      ServerBridge.buySupplies(hours).then(res => {
+        if (res && res.success) {
+          if (res.bank !== undefined) state.bank = res.bank;
+          if (res.cash !== undefined) state.cash = res.cash;
+        }
+      }).catch(() => {});
+    }
+
+    forceSaveState(true);
+    return {
+      cost: totalCost,
+      count: targets.length
     };
   }
 
@@ -9524,6 +9620,7 @@ const GameEngine = (() => {
 
     // Business Supply Method
     supplyBusiness,
+    supplyAllBusinesses,
     getBusinessSupplyCost,
     recordPlayerActivity,
 

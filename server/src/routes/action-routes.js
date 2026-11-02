@@ -289,7 +289,7 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const session = await resolveSession(request, reply);
     if (!session) return;
 
-    const { businessId } = request.body || {};
+    const { businessId, hours, mode } = request.body || {};
     if (!businessId || !ALLOWED_BUSINESS_KEYS.has(businessId)) {
       return reply.code(400).send({ error: 'المشروع غير متوفر أو غير صالح.' });
     }
@@ -301,24 +301,49 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     const b = s.businesses[businessId];
     const currentTicks = Math.max(0, Number(b.suppliesTicks) || 0);
-    const MAX_SUPPLIES_TICKS = 43200; // 12 hours
-    const SUPPLY_INCREMENT_TICKS = 3600; // 1 hour
+    const MAX_SUPPLIES_TICKS = 43200; // 12 hours max
 
     if (currentTicks >= MAX_SUPPLIES_TICKS) {
       return reply.code(400).send({ error: 'وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!' });
     }
 
-    const supplyCost = getBusinessSupplyCost(businessId, b);
-    if ((Number(s.bank) || 0) < supplyCost) {
+    const hourlyCost = getBusinessSupplyCost(businessId, b);
+    let ticksToAdd = 3600; // default 1 hour = 3600s
+    let supplyCost = hourlyCost;
+
+    const is12Hours = (hours === 12 || hours === '12' || hours === 'max' || mode === 'max');
+    if (is12Hours) {
+      const missingTicks = Math.max(0, MAX_SUPPLIES_TICKS - currentTicks);
+      if (missingTicks <= 0) {
+        return reply.code(400).send({ error: 'المخزون مكتمل بالكامل (12 ساعة)!' });
+      }
+      supplyCost = Math.round(hourlyCost * (missingTicks / 3600));
+      ticksToAdd = missingTicks;
+    }
+
+    const curBank = Number(s.bank || 0);
+    const curCash = Number(s.cash || 0);
+    const totalFunds = curBank + curCash;
+
+    if (totalFunds < supplyCost) {
       return reply.code(400).send({
-        error: `رصيدك في البنك لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(s.bank) || 0).toLocaleString()} EGP`,
-        requiredBank: supplyCost,
-        currentBank: s.bank
+        error: `رصيدك الإجمالي (بنك + كاش) لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${totalFunds.toLocaleString()} EGP`,
+        requiredCost: supplyCost,
+        currentBank: curBank,
+        currentCash: curCash
       });
     }
 
-    s.bank = (Number(s.bank) || 0) - supplyCost;
-    b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + SUPPLY_INCREMENT_TICKS);
+    // Smart Wallet Deduction: Bank first, remaining from Cash
+    if (curBank >= supplyCost) {
+      s.bank = curBank - supplyCost;
+    } else {
+      const rem = supplyCost - curBank;
+      s.bank = 0;
+      s.cash = Math.max(0, curCash - rem);
+    }
+
+    b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + ticksToAdd);
     s.netWorth = calculateNetWorth(s);
     session.lastServerCashSpendAt = Date.now();
     session.lastServerBankActionAt = Date.now();
@@ -342,9 +367,12 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     const session = await resolveSession(request, reply);
     if (!session) return;
 
-    const { businessId } = request.body || {};
+    const { businessId, hours, mode } = request.body || {};
     const s = session.state;
     if (!s.businesses || typeof s.businesses !== 'object') s.businesses = {};
+
+    const MAX_SUPPLIES_TICKS = 43200;
+    const is12Hours = (hours === 12 || hours === '12' || hours === 'max' || mode === 'max');
 
     if (businessId && ALLOWED_BUSINESS_KEYS.has(businessId)) {
       if (!s.businesses[businessId] || (s.businesses[businessId].level || 0) <= 0) {
@@ -352,24 +380,48 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
       }
       const b = s.businesses[businessId];
       const currentTicks = Math.max(0, Number(b.suppliesTicks) || 0);
-      const MAX_SUPPLIES_TICKS = 43200;
       if (currentTicks >= MAX_SUPPLIES_TICKS) {
         return reply.code(400).send({ error: 'وصل مخزون المشروع للحد الأقصى للتكديس (12 ساعة كاملة)!' });
       }
-      const supplyCost = getBusinessSupplyCost(businessId, b);
-      if ((Number(s.bank) || 0) < supplyCost) {
+
+      const hourlyCost = getBusinessSupplyCost(businessId, b);
+      let ticksToAdd = 3600;
+      let supplyCost = hourlyCost;
+
+      if (is12Hours) {
+        const missingTicks = Math.max(0, MAX_SUPPLIES_TICKS - currentTicks);
+        supplyCost = Math.round(hourlyCost * (missingTicks / 3600));
+        ticksToAdd = missingTicks;
+      }
+
+      const curBank = Number(s.bank || 0);
+      const curCash = Number(s.cash || 0);
+      const totalFunds = curBank + curCash;
+
+      if (totalFunds < supplyCost) {
         return reply.code(400).send({
-          error: `رصيدك في البنك لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${(Number(s.bank) || 0).toLocaleString()} EGP`,
-          requiredBank: supplyCost,
-          currentBank: s.bank
+          error: `رصيدك الإجمالي (بنك + كاش) لا يكفي لتوريد البضاعة. تحتاج: ${supplyCost.toLocaleString()} EGP — لديك: ${totalFunds.toLocaleString()} EGP`,
+          requiredCost: supplyCost,
+          currentBank: curBank,
+          currentCash: curCash
         });
       }
-      s.bank = (Number(s.bank) || 0) - supplyCost;
-      b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + 3600);
+
+      if (curBank >= supplyCost) {
+        s.bank = curBank - supplyCost;
+      } else {
+        const rem = supplyCost - curBank;
+        s.bank = 0;
+        s.cash = Math.max(0, curCash - rem);
+      }
+
+      b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, currentTicks + ticksToAdd);
       s.netWorth = calculateNetWorth(s);
       session.lastServerCashSpendAt = Date.now();
       session.lastServerBankActionAt = Date.now();
       sessionManager.markDirty(session.username);
+      await sessionManager.forceSaveSession(session.username);
+
       return {
         success: true,
         businessId,
@@ -385,38 +437,67 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
 
     // Default global restock
     let totalCost = 0;
-    const MAX_SUPPLIES_TICKS = 43200;
+    const itemsToSupply = [];
+
     Object.keys(s.businesses).forEach(bk => {
       const b = s.businesses[bk];
       if (b && b.level > 0 && (b.suppliesTicks || 0) < MAX_SUPPLIES_TICKS) {
-        totalCost += getBusinessSupplyCost(bk, b);
+        const currentTicks = Math.max(0, Number(b.suppliesTicks) || 0);
+        const hourlyCost = getBusinessSupplyCost(bk, b);
+        let ticksToAdd = 3600;
+        let cost = hourlyCost;
+
+        if (is12Hours) {
+          const missingTicks = MAX_SUPPLIES_TICKS - currentTicks;
+          cost = Math.round(hourlyCost * (missingTicks / 3600));
+          ticksToAdd = missingTicks;
+        }
+
+        totalCost += cost;
+        itemsToSupply.push({ bk, b, ticksToAdd, cost });
       }
     });
 
-    if (totalCost > 0) {
-      if ((Number(s.bank) || 0) < totalCost) {
-        return reply.code(400).send({
-          error: `رصيدك في البنك لا يكفي لتوريد بضاعة لجميع المشاريع. تحتاج: ${totalCost.toLocaleString()} EGP — لديك: ${(Number(s.bank) || 0).toLocaleString()} EGP`,
-          requiredBank: totalCost,
-          currentBank: s.bank
-        });
-      }
-      s.bank = (Number(s.bank) || 0) - totalCost;
-      Object.keys(s.businesses).forEach(bk => {
-        const b = s.businesses[bk];
-        if (b && b.level > 0) {
-          b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, (b.suppliesTicks || 0) + 3600);
-        }
-      });
-      s.netWorth = calculateNetWorth(s);
-      session.lastServerCashSpendAt = Date.now();
-      session.lastServerBankActionAt = Date.now();
-      await sessionManager.forceSaveSession(session.username);
+    if (itemsToSupply.length === 0) {
+      return reply.code(400).send({ error: 'مخزون جميع المشاريع ممتلئ بالكامل بالفعل (12 ساعة)!' });
     }
+
+    const curBank = Number(s.bank || 0);
+    const curCash = Number(s.cash || 0);
+    const totalFunds = curBank + curCash;
+
+    if (totalFunds < totalCost) {
+      return reply.code(400).send({
+        error: `رصيدك الإجمالي (بنك + كاش) لا يكفي لتوريد بضاعة لجميع المشاريع. تحتاج: ${totalCost.toLocaleString()} EGP — لديك: ${totalFunds.toLocaleString()} EGP`,
+        requiredCost: totalCost,
+        currentBank: curBank,
+        currentCash: curCash
+      });
+    }
+
+    if (curBank >= totalCost) {
+      s.bank = curBank - totalCost;
+    } else {
+      const rem = totalCost - curBank;
+      s.bank = 0;
+      s.cash = Math.max(0, curCash - rem);
+    }
+
+    itemsToSupply.forEach(({ b, ticksToAdd }) => {
+      b.suppliesTicks = Math.min(MAX_SUPPLIES_TICKS, (b.suppliesTicks || 0) + ticksToAdd);
+    });
+
+    s.netWorth = calculateNetWorth(s);
+    session.lastServerCashSpendAt = Date.now();
+    session.lastServerBankActionAt = Date.now();
+    sessionManager.markDirty(session.username);
+    await sessionManager.forceSaveSession(session.username);
 
     return {
       success: true,
       costPaid: totalCost,
+      suppliedCount: itemsToSupply.length,
+      mode: is12Hours ? '12h' : '1h',
       bank: s.bank,
       cash: s.cash,
       netWorth: s.netWorth,

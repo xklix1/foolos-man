@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بوستر دعائي — بورصة الأسهم الاحترافية</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Cairo', sans-serif;
+    }
+    body {
+      background: #030712;
+      color: #f8fafc;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    body.export-clean {
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      width: 1080px !important;
+      height: 1440px !important;
+    }
+    .en-font {
+      font-family: 'Orbitron', sans-serif;
+    }
+    #poster-canvas {
+      width: 1080px;
+      height: 1440px;
+      position: relative;
+      overflow: hidden;
+      background: #040814;
+      box-shadow: 0 25px 80px -15px rgba(16, 185, 129, 0.35), 0 0 1px 1px rgba(16, 185, 129, 0.3);
+      transform-origin: top center;
+    }
+    .poster-card {
+      background: linear-gradient(145deg, rgba(10, 18, 32, 0.90) 0%, rgba(5, 9, 20, 0.95) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.28);
+      box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+    }
+    .hud-glass {
+      background: linear-gradient(145deg, rgba(8, 15, 28, 0.82) 0%, rgba(4, 8, 18, 0.90) 100%);
+      border: 1px solid rgba(52, 211, 153, 0.35);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+    }
+    .gold-glow-text {
+      background: linear-gradient(180deg, #fffbeb 0%, #fef08a 30%, #f59e0b 80%, #b45309 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 6px 22px rgba(245, 158, 11, 0.55));
+    }
+    .market-glow-text {
+      background: linear-gradient(90deg, #6ee7b7 0%, #38bdf8 50%, #fda4af 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 18px rgba(16, 185, 129, 0.45));
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center py-6 px-4 select-none">
+
+  <!-- Top Studio Controls Bar -->
+  <div id="studio-toolbar" class="w-full max-w-[1080px] mb-6 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400">
+        <i class="fa-solid fa-chart-line text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-sm sm:text-base font-black text-white">استوديو البوستر الدعائي — بورصة الأسهم الاحترافية (Stock Exchange Pro)</h1>
+        <p class="text-xs text-slate-400">بدّل بين التصميم السينمائي والتصميم التفصيلي أو حمّل البوستر بصيغة PNG</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button onclick="setVariant('cinematic')" id="btn-var-cinematic" class="px-4 py-2 rounded-xl text-xs font-black bg-emerald-500 text-slate-950 transition cursor-pointer">
+        <i class="fa-solid fa-film ml-1"></i> البوستر السينمائي العربي
+      </button>
+      <button onclick="setVariant('infographic')" id="btn-var-infographic" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer">
+        <i class="fa-solid fa-table-cells-large ml-1"></i> البوستر التفصيلي الشامل
+      </button>
+      <button onclick="exportPosterPNG()" id="btn-download-png" class="px-5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 hover:brightness-110 transition cursor-pointer flex items-center gap-2">
+        <i class="fa-solid fa-download"></i>
+        <span>تحميل البوستر PNG</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scale Wrapper -->
+  <div id="poster-wrapper" class="w-full flex justify-center overflow-hidden">
+    <div id="poster-canvas">
+
+      <!-- ========================================================================= -->
+      <!-- VARIANT 1: CINEMATIC HERO POSTER (Bull vs Bear Art + Arabic HUD Overlays) -->
+      <!-- ========================================================================= -->
+      <div id="view-cinematic" class="w-full h-full relative flex flex-col justify-between p-10">
+        <!-- Full Brightness AI Hero Artwork -->
+        <img src="assets/banners/stock_exchange_bg_art.png" alt="Stock Exchange Pro Artwork"
+          class="pointer-events-none absolute inset-0 w-full h-full object-cover" />
+
+        <!-- Subtle Top & Bottom Gradient Vignettes Only -->
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-[370px] bg-gradient-to-b from-[#02050d]/95 via-[#040a18]/75 to-transparent"></div>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[440px] bg-gradient-to-t from-[#02050d]/98 via-[#050b1a]/88 to-transparent"></div>
+
+        <!-- Outer Tech Border -->
+        <div class="pointer-events-none absolute inset-4 rounded-[32px] border border-emerald-400/25"></div>
+        <div class="pointer-events-none absolute top-4 right-4 w-14 h-14 border-t-4 border-r-4 border-emerald-400 rounded-tr-[32px]"></div>
+        <div class="pointer-events-none absolute top-4 left-4 w-14 h-14 border-t-4 border-l-4 border-rose-500 rounded-tl-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 right-4 w-14 h-14 border-b-4 border-r-4 border-amber-400 rounded-br-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 left-4 w-14 h-14 border-b-4 border-l-4 border-emerald-400 rounded-bl-[32px]"></div>
+
+        <!-- TOP HEADER -->
+        <div class="relative z-10 text-center space-y-2.5 pt-1">
+          <div class="flex items-center justify-between px-4">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-950/85 border border-amber-400/50 shadow-lg">
+              <i class="fa-solid fa-crown text-amber-400"></i>
+              <span class="text-sm font-black text-amber-300">إمبراطورية رأس المال • RAS ALMAL TYCOON</span>
+            </div>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/20 border border-emerald-400/50 text-emerald-200 text-sm font-black">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span>التحديث المالي الجديد 📈</span>
+            </div>
+          </div>
+
+          <div class="pt-1">
+            <div class="text-xs font-extrabold tracking-[0.22em] text-emerald-300 uppercase en-font mb-1">
+              STOCK EXCHANGE PRO • SHORT SELLING &amp; AUTO ORDERS
+            </div>
+            <h1 class="text-[66px] leading-[1.08] font-black gold-glow-text">
+              بورصة الأسهم الاحترافية
+            </h1>
+            <p class="text-[25px] font-black market-glow-text mt-1">
+              اربح في الصعود والهبوط.. تداول كأباطرة وول ستريت بأدوات احترافية!
+            </p>
+          </div>
+
+          <!-- Floating Trading Mode Pills under Header -->
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <div class="px-4 py-1.5 rounded-full hud-glass border-emerald-400/50 flex items-center gap-2 text-sm font-black text-emerald-200">
+              <i class="fa-solid fa-arrow-trend-up text-emerald-400"></i>
+              <span>شراء صاعد (Long)</span>
+            </div>
+            <div class="px-4 py-1.5 rounded-full hud-glass border-rose-400/60 flex items-center gap-2 text-sm font-black text-rose-200">
+              <i class="fa-solid fa-arrow-trend-down text-rose-400"></i>
+              <span>بيع على المكشوف (Short)</span>
+            </div>
+            <div class="px-4 py-1.5 rounded-full hud-glass border-amber-400/50 flex items-center gap-2 text-sm font-black text-amber-200">
+              <i class="fa-solid fa-bullseye text-amber-400"></i>
+              <span>جني أرباح تلقائي (TP)</span>
+            </div>
+            <div class="px-4 py-1.5 rounded-full hud-glass border-sky-400/50 flex items-center gap-2 text-sm font-black text-sky-200">
+              <i class="fa-solid fa-shield-halved text-sky-400"></i>
+              <span>وقف خسارة ذكي (SL)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM HUD CARDS & CTA -->
+        <div class="relative z-10 space-y-4">
+          <!-- 4 Compact HUD Cards -->
+          <div class="grid grid-cols-4 gap-3">
+            <div class="hud-glass rounded-2xl p-3.5 border-rose-400/50 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-rose-500/25 border border-rose-400/50 flex items-center justify-center text-rose-300 text-lg">
+                <i class="fa-solid fa-arrow-trend-down"></i>
+              </div>
+              <div class="text-sm font-black text-white">البيع على المكشوف</div>
+              <div class="text-[11px] text-rose-200 font-bold leading-snug">راهِن على انهيار الأسهم (Short) وحقق أرباحاً ضخمة مع كل هبوط!</div>
+            </div>
+
+            <div class="hud-glass rounded-2xl p-3.5 border-emerald-400/50 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-500/25 border border-emerald-400/50 flex items-center justify-center text-emerald-300 text-lg">
+                <i class="fa-solid fa-sliders"></i>
+              </div>
+              <div class="text-sm font-black text-white">أوامر آلية TP / SL</div>
+              <div class="text-[11px] text-emerald-200 font-bold leading-snug">حدّد هدف الربح ووقف الخسارة بضغطة زر ليبيع النظام تلقائياً!</div>
+            </div>
+
+            <div class="hud-glass rounded-2xl p-3.5 border-amber-400/50 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-amber-500/25 border border-amber-400/50 flex items-center justify-center text-amber-300 text-lg">
+                <i class="fa-solid fa-chart-area"></i>
+              </div>
+              <div class="text-sm font-black text-white">شارت بخطوط الأهداف</div>
+              <div class="text-[11px] text-amber-200 font-bold leading-snug">خطوط حية على الشارت لسعر الدخول (Entry) والهدف (TP) والحماية (SL)</div>
+            </div>
+
+            <div class="hud-glass rounded-2xl p-3.5 border-sky-400/50 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-sky-500/25 border border-sky-400/50 flex items-center justify-center text-sky-300 text-lg">
+                <i class="fa-solid fa-sack-dollar"></i>
+              </div>
+              <div class="text-sm font-black text-white">مضاعفة الحدود 2X</div>
+              <div class="text-[11px] text-sky-200 font-bold leading-snug">رفع سقف الربح اليومي إلى 10 مليون ج.م ومضاعفة سعة الأسهم 2X!</div>
+            </div>
+          </div>
+
+          <!-- Footer CTA Bar -->
+          <div class="p-4 rounded-3xl bg-slate-950/90 border-2 border-emerald-400/50 shadow-2xl flex items-center justify-between gap-4">
+            <div class="flex items-center gap-5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 text-lg">
+                  <i class="fa-solid fa-money-bill-trend-up"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">سقف أرباح البورصة اليومي</div>
+                  <div class="text-lg font-black text-emerald-400 whitespace-nowrap">10,000,000 ج.م يومياً</div>
+                </div>
+              </div>
+
+              <div class="h-9 w-px bg-slate-800"></div>
+
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 text-lg">
+                  <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">سعة امتلاك الأسهم</div>
+                  <div class="text-lg font-black text-amber-300 whitespace-nowrap">مضاعفة 2X بالكامل</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <div class="text-left">
+                <div class="text-xs font-bold text-emerald-300">اقتنص فرص السوق الآن</div>
+                <div class="text-xl font-black text-white en-font tracking-wider">RASALMAL.ONLINE</div>
+              </div>
+              <div class="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600 text-slate-950 font-black text-base shadow-xl shadow-emerald-500/30 flex items-center gap-2">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>ابدأ المضاربة الآن</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- VARIANT 2: DETAILED INFOGRAPHIC POSTER (All Pro Trading Mechanics)        -->
+      <!-- ========================================================================= -->
+      <div id="view-infographic" class="hidden w-full h-full relative flex flex-col justify-between p-11">
+        <img src="assets/banners/stock_exchange_bg_art.png" alt="Stock Exchange Background"
+          class="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-30" />
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#030712]/90 via-[#050b18]/80 to-[#02050d]/95"></div>
+
+        <!-- Outer Frame -->
+        <div class="pointer-events-none absolute inset-4 rounded-[32px] border border-emerald-400/25"></div>
+        <div class="pointer-events-none absolute top-4 right-4 w-14 h-14 border-t-4 border-r-4 border-emerald-400 rounded-tr-[32px]"></div>
+        <div class="pointer-events-none absolute top-4 left-4 w-14 h-14 border-t-4 border-l-4 border-rose-500 rounded-tl-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 right-4 w-14 h-14 border-b-4 border-r-4 border-amber-400 rounded-br-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 left-4 w-14 h-14 border-b-4 border-l-4 border-emerald-400 rounded-bl-[32px]"></div>
+
+        <!-- Header -->
+        <div class="relative z-10 text-center space-y-3 pt-1">
+          <div class="flex items-center justify-between px-4">
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900/90 border border-amber-500/40">
+              <i class="fa-solid fa-crown text-amber-400"></i>
+              <span class="text-sm font-black text-amber-300">إمبراطورية رأس المال • RAS ALMAL TYCOON</span>
+            </div>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-sm font-black">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span>الدليل الشامل لبورصة المحترفين 📈</span>
+            </div>
+          </div>
+
+          <div class="pt-1 space-y-1">
+            <div class="inline-flex items-center gap-2 px-5 py-1 rounded-full bg-emerald-500/15 border border-emerald-400/40 text-emerald-300 text-xs font-extrabold tracking-widest uppercase en-font">
+              <span>WALL STREET PRO • SHORT SELLING &amp; SMART TP/SL</span>
+            </div>
+            <h1 class="text-[60px] leading-[1.1] font-black gold-glow-text">
+              بورصة الأسهم الاحترافية
+            </h1>
+            <p class="text-[24px] font-extrabold market-glow-text">
+              اربح في الصعود والهبوط.. تداول كأباطرة وول ستريت بأدوات احترافية!
+            </p>
+          </div>
+        </div>
+
+        <!-- Center Content -->
+        <div class="relative z-10 my-auto space-y-4">
+
+          <!-- Live Interactive Target Chart Showcase Banner -->
+          <div class="poster-card rounded-3xl p-5 border-emerald-500/35">
+            <div class="flex items-center justify-between mb-3 px-1">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-chart-line text-emerald-400 text-xl"></i>
+                <span class="text-lg font-black text-white">شارت تفاعلي مباشر مع خطوط الأهداف السعرية الحية</span>
+              </div>
+              <div class="flex items-center gap-2 text-xs font-black">
+                <span class="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">خط جني الربح (TP)</span>
+                <span class="px-2.5 py-1 rounded-lg bg-amber-500/20 text-amber-300 border border-amber-500/40">خط سعر الدخول (Entry)</span>
+                <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40">خط وقف الخسارة (SL)</span>
+              </div>
+            </div>
+
+            <!-- Simulated Pro SVG Chart inside Infographic -->
+            <div class="relative h-36 rounded-2xl bg-slate-950/95 border border-slate-800 p-3 overflow-hidden">
+              <svg viewBox="0 0 900 120" class="w-full h-full overflow-visible">
+                <line x1="0" y1="22" x2="900" y2="22" stroke="#10b981" stroke-width="2" stroke-dasharray="8 5" />
+                <line x1="0" y1="64" x2="900" y2="64" stroke="#f59e0b" stroke-width="2" stroke-dasharray="6 4" />
+                <line x1="0" y1="102" x2="900" y2="102" stroke="#f43f5e" stroke-width="2" stroke-dasharray="8 5" />
+                <path d="M 0 92 L 90 84 L 180 88 L 270 72 L 360 64 L 450 54 L 540 58 L 630 42 L 720 32 L 810 25 L 890 18"
+                  fill="none" stroke="#38bdf8" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" />
+                <circle cx="890" cy="18" r="6" fill="#10b981" stroke="#fff" stroke-width="2" />
+              </svg>
+              <!-- Clean HTML Overlay Badges on Chart -->
+              <div class="absolute top-3 left-4 px-3 py-1 rounded-lg bg-emerald-950/95 border border-emerald-400/60 text-emerald-300 text-xs font-black shadow-lg">
+                🎯 هدف جني الربح (TP): 198 ج.م (+10%)
+              </div>
+              <div class="absolute top-[52px] right-6 px-3 py-1 rounded-lg bg-amber-950/95 border border-amber-400/60 text-amber-300 text-xs font-black shadow-lg">
+                ⚡ سعر الدخول (Entry): 180 ج.م
+              </div>
+              <div class="absolute bottom-3 left-4 px-3 py-1 rounded-lg bg-rose-950/95 border border-rose-400/60 text-rose-300 text-xs font-black shadow-lg">
+                🛡️ وقف الخسارة (SL): 171 ج.م (-5%)
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Pillars Grid -->
+          <div class="grid grid-cols-2 gap-4">
+            <!-- Pillar 1: Short Selling -->
+            <div class="poster-card rounded-3xl p-5 border-rose-500/35 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-rose-500/25 border border-rose-400/50 flex items-center justify-center text-rose-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-arrow-trend-down"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <h3 class="text-lg font-black text-white">البيع على المكشوف (Short Selling)</h3>
+                    <span class="px-2 py-0.5 rounded-md bg-rose-500/20 text-rose-300 text-[11px] font-black whitespace-nowrap">ميزة جديدة</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    لا تخسر في الأزمات بعد اليوم! افتح صفقة <span class="text-rose-300 font-bold">بيع مكشوف (Short)</span> عندما تتوقع هبوط السهم، واربح الفارق السعري كلما انخفض السعر في السوق!
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">الضمان المطلوب:</span>
+                  <span class="text-amber-300 font-black">100% Margin</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">حماية التصفية:</span>
+                  <span class="text-rose-300 font-black">Margin Call +50%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pillar 2: Auto TP / SL -->
+            <div class="poster-card rounded-3xl p-5 border-emerald-500/35 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-emerald-500/25 border border-emerald-400/50 flex items-center justify-center text-emerald-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-bullseye"></i>
+                </div>
+                <div class="flex-1">
+                  <div class="flex items-center justify-between gap-2">
+                    <h3 class="text-lg font-black text-white">الأوامر الآلية الذكية (TP &amp; SL)</h3>
+                    <span class="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-300 text-[11px] font-black whitespace-nowrap">تنفيذ تلقائي</span>
+                  </div>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    اضبط <span class="text-emerald-300 font-bold">هدف جني الربح (TP)</span> و<span class="text-rose-300 font-bold">وقف الخسارة (SL)</span> بأزرار النسب السريعة، وسيقوم السيرفر بإغلاق الصفقة وتحصيل أرباحك تلقائياً!
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">أزرار ربح سريعة:</span>
+                  <span class="text-emerald-300 font-black">+5% / +10% / +20%</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">أزرار حماية سريعة:</span>
+                  <span class="text-rose-300 font-black">-5% / -10%</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pillar 3: Long vs Short Modes -->
+            <div class="poster-card rounded-3xl p-5 border-sky-500/35 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-sky-500/25 border border-sky-400/50 flex items-center justify-center text-sky-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-arrows-up-down"></i>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-lg font-black text-white">تبديل فوري بين الشراء (Long) والشورت (Short)</h3>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    واجهة تداول مطورة بالكامل تتيح لك اختيار اتجاه الصفقة، ومراقبة صافي الربح أو الخسارة اللحظية لكل سهم مع إشعارات فورية عند تحقق الهدف!
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">زمن تأمين الصفقة:</span>
+                  <span class="text-sky-300 font-black">45 ثانية فقط</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">تعديل الأهداف:</span>
+                  <span class="text-emerald-300 font-black">متاح بأي لحظة</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Pillar 4: Massive Economic Boost -->
+            <div class="poster-card rounded-3xl p-5 border-amber-500/35 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-amber-500/25 border border-amber-400/50 flex items-center justify-center text-amber-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-vault"></i>
+                </div>
+                <div class="flex-1">
+                  <h3 class="text-lg font-black text-white">رفع سقف الأرباح ومضاعفة الأسهم (2X)</h3>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    تم رفع سقف أرباح البورصة اليومي أكثر من 3 أضعاف ليصل إلى <span class="text-emerald-300 font-bold">10 مليون ج.م يومياً</span>، مع مضاعفة الحد الأقصى لامتلاك الأسهم <span class="text-amber-300 font-bold">2X</span>!
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">السقف اليومي الجديد:</span>
+                  <span class="text-emerald-300 font-black">10,000,000 ج.م</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">سعة الأسهم:</span>
+                  <span class="text-amber-300 font-black">200% (ضعف السعة)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Listed Companies Ticker Strip -->
+          <div class="poster-card rounded-2xl px-5 py-3 border-slate-700/80 flex items-center justify-between">
+            <span class="text-xs font-black text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-building-columns text-amber-400"></i>
+              <span>الشركات المدرجة للتداول:</span>
+            </span>
+            <div class="flex items-center gap-3.5 text-xs font-extrabold">
+              <span class="text-sky-300">حديد عز (EZDK)</span>
+              <span class="text-emerald-300">المصرية للاتصالات (ETEL)</span>
+              <span class="text-amber-300">جهينة (JUFO)</span>
+              <span class="text-purple-300">السويدي (SWDY)</span>
+              <span class="text-rose-300">طلعت مصطفى (TMGH)</span>
+              <span class="text-cyan-300">التجاري الدولي (COMI)</span>
+              <span class="text-yellow-300">فوري (FWRY)</span>
+              <span class="text-fuchsia-300">إعمار (EMFD)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="relative z-10 pt-1">
+          <div class="p-4 rounded-3xl bg-slate-950/95 border-2 border-emerald-500/40 shadow-2xl flex items-center justify-between gap-4">
+            <div class="flex items-center gap-5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 text-lg">
+                  <i class="fa-solid fa-money-bill-trend-up"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">سقف الأرباح اليومي</div>
+                  <div class="text-lg font-black text-emerald-400">10,000,000 ج.م</div>
+                </div>
+              </div>
+              <div class="h-9 w-px bg-slate-800"></div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 text-lg">
+                  <i class="fa-solid fa-layer-group"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">الحد الأقصى للأسهم</div>
+                  <div class="text-lg font-black text-amber-300">مضاعف 2X لكل سهم</div>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-left">
+                <div class="text-xs font-bold text-emerald-300">اقتنص فرص السوق الآن</div>
+                <div class="text-xl font-black text-white en-font tracking-wider">RASALMAL.ONLINE</div>
+              </div>
+              <div class="px-5 py-3 rounded-2xl bg-gradient-to-r from-emerald-400 via-teal-400 to-emerald-600 text-slate-950 font-black text-base shadow-xl flex items-center gap-2">
+                <i class="fa-solid fa-chart-line"></i>
+                <span>ابدأ المضاربة الآن</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function setVariant(v) {
+      const cin = document.getElementById('view-cinematic');
+      const info = document.getElementById('view-infographic');
+      const btnCin = document.getElementById('btn-var-cinematic');
+      const btnInfo = document.getElementById('btn-var-infographic');
+
+      if (v === 'infographic') {
+        cin.classList.add('hidden');
+        info.classList.remove('hidden');
+        btnInfo.className = 'px-4 py-2 rounded-xl text-xs font-black bg-emerald-500 text-slate-950 transition cursor-pointer';
+        btnCin.className = 'px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer';
+      } else {
+        info.classList.add('hidden');
+        cin.classList.remove('hidden');
+        btnCin.className = 'px-4 py-2 rounded-xl text-xs font-black bg-emerald-500 text-slate-950 transition cursor-pointer';
+        btnInfo.className = 'px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer';
+      }
+    }
+
+    function fitPosterToViewport() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('export')) {
+        document.body.classList.add('export-clean');
+        document.getElementById('studio-toolbar').style.display = 'none';
+        setVariant(params.get('export'));
+        return;
+      }
+      const canvas = document.getElementById('poster-canvas');
+      const wrapper = document.getElementById('poster-wrapper');
+      if (!canvas || !wrapper) return;
+      const availableWidth = Math.min(window.innerWidth - 32, 1080);
+      const scale = availableWidth / 1080;
+      canvas.style.transform = `scale(${scale})`;
+      wrapper.style.height = `${canvas.offsetHeight * scale}px`;
+    }
+
+    async function exportPosterPNG() {
+      const btn = document.getElementById('btn-download-png');
+      const canvasEl = document.getElementById('poster-canvas');
+      const prevTransform = canvasEl.style.transform;
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري تصدير الصورة...</span>';
+        canvasEl.style.transform = 'none';
+        await document.fonts.ready;
+        const rendered = await html2canvas(canvasEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#030712'
+        });
+        const link = document.createElement('a');
+        link.download = 'ras-almal-stock-exchange-poster.png';
+        link.href = rendered.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        alert('حدث خطأ أثناء تصدير الصورة: ' + err.message);
+      } finally {
+        canvasEl.style.transform = prevTransform;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-download"></i> <span>تحميل البوستر PNG</span>';
+      }
+    }
+
+    window.addEventListener('resize', fitPosterToViewport);
+    window.addEventListener('DOMContentLoaded', fitPosterToViewport);
+  </script>
+</body>
+</html>

@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>بوستر دعائي — محطة رأس المال لاستكشاف الفضاء</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      font-family: 'Cairo', sans-serif;
+    }
+    body {
+      background: #030611;
+      color: #f8fafc;
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    body.export-clean {
+      padding: 0 !important;
+      margin: 0 !important;
+      overflow: hidden !important;
+      width: 1080px !important;
+      height: 1440px !important;
+    }
+    .en-font {
+      font-family: 'Orbitron', sans-serif;
+    }
+    #poster-canvas {
+      width: 1080px;
+      height: 1440px;
+      position: relative;
+      overflow: hidden;
+      background: #040611;
+      box-shadow: 0 25px 80px -15px rgba(14, 165, 233, 0.35), 0 0 1px 1px rgba(56, 189, 248, 0.3);
+      transform-origin: top center;
+    }
+    .poster-card {
+      background: linear-gradient(145deg, rgba(10, 16, 34, 0.88) 0%, rgba(5, 8, 20, 0.94) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.28);
+      box-shadow: 0 12px 32px -8px rgba(0, 0, 0, 0.7), inset 0 1px 1px rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(14px);
+    }
+    .hud-glass {
+      background: linear-gradient(145deg, rgba(8, 13, 29, 0.78) 0%, rgba(4, 7, 18, 0.88) 100%);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.75), inset 0 1px 1px rgba(255, 255, 255, 0.12);
+      backdrop-filter: blur(12px);
+    }
+    .gold-glow-text {
+      background: linear-gradient(180deg, #fffbeb 0%, #fef08a 30%, #f59e0b 80%, #b45309 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 6px 22px rgba(245, 158, 11, 0.55));
+    }
+    .cyan-glow-text {
+      background: linear-gradient(90deg, #f0f9ff 0%, #38bdf8 50%, #e879f9 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 4px 18px rgba(56, 189, 248, 0.5));
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center py-6 px-4 select-none">
+
+  <!-- Top Studio Controls Bar -->
+  <div id="studio-toolbar" class="w-full max-w-[1080px] mb-6 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-4 shadow-2xl">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/40 flex items-center justify-center text-sky-400">
+        <i class="fa-solid fa-wand-magic-sparkles text-lg"></i>
+      </div>
+      <div>
+        <h1 class="text-sm sm:text-base font-black text-white">استوديو البوستر الدعائي — محطة استكشاف الفضاء</h1>
+        <p class="text-xs text-slate-400">بدّل بين التصميم السينمائي والتصميم التفصيلي أو حمّل البوستر بصيغة PNG</p>
+      </div>
+    </div>
+
+    <div class="flex flex-wrap items-center gap-2">
+      <button onclick="setVariant('cinematic')" id="btn-var-cinematic" class="px-4 py-2 rounded-xl text-xs font-black bg-sky-500 text-slate-950 transition cursor-pointer">
+        <i class="fa-solid fa-film ml-1"></i> البوستر السينمائي العربي
+      </button>
+      <button onclick="setVariant('infographic')" id="btn-var-infographic" class="px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer">
+        <i class="fa-solid fa-table-cells-large ml-1"></i> البوستر التفصيلي الشامل
+      </button>
+      <button onclick="exportPosterPNG()" id="btn-download-png" class="px-5 py-2 rounded-xl text-xs font-black bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-slate-950 shadow-lg shadow-amber-500/25 hover:brightness-110 transition cursor-pointer flex items-center gap-2">
+        <i class="fa-solid fa-download"></i>
+        <span>تحميل البوستر PNG</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Scale Wrapper -->
+  <div id="poster-wrapper" class="w-full flex justify-center overflow-hidden">
+    <div id="poster-canvas">
+
+      <!-- ========================================================================= -->
+      <!-- VARIANT 1: CINEMATIC HERO POSTER (Full Artwork + Arabic HUD Overlays)     -->
+      <!-- ========================================================================= -->
+      <div id="view-cinematic" class="w-full h-full relative flex flex-col justify-between p-10">
+        <!-- Full Brightness AI Hero Artwork -->
+        <img src="assets/banners/space_station_bg_art.png" alt="Space Station Artwork"
+          class="pointer-events-none absolute inset-0 w-full h-full object-cover" />
+
+        <!-- Subtle Top & Bottom Gradient Vignettes Only (Center stays 100% clear!) -->
+        <div class="pointer-events-none absolute inset-x-0 top-0 h-[360px] bg-gradient-to-b from-[#02040d]/95 via-[#04081a]/70 to-transparent"></div>
+        <div class="pointer-events-none absolute inset-x-0 bottom-0 h-[430px] bg-gradient-to-t from-[#02040d]/98 via-[#05091d]/85 to-transparent"></div>
+
+        <!-- Outer Tech Border -->
+        <div class="pointer-events-none absolute inset-4 rounded-[32px] border border-sky-400/25"></div>
+        <div class="pointer-events-none absolute top-4 right-4 w-14 h-14 border-t-4 border-r-4 border-amber-400 rounded-tr-[32px]"></div>
+        <div class="pointer-events-none absolute top-4 left-4 w-14 h-14 border-t-4 border-l-4 border-sky-400 rounded-tl-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 right-4 w-14 h-14 border-b-4 border-r-4 border-sky-400 rounded-br-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 left-4 w-14 h-14 border-b-4 border-l-4 border-amber-400 rounded-bl-[32px]"></div>
+
+        <!-- TOP HEADER -->
+        <div class="relative z-10 text-center space-y-2.5 pt-1">
+          <div class="flex items-center justify-between px-4">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-950/85 border border-amber-400/50 shadow-lg">
+              <i class="fa-solid fa-crown text-amber-400"></i>
+              <span class="text-sm font-black text-amber-300">إمبراطورية رأس المال • RAS ALMAL TYCOON</span>
+            </div>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/20 border border-sky-400/50 text-sky-200 text-sm font-black">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span>التحديث الفضائي الكبير 🚀</span>
+            </div>
+          </div>
+
+          <div class="pt-1">
+            <div class="text-xs font-extrabold tracking-[0.25em] text-sky-300 uppercase en-font mb-1">
+              SPACE EXPLORATION &amp; PLANETARY MINING HUB
+            </div>
+            <h1 class="text-[68px] leading-[1.08] font-black gold-glow-text">
+              محطة استكشاف الفضاء
+            </h1>
+            <p class="text-[25px] font-black cyan-glow-text mt-1">
+              دشّن محطتك المدارية.. وانطلق لغزو الكواكب وتعدين أندر ثروات المجرة!
+            </p>
+          </div>
+
+          <!-- Floating Destination Pills under Header -->
+          <div class="flex items-center justify-center gap-3 pt-2">
+            <div class="px-4 py-1.5 rounded-full hud-glass border-slate-400/40 flex items-center gap-2 text-sm font-black text-slate-100">
+              <i class="fa-solid fa-moon text-slate-300"></i>
+              <span>القمر (12س)</span>
+            </div>
+            <div class="px-4 py-1.5 rounded-full hud-glass border-rose-400/50 flex items-center gap-2 text-sm font-black text-rose-200">
+              <i class="fa-solid fa-globe text-rose-400"></i>
+              <span>كوكب المريخ (24س)</span>
+            </div>
+            <div class="px-4 py-1.5 rounded-full hud-glass border-amber-400/50 flex items-center gap-2 text-sm font-black text-amber-200">
+              <i class="fa-solid fa-meteor text-amber-400"></i>
+              <span>حزام الكويكبات (48س)</span>
+            </div>
+            <div class="px-4 py-1.5 rounded-full hud-glass border-fuchsia-400/60 flex items-center gap-2 text-sm font-black text-fuchsia-200">
+              <i class="fa-solid fa-burst text-fuchsia-400"></i>
+              <span>أقمار المشتري (72س)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- BOTTOM HUD CARDS & CTA -->
+        <div class="relative z-10 space-y-4">
+          <!-- 4 Compact HUD Cards -->
+          <div class="grid grid-cols-4 gap-3">
+            <div class="hud-glass rounded-2xl p-3.5 border-sky-400/40 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-sky-500/25 border border-sky-400/50 flex items-center justify-center text-sky-300 text-lg">
+                <i class="fa-solid fa-shuttle-space"></i>
+              </div>
+              <div class="text-sm font-black text-white">أسطول صواريخ عملاق</div>
+              <div class="text-[11px] text-sky-200 font-bold leading-snug">4 فئات حتى مدمرة Quantum Dreadnought بحمولة 7,000 كجم</div>
+            </div>
+
+            <div class="hud-glass rounded-2xl p-3.5 border-fuchsia-400/45 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-fuchsia-500/25 border border-fuchsia-400/50 flex items-center justify-center text-fuchsia-300 text-lg">
+                <i class="fa-solid fa-gem"></i>
+              </div>
+              <div class="text-sm font-black text-white">بورصة المعادن (24h)</div>
+              <div class="text-[11px] text-fuchsia-200 font-bold leading-snug">6 خامات نادرة أبرزها المادة المظلمة بـ 450,000 ج.م/كجم</div>
+            </div>
+
+            <div class="hud-glass rounded-2xl p-3.5 border-emerald-400/40 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-emerald-500/25 border border-emerald-400/50 flex items-center justify-center text-emerald-300 text-lg">
+                <i class="fa-solid fa-satellite-dish"></i>
+              </div>
+              <div class="text-sm font-black text-white">مرفأ إطلاق CAT-III</div>
+              <div class="text-[11px] text-emerald-200 font-bold leading-snug">إطلاق 3 صواريخ متزامنة ومخازن كمومية سعة 100 طن</div>
+            </div>
+
+            <div class="hud-glass rounded-2xl p-3.5 border-amber-400/45 text-center space-y-1">
+              <div class="w-10 h-10 mx-auto rounded-xl bg-amber-500/25 border border-amber-400/50 flex items-center justify-center text-amber-300 text-lg">
+                <i class="fa-solid fa-user-astronaut"></i>
+              </div>
+              <div class="text-sm font-black text-white">طيار آلي ومدراء VIP</div>
+              <div class="text-[11px] text-amber-200 font-bold leading-snug">إطلاق وتحصيل آلي +25% حصيلة معادن و+15% أرباح</div>
+            </div>
+          </div>
+
+          <!-- Footer CTA Bar -->
+          <div class="p-4 rounded-3xl bg-slate-950/90 border-2 border-amber-400/50 shadow-2xl flex items-center justify-between gap-4">
+            <div class="flex items-center gap-5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 text-lg">
+                  <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">الحد الأدنى للثروة</div>
+                  <div class="text-lg font-black text-amber-300">5 مليار ج.م</div>
+                </div>
+              </div>
+
+              <div class="h-9 w-px bg-slate-800"></div>
+
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 text-lg">
+                  <i class="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">تكلفة التأسيس</div>
+                  <div class="text-lg font-black text-emerald-400">2.5 مليار ج.م</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-4">
+              <div class="text-left">
+                <div class="text-xs font-bold text-sky-300">انضم لنخبة أباطرة الفضاء الآن</div>
+                <div class="text-xl font-black text-white en-font tracking-wider">RASALMAL.ONLINE</div>
+              </div>
+              <div class="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-slate-950 font-black text-base shadow-xl shadow-amber-500/30 flex items-center gap-2">
+                <i class="fa-solid fa-rocket"></i>
+                <span>ابدأ الغزو الفضائي</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ========================================================================= -->
+      <!-- VARIANT 2: DETAILED INFOGRAPHIC POSTER (All Features & Stats)             -->
+      <!-- ========================================================================= -->
+      <div id="view-infographic" class="hidden w-full h-full relative flex flex-col justify-between p-11">
+        <img src="assets/banners/space_station_bg_art.png" alt="Space Station Background"
+          class="pointer-events-none absolute inset-0 w-full h-full object-cover opacity-35" />
+        <div class="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#040714]/90 via-[#070c22]/75 to-[#03050e]/95"></div>
+
+        <!-- Outer Frame -->
+        <div class="pointer-events-none absolute inset-4 rounded-[32px] border border-sky-400/25"></div>
+        <div class="pointer-events-none absolute top-4 right-4 w-14 h-14 border-t-4 border-r-4 border-amber-400 rounded-tr-[32px]"></div>
+        <div class="pointer-events-none absolute top-4 left-4 w-14 h-14 border-t-4 border-l-4 border-sky-400 rounded-tl-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 right-4 w-14 h-14 border-b-4 border-r-4 border-sky-400 rounded-br-[32px]"></div>
+        <div class="pointer-events-none absolute bottom-4 left-4 w-14 h-14 border-b-4 border-l-4 border-amber-400 rounded-bl-[32px]"></div>
+
+        <!-- Header -->
+        <div class="relative z-10 text-center space-y-3 pt-1">
+          <div class="flex items-center justify-between px-4">
+            <div class="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-slate-900/90 border border-amber-500/40">
+              <i class="fa-solid fa-crown text-amber-400"></i>
+              <span class="text-sm font-black text-amber-300">إمبراطورية رأس المال • RAS ALMAL TYCOON</span>
+            </div>
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-sky-500/15 border border-sky-400/40 text-sky-300 text-sm font-black">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-400"></span>
+              <span>الدليل الشامل لتحديث الفضاء 🚀</span>
+            </div>
+          </div>
+
+          <div class="pt-1 space-y-1">
+            <div class="inline-flex items-center gap-2 px-5 py-1 rounded-full bg-fuchsia-500/15 border border-fuchsia-400/40 text-fuchsia-300 text-xs font-extrabold tracking-widest uppercase en-font">
+              <span>SPACE EXPLORATION &amp; MINING HUB</span>
+            </div>
+            <h1 class="text-[60px] leading-[1.1] font-black gold-glow-text">
+              محطة استكشاف الفضاء
+            </h1>
+            <p class="text-[24px] font-extrabold cyan-glow-text">
+              دشّن محطتك المدارية.. وانطلق لغزو الكواكب وتعدين أندر ثروات المجرة!
+            </p>
+          </div>
+        </div>
+
+        <!-- Center Content -->
+        <div class="relative z-10 my-auto space-y-4">
+          <!-- 4 Destinations -->
+          <div class="poster-card rounded-3xl p-5 border-sky-500/35">
+            <div class="flex items-center justify-between mb-3 px-1">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid fa-compass text-sky-400 text-xl"></i>
+                <span class="text-lg font-black text-white">4 وجهات كونية للتنقيب الفضائي العميق</span>
+              </div>
+              <span class="text-xs font-black px-3 py-1 rounded-full bg-sky-500/15 text-sky-300 border border-sky-400/30">
+                رحلات مدارية من 12 ساعة حتى 72 ساعة
+              </span>
+            </div>
+            <div class="grid grid-cols-4 gap-3">
+              <div class="p-3.5 rounded-2xl bg-slate-900/90 border border-slate-700 flex flex-col items-center text-center">
+                <div class="w-11 h-11 rounded-2xl bg-slate-700/40 border border-slate-400/40 flex items-center justify-center text-slate-200 text-xl mb-1.5">
+                  <i class="fa-solid fa-moon"></i>
+                </div>
+                <div class="text-base font-black text-white">القمر (Moon)</div>
+                <div class="text-[11px] text-slate-400 font-bold en-font">384,000 KM</div>
+                <div class="mt-1.5 px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 text-[11px] font-black">فئة 1 • 12 ساعة</div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-rose-950/35 border border-rose-500/40 flex flex-col items-center text-center">
+                <div class="w-11 h-11 rounded-2xl bg-rose-500/20 border border-rose-400/50 flex items-center justify-center text-rose-400 text-xl mb-1.5">
+                  <i class="fa-solid fa-globe"></i>
+                </div>
+                <div class="text-base font-black text-white">كوكب المريخ</div>
+                <div class="text-[11px] text-rose-300 font-bold en-font">225M KM • Olympus</div>
+                <div class="mt-1.5 px-2.5 py-0.5 rounded-full bg-rose-500/20 text-rose-300 text-[11px] font-black">فئة 2 • 24 ساعة</div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-amber-950/35 border border-amber-500/40 flex flex-col items-center text-center">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/50 flex items-center justify-center text-amber-400 text-xl mb-1.5">
+                  <i class="fa-solid fa-meteor"></i>
+                </div>
+                <div class="text-base font-black text-white">حزام الكويكبات</div>
+                <div class="text-[11px] text-amber-300 font-bold en-font">Psyche 16 • 480M KM</div>
+                <div class="mt-1.5 px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 text-[11px] font-black">فئة 3 • 48 ساعة</div>
+              </div>
+              <div class="p-3.5 rounded-2xl bg-purple-950/45 border border-fuchsia-500/50 flex flex-col items-center text-center">
+                <div class="w-11 h-11 rounded-2xl bg-fuchsia-500/20 border border-fuchsia-400/60 flex items-center justify-center text-fuchsia-300 text-xl mb-1.5">
+                  <i class="fa-solid fa-burst"></i>
+                </div>
+                <div class="text-base font-black text-white">أقمار المشتري</div>
+                <div class="text-[11px] text-fuchsia-300 font-bold en-font">Europa • 778M KM</div>
+                <div class="mt-1.5 px-2.5 py-0.5 rounded-full bg-fuchsia-500/25 text-fuchsia-200 text-[11px] font-black">فئة 4 حصرياً • 72 ساعة</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 4 Pillars Grid -->
+          <div class="grid grid-cols-2 gap-4">
+            <div class="poster-card rounded-3xl p-5 border-sky-500/30 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-sky-500/25 border border-sky-400/50 flex items-center justify-center text-sky-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-rocket"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-black text-white">أسطول المركبات الفضائية (4 فئات)</h3>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    من <span class="text-sky-300 font-bold">مسبار أوريون-1</span> و<span class="text-indigo-300 font-bold">فالكون ستار</span> حتى عملاق التعدين <span class="text-amber-300 font-bold">Heavy Starship</span> والمدمرة <span class="text-fuchsia-300 font-bold">Quantum Dreadnought</span>!
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">أقصى حمولة:</span>
+                  <span class="text-sky-300 font-black">7,000 كجم</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">إطلاق متزامن:</span>
+                  <span class="text-amber-300 font-black">حتى 3 صواريخ</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="poster-card rounded-3xl p-5 border-fuchsia-500/35 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-fuchsia-500/25 border border-fuchsia-400/50 flex items-center justify-center text-fuchsia-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-gem"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-black text-white">بورصة المعادن الكونية (24h)</h3>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    استخرج وخزّن <span class="text-cyan-300 font-bold">البلاتين الكويكبي</span>، <span class="text-amber-300 font-bold">الهيليوم-3</span>، <span class="text-yellow-300 font-bold">الليثيوم الفضائي</span>، و<span class="text-fuchsia-300 font-bold">بلورات المادة المظلمة</span> وبعها بأعلى سعر!
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">المادة المظلمة:</span>
+                  <span class="text-fuchsia-300 font-black">450,000 ج.م/كجم</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">ليثيوم فضائي:</span>
+                  <span class="text-yellow-300 font-black">240,000 ج.م/كجم</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="poster-card rounded-3xl p-5 border-emerald-500/30 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-emerald-500/25 border border-emerald-400/50 flex items-center justify-center text-emerald-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-satellite-dish"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-black text-white">مرافق مدارية ومخازن كمومية</h3>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    طوّر <span class="text-sky-300 font-bold">مرفأ الإطلاق الثلاثي CAT-III</span>، و<span class="text-indigo-300 font-bold">نواة القفز الفضائي</span>، و<span class="text-emerald-300 font-bold">معمل التنقية الكمومي</span>.
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">سعة الصوامع:</span>
+                  <span class="text-amber-300 font-black">100,000 كجم</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">نقاء التكرير:</span>
+                  <span class="text-emerald-300 font-black">+12% قيمة الخام</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="poster-card rounded-3xl p-5 border-amber-500/35 flex flex-col justify-between space-y-3">
+              <div class="flex items-start gap-3.5">
+                <div class="w-13 h-13 p-3 rounded-2xl bg-amber-500/25 border border-amber-400/50 flex items-center justify-center text-amber-300 text-2xl shrink-0">
+                  <i class="fa-solid fa-user-astronaut"></i>
+                </div>
+                <div>
+                  <h3 class="text-xl font-black text-white">قادة الأسطول والطيار الآلي VIP</h3>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">
+                    عيّن <span class="text-sky-300 font-bold">د. ليام</span>، <span class="text-amber-300 font-bold">د. سارة</span>، و<span class="text-fuchsia-300 font-bold">الآدميرال فالكون</span> لتشغيل الطيار الآلي ومضاعفة الأرباح!
+                  </p>
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2 pt-2 border-t border-slate-800 text-xs">
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">بونص الحصيلة:</span>
+                  <span class="text-amber-300 font-black">+25% معادن</span>
+                </div>
+                <div class="px-3 py-1.5 rounded-xl bg-slate-900 flex items-center justify-between">
+                  <span class="text-slate-400 font-bold">بونص البورصة:</span>
+                  <span class="text-fuchsia-300 font-black">+15% أرباح بيع</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Ores Strip -->
+          <div class="poster-card rounded-2xl px-5 py-3 border-slate-700/80 flex items-center justify-between">
+            <span class="text-xs font-black text-slate-400 flex items-center gap-1.5">
+              <i class="fa-solid fa-cubes-stacked text-amber-400"></i>
+              <span>خامات التعدين الفضائي:</span>
+            </span>
+            <div class="flex items-center gap-4 text-xs font-extrabold">
+              <span class="text-slate-300"><i class="fa-solid fa-cubes text-slate-400 ml-1"></i>ريجوليث قمري</span>
+              <span class="text-blue-300"><i class="fa-solid fa-shield-halved text-blue-400 ml-1"></i>حديد نيزكي</span>
+              <span class="text-cyan-300"><i class="fa-solid fa-gem text-cyan-400 ml-1"></i>بلاتين كويكبي</span>
+              <span class="text-amber-300"><i class="fa-solid fa-atom text-amber-400 ml-1"></i>هيليوم-3 كوني</span>
+              <span class="text-yellow-300"><i class="fa-solid fa-bolt text-yellow-400 ml-1"></i>ليثيوم فضائي</span>
+              <span class="text-fuchsia-300"><i class="fa-solid fa-wand-magic-sparkles text-fuchsia-400 ml-1"></i>بلورات المادة المظلمة</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="relative z-10 pt-1">
+          <div class="p-4 rounded-3xl bg-slate-950/95 border-2 border-amber-500/40 shadow-2xl flex items-center justify-between gap-4">
+            <div class="flex items-center gap-5">
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-400/40 flex items-center justify-center text-amber-400 text-lg">
+                  <i class="fa-solid fa-chart-line"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">الحد الأدنى للثروة</div>
+                  <div class="text-lg font-black text-amber-300">5,000,000,000 ج.م</div>
+                </div>
+              </div>
+              <div class="h-9 w-px bg-slate-800"></div>
+              <div class="flex items-center gap-2.5">
+                <div class="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-emerald-400 text-lg">
+                  <i class="fa-solid fa-coins"></i>
+                </div>
+                <div>
+                  <div class="text-[11px] text-slate-400 font-bold">تكلفة تأسيس المحطة</div>
+                  <div class="text-lg font-black text-emerald-400">2,500,000,000 ج.م</div>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-4">
+              <div class="text-left">
+                <div class="text-xs font-bold text-sky-300">انضم لنخبة أباطرة الفضاء الآن</div>
+                <div class="text-xl font-black text-white en-font tracking-wider">RASALMAL.ONLINE</div>
+              </div>
+              <div class="px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-600 text-slate-950 font-black text-base shadow-xl flex items-center gap-2">
+                <i class="fa-solid fa-shuttle-space"></i>
+                <span>ابدأ الغزو الفضائي</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <script>
+    function setVariant(v) {
+      const cin = document.getElementById('view-cinematic');
+      const info = document.getElementById('view-infographic');
+      const btnCin = document.getElementById('btn-var-cinematic');
+      const btnInfo = document.getElementById('btn-var-infographic');
+
+      if (v === 'infographic') {
+        cin.classList.add('hidden');
+        info.classList.remove('hidden');
+        btnInfo.className = 'px-4 py-2 rounded-xl text-xs font-black bg-sky-500 text-slate-950 transition cursor-pointer';
+        btnCin.className = 'px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer';
+      } else {
+        info.classList.add('hidden');
+        cin.classList.remove('hidden');
+        btnCin.className = 'px-4 py-2 rounded-xl text-xs font-black bg-sky-500 text-slate-950 transition cursor-pointer';
+        btnInfo.className = 'px-4 py-2 rounded-xl text-xs font-black bg-slate-800 text-slate-300 hover:bg-slate-700 transition cursor-pointer';
+      }
+    }
+
+    function fitPosterToViewport() {
+      const params = new URLSearchParams(window.location.search);
+      if (params.has('export')) {
+        document.body.classList.add('export-clean');
+        document.getElementById('studio-toolbar').style.display = 'none';
+        setVariant(params.get('export'));
+        return;
+      }
+      const canvas = document.getElementById('poster-canvas');
+      const wrapper = document.getElementById('poster-wrapper');
+      if (!canvas || !wrapper) return;
+      const availableWidth = Math.min(window.innerWidth - 32, 1080);
+      const scale = availableWidth / 1080;
+      canvas.style.transform = `scale(${scale})`;
+      wrapper.style.height = `${canvas.offsetHeight * scale}px`;
+    }
+
+    async function exportPosterPNG() {
+      const btn = document.getElementById('btn-download-png');
+      const canvasEl = document.getElementById('poster-canvas');
+      const prevTransform = canvasEl.style.transform;
+      try {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span>جاري تصدير الصورة...</span>';
+        canvasEl.style.transform = 'none';
+        await document.fonts.ready;
+        const rendered = await html2canvas(canvasEl, {
+          scale: 2,
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: '#030611'
+        });
+        const link = document.createElement('a');
+        link.download = 'ras-almal-space-station-poster.png';
+        link.href = rendered.toDataURL('image/png');
+        link.click();
+      } catch (err) {
+        alert('حدث خطأ أثناء تصدير الصورة: ' + err.message);
+      } finally {
+        canvasEl.style.transform = prevTransform;
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-download"></i> <span>تحميل البوستر PNG</span>';
+      }
+    }
+
+    window.addEventListener('resize', fitPosterToViewport);
+    window.addEventListener('DOMContentLoaded', fitPosterToViewport);
+  </script>
+</body>
+</html>

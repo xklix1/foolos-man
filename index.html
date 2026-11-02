@@ -3094,14 +3094,27 @@
 
       <!-- TAB 3: الاعمال (BUSINESS TYCOON) -->
       <section id="panel-business" class="game-panel hidden space-y-6">
-        <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40 mb-4 flex justify-between items-center">
+        <div class="bg-slate-900/10 p-4 rounded-xl border border-slate-800/40 mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
-            <h3 class="text-md font-bold text-white">إمبراطورية التجارة وإدارة الأعمال</h3>
+            <h3 class="text-md font-bold text-white flex items-center gap-2">
+              <i class="fa-solid fa-briefcase text-yellow-500"></i>
+              <span>إمبراطورية التجارة وإدارة الأعمال</span>
+            </h3>
             <p class="text-xs text-slate-400 mt-0.5">اشترِ المشاريع الحرة ووظف عمالة. اضبط السعر المناسب وفق مرونة الطلب لتحقيق أعلى ربح ممكن بالدورة.</p>
           </div>
-          <button class="btn-panel-help px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-400 hover:text-yellow-400 rounded-lg transition flex items-center gap-1 shrink-0 ml-4" data-help="panel-business" title="شرح الصفحة">
-            <i class="fa-solid fa-circle-question text-xs"></i> شرح الصفحة
-          </button>
+          <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto">
+            <button type="button" id="btn-bulk-supply-12h" class="flex-1 sm:flex-none px-3 py-1.5 bg-gradient-to-r from-indigo-600 via-purple-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500 text-white rounded-lg text-xs font-black transition flex items-center justify-center gap-1.5 shadow-md shadow-indigo-500/20 active:scale-95 cursor-pointer" title="توريد وإكمال بضاعة 12 ساعة لجميع المشاريع بضغطة واحدة">
+              <i class="fa-solid fa-boxes-stacked text-cyan-300"></i>
+              <span>توريد 12 ساعة للكل</span>
+            </button>
+            <button type="button" id="btn-bulk-supply-1h" class="flex-1 sm:flex-none px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-emerald-500/30 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1 active:scale-95 cursor-pointer" title="توريد ساعة واحدة لجميع المشاريع">
+              <i class="fa-solid fa-box-open text-emerald-400"></i>
+              <span>+1 س للكل</span>
+            </button>
+            <button class="btn-panel-help px-2.5 py-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[10px] text-slate-400 hover:text-yellow-400 rounded-lg transition flex items-center gap-1 shrink-0" data-help="panel-business" title="شرح الصفحة">
+              <i class="fa-solid fa-circle-question text-xs"></i> شرح الصفحة
+            </button>
+          </div>
         </div>
         <div id="businesses-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           <!-- Dyn list -->

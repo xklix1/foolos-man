@@ -330,11 +330,12 @@ var ServerBridge = (() => {
   /**
    * Authoritatively supplies goods to a specific business
    */
-  async function supplyBusiness(businessId) {
+  async function supplyBusiness(businessId, hours = 1) {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/business/supply', {
       username: _activeUsername,
-      businessId
+      businessId,
+      hours
     });
     return _reconcileBusinessResponse(res);
   }

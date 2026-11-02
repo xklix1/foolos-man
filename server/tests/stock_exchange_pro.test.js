@@ -121,3 +121,4 @@ test('Stock Exchange Pro — Short Selling, Take-Profit, Stop-Loss & 10M Cap', a
     assert.strictEqual(state.stocks.COMI.shares, 0);
   });
 });
+
