@@ -352,6 +352,8 @@ class MarketService {
 
     // 7. Update Net Worth & Mark Session Dirty
     s.netWorth = calculateNetWorth(s);
+    s.lastServerMarketActionAt = now;
+    session.lastServerMarketActionAt = now;
     session.dirty = true;
     await sessionManager.forceSaveSession(username).catch(() => {});
 
@@ -384,7 +386,14 @@ class MarketService {
     return {
       success: true,
       message: `تم حجز وعرض ${qty} من "${itemDef.name}" بسعر ${price.toLocaleString()} ج.م للوحدة في سوق التجارة بنجاح.`,
-      listing
+      listing,
+      updatedState: {
+        tradeCompany: s.tradeCompany,
+        space: s.space,
+        farm: s.farm,
+        airport: s.airport,
+        netWorth: s.netWorth
+      }
     };
   }
 
@@ -500,6 +509,8 @@ class MarketService {
       }
 
       bs.netWorth = calculateNetWorth(bs);
+      bs.lastServerMarketActionAt = now;
+      buyerSession.lastServerMarketActionAt = now;
       buyerSession.dirty = true;
       await sessionManager.forceSaveSession(bClean).catch(() => {});
 
@@ -551,7 +562,16 @@ class MarketService {
         remainingInListing: listing.quantityRemaining,
         buyerCash: bs.cash,
         buyerBank: bs.bank,
-        buyerNetWorth: bs.netWorth
+        buyerNetWorth: bs.netWorth,
+        updatedState: {
+          cash: bs.cash,
+          bank: bs.bank,
+          netWorth: bs.netWorth,
+          tradeCompany: bs.tradeCompany,
+          space: bs.space,
+          farm: bs.farm,
+          airport: bs.airport
+        }
       };
 
     } finally {
@@ -712,6 +732,8 @@ class MarketService {
     vault.returnedItems.splice(idx, 1);
     ss.netWorth = calculateNetWorth(ss);
 
+    ss.lastServerMarketActionAt = Date.now();
+    session.lastServerMarketActionAt = Date.now();
     session.dirty = true;
     await sessionManager.forceSaveSession(username).catch(() => {});
 
@@ -719,7 +741,14 @@ class MarketService {
       success: true,
       message: `تم استلام ${qty} وحدة من "${item.name}" وإعادتها لمستودعك بنجاح!`,
       claimedItem: item,
-      remainingVaultItems: vault.returnedItems.length
+      remainingVaultItems: vault.returnedItems.length,
+      updatedState: {
+        tradeCompany: ss.tradeCompany,
+        space: ss.space,
+        farm: ss.farm,
+        airport: ss.airport,
+        netWorth: ss.netWorth
+      }
     };
   }
 

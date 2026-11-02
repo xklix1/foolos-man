@@ -873,6 +873,12 @@ var ServerBridge = (() => {
               s.airport.manager = res.authoritativeState.airport.manager;
             }
           }
+          if (res.authoritativeState.tradeCompany !== undefined && typeof res.authoritativeState.tradeCompany === 'object') {
+            s.tradeCompany = s.tradeCompany || {};
+            if (res.authoritativeState.tradeCompany.warehouse && typeof res.authoritativeState.tradeCompany.warehouse === 'object') {
+              s.tradeCompany.warehouse = JSON.parse(JSON.stringify(res.authoritativeState.tradeCompany.warehouse));
+            }
+          }
           if (res.authoritativeState.businesses !== undefined && typeof res.authoritativeState.businesses === 'object') {
             s.businesses = s.businesses || {};
             Object.keys(res.authoritativeState.businesses).forEach(bk => {
@@ -1778,6 +1784,36 @@ var ServerBridge = (() => {
     return await _get('/api/market/my-listings?username=' + encodeURIComponent(_activeUsername) + '&token=' + encodeURIComponent(token || ''));
   }
 
+  function _applyUpdatedMarketState(updatedState) {
+    if (!updatedState || typeof GameEngine === 'undefined') return;
+    const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+    if (!s) return;
+    if (updatedState.cash !== undefined) s.cash = updatedState.cash;
+    if (updatedState.bank !== undefined) s.bank = updatedState.bank;
+    if (updatedState.netWorth !== undefined) s.netWorth = updatedState.netWorth;
+    if (updatedState.tradeCompany && typeof updatedState.tradeCompany === 'object') {
+      s.tradeCompany = s.tradeCompany || {};
+      if (updatedState.tradeCompany.warehouse) {
+        s.tradeCompany.warehouse = JSON.parse(JSON.stringify(updatedState.tradeCompany.warehouse));
+      }
+    }
+    if (updatedState.space && typeof updatedState.space === 'object') {
+      s.space = JSON.parse(JSON.stringify(updatedState.space));
+    }
+    if (updatedState.farm && typeof updatedState.farm === 'object') {
+      s.farm = JSON.parse(JSON.stringify(updatedState.farm));
+    }
+    if (updatedState.airport && typeof updatedState.airport === 'object') {
+      s.airport = JSON.parse(JSON.stringify(updatedState.airport));
+    }
+    if (typeof UI !== 'undefined' && typeof UI.renderStatsBar === 'function') {
+      try { UI.renderStatsBar(); } catch (_) {}
+    }
+    if (typeof window !== 'undefined' && typeof window.renderStatsBar === 'function') {
+      try { window.renderStatsBar(); } catch (_) {}
+    }
+  }
+
   async function getMarketVault() {
     if (!_isServerOnline || !_activeUsername) return { success: true, earnings: 0, salesHistory: [], returnedItems: [] };
     const token = resolveEffectiveToken(_activeUsername);
@@ -1797,6 +1833,9 @@ var ServerBridge = (() => {
       durationHours
     });
     if (res && res.success && typeof GameEngine !== 'undefined') {
+      if (res.updatedState) {
+        _applyUpdatedMarketState(res.updatedState);
+      }
       await GameEngine.forceSaveState(true).catch(() => {});
     }
     return res;
@@ -1817,6 +1856,9 @@ var ServerBridge = (() => {
         if (res.buyerCash !== undefined) s.cash = res.buyerCash;
         if (res.buyerBank !== undefined) s.bank = res.buyerBank;
         if (res.buyerNetWorth !== undefined) s.netWorth = res.buyerNetWorth;
+      }
+      if (res.updatedState) {
+        _applyUpdatedMarketState(res.updatedState);
       }
       await GameEngine.forceSaveState(true).catch(() => {});
     }
@@ -1857,6 +1899,9 @@ var ServerBridge = (() => {
       vaultEntryId
     });
     if (res && res.success && typeof GameEngine !== 'undefined') {
+      if (res.updatedState) {
+        _applyUpdatedMarketState(res.updatedState);
+      }
       await GameEngine.forceSaveState(true).catch(() => {});
     }
     return res;

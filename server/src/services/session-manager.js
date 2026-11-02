@@ -242,6 +242,10 @@ class SessionManager {
       (session.lastServerAirportActionAt && (Date.now() - session.lastServerAirportActionAt < 15000)) ||
       (s.lastServerAirportActionAt && (Date.now() - s.lastServerAirportActionAt < 15000))
     );
+    const hasRecentServerMarketAction = Boolean(
+      (session.lastServerMarketActionAt && (Date.now() - session.lastServerMarketActionAt < 25000)) ||
+      (s.lastServerMarketActionAt && (Date.now() - s.lastServerMarketActionAt < 25000))
+    );
     const isClientStale = (sessionAdminTs > 0 && clientAdminTs < sessionAdminTs) || hasRecentBankAction || hasRecentServerCashSpend || hasRecentServerCashEarn;
     // CRITICAL SECURITY ENFORCEMENT:
     // Client sync payloads CANNOT grant themselves admin authority via timestamps or spoofed flags.
@@ -484,11 +488,15 @@ class SessionManager {
     if (clientState.farm && typeof clientState.farm === 'object') {
       const sFarmLiq = (s.farm && s.farm.dailyLiquidation && typeof s.farm.dailyLiquidation === 'object') ? s.farm.dailyLiquidation : null;
       const cFarmLiq = (clientState.farm.dailyLiquidation && typeof clientState.farm.dailyLiquidation === 'object') ? clientState.farm.dailyLiquidation : null;
+      const sHarvested = (s.farm && s.farm.harvestedCrops) ? JSON.parse(JSON.stringify(s.farm.harvestedCrops)) : null;
       if (s.farm && s.farm.livestock && clientState.farm.livestock && !isAdminGrant) {
         clientState.farm.livestock.cows = Math.min(Number(clientState.farm.livestock.cows || 0), Number(s.farm.livestock.cows || 0));
         clientState.farm.livestock.chickens = Math.min(Number(clientState.farm.livestock.chickens || 0), Number(s.farm.livestock.chickens || 0));
       }
       s.farm = clientState.farm;
+      if (hasRecentServerMarketAction && sHarvested) {
+        s.farm.harvestedCrops = sHarvested;
+      }
       if (sFarmLiq && cFarmLiq && sFarmLiq.date === cFarmLiq.date) {
         s.farm.dailyLiquidation = {
           date: sFarmLiq.date,
@@ -681,7 +689,7 @@ class SessionManager {
         s.tradeCompany = clientState.tradeCompany;
       } else {
         // Dual Lockdown: warehouseCapacity is server-authoritative.
-        if (clientState.tradeCompany.warehouse && typeof clientState.tradeCompany.warehouse === 'object') {
+        if (!hasRecentServerMarketAction && clientState.tradeCompany.warehouse && typeof clientState.tradeCompany.warehouse === 'object') {
           s.tradeCompany.warehouse = s.tradeCompany.warehouse || {};
           const clientKeys = Object.keys(clientState.tradeCompany.warehouse);
           if (clientKeys.length > 0) {

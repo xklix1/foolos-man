@@ -252,6 +252,35 @@ async function adminRoutes(fastify, options) {
   });
 
   /**
+   * POST /api/admin/query
+   * Authoritatively queries database tables using SERVICE_ROLE_KEY
+   */
+  fastify.post('/query', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { pathAndQuery } = request.body || {};
+    if (!pathAndQuery || typeof pathAndQuery !== 'string') {
+      return reply.status(400).send({ error: 'Missing pathAndQuery' });
+    }
+    const clean = pathAndQuery.replace(/^\/+/, '');
+    const firstPart = clean.split('?')[0].replace(/^rest\/v1\//, '');
+    if (!ALLOWED_TABLES.has(firstPart)) {
+      return reply.status(403).send({ error: 'Disallowed table: ' + firstPart });
+    }
+    try {
+      const res = await adminDbFetch(pathAndQuery);
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch (_) { data = text; }
+      return reply.code(res.status).send(data);
+    } catch (err) {
+      request.log.error(err, '[Admin Query] Internal Exception');
+      return reply.status(500).send({ error: 'Internal Server Error', message: err.message });
+    }
+  });
+
+  /**
    * POST /api/admin/verify
    * Validates admin token without performing mutation
    */
