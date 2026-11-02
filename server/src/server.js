@@ -371,6 +371,7 @@ app.register(require('./routes/airport-routes'));
 app.register(require('./routes/space-routes'));
 app.register(require('./routes/auction-routes'));
 app.register(require('./routes/museum-routes'));
+app.register(require('./routes/market-routes'));
 app.register(require('./routes/push-routes'));
 app.register(require('./routes/auth-otp-routes'));
 app.register(require('./routes/chat-routes'));

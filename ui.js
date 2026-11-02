@@ -3136,6 +3136,10 @@ const UIController = (() => {
       renderCorporationsTab();
     } else if (tabId ==='trade') {
       renderTradePanel();
+    } else if (tabId ==='market') {
+      if (window.MarketUI && typeof window.MarketUI.renderMarketTab === 'function') {
+        window.MarketUI.renderMarketTab();
+      }
     } else if (tabId ==='industry') {
       renderIndustryPanel();
     } else if (tabId ==='airport') {

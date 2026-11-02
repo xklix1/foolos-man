@@ -128,6 +128,11 @@ const DEFAULT_STATE = {
     warehouse: { regolith: 0, iron: 0, platinum: 0, helium3: 0, lithium: 0, dark_matter: 0 },
     hiredManagers: [],
     stats: { totalFlightsLaunched: 0, totalFlightsCompleted: 0, totalOresMinedKg: 0, totalRevenueEGP: 0 }
+  },
+  marketVault: {
+    earnings: 0,
+    salesHistory: [],
+    returnedItems: []
   }
 };
 
@@ -349,6 +354,21 @@ function sanitizePlayerState(dbRow) {
       dailyExportedContainers: 0,
       dailyExportsCount: {},
       dailyTradeResetAt: 0
+    };
+  }
+
+  // P2P Market Vault & Earnings Preservation
+  if (rawState.marketVault && typeof rawState.marketVault === 'object') {
+    cleanState.marketVault = {
+      earnings: Math.max(0, Number(rawState.marketVault.earnings) || 0),
+      salesHistory: Array.isArray(rawState.marketVault.salesHistory) ? rawState.marketVault.salesHistory : [],
+      returnedItems: Array.isArray(rawState.marketVault.returnedItems) ? rawState.marketVault.returnedItems : []
+    };
+  } else {
+    cleanState.marketVault = {
+      earnings: 0,
+      salesHistory: [],
+      returnedItems: []
     };
   }
 

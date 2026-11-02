@@ -1751,6 +1751,108 @@ var ServerBridge = (() => {
     return await _post('/api/session/verify-tester-pass', { pass });
   }
 
+  // ── P2P Marketplace Methods ──
+  async function browseMarket(params = {}) {
+    if (!_isServerOnline) return { success: false, listings: [], error: 'السيرفر غير متصل' };
+    const query = new URLSearchParams();
+    if (params.category) query.append('category', params.category);
+    if (params.search) query.append('search', params.search);
+    if (params.sort) query.append('sort', params.sort);
+    if (params.page) query.append('page', params.page);
+    if (params.limit) query.append('limit', params.limit);
+    return await _get('/api/market/browse?' + query.toString());
+  }
+
+  async function getMyMarketListings() {
+    if (!_isServerOnline || !_activeUsername) return { success: true, listings: [] };
+    const token = resolveEffectiveToken(_activeUsername);
+    return await _get('/api/market/my-listings?username=' + encodeURIComponent(_activeUsername) + '&token=' + encodeURIComponent(token || ''));
+  }
+
+  async function getMarketVault() {
+    if (!_isServerOnline || !_activeUsername) return { success: true, earnings: 0, salesHistory: [], returnedItems: [] };
+    const token = resolveEffectiveToken(_activeUsername);
+    return await _get('/api/market/vault?username=' + encodeURIComponent(_activeUsername) + '&token=' + encodeURIComponent(token || ''));
+  }
+
+  async function createMarketListing(category, itemId, quantity, unitPrice, durationHours) {
+    if (!_isServerOnline || !_activeUsername) throw new Error('السيرفر غير متصل، يرجى المحاولة لاحقاً');
+    const token = resolveEffectiveToken(_activeUsername);
+    const res = await _post('/api/market/create', {
+      username: _activeUsername,
+      token,
+      category,
+      itemId,
+      quantity,
+      unitPrice,
+      durationHours
+    });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      await GameEngine.forceSaveState(true).catch(() => {});
+    }
+    return res;
+  }
+
+  async function buyMarketListing(listingId, buyQuantity = 1) {
+    if (!_isServerOnline || !_activeUsername) throw new Error('السيرفر غير متصل، يرجى المحاولة لاحقاً');
+    const token = resolveEffectiveToken(_activeUsername);
+    const res = await _post('/api/market/buy', {
+      username: _activeUsername,
+      token,
+      listingId,
+      buyQuantity
+    });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s) {
+        if (res.buyerCash !== undefined) s.cash = res.buyerCash;
+        if (res.buyerBank !== undefined) s.bank = res.buyerBank;
+        if (res.buyerNetWorth !== undefined) s.netWorth = res.buyerNetWorth;
+      }
+      await GameEngine.forceSaveState(true).catch(() => {});
+    }
+    return res;
+  }
+
+  async function cancelMarketListing(listingId) {
+    if (!_isServerOnline || !_activeUsername) throw new Error('السيرفر غير متصل، يرجى المحاولة لاحقاً');
+    const token = resolveEffectiveToken(_activeUsername);
+    return await _post('/api/market/cancel', {
+      username: _activeUsername,
+      token,
+      listingId
+    });
+  }
+
+  async function claimAllMarketVaultEarnings() {
+    if (!_isServerOnline || !_activeUsername) throw new Error('السيرفر غير متصل، يرجى المحاولة لاحقاً');
+    const token = resolveEffectiveToken(_activeUsername);
+    const res = await _post('/api/market/claim-all-earnings', {
+      username: _activeUsername,
+      token
+    });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      const s = GameEngine.getState ? GameEngine.getState() : (GameEngine.state || null);
+      if (s && res.newBankBalance !== undefined) s.bank = res.newBankBalance;
+      await GameEngine.forceSaveState(true).catch(() => {});
+    }
+    return res;
+  }
+
+  async function claimMarketVaultItem(vaultEntryId) {
+    if (!_isServerOnline || !_activeUsername) throw new Error('السيرفر غير متصل، يرجى المحاولة لاحقاً');
+    const token = resolveEffectiveToken(_activeUsername);
+    const res = await _post('/api/market/claim-vault-item', {
+      username: _activeUsername,
+      token,
+      vaultEntryId
+    });
+    if (res && res.success && typeof GameEngine !== 'undefined') {
+      await GameEngine.forceSaveState(true).catch(() => {});
+    }
+    return res;
+  }
+
   return {
     getApiBase,
     verifyTesterPass,
@@ -1852,7 +1954,15 @@ var ServerBridge = (() => {
     isServerOnline: () => _isServerOnline,
     getActiveUsername: () => _activeUsername,
     getSessionToken: () => _sessionToken,
-    resolveEffectiveToken
+    resolveEffectiveToken,
+    browseMarket,
+    getMyMarketListings,
+    getMarketVault,
+    createMarketListing,
+    buyMarketListing,
+    cancelMarketListing,
+    claimAllMarketVaultEarnings,
+    claimMarketVaultItem
   };
 })();
 
