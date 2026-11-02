@@ -776,3 +776,4 @@ module.exports = {
   marketService,
   MARKET_ITEM_CATALOG
 };
+

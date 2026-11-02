@@ -160,3 +160,4 @@ async function marketRoutes(fastify, options) {
 }
 
 module.exports = marketRoutes;
+

@@ -1,7 +1,7 @@
 {
   "version": "v10.0.46",
-  "build": 1793653600000,
-  "timestamp": 1793653600000,
-  "notes": "Launch Player-to-Player (P2P) Free Trading Market: players can list farm crops, trade containers, aircraft, space rockets, and minerals with escrow locking, 50%-300% price bounding, partial purchasing, and secure Market Vault.",
-  "releaseNotes": "إطلاق بورصة وسوق التجارة الحرة بين اللاعبين (P2P): بيع وشراء المحاصيل الزراعية، حاويات الشحن، طائرات الأسطول، صواريخ الفضاء، والمعادن الكونية مع نظام الضمان المالي المحمي وخزينة السوق."
+  "build": 1793657000000,
+  "timestamp": 1793657000000,
+  "notes": "Fix OTP registration verification 500 internal server error; Launch Player-to-Player (P2P) Free Trading Market with secure escrow, price bounding, partial purchasing, and Market Vault.",
+  "releaseNotes": "إصلاح فوري للتحقق من رمز OTP وإنشاء الحسابات الجديدة؛ وإطلاق بورصة وسوق التجارة الحرة بين اللاعبين (P2P) مع نظام الضمان المالي وخزينة السوق."
 }

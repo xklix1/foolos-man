@@ -410,6 +410,10 @@ module.exports = async function authOtpRoutes(fastify, opts) {
       const rawPin = String(pin || (playerRow && playerRow.pin) || '').trim();
       const hashedPin = crypto.createHash('sha256').update(rawPin).digest('hex');
 
+      const incomingState = (playerRow && playerRow.state && typeof playerRow.state === 'object')
+        ? playerRow.state
+        : ((request.body && request.body.state && typeof request.body.state === 'object') ? request.body.state : {});
+
       // Referral bonus evaluation on register
       let refBonusCash = 0;
       let referrerUsername = '';
@@ -698,3 +702,5 @@ module.exports = async function authOtpRoutes(fastify, opts) {
     }
   });
 };
+
+module.exports._otpStore = otpStore;
