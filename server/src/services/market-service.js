@@ -15,16 +15,16 @@ const MARKET_STATE_FILE = path.join(__dirname, '..', '..', 'data', 'p2p-market-s
 
 // Master Catalog of Tradeable Commodities, Minerals, Crops, Aircraft & Rockets
 const MARKET_ITEM_CATALOG = {
-  // 1. Trade Cargo Containers (حاويات الاستيراد والتصدير)
+  // 1. Trade Cargo Containers (حاويات الاستيراد والتصدير - مطابقة للقيم الاقتصادية لشركة التجارة)
   trade_containers: {
-    espresso_coffee: { name: 'قهوة اسبريسو فاخرة', icon: 'fa-mug-hot text-amber-500', basePrice: 80000, stackable: true },
-    fashion_brands: { name: 'أزياء وماركات عالمية', icon: 'fa-shirt text-pink-400', basePrice: 220000, stackable: true },
-    auto_spare_parts: { name: 'قطع غيار سيارات ومحركات', icon: 'fa-gears text-blue-400', basePrice: 650000, stackable: true },
-    solar_panels: { name: 'ألواح وخلايا طاقة شمسية', icon: 'fa-solar-panel text-yellow-400', basePrice: 1800000, stackable: true },
-    luxury_cars: { name: 'أساطيل سيارات فارهة', icon: 'fa-car text-emerald-400', basePrice: 4500000, stackable: true },
-    industrial_turbines: { name: 'توربينات ومولدات صناعية', icon: 'fa-fan text-cyan-400', basePrice: 9500000, stackable: true },
-    ai_quantum_chips: { name: 'معالجات كوانتم وسيرفرات AI', icon: 'fa-microchip text-purple-400', basePrice: 18000000, stackable: true },
-    gold_bullion_bars: { name: 'سبائك ذهب بنكية معتمدة', icon: 'fa-coins text-amber-300', basePrice: 35000000, stackable: true }
+    fashion_brands: { name: 'أزياء وملابس ماركات عالمية', icon: 'fa-shirt text-pink-400', basePrice: 6000, stackable: true },
+    espresso_coffee: { name: 'بن إسبريسو كولومبي فاخر', icon: 'fa-mug-hot text-amber-500', basePrice: 10000, stackable: true },
+    auto_spare_parts: { name: 'قطع غيار سيارات أوروبية', icon: 'fa-gears text-blue-400', basePrice: 31000, stackable: true },
+    solar_panels: { name: 'ألواح وخلايا طاقة شمسية', icon: 'fa-solar-panel text-yellow-400', basePrice: 62500, stackable: true },
+    luxury_cars: { name: 'سيارات فارهة ومدرعة', icon: 'fa-car text-emerald-400', basePrice: 150000, stackable: true },
+    industrial_turbines: { name: 'توربينات وخطوط إنتاج صناعية', icon: 'fa-fan text-cyan-400', basePrice: 320000, stackable: true },
+    ai_quantum_chips: { name: 'رقائق ومعالجات ذكاء اصطناعي', icon: 'fa-microchip text-purple-400', basePrice: 640000, stackable: true },
+    gold_bullion_bars: { name: 'سبائك ذهب بنكية معتمدة', icon: 'fa-coins text-amber-300', basePrice: 1300000, stackable: true }
   },
 
   // 2. Space Minerals (خامات ومعادن الفضاء بالكيلوغرام)

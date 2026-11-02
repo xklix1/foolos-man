@@ -1078,14 +1078,14 @@
       Object.keys(s.tradeCompany.warehouse).forEach(cId => {
         const qty = Number(s.tradeCompany.warehouse[cId] || 0);
         if (qty > 0) {
-          const itemMeta = catGroup[cId] || { name: cId, basePrice: 100000 };
+          const itemMeta = catGroup[cId] || { name: cId, basePrice: 6000 };
           list.push({
             category: 'trade_containers',
             categoryLabel: 'حاويات التجارة',
             id: cId,
             name: itemMeta.name || cId,
             ownedQty: qty,
-            basePrice: itemMeta.basePrice || 100000,
+            basePrice: itemMeta.basePrice || 6000,
             stackable: true
           });
         }

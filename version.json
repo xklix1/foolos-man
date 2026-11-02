@@ -1,7 +1,7 @@
 {
   "version": "v10.0.46",
-  "build": 1793660500000,
-  "timestamp": 1793660500000,
-  "notes": "Launch Free Unbounded P2P Black Market: remove price bounds, add extreme price warnings for buyers and sellers, and smart deal & bargain badges.",
-  "releaseNotes": "إطلاق السوق الحرة الكاملة (السوق السوداء) في P2P: إزالة النطاق السعري بالكامل وحرية تسعير مطلقة، مع شارات الصفقات واللقطات وحماية تأكيدية للبائع والمشتري."
+  "build": 1793661500000,
+  "timestamp": 1793661500000,
+  "notes": "Synchronize trade container reference prices to match exact import/export company values (e.g. fashion brands 6,000 EGP).",
+  "releaseNotes": "مزامنة الأسعار الاسترشادية لحاويات الاستيراد والتصدير في سوق التجارة لتطابق بدقة أسعار شركة التجارة الرسمية (مثلاً الأزياء 6,000 ج.م)."
 }
