@@ -286,15 +286,34 @@
 
       const catBadge = getCategoryBadge(l.category);
 
+      // Free Market Deal & Bargain Badges
+      const base = Number(l.basePrice) || 0;
+      const unit = Number(l.unitPrice) || 0;
+      let dealBadge = '';
+      if (base > 0) {
+        const ratio = unit / base;
+        if (ratio <= 0.8) {
+          const discount = Math.round((1 - ratio) * 100);
+          dealBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 flex items-center gap-1 shadow-sm"><i class="fa-solid fa-tag text-[9px]"></i> لقطة (-${discount}%)</span>`;
+        } else if (ratio >= 2.0) {
+          dealBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500/20 text-rose-400 border border-rose-500/40 flex items-center gap-1 shadow-sm"><i class="fa-solid fa-fire-flame-curved text-[9px]"></i> مضاربة (${ratio.toFixed(1)}x)</span>`;
+        } else {
+          dealBadge = `<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">سعر معتاد</span>`;
+        }
+      }
+
       return `
         <div class="glass-panel p-4 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition-all flex flex-col justify-between space-y-3 shadow-lg relative group">
           
           <div class="space-y-2.5">
             <!-- Top Badges -->
             <div class="flex items-center justify-between gap-2">
-              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${catBadge.bg} ${catBadge.text} border ${catBadge.border}">
-                ${catBadge.label}
-              </span>
+              <div class="flex items-center gap-1.5 flex-wrap">
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold ${catBadge.bg} ${catBadge.text} border ${catBadge.border}">
+                  ${catBadge.label}
+                </span>
+                ${dealBadge}
+              </div>
               <span class="text-[10px] font-bold text-slate-400 flex items-center gap-1">
                 <i class="fa-regular fa-clock text-amber-400"></i>
                 <span>${remHours}س ${remMinutes}د</span>
@@ -322,7 +341,13 @@
                 <span>سعر الوحدة:</span>
                 <span class="font-black text-amber-400 numbers-font text-sm">${Number(l.unitPrice).toLocaleString()} EGP</span>
               </div>
-              <div class="flex justify-between items-center text-slate-400">
+              ${base > 0 ? `
+                <div class="flex justify-between items-center text-slate-500 text-[10px]">
+                  <span>القيمة التقديرية:</span>
+                  <span class="numbers-font">${base.toLocaleString()} EGP</span>
+                </div>
+              ` : ''}
+              <div class="flex justify-between items-center text-slate-400 border-t border-slate-800/60 pt-1">
                 <span>الكمية المتاحة:</span>
                 <span class="font-black text-white numbers-font">${Number(l.quantityRemaining).toLocaleString()} ${l.stackable ? 'وحدة' : ''}</span>
               </div>
@@ -593,8 +618,9 @@
     _newListingForm.ownedQty = parseInt(ownedQty, 10) || 1;
 
     const base = parseInt(basePrice, 10) || 1000;
-    _newListingForm.minPrice = Math.max(1, Math.floor(base * 0.5));
-    _newListingForm.maxPrice = Math.max(_newListingForm.minPrice, Math.ceil(base * 3.0));
+    _newListingForm.basePrice = base;
+    _newListingForm.minPrice = 1;
+    _newListingForm.maxPrice = 1000000000000;
     _newListingForm.unitPrice = base; // Default to base price
 
     if (box) box.classList.remove('hidden');
@@ -603,7 +629,7 @@
     if (labelOwned) labelOwned.textContent = `المتوفر لديك: ${_newListingForm.ownedQty}`;
 
     const labelBounds = document.getElementById('label-price-bounds');
-    if (labelBounds) labelBounds.textContent = `النطاق: ${_newListingForm.minPrice.toLocaleString()} - ${_newListingForm.maxPrice.toLocaleString()} EGP`;
+    if (labelBounds) labelBounds.innerHTML = `<span class="text-emerald-400 font-bold">سوق حر مفتوح</span> <span class="text-slate-400 font-medium">(الرسمي: ${base.toLocaleString()} EGP)</span>`;
 
     const inputQty = document.getElementById('input-listing-qty');
     if (inputQty) {
@@ -615,8 +641,8 @@
 
     const inputPrice = document.getElementById('input-listing-price');
     if (inputPrice) {
-      inputPrice.min = _newListingForm.minPrice;
-      inputPrice.max = _newListingForm.maxPrice;
+      inputPrice.min = 1;
+      inputPrice.max = 1000000000000;
       inputPrice.value = _newListingForm.unitPrice;
     }
 
@@ -650,6 +676,19 @@
   }
 
   async function submitNewListing() {
+    // Fat-Finger & Extreme Pricing Protection for Seller
+    const base = Number(_newListingForm.basePrice) || 1000;
+    const price = Number(_newListingForm.unitPrice) || 0;
+    if (base > 0 && (price < base * 0.1 || price > base * 10)) {
+      const isSuperCheap = price < base * 0.1;
+      const warningPrompt = isSuperCheap
+        ? `⚠️ تنبيه حماية: أنت تعرض السلعة بسعر (${price.toLocaleString()} ج.م للوحدة) وهو أقل بكثير من القيمة التقديرية (${base.toLocaleString()} ج.م)!\n\nهل أنت متأكد من رغبتك في البيع بهذا السعر الرخيص؟`
+        : `⚠️ تنبيه حماية: أنت تعرض السلعة بسعر مرتفع جداً (${price.toLocaleString()} ج.م للوحدة) وهو أكثر من 10 أضعاف القيمة التقديرية (${base.toLocaleString()} ج.م)!\n\nهل أنت متأكد من نشر هذا السعر في السوق؟`;
+      if (!confirm(warningPrompt)) {
+        return;
+      }
+    }
+
     const btn = document.getElementById('btn-submit-listing');
     if (btn) {
       btn.disabled = true;
@@ -957,9 +996,23 @@
   };
 
   async function executePurchase(listingId) {
+    const listing = _browseListings.find(l => l.id === listingId);
     const input = document.getElementById('modal-buy-qty');
     const btn = document.getElementById('btn-modal-confirm-buy');
     const qty = parseInt(input ? input.value : 1, 10) || 1;
+
+    // Buyer Overpriced Confirmation Defense (> 500% base price)
+    if (listing && Number(listing.basePrice) > 0) {
+      const base = Number(listing.basePrice);
+      const unit = Number(listing.unitPrice);
+      if (unit > base * 5) {
+        const total = qty * unit;
+        const warning = `⚠️ تنبيه حماية المشتري:\nهذا العنصر معروض بسعر مرتفع جداً (${unit.toLocaleString()} ج.م للوحدة) وهو أكثر من 5 أضعاف القيمة التقديرية (${base.toLocaleString()} ج.م)!\n\nإجمالي المبلغ المطلوب: ${total.toLocaleString()} ج.م.\n\nهل أنت متأكد من الشراء والمتابعة؟`;
+        if (!confirm(warning)) {
+          return;
+        }
+      }
+    }
 
     if (btn) {
       btn.disabled = true;

@@ -1,7 +1,7 @@
 {
   "version": "v10.0.46",
-  "build": 1793659500000,
-  "timestamp": 1793659500000,
-  "notes": "Synchronize P2P market warehouse assets and escrow locking on listing and purchase; add server market lock against stale client state syncs.",
-  "releaseNotes": "إصلاح ومزامنة فورية لنقل الحاويات والبضائع في سوق التجارة P2P بين اللاعبين؛ حماية حركات البيع والشراء من التضارب أو التراجع."
+  "build": 1793660500000,
+  "timestamp": 1793660500000,
+  "notes": "Launch Free Unbounded P2P Black Market: remove price bounds, add extreme price warnings for buyers and sellers, and smart deal & bargain badges.",
+  "releaseNotes": "إطلاق السوق الحرة الكاملة (السوق السوداء) في P2P: إزالة النطاق السعري بالكامل وحرية تسعير مطلقة، مع شارات الصفقات واللقطات وحماية تأكيدية للبائع والمشتري."
 }

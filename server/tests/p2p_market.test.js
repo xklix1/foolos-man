@@ -66,31 +66,34 @@ async function runTests() {
   const sellerSession = sessionManager.sessions.get(sellerUsername.toLowerCase());
   const buyerSession = sessionManager.sessions.get(buyerUsername.toLowerCase());
 
-  // ── TEST 1: Price Bounding Enforcement ──
-  console.log('[Test 1] Price bounding (50% to 300% of base price)...');
+  // ── TEST 1: Free Market Pricing (No 50%-300% bounds, 1 EGP min, 1T max) ──
+  console.log('[Test 1] Free Market Pricing validation (unbounded pricing with 1 EGP floor & 1T cap)...');
   const coffeeDef = MARKET_ITEM_CATALOG.trade_containers.espresso_coffee;
-  // Base price is 80,000 -> Min is 40,000, Max is 240,000
-  
-  await assert.rejects(async () => {
-    await marketService.createListing(sellerUsername, {
-      category: 'trade_containers',
-      itemId: 'espresso_coffee',
-      quantity: 2,
-      unitPrice: 10000, // Too cheap (< 50%)
-      durationHours: 24
-    });
-  }, /خارج النطاق السعري/, 'Should reject price below 50%');
+  // Base price is 80,000. In free market, 500 EGP and 5,000,000 EGP are both valid!
 
+  // Rejects 0 or negative price
   await assert.rejects(async () => {
     await marketService.createListing(sellerUsername, {
       category: 'trade_containers',
       itemId: 'espresso_coffee',
-      quantity: 2,
-      unitPrice: 500000, // Too expensive (> 300%)
+      quantity: 1,
+      unitPrice: 0,
       durationHours: 24
     });
-  }, /خارج النطاق السعري/, 'Should reject price above 300%');
-  console.log('  ✓ Price bounding successfully clamped!\n');
+  }, /يرجى إدخال سعر بيع صحيح/, 'Should reject 0 EGP price');
+
+  // Rejects price above 1 Trillion
+  await assert.rejects(async () => {
+    await marketService.createListing(sellerUsername, {
+      category: 'trade_containers',
+      itemId: 'espresso_coffee',
+      quantity: 1,
+      unitPrice: 2000000000000,
+      durationHours: 24
+    });
+  }, /غير مسموح به/, 'Should reject price above 1 Trillion EGP');
+
+  console.log('  ✓ Free Market pricing rules validated successfully!\n');
 
   // ── TEST 2: Escrow Asset Locking on Creation ──
   console.log('[Test 2] Escrow asset locking (deduction from seller)...');

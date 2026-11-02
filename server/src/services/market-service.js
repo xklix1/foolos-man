@@ -263,16 +263,16 @@ class MarketService {
       throw new Error(`سلعة "${itemDef.name}" أصل فريد ويجب عرضها كوحدة واحدة (كمية: 1) فقط.`);
     }
 
-    // 4. Validate Price Bounding (50% to 300% of Base Price)
+    // 4. Validate Free Market Pricing (Min 1 EGP, Max 1 Trillion EGP Safety Cap)
     const price = parseInt(unitPrice, 10);
     if (!price || price <= 0 || isNaN(price)) {
-      throw new Error("يرجى إدخال سعر بيع صحيح.");
+      throw new Error("يرجى إدخال سعر بيع صحيح (1 ج.م كحد أدنى).");
     }
-    const minPrice = Math.max(1, Math.floor(itemDef.basePrice * 0.5));
-    const maxPrice = Math.max(minPrice, Math.ceil(itemDef.basePrice * 3.0));
+    const minPrice = 1;
+    const maxPrice = 1000000000000; // 1 Trillion EGP technical safety ceiling
 
     if (price < minPrice || price > maxPrice) {
-      throw new Error(`سعر الوحدة (${price.toLocaleString()} ج.م) خارج النطاق السعري المسموح به لـ "${itemDef.name}". النطاق المسموح: من ${minPrice.toLocaleString()} ج.م إلى ${maxPrice.toLocaleString()} ج.م (50% - 300%).`);
+      throw new Error(`سعر الوحدة (${price.toLocaleString()} ج.م) غير مسموح به. في السوق الحرة يجب أن يكون السعر بين 1 ج.م و 1 تريليون ج.م.`);
     }
 
     // 5. Check Active Listings Limit (Max 10)
@@ -439,6 +439,15 @@ class MarketService {
       const totalCost = qty * listing.unitPrice;
       const commission = Math.floor(totalCost * 0.03); // 3% Market broker fee
       const sellerNet = totalCost - commission;
+
+      // Free Market Anti-Cheat Monitoring: Log extreme price transactions for admin audit
+      const basePrice = Number(listing.basePrice) || 0;
+      if (basePrice > 0) {
+        const ratio = listing.unitPrice / basePrice;
+        if (ratio >= 10 || ratio <= 0.1) {
+          console.log(`[Market Free Trade] Extreme trade ratio (${ratio.toFixed(2)}x base): Buyer "${bClean}" bought ${qty}x "${listing.name}" from "${listing.sellerUsername}" at ${listing.unitPrice.toLocaleString()} EGP (Base: ${basePrice.toLocaleString()} EGP, Total: ${totalCost.toLocaleString()} EGP).`);
+        }
+      }
 
       // Resolve Buyer Session
       const buyerSession = await this._resolvePlayerSession(bClean);
