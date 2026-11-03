@@ -7405,7 +7405,7 @@ const GameEngine = (() => {
     };
   }
 
-  function transferIndustryGoodsToTradeExport(sectorId) {
+  async function transferIndustryGoodsToTradeExport(sectorId) {
     if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة شحنات التصدير.");
     const info = getIndustrySectorState(sectorId);
     if (!info.state.unlocked) throw new Error("هذا القطاع غير مرخص.");
@@ -7436,9 +7436,34 @@ const GameEngine = (() => {
       throw new Error(`مستودع شركة الاستيراد والتصدير ممتلئ بالكامل (${currentWarehouseTotal}/${cap} حاوية)! قم ببيع البضائع المخزنة أولاً.`);
     }
 
-    const containersToTransfer = Math.min(maxContainers, availableSpace, 10);
+    // Authoritative Server execution if online
+    if (typeof ServerBridge !== 'undefined' && ServerBridge.isServerOnline && ServerBridge.isServerOnline()) {
+      try {
+        const sRes = await ServerBridge.transferIndustryGoodsToTradeExport(sectorId, info.state);
+        if (sRes && sRes.success) {
+          recordPlayerActivity('شحن لمستودع التصدير', `تعبئة وشحن ${sRes.transferred} حاوية من "${info.definition.product.name}" (${sRes.unitsDeducted} وحدة منتجة) إلى مستودع التصدير كبضاعة "${sRes.commodityName}"!`, 'trade');
+          state.netWorth = calculateNetWorth();
+          await forceSaveState(true);
+          return {
+            transferred: sRes.transferred,
+            unitsDeducted: sRes.unitsDeducted,
+            unitsPerContainer: sRes.unitsPerContainer,
+            tradeCommodityId: sRes.tradeCommodityId,
+            commodityName: sRes.commodityName,
+            remainingFactoryStock: sRes.remainingReadyStock !== undefined ? sRes.remainingReadyStock : info.state.readyStock,
+            warehouseTotal: sRes.warehouseTotal !== undefined ? sRes.warehouseTotal : (currentWarehouseTotal + sRes.transferred),
+            warehouseCapacity: sRes.warehouseCapacity || cap
+          };
+        }
+      } catch (srvErr) {
+        console.warn('[GameEngine] Server transferIndustryGoodsToTradeExport warning:', srvErr.message);
+      }
+    }
+
+    // Local Fallback Execution (NO arbitrary 10-cap!)
+    const containersToTransfer = Math.min(maxContainers, availableSpace);
     const unitsDeducted = containersToTransfer * unitsPerContainer;
-    const tradeCommId = info.definition.product.tradeCommodityId ||'espresso_coffee';
+    const tradeCommId = info.definition.product.tradeCommodityId || 'espresso_coffee';
 
     info.state.readyStock -= unitsDeducted;
     state.tradeCompany.warehouse[tradeCommId] = (state.tradeCompany.warehouse[tradeCommId] || 0) + containersToTransfer;
@@ -7447,7 +7472,7 @@ const GameEngine = (() => {
     const commDef = TRADE_COMMODITIES[tradeCommId];
     const commName = commDef ? commDef.name : tradeCommId;
 
-    recordPlayerActivity('شحن لمستودع التصدير',`تعبئة وشحن ${containersToTransfer} حاوية من"${info.definition.product.name}" (${unitsDeducted} وحدة منتجة) إلى مستودع التصدير كبضاعة"${commName}"!`,'trade');
+    recordPlayerActivity('شحن لمستودع التصدير', `تعبئة وشحن ${containersToTransfer} حاوية من "${info.definition.product.name}" (${unitsDeducted} وحدة منتجة) إلى مستودع التصدير كبضاعة "${commName}"!`, 'trade');
     state.netWorth = calculateNetWorth();
     forceSaveState(true);
 
@@ -7457,7 +7482,9 @@ const GameEngine = (() => {
       unitsPerContainer,
       tradeCommodityId: tradeCommId,
       commodityName: commName,
-      remainingFactoryStock: info.state.readyStock
+      remainingFactoryStock: info.state.readyStock,
+      warehouseTotal: currentWarehouseTotal + containersToTransfer,
+      warehouseCapacity: cap
     };
   }
 

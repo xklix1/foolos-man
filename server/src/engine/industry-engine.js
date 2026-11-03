@@ -3,7 +3,7 @@
  * Authoritative Server Logic for Industrial Supply Chain Empire
  */
 
-const { INDUSTRIAL_SECTORS } = require('./definitions');
+const { INDUSTRIAL_SECTORS, TRADE_COMMODITIES } = require('./definitions');
 const { calculateNetWorth } = require('./net-worth-engine');
 
 function ensureIndustryState(state) {
@@ -180,10 +180,85 @@ function collectIndustryRevenue(state, sectorId, requestedUnits = null) {
   };
 }
 
+function transferIndustryGoodsToTradeExport(state, sectorId) {
+  if (state.jailTimer > 0) throw new Error("أنت مسجون! لا يمكنك إدارة شحنات التصدير.");
+  const def = INDUSTRIAL_SECTORS[sectorId];
+  if (!def) throw new Error("القطاع الصناعي المحدد غير صالح.");
+
+  const industry = ensureIndustryState(state);
+  const secState = industry[sectorId];
+  if (!secState || !secState.unlocked) throw new Error("هذا القطاع الصناعي غير مرخص.");
+
+  const units = Math.floor(Number(secState.readyStock) || 0);
+  if (units <= 0) throw new Error("لا يوجد مخزون جاهز للتحويل إلى مستودع التصدير الجمركي.");
+
+  const unitsPerContainer = def.product.unitsPerContainer || 10;
+  const maxContainers = Math.floor(units / unitsPerContainer);
+  if (maxContainers <= 0) {
+    throw new Error(`المخزون المتوفر (${units} وحدة) لا يكفي لتجهيز حاوية تصدير كاملة! يلزم ${unitsPerContainer} وحدة لكل حاوية.`);
+  }
+
+  // Ensure tradeCompany state integrity
+  if (!state.tradeCompany || typeof state.tradeCompany !== 'object') {
+    state.tradeCompany = {
+      warehouseCapacity: 10,
+      warehouse: {},
+      activeImports: [],
+      activeExports: [],
+      totalProfitEarned: 0,
+      totalShipmentsCompleted: 0
+    };
+  }
+  const tc = state.tradeCompany;
+  tc.warehouseCapacity = Math.min(50, Math.max(10, Number(tc.warehouseCapacity) || 10));
+  if (!tc.warehouse || typeof tc.warehouse !== 'object') tc.warehouse = {};
+
+  let currentWarehouseTotal = 0;
+  Object.keys(tc.warehouse).forEach(k => {
+    currentWarehouseTotal += Number(tc.warehouse[k] || 0);
+  });
+
+  const cap = tc.warehouseCapacity;
+  const availableSpace = Math.max(0, cap - currentWarehouseTotal);
+  if (availableSpace <= 0) {
+    throw new Error(`مستودع شركة الاستيراد والتصدير ممتلئ بالكامل (${currentWarehouseTotal}/${cap} حاوية)! قم ببيع البضائع المخزنة أولاً.`);
+  }
+
+  // NO arbitrary 10-cap! Transfer up to available warehouse capacity
+  const containersToTransfer = Math.min(maxContainers, availableSpace);
+  const unitsDeducted = containersToTransfer * unitsPerContainer;
+  const tradeCommId = def.product.tradeCommodityId || 'espresso_coffee';
+
+  secState.readyStock = Math.max(0, units - unitsDeducted);
+  tc.warehouse[tradeCommId] = (Number(tc.warehouse[tradeCommId]) || 0) + containersToTransfer;
+  secState.totalExported = (Number(secState.totalExported) || 0) + containersToTransfer;
+
+  const commDef = TRADE_COMMODITIES[tradeCommId];
+  const commodityName = commDef ? commDef.name : tradeCommId;
+
+  state.netWorth = calculateNetWorth(state);
+
+  return {
+    success: true,
+    sectorId,
+    transferred: containersToTransfer,
+    unitsDeducted,
+    unitsPerContainer,
+    tradeCommodityId: tradeCommId,
+    commodityName,
+    remainingReadyStock: secState.readyStock,
+    warehouseTotal: currentWarehouseTotal + containersToTransfer,
+    warehouseCapacity: cap,
+    industry: state.industry,
+    tradeCompany: tc
+  };
+}
+
 module.exports = {
   ensureIndustryState,
   unlockIndustrySector,
   upgradeIndustryStage,
-  collectIndustryRevenue
+  collectIndustryRevenue,
+  transferIndustryGoodsToTradeExport
 };
 

@@ -2851,6 +2851,28 @@ const ALLOWED_BUSINESS_KEYS = new Set(Object.keys(BUSINESSES));
     }
   });
 
+  // POST /api/action/industry/transfer-export
+  fastify.post('/api/action/industry/transfer-export', async (request, reply) => {
+    const session = await resolveSession(request, reply);
+    if (!session) return;
+    const { sectorId, clientIndustry } = request.body || {};
+    try {
+      // Adopt client readyStock if higher (since simulation runs in client loop)
+      if (clientIndustry && clientIndustry.readyStock !== undefined) {
+        const cStock = Math.max(0, Number(clientIndustry.readyStock) || 0);
+        const sSec = session.state.industry && session.state.industry[sectorId];
+        if (sSec && cStock > (Number(sSec.readyStock) || 0)) {
+          sSec.readyStock = cStock;
+        }
+      }
+      const res = industryEngine.transferIndustryGoodsToTradeExport(session.state, sectorId);
+      await sessionManager.forceSaveSession(session.username);
+      return reply.send({ success: true, ...res });
+    } catch (err) {
+      return reply.code(400).send({ error: err.message });
+    }
+  });
+
   // POST /api/action/trade/buy-cargo
   fastify.post('/api/action/trade/buy-cargo', async (request, reply) => {
     const session = await resolveSession(request, reply);

@@ -211,7 +211,7 @@ const INDUSTRIAL_SECTORS = {
       stage3: { baseCost: 950000 },
       logistics: { baseCost: 450000 }
     },
-    product: { baseValue: 500 }
+    product: { name: 'سلع تموينية وغذائية فاخرة', baseValue: 500, tradeCommodityId: 'espresso_coffee', unitsPerContainer: 20 }
   },
   auto: {
     id: 'auto',
@@ -223,7 +223,7 @@ const INDUSTRIAL_SECTORS = {
       stage3: { baseCost: 9500000 },
       logistics: { baseCost: 4200000 }
     },
-    product: { baseValue: 3200 }
+    product: { name: 'سيارات سيدان وتجارية حديثة', baseValue: 3200, tradeCommodityId: 'auto_spare_parts', unitsPerContainer: 8 }
   },
   semiconductor: {
     id: 'semiconductor',
@@ -235,7 +235,7 @@ const INDUSTRIAL_SECTORS = {
       stage3: { baseCost: 65000000 },
       logistics: { baseCost: 28000000 }
     },
-    product: { baseValue: 12500 }
+    product: { name: 'معالجات كوانتم وسيرفرات ذكاء اصطناعي', baseValue: 12500, tradeCommodityId: 'ai_quantum_chips', unitsPerContainer: 40 }
   },
   petrochemical: {
     id: 'petrochemical',
@@ -247,7 +247,19 @@ const INDUSTRIAL_SECTORS = {
       stage3: { baseCost: 320000000 },
       logistics: { baseCost: 140000000 }
     },
-    product: { baseValue: 38000 }
+    product: { name: 'بوليمرات ووقود طائرات عالي النقاوة', baseValue: 38000, tradeCommodityId: 'industrial_turbines', unitsPerContainer: 8 }
+  },
+  aerospace: {
+    id: 'aerospace',
+    name: 'الصناعات الفضائية والملاحة الجوية',
+    unlockCost: 1500000000,
+    stages: {
+      stage1: { baseCost: 200000000 },
+      stage2: { baseCost: 550000000 },
+      stage3: { baseCost: 1400000000 },
+      logistics: { baseCost: 650000000 }
+    },
+    product: { name: 'مركبات فضائية ومحطات مدارية سيادية', baseValue: 100000, tradeCommodityId: 'gold_bullion_bars', unitsPerContainer: 12 }
   }
 };
 

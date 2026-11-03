@@ -442,6 +442,35 @@ var ServerBridge = (() => {
     });
   }
 
+  async function transferIndustryGoodsToTradeExport(sectorId, clientIndustry = null) {
+    if (!_isServerOnline || !_activeUsername) return null;
+    const res = await _post('/api/action/industry/transfer-export', {
+      username: _activeUsername,
+      sectorId,
+      clientIndustry
+    });
+    return _reconcileGenericActionResponse(res, (s, r) => {
+      if (r.industry && s.industry) {
+        s.industry[sectorId] = r.industry[sectorId];
+      }
+      if (r.tradeCompany) {
+        s.tradeCompany = s.tradeCompany || {};
+        if (r.tradeCompany.warehouse) {
+          s.tradeCompany.warehouse = JSON.parse(JSON.stringify(r.tradeCompany.warehouse));
+        }
+        if (r.tradeCompany.warehouseCapacity) {
+          s.tradeCompany.warehouseCapacity = r.tradeCompany.warehouseCapacity;
+        }
+      }
+      if (typeof UI !== 'undefined' && UI.renderIndustryEmpirePanel) {
+        try { UI.renderIndustryEmpirePanel(); } catch (_) {}
+      }
+      if (typeof UI !== 'undefined' && UI.renderTradePanel) {
+        try { UI.renderTradePanel(); } catch (_) {}
+      }
+    });
+  }
+
   async function buyImportCargo(commodityId, quantity = 1) {
     if (!_isServerOnline || !_activeUsername) return null;
     const res = await _post('/api/action/trade/buy-cargo', { username: _activeUsername, commodityId, quantity });
@@ -1969,6 +1998,7 @@ var ServerBridge = (() => {
     unlockIndustrySector,
     upgradeIndustryStage,
     collectIndustryRevenue,
+    transferIndustryGoodsToTradeExport,
     buyImportCargo,
     upgradeWarehouse,
     claimExportProfit,

@@ -23269,14 +23269,27 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     // Bind Transfer to Export Button
     const transferExportBtn = document.getElementById('btn-industry-transfer-export');
     if (transferExportBtn) {
-      transferExportBtn.onclick = () => {
+      transferExportBtn.onclick = async () => {
         try {
           playMenuSound('click');
-          const res = GameEngine.transferIndustryGoodsToTradeExport(currentIndustrySector);
-          showToast('تم التحويل للتصدير',`تم تحويل ${res.transferred} حاوية بنجاح إلى مستودع التصدير كبضاعة"${res.commodityName}".`,'success');
+          transferExportBtn.disabled = true;
+          const res = await GameEngine.transferIndustryGoodsToTradeExport(currentIndustrySector);
+          
+          const remUnits = res.remainingFactoryStock !== undefined ? Number(res.remainingFactoryStock).toLocaleString() : '0';
+          const whTotal = res.warehouseTotal !== undefined ? res.warehouseTotal : '-';
+          const whCap = res.warehouseCapacity !== undefined ? res.warehouseCapacity : '50';
+          const msg = `تم بنجاح شحن ${res.transferred} حاوية كبضاعة "${res.commodityName}"!\n📦 المستودع الآن: ${whTotal}/${whCap} حاوية • 🏭 المتبقي بالصوامع: ${remUnits} وحدة.`;
+          showToast('تم التحويل للتصدير بنجاح', msg, 'success');
+          
+          // Re-render both panels immediately
           renderIndustryPanel();
+          if (typeof renderTradePanel === 'function') {
+            try { renderTradePanel(); } catch (_) {}
+          }
         } catch (err) {
-          showToast('تعذر التحويل', err.message,'error');
+          showToast('تعذر التحويل للتصدير', err.message, 'error');
+        } finally {
+          transferExportBtn.disabled = false;
         }
       };
     }
