@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.47",
-  "build": 1793663000000,
-  "timestamp": 1793663000000,
-  "notes": "Launch Season 2 with clean seasonal wipe, preserving player Gold and Executive Gear, and optimize daily quests to 4.",
-  "releaseNotes": "انطلاق الموسم الجديد وتصفير جميع الحسابات لبدء المنافسة من جديد، مع الحفاظ الكامل على سبائك الذهب ومستويات العتاد الرئاسي، وتحديث المهام اليومية إلى 4 مهام متكاملة."
+  "version": "v10.0.48",
+  "build": 1793664000000,
+  "timestamp": 1793664000000,
+  "notes": "Launch Season 1 Hall of Fame in Leaderboard and Start Menu, assign official S1T1-S1T10 royal glowing badges to top 10 champions.",
+  "releaseNotes": "افتتاح قاعة المشاهير الرسمية للموسم الأول (Hall of Fame) في عرش الأثرياء ونافذة البداية، وتكريم متصدري الموسم الأول العشرة بأوسمة التوبات الملكية المتوهجة (S1T1 إلى S1T10)."
 }

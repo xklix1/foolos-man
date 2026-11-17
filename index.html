@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.47';
+    window._CLIENT_VERSION = 'v10.0.48';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.47';
+      const CURRENT_APP_BUILD = 'v10.0.48';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.47">
+  <link rel="stylesheet" href="app.css?v=v10.0.48">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -763,13 +763,27 @@
         </button>
       </div>
 
+      <!-- Start Menu Season Switcher -->
+      <div class="flex items-center justify-center p-1 bg-slate-900/90 rounded-2xl border border-yellow-500/30 my-2">
+        <button id="start-lb-tab-btn-live" type="button" onclick="window.UI.switchLeaderboardSeason('live')"
+          class="flex-1 py-1.5 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-md">
+          <i class="fa-solid fa-bolt text-xs"></i>
+          <span>الموسم الحالي</span>
+        </button>
+        <button id="start-lb-tab-btn-hall" type="button" onclick="window.UI.switchLeaderboardSeason('hall')"
+          class="flex-1 py-1.5 px-3 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-monument text-amber-400 text-xs"></i>
+          <span>قاعة المشاهير (الموسم 1) 🏛️</span>
+        </button>
+      </div>
+
       <!-- Hourly Official Snapshot Notice Banner -->
       <div class="my-2.5 px-3.5 py-2 bg-gradient-to-r from-amber-500/10 via-yellow-500/5 to-slate-900/40 border border-amber-500/30 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs">
-        <div class="flex items-center gap-2 text-amber-300 font-bold">
+        <div id="start-lb-notice-text" class="flex items-center gap-2 text-amber-300 font-bold">
           <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
           <span>يتم فرز واعتماد عرش الأثرياء رسمياً كل 60 دقيقة</span>
         </div>
-        <div class="flex items-center gap-3 text-[11px] text-slate-300">
+        <div id="start-lb-timer-cont" class="flex items-center gap-3 text-[11px] text-slate-300">
           <span>التحديث القادم بعد: <strong id="start-lb-timer" class="text-yellow-400 font-black numbers-font">--:--</strong></span>
           <span class="text-slate-600">|</span>
           <span class="text-slate-400">آخر اعتماد: <span id="start-lb-last-updated" class="text-slate-300 font-medium">--</span></span>
@@ -813,12 +827,12 @@
       <!-- Leaderboard Rows Scrollable Container -->
       <div class="flex-1 overflow-y-auto pr-1">
         <table class="w-full text-right text-xs">
-          <thead class="text-[11px] text-slate-400 border-b border-slate-800 pb-2">
+          <thead id="start-leaderboard-table-head" class="text-[11px] text-slate-400 border-b border-slate-800 pb-2">
             <tr>
               <th class="py-2 pr-2">الترتيب</th>
-              <th class="py-2">اللاعب</th>
-              <th class="py-2">اللقب</th>
-              <th class="py-2 pl-2 text-left">الثروة الإجمالية</th>
+              <th id="start-th-leaderboard-player" class="py-2">اللاعب</th>
+              <th id="start-th-leaderboard-title" class="py-2">اللقب</th>
+              <th id="start-th-leaderboard-worth" class="py-2 pl-2 text-left">الثروة الإجمالية</th>
             </tr>
           </thead>
           <tbody id="start-menu-leaderboard-rows" class="divide-y divide-slate-900/60">
@@ -5613,14 +5627,28 @@
       </div>
     </div>
 
+    <!-- LEADERBOARD SEASON SWITCHER TABS (Live Season 2 vs Season 1 Hall of Fame) -->
+    <div class="flex items-center justify-center p-1.5 bg-slate-950/90 rounded-2xl border border-yellow-500/40 max-w-md mx-auto shadow-xl">
+      <button id="lb-tab-btn-live" type="button" onclick="window.UI.switchLeaderboardSeason('live')"
+        class="flex-1 py-2 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-md">
+        <i class="fa-solid fa-bolt text-xs"></i>
+        <span>الموسم الحالي (Season 2)</span>
+      </button>
+      <button id="lb-tab-btn-hall" type="button" onclick="window.UI.switchLeaderboardSeason('hall')"
+        class="flex-1 py-2 px-3 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2">
+        <i class="fa-solid fa-monument text-amber-400 text-xs"></i>
+        <span>قاعة المشاهير (الموسم 1) 🏛️</span>
+      </button>
+    </div>
+
     <!-- Hourly Official Snapshot Notice Banner -->
     <div class="px-4 py-2.5 bg-gradient-to-r from-amber-500/15 via-yellow-500/10 to-slate-950/80 border border-amber-500/40 rounded-2xl flex flex-wrap items-center justify-between gap-2 text-xs shadow-md">
-      <div class="flex items-center gap-2.5 text-amber-300 font-bold">
+      <div id="ingame-lb-notice-text" class="flex items-center gap-2.5 text-amber-300 font-bold">
         <span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span>
         <i class="fa-solid fa-clock-rotate-left text-amber-400 text-sm"></i>
         <span>نظام الاعتماد الساعي: يتم فرز وتثبيت عرش الأثرياء رسمياً كل 60 دقيقة</span>
       </div>
-      <div class="flex items-center gap-4 text-xs">
+      <div id="ingame-lb-timer-cont" class="flex items-center gap-4 text-xs">
         <span class="text-slate-300">التحديث القادم بعد: <strong id="ingame-lb-timer" class="text-yellow-400 font-black numbers-font text-sm">--:--</strong></span>
         <span class="text-slate-600">|</span>
         <span class="text-slate-400 text-[11px]">آخر اعتماد رسمي: <span id="ingame-lb-last-updated" class="text-slate-200 font-medium numbers-font">--</span></span>
@@ -5740,13 +5768,13 @@
 
       <div class="overflow-x-auto w-full">
         <table class="w-full text-right border-collapse">
-          <thead>
+          <thead id="leaderboard-table-head">
             <tr
               class="bg-slate-950/90 text-[10px] sm:text-[11px] text-slate-400 font-bold border-b border-slate-800/80">
               <th class="py-3 pr-4 pl-2 text-right">المرتبة</th>
-              <th class="py-3 px-3">اللاعب</th>
-              <th class="py-3 px-3">اللقب الوظيفي</th>
-              <th class="py-3 pl-4 pr-3 text-left">صافي الثروة</th>
+              <th id="th-leaderboard-player" class="py-3 px-3">اللاعب</th>
+              <th id="th-leaderboard-title" class="py-3 px-3">اللقب الوظيفي</th>
+              <th id="th-leaderboard-worth" class="py-3 pl-4 pr-3 text-left">صافي الثروة</th>
             </tr>
           </thead>
           <tbody id="leaderboard-rows" class="divide-y divide-slate-800/40">
@@ -8564,8 +8592,8 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.47"></script>
-  <script src="space-ui.js?v=v10.0.47"></script>
+  <script src="core.bundle.js?v=v10.0.48"></script>
+  <script src="space-ui.js?v=v10.0.48"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

@@ -2627,25 +2627,129 @@ const UIController = (() => {
     if (!tbody) return;
     const podiumEl = document.getElementById('start-menu-leaderboard-podium');
     if (podiumEl) {
-      podiumEl.style.opacity = '0.35';
-      podiumEl.style.pointerEvents = 'none';
-      podiumEl.style.filter = 'grayscale(60%)';
+      podiumEl.style.opacity = '1';
+      podiumEl.style.pointerEvents = 'auto';
+      podiumEl.style.filter = 'none';
     }
 
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4" class="py-10 px-4 text-center">
-          <div class="max-w-md mx-auto p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center shadow-lg">
-            <div class="w-12 h-12 mx-auto mb-2 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-xl">
-              <i class="fa-solid fa-screwdriver-wrench animate-bounce" style="animation-duration: 2s;"></i>
-            </div>
-            <h4 class="text-sm font-black text-white mb-1">قائمة التوب مغلقة حالياً للصيانة </h4>
-            <p class="text-xs text-slate-300 leading-relaxed">
-              تخضع قائمة المتصدرين لأعمال تدقيق ومراجعة حسابات شاملة. سيتم إتاحتها قريباً.
-            </p>
-          </div>
-        </td>
-      </tr>`;
+    const isHall = _currentLeaderboardSeason === 'hall';
+    const thTitle = document.getElementById('start-th-leaderboard-title');
+    if (thTitle) thTitle.style.display = isHall ? 'none' : '';
+    const thPlayer = document.getElementById('start-th-leaderboard-player');
+    if (thPlayer) thPlayer.textContent = isHall ? 'بطل قاعة المشاهير' : 'اللاعب';
+    const thWorth = document.getElementById('start-th-leaderboard-worth');
+    if (thWorth) thWorth.textContent = isHall ? 'صافي الثروة القياسية' : 'الثروة الإجمالية';
+
+    const noticeText = document.getElementById('start-lb-notice-text');
+    const timerCont = document.getElementById('start-lb-timer-cont');
+
+    if (isHall) {
+      if (noticeText) noticeText.innerHTML = '<i class="fa-solid fa-monument text-amber-400"></i> <span>قاعة مشاهير الموسم الأول (أبطال معتمدون تاريخياً 👑)</span>';
+      if (timerCont) timerCont.innerHTML = '<span class="text-amber-300 font-bold text-xs"><i class="fa-solid fa-trophy text-amber-400 mr-1"></i> الموسم 1</span>';
+
+      // Update Start Menu Podium
+      const sp1Name = document.getElementById('start-podium-name-1');
+      const sp1Worth = document.getElementById('start-podium-worth-1');
+      if (sp1Name) sp1Name.innerHTML = 'Emad ' + getSeasonBadgeHtml('S1T1', 'text-[9px] py-0.2 px-1 ml-0.5');
+      if (sp1Worth) sp1Worth.textContent = '54.37B EGP';
+
+      const sp2Name = document.getElementById('start-podium-name-2');
+      const sp2Worth = document.getElementById('start-podium-worth-2');
+      if (sp2Name) sp2Name.innerHTML = 'Osama.nasr ' + getSeasonBadgeHtml('S1T2', 'text-[9px] py-0.2 px-1 ml-0.5');
+      if (sp2Worth) sp2Worth.textContent = '47.60B EGP';
+
+      const sp3Name = document.getElementById('start-podium-name-3');
+      const sp3Worth = document.getElementById('start-podium-worth-3');
+      if (sp3Name) sp3Name.innerHTML = 'joesky ' + getSeasonBadgeHtml('S1T3', 'text-[9px] py-0.2 px-1 ml-0.5');
+      if (sp3Worth) sp3Worth.textContent = '34.54B EGP';
+
+      // Rows
+      tbody.innerHTML = '';
+      SEASON_1_HALL_OF_FAME.forEach(item => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-slate-900/60 hover:bg-slate-900/40 text-xs transition';
+        const rankBadge = item.rank === 1
+          ? '<span class="font-black text-amber-400"><i class="fa-solid fa-crown text-[10px]"></i> 1</span>'
+          : item.rank === 2
+            ? '<span class="font-black text-slate-300"><i class="fa-solid fa-medal text-[10px]"></i> 2</span>'
+            : item.rank === 3
+              ? '<span class="font-black text-amber-600"><i class="fa-solid fa-award text-[10px]"></i> 3</span>'
+              : `<span class="text-slate-400 numbers-font font-bold">#${item.rank}</span>`;
+
+        const badgeHtml = getSeasonBadgeHtml(item.badge, 'text-[9px] py-0.2 px-1 ml-1');
+        row.innerHTML = `
+          <td class="py-2.5 pr-2 font-bold">${rankBadge}</td>
+          <td class="py-2.5">
+            <span class="font-black text-white inline-flex items-center gap-1 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${escapeHtml(item.username)}')">
+              <span>${escapeHtml(item.username)}</span>
+              ${badgeHtml}
+            </span>
+          </td>
+          <td class="py-2.5 pl-2 text-left numbers-font font-black ${item.rank === 1 ? 'text-yellow-400' : 'text-emerald-400'}">
+            ${item.worthFormatted}
+          </td>`;
+        tbody.appendChild(row);
+      });
+      return;
+    }
+
+    // Live mode for start menu
+    if (noticeText) noticeText.innerHTML = '<i class="fa-solid fa-clock-rotate-left text-amber-400"></i> <span>يتم فرز واعتماد عرش الأثرياء رسمياً كل 60 دقيقة</span>';
+    if (timerCont) timerCont.innerHTML = '<span>التحديث القادم بعد: <strong id="start-lb-timer" class="text-yellow-400 font-black numbers-font">--:--</strong></span><span class="text-slate-600">|</span><span class="text-slate-400">آخر اعتماد: <span id="start-lb-last-updated" class="text-slate-300 font-medium">--</span></span>';
+
+    try {
+      let players = cachedLeaderboard;
+      if (!players) {
+        players = await AppDB.getLeaderboard(false);
+        if (Array.isArray(players)) {
+          players = players.filter(p => p && p.username && !p.isAdmin && !['newu', 'khaled', 'خالد'].includes(String(p.username).trim().toLowerCase()));
+        }
+        cachedLeaderboard = players;
+      }
+
+      const p1 = (players && players[0]) || null;
+      const p2 = (players && players[1]) || null;
+      const p3 = (players && players[2]) || null;
+
+      const sp1Name = document.getElementById('start-podium-name-1');
+      const sp1Worth = document.getElementById('start-podium-worth-1');
+      if (sp1Name) sp1Name.textContent = p1 ? p1.username : '—';
+      if (sp1Worth) sp1Worth.textContent = p1 ? `${formatCompactNumber(p1.netWorth || 0)} EGP` : '0 جنيه';
+
+      const sp2Name = document.getElementById('start-podium-name-2');
+      const sp2Worth = document.getElementById('start-podium-worth-2');
+      if (sp2Name) sp2Name.textContent = p2 ? p2.username : '—';
+      if (sp2Worth) sp2Worth.textContent = p2 ? `${formatCompactNumber(p2.netWorth || 0)} EGP` : '0 جنيه';
+
+      const sp3Name = document.getElementById('start-podium-name-3');
+      const sp3Worth = document.getElementById('start-podium-worth-3');
+      if (sp3Name) sp3Name.textContent = p3 ? p3.username : '—';
+      if (sp3Worth) sp3Worth.textContent = p3 ? `${formatCompactNumber(p3.netWorth || 0)} EGP` : '0 جنيه';
+
+      tbody.innerHTML = '';
+      if (!players || players.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4" class="py-6 text-center text-slate-500 text-xs">لا توجد حسابات مسجلة حالياً في قائمة المتصدرين.</td></tr>';
+        return;
+      }
+
+      players.slice(0, 10).forEach((player, idx) => {
+        const row = document.createElement('tr');
+        row.className = 'border-b border-slate-900/60 hover:bg-slate-900/40 text-xs transition';
+        const rank = idx + 1;
+        row.innerHTML = `
+          <td class="py-2.5 pr-2 font-bold text-slate-400 numbers-font">#${rank}</td>
+          <td class="py-2.5 font-black text-white cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${escapeHtml(player.username)}')">
+            ${escapeHtml(player.username)}
+          </td>
+          <td class="py-2.5 text-slate-400 text-[10px]">${escapeHtml(player.title || 'عامل مبتدئ')}</td>
+          <td class="py-2.5 pl-2 text-left numbers-font font-black text-emerald-400">
+            ${formatCompactNumber(player.netWorth || 0)} EGP
+          </td>`;
+        tbody.appendChild(row);
+      });
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="4" class="py-4 text-center text-rose-400 text-xs">تعذر تحميل المتصدرين</td></tr>';
+    }
   }
 
   function setupAuthPanel() {
@@ -8858,6 +8962,55 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
   }
 
   // --- Tab 10: Leaderboard Panel (Grand Tycoon Leaderboard & Podium) ---
+  const SEASON_1_HALL_OF_FAME = [
+    { rank: 1, username: 'Emad', badge: 'S1T1', worth: 54370000000, worthFormatted: '54.37B EGP' },
+    { rank: 2, username: 'Osama.nasr', badge: 'S1T2', worth: 47600000000, worthFormatted: '47.60B EGP' },
+    { rank: 3, username: 'joesky', badge: 'S1T3', worth: 34540000000, worthFormatted: '34.54B EGP' },
+    { rank: 4, username: 'Samir Saber', badge: 'S1T4', worth: 27690000000, worthFormatted: '27.69B EGP' },
+    { rank: 5, username: 'Mahm0ud', badge: 'S1T5', worth: 20710000000, worthFormatted: '20.71B EGP' },
+    { rank: 6, username: 'bala7a', badge: 'S1T6', worth: 18460000000, worthFormatted: '18.46B EGP' },
+    { rank: 7, username: 'ahmedkamel', badge: 'S1T7', worth: 17500000000, worthFormatted: '17.50B EGP' },
+    { rank: 8, username: 'Mohamed Gamal', badge: 'S1T8', worth: 16560000000, worthFormatted: '16.56B EGP' },
+    { rank: 9, username: 'B7R', badge: 'S1T9', worth: 15640000000, worthFormatted: '15.64B EGP' },
+    { rank: 10, username: 'M.shawky', badge: 'S1T10', worth: 14240000000, worthFormatted: '14.24B EGP' }
+  ];
+
+  let _currentLeaderboardSeason = 'live'; // 'live' or 'hall'
+
+  function switchLeaderboardSeason(season) {
+    _currentLeaderboardSeason = (season === 'hall') ? 'hall' : 'live';
+    _updateLeaderboardSeasonButtonsUI();
+    renderLeaderboard(false);
+    renderStartMenuLeaderboard(false);
+  }
+
+  function _updateLeaderboardSeasonButtonsUI() {
+    const isHall = _currentLeaderboardSeason === 'hall';
+    const btnLive = document.getElementById('lb-tab-btn-live');
+    const btnHall = document.getElementById('lb-tab-btn-hall');
+    if (btnLive && btnHall) {
+      if (isHall) {
+        btnLive.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2';
+        btnHall.className = 'flex-1 py-2 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-md';
+      } else {
+        btnLive.className = 'flex-1 py-2 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-md';
+        btnHall.className = 'flex-1 py-2 px-3 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all flex items-center justify-center gap-2';
+      }
+    }
+
+    const startBtnLive = document.getElementById('start-lb-tab-btn-live');
+    const startBtnHall = document.getElementById('start-lb-tab-btn-hall');
+    if (startBtnLive && startBtnHall) {
+      if (isHall) {
+        startBtnLive.className = 'flex-1 py-1.5 px-3 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+        startBtnHall.className = 'flex-1 py-1.5 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-md';
+      } else {
+        startBtnLive.className = 'flex-1 py-1.5 px-3 rounded-xl font-black text-xs transition-all flex items-center justify-center gap-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 shadow-md';
+        startBtnHall.className = 'flex-1 py-1.5 px-3 rounded-xl font-bold text-xs text-slate-400 hover:text-white transition-all flex items-center justify-center gap-1.5';
+      }
+    }
+  }
+
   let cachedLeaderboard = null;
   let lastLeaderboardFetchTime = 0;
 
@@ -8908,10 +9061,28 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     const list = document.getElementById('leaderboard-rows');
     if (!list) return;
 
+    const isHall = _currentLeaderboardSeason === 'hall';
+    const thTitle = document.getElementById('th-leaderboard-title');
+    if (thTitle) thTitle.style.display = isHall ? 'none' : '';
+    const thPlayer = document.getElementById('th-leaderboard-player');
+    if (thPlayer) thPlayer.textContent = isHall ? 'بطل قاعة المشاهير' : 'اللاعب';
+    const thWorth = document.getElementById('th-leaderboard-worth');
+    if (thWorth) thWorth.textContent = isHall ? 'صافي الثروة القياسية' : 'صافي الثروة';
+
+    const noticeText = document.getElementById('ingame-lb-notice-text');
+    const timerCont = document.getElementById('ingame-lb-timer-cont');
+    if (isHall) {
+      if (noticeText) noticeText.innerHTML = '<i class="fa-solid fa-monument text-amber-400 text-sm"></i> <span class="text-amber-300 font-bold">قاعة مشاهير الموسم الأول: توثيق وتكريم أصحاب أعلى ثروات في تاريخ اللعبة</span>';
+      if (timerCont) timerCont.innerHTML = '<span class="text-amber-300 font-bold text-xs"><i class="fa-solid fa-crown text-amber-400 mr-1"></i> أبطال معتمدون تاريخياً 👑</span>';
+    } else {
+      if (noticeText) noticeText.innerHTML = '<span class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping"></span><i class="fa-solid fa-clock-rotate-left text-amber-400 text-sm"></i><span>نظام الاعتماد الساعي: يتم فرز وتثبيت عرش الأثرياء رسمياً كل 60 دقيقة</span>';
+      if (timerCont) timerCont.innerHTML = '<span class="text-slate-300">التحديث القادم بعد: <strong id="ingame-lb-timer" class="text-yellow-400 font-black numbers-font text-sm">--:--</strong></span><span class="text-slate-600">|</span><span class="text-slate-400 text-[11px]">آخر اعتماد رسمي: <span id="ingame-lb-last-updated" class="text-slate-200 font-medium numbers-font">--</span></span>';
+    }
+
     const now = Date.now();
     const canUseCache = !forceRefresh && cachedLeaderboard && (now - lastLeaderboardFetchTime < 60000);
 
-    if (!canUseCache) {
+    if (!canUseCache && !isHall) {
       list.innerHTML = `
         <tr>
           <td colspan="4" class="text-center py-8 text-slate-400">
@@ -8945,6 +9116,109 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
       }
       updateHourlyLeaderboardTimerUI();
       list.innerHTML = '';
+
+      if (isHall) {
+        // Hall of Fame Podium Display
+        const p1Name = document.getElementById('podium-name-1');
+        const p1Title = document.getElementById('podium-title-1');
+        const p1Worth = document.getElementById('podium-worth-1');
+        const p1Avatar = document.getElementById('podium-avatar-1');
+        if (p1Name) {
+          p1Name.innerHTML = 'Emad ' + getSeasonBadgeHtml('S1T1', 'text-xs py-0.5 px-2 ml-1');
+          p1Name.classList.add('cursor-pointer', 'hover:underline');
+          p1Name.onclick = () => openPlayerProfileCard('Emad');
+        }
+        if (p1Title) p1Title.innerHTML = '<span class="text-amber-300 font-bold">بطل الموسم الأول 👑</span>';
+        if (p1Worth) p1Worth.textContent = '54.37B EGP';
+        if (p1Avatar) p1Avatar.innerHTML = '<span class="text-sm sm:text-base font-black">EM</span>';
+
+        const p2Name = document.getElementById('podium-name-2');
+        const p2Title = document.getElementById('podium-title-2');
+        const p2Worth = document.getElementById('podium-worth-2');
+        const p2Avatar = document.getElementById('podium-avatar-2');
+        if (p2Name) {
+          p2Name.innerHTML = 'Osama.nasr ' + getSeasonBadgeHtml('S1T2', 'text-xs py-0.5 px-2 ml-1');
+          p2Name.classList.add('cursor-pointer', 'hover:underline');
+          p2Name.onclick = () => openPlayerProfileCard('Osama.nasr');
+        }
+        if (p2Title) p2Title.innerHTML = '<span class="text-slate-300 font-bold">وصيف الموسم الأول 🥈</span>';
+        if (p2Worth) p2Worth.textContent = '47.60B EGP';
+        if (p2Avatar) p2Avatar.innerHTML = '<span class="text-xs sm:text-sm font-black">OS</span>';
+
+        const p3Name = document.getElementById('podium-name-3');
+        const p3Title = document.getElementById('podium-title-3');
+        const p3Worth = document.getElementById('podium-worth-3');
+        const p3Avatar = document.getElementById('podium-avatar-3');
+        if (p3Name) {
+          p3Name.innerHTML = 'joesky ' + getSeasonBadgeHtml('S1T3', 'text-xs py-0.5 px-2 ml-1');
+          p3Name.classList.add('cursor-pointer', 'hover:underline');
+          p3Name.onclick = () => openPlayerProfileCard('joesky');
+        }
+        if (p3Title) p3Title.innerHTML = '<span class="text-amber-400 font-bold">المركز الثالث 🥉</span>';
+        if (p3Worth) p3Worth.textContent = '34.54B EGP';
+        if (p3Avatar) p3Avatar.innerHTML = '<span class="text-xs sm:text-sm font-black">JO</span>';
+
+        // Render Hall of Fame Rows (Option B: 3 Columns, Rank, Champion+Badge, Net Worth)
+        const curUser = ((typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '').toLowerCase();
+        SEASON_1_HALL_OF_FAME.forEach(item => {
+          const isSelf = item.username.toLowerCase() === curUser;
+          const rank = item.rank;
+          const initials = item.username.substring(0, 2).toUpperCase();
+          const badgeHtml = getSeasonBadgeHtml(item.badge, 'text-xs py-0.5 px-2 ml-1');
+
+          const row = document.createElement('tr');
+          row.className = `border-b border-slate-800/40 text-xs transition duration-200 ${
+            isSelf
+              ? 'bg-yellow-500/15 hover:bg-yellow-500/20 font-bold border-r-4 border-r-yellow-500 shadow-inner'
+              : rank === 1 ? 'bg-gradient-to-r from-yellow-500/10 via-amber-950/20 to-transparent hover:bg-yellow-500/15'
+                : rank === 2 ? 'bg-gradient-to-r from-slate-700/10 via-slate-800/20 to-transparent hover:bg-slate-800/30'
+                  : rank === 3 ? 'bg-gradient-to-r from-amber-900/10 via-amber-950/20 to-transparent hover:bg-amber-900/20'
+                    : 'hover:bg-slate-900/50'
+          }`;
+
+          let rankBadge = '';
+          if (rank === 1) {
+            rankBadge = `<span class="w-8 h-8 rounded-xl bg-gradient-to-r from-yellow-500 to-amber-500 text-slate-950 font-black flex items-center justify-center text-xs shadow-md glow-gold"><i class="fa-solid fa-crown text-[10px] ml-0.5"></i>1</span>`;
+          } else if (rank === 2) {
+            rankBadge = `<span class="w-8 h-8 rounded-xl bg-slate-700 border border-slate-400/60 text-slate-100 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-medal text-[10px] ml-0.5"></i>2</span>`;
+          } else if (rank === 3) {
+            rankBadge = `<span class="w-8 h-8 rounded-xl bg-amber-950 border border-amber-600/60 text-amber-400 font-black flex items-center justify-center text-xs shadow"><i class="fa-solid fa-award text-[10px] ml-0.5"></i>3</span>`;
+          } else {
+            rankBadge = `<span class="w-7 h-7 rounded-lg bg-slate-900 border border-slate-700 text-slate-300 font-bold flex items-center justify-center text-xs numbers-font">#${rank}</span>`;
+          }
+
+          row.innerHTML = `
+            <td class="py-3 pr-4 pl-2 text-right">
+              ${rankBadge}
+            </td>
+            <td class="py-3 px-3">
+              <div class="flex items-center gap-2.5">
+                <div class="w-8 h-8 rounded-xl ${rank === 1 ? 'bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 glow-gold' : 'bg-slate-800 border border-slate-700 text-slate-300'} flex items-center justify-center text-[10px] font-black numbers-font flex-shrink-0">
+                  ${initials}
+                </div>
+                <div class="min-w-0 flex items-center flex-wrap gap-1.5 cursor-pointer hover:underline" onclick="window.UI.openPlayerProfileCard('${escapeHtml(item.username)}')">
+                  <span class="font-black ${rank === 1 ? 'text-yellow-300 glow-gold' : 'text-white'} text-xs sm:text-sm">${escapeHtml(item.username)}</span>
+                  ${badgeHtml}
+                  ${isSelf ? '<span class="text-[8.5px] px-1.5 py-0.2 bg-yellow-500/20 text-yellow-400 rounded font-black inline-block border border-yellow-500/30 mr-1">أنت (حسابك)</span>' : ''}
+                </div>
+              </div>
+            </td>
+            <td class="py-3 pl-4 pr-3 text-left">
+              <span class="numbers-font font-black ${rank === 1 ? 'text-yellow-400 text-sm sm:text-base glow-gold' : 'text-emerald-400 text-xs sm:text-sm'} whitespace-nowrap" title="${item.worth.toLocaleString()} EGP">
+                ${item.worthFormatted}
+              </span>
+            </td>`;
+          list.appendChild(row);
+        });
+
+        // Update Self Rank indicator for Hall of Fame
+        const selfIndex = SEASON_1_HALL_OF_FAME.findIndex(p => p.username.toLowerCase() === curUser);
+        const selfRankEl = document.getElementById('self-rank-num');
+        if (selfRankEl) {
+          selfRankEl.textContent = selfIndex !== -1 ? `#${selfIndex + 1} (الموسم 1) 🏆` : 'غير مصنف في توب 10';
+        }
+        return;
+      }
 
       // Update Podium Cards (Top 3) - Guaranteed to never remain stuck on "تحميل..."
       const top1 = (players && players[0]) || null;
@@ -27002,6 +27276,11 @@ ${isWin ? ' صافي الأرباح: +' : ' صافي الخسارة: -'}${Math.a
     openForgotPinModal: () => openForgotPinModal(),
     closeForgotPinModal: () => closeForgotPinModal(),
     submitForgotPinForm: () => submitForgotPinForm(),
+
+    // Hall of Fame & Leaderboard Season Switcher
+    switchLeaderboardSeason,
+    renderStartMenuLeaderboard,
+    renderLeaderboard,
 
     // Custom Profile Picture Avatar Controller
     openAvatarModal: () => openAvatarModal(),
