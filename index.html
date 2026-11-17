@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.46';
+    window._CLIENT_VERSION = 'v10.0.47';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.46';
+      const CURRENT_APP_BUILD = 'v10.0.47';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.46">
+  <link rel="stylesheet" href="app.css?v=v10.0.47">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -6117,7 +6117,7 @@
           </div>
           <div>
             <h4 class="text-sm font-black text-white"><i class="fa-solid fa-gift text-amber-400 mr-1.5"></i> صندوق المكافأة الكبرى الأسطوري</h4>
-            <p class="text-[11px] text-slate-400 mt-0.5">يُفتح فقط بعد إكمال واستلام مكافآت جميع المهام الخمس!</p>
+            <p class="text-[11px] text-slate-400 mt-0.5">يُفتح فقط بعد إكمال واستلام مكافآت جميع المهام الـ 4!</p>
           </div>
           <div class="flex items-center justify-center gap-4 text-xs font-black numbers-font text-amber-400">
             <span id="daily-grand-cash-preview"><i class="fa-solid fa-coins text-yellow-400 mr-1"></i> +0 جنيه</span>
@@ -6127,7 +6127,7 @@
           <button id="btn-claim-grand-daily-bonus" type="button" disabled
             class="w-full py-2.5 px-4 bg-gradient-to-r from-amber-500 to-yellow-400 text-slate-950 font-black rounded-xl text-xs transition duration-200 shadow-lg shadow-amber-500/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer">
             <i class="fa-solid fa-key text-xs"></i>
-            <span id="btn-claim-grand-text">افتح الصندوق الأكبر (أكمل 5/5)</span>
+            <span id="btn-claim-grand-text">افتح الصندوق الأكبر (أكمل 4/4)</span>
           </button>
         </div>
 
@@ -8564,8 +8564,8 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.46"></script>
-  <script src="space-ui.js?v=v10.0.46"></script>
+  <script src="core.bundle.js?v=v10.0.47"></script>
+  <script src="space-ui.js?v=v10.0.47"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {

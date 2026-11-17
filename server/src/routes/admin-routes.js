@@ -1022,6 +1022,281 @@ async function adminRoutes(fastify, options) {
   });
 
   /**
+   * POST /api/admin/seasonal-wipe
+   * Authoritative server-side seasonal wipe for all players:
+   * - Resets all players to fresh state (1,000,000 EGP: 500k cash + 500k bank)
+   * - Strictly preserves Gold currency (state.gold & SQL gold)
+   * - Strictly preserves Executive Gear (state.executiveGear)
+   * - Strictly preserves Admin privileges (is_admin / isAdmin) & pin
+   * - Wipes server/data/p2p-market-state.json
+   * - Cleans up old pending money transfers in mailbox
+   * - Unloads/refreshes active sessions in sessionManager
+   * - Broadcasts global force_reload
+   */
+  fastify.post('/seasonal-wipe', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    try {
+      request.log.info('[Seasonal Wipe] Initiating server-side seasonal wipe...');
+      const futureTs = Date.now() + 86400000;
+
+      let allPlayers = [];
+      let page = 0;
+      const pageSize = 100;
+      let hasMore = true;
+
+      while (hasMore) {
+        const rangeStart = page * pageSize;
+        const rangeEnd = rangeStart + pageSize - 1;
+        const res = await adminDbFetch(`/rest/v1/players?select=*&order=created_at.asc`, {
+          headers: {
+            'Range': `${rangeStart}-${rangeEnd}`
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error(`Failed to fetch players page ${page}: HTTP ${res.status}`);
+        }
+
+        const batch = await res.json();
+        if (!Array.isArray(batch) || batch.length === 0) {
+          hasMore = false;
+        } else {
+          allPlayers = allPlayers.concat(batch);
+          if (batch.length < pageSize) {
+            hasMore = false;
+          } else {
+            page++;
+          }
+        }
+      }
+
+      request.log.info(`[Seasonal Wipe] Fetched ${allPlayers.length} players. Processing resets...`);
+
+      const defaultGear = {
+        ledger: { unlocked: false, level: 1, stars: 1 },
+        laptop: { unlocked: false, level: 1, stars: 1 },
+        pen: { unlocked: false, level: 1, stars: 1 },
+        terminal: { unlocked: false, level: 1, stars: 1 }
+      };
+
+      let successCount = 0;
+      let failCount = 0;
+
+      const CONCURRENCY = 10;
+      for (let i = 0; i < allPlayers.length; i += CONCURRENCY) {
+        const slice = allPlayers.slice(i, i + CONCURRENCY);
+        await Promise.all(slice.map(async (p) => {
+          const u = p.username;
+          const s = (typeof p.state === 'object' && p.state) ? p.state : {};
+
+          // Strictly extract and preserve Gold
+          const preservedGold = Math.max(0, Number(p.gold !== undefined ? p.gold : (s.gold !== undefined ? s.gold : 0)));
+
+          // Strictly extract and preserve Executive Gear
+          const preservedGear = (s.executiveGear && typeof s.executiveGear === 'object')
+            ? JSON.parse(JSON.stringify(s.executiveGear))
+            : JSON.parse(JSON.stringify(defaultGear));
+
+          // Strictly extract and preserve Admin status
+          const preservedIsAdmin = Boolean(p.is_admin || s.isAdmin);
+          const pin = p.pin || s.pin || '1234';
+
+          const cleanNewState = {
+            username: u,
+            pin: pin,
+            cash: 500000,
+            bank: 500000,
+            dirtyCash: 0,
+            netWorth: 1000000,
+            xp: 0,
+            title: 'عامل مبتدئ',
+            jobId: 'worker',
+            businesses: {},
+            industry: {},
+            inventory: { suppliesHours: 12 },
+            ownedCars: {},
+            activeCar: null,
+            assets: {},
+            stocks: {},
+            crypto: {},
+            investments: [],
+            dailyInvestments: { date: '', count: 0 },
+            dailyStockProfit: { date: '', realizedProfit: 0 },
+            dailyQuests: null,
+            tradeCompany: {
+              warehouseCapacity: 10,
+              warehouse: {},
+              activeImports: [],
+              activeExports: [],
+              totalProfitEarned: 0,
+              totalShipmentsCompleted: 0,
+              dailyTradeProfit: 0,
+              dailyExportedContainers: 0,
+              dailyExportsCount: {},
+              dailyTradeResetAt: 0
+            },
+            activeLoan: null,
+            loanCooldownUntil: 0,
+            workCooldownUntil: 0,
+            casinoCooldownUntil: 0,
+            jailTimer: 0,
+            underSuspicion: false,
+            freezeUntil: 0,
+            freezeReason: '',
+            mutedUntil: 0,
+            muteReason: '',
+            staffFlag: null,
+            heatLevel: 0,
+            underworldRep: 0,
+            afkManagerExpiresAt: 0,
+            totalTaxesPaid: 0,
+            activityLog: [{
+              action: 'انطلاق الموسم الجديد 👑',
+              details: 'بدء موسم التحدي الجديد برأس مال 1,000,000 EGP مع الاحتفاظ بسبائك الذهب ومستويات العتاد الرئاسي!',
+              timestamp: Date.now(),
+              category: 'system'
+            }],
+            smugglingFleet: {},
+            activeSmugglingJobs: {},
+            gold: preservedGold,
+            executiveGear: preservedGear,
+            isAdmin: preservedIsAdmin,
+            avatarUrl: s.avatarUrl || '',
+            farm: {
+              unlocked: false,
+              landLevel: 1,
+              maxPlots: 4,
+              waterLevel: 1,
+              fertilizerLevel: 1,
+              workers: 0,
+              siloLevel: 1,
+              plots: [null, null, null, null],
+              inventory: {},
+              stats: { totalHarvested: 0, totalRevenue: 0 },
+              processing: { storage: {}, stats: {} },
+              livestock: { cows: 0, chickens: 0, milk: 0, eggs: 0, compost: 0, lastProduceAt: 0, stats: {} },
+              contracts: { reputation: 0, completedCount: 0, totalBonusEarned: 0, active: [] }
+            },
+            airport: {
+              unlocked: false,
+              name: 'مطار العاصمة الدولي',
+              code: 'CAI',
+              facilities: { runway: 1, terminals: 1, hangar: 1, duty_free: 0 },
+              fleet: [],
+              manager: null,
+              claimedFlightIds: [],
+              stats: { totalFlights: 0, totalRevenue: 0, totalOperatingCost: 0, totalNetProfit: 0, totalDutyFreeCollected: 0, transitPermitsAccepted: 0 },
+              lastDutyFreeCollectionAt: 0,
+              lastTransitPermitAt: 0,
+              lastTransitCollectionAt: 0
+            },
+            space: {
+              unlocked: false,
+              unlockedAt: 0,
+              facilities: { launchpads: 1, mission_control: 1, ore_silo: 1, ore_refinery: 1 },
+              activeRockets: [],
+              activeFlights: [],
+              warehouse: { regolith: 0, iron: 0, platinum: 0, helium3: 0, lithium: 0, dark_matter: 0 },
+              hiredManagers: [],
+              stats: { totalFlightsLaunched: 0, totalFlightsCompleted: 0, totalOresMinedKg: 0, totalRevenueEGP: 0 }
+            },
+            marketVault: { earnings: 0, salesHistory: [], returnedItems: [] },
+            adminModifiedTimestamp: futureTs
+          };
+
+          const updatePayload = {
+            cash: 500000,
+            bank: 500000,
+            dirty_cash: 0,
+            net_worth: 1000000,
+            xp: 0,
+            title: 'عامل مبتدئ',
+            job_id: 'worker',
+            jail_timer: 0,
+            total_taxes_paid: 0,
+            gold: preservedGold,
+            admin_modified_timestamp: futureTs,
+            state: cleanNewState
+          };
+
+          try {
+            const patchRes = await adminDbFetch(`/rest/v1/players?username=eq.${encodeURIComponent(u)}`, {
+              method: 'PATCH',
+              headers: { 'Prefer': 'return=representation' },
+              body: JSON.stringify(updatePayload)
+            });
+            if (patchRes.ok) successCount++;
+            else failCount++;
+          } catch (err) {
+            failCount++;
+          }
+        }));
+      }
+
+      // Wipe P2P market state file
+      try {
+        const fs = require('fs');
+        const path = require('path');
+        const marketFile = path.resolve(__dirname, '../../data/p2p-market-state.json');
+        fs.writeFileSync(marketFile, JSON.stringify({ listings: [], salesHistory: [] }, null, 2), 'utf8');
+      } catch (fErr) {
+        request.log.warn('[Seasonal Wipe] Market file wipe note:', fErr.message);
+      }
+
+      // Clean mailbox old financial messages
+      try {
+        await adminDbFetch(`/rest/v1/mailbox?type=in.(transfer_received,transfer_request,market_sale,airdrop)`, {
+          method: 'DELETE'
+        });
+      } catch (mErr) {
+        request.log.warn('[Seasonal Wipe] Mailbox cleanup note:', mErr.message);
+      }
+
+      // Purge all in-memory active sessions
+      if (sessionManager && sessionManager.sessions) {
+        sessionManager.sessions.clear();
+      }
+
+      // Broadcast force_reload to globals
+      const ts = Date.now();
+      try {
+        await adminDbFetch('/rest/v1/globals', {
+          method: 'POST',
+          headers: {
+            'Prefer': 'resolution=merge-duplicates'
+          },
+          body: JSON.stringify({
+            id: 'force_reload',
+            data: {
+              timestamp: ts,
+              version: 'v10.0.47',
+              message: 'انطلق الموسم الجديد رسمياً! تم تصفير جميع الحسابات لبدء موسم التحدي الجديد، مع الاحتفاظ بسبائك الذهب ومستويات العتاد الرئاسي 👑',
+              forcedBy: 'admin',
+              seasonReset: true
+            },
+            updated_at: ts
+          })
+        });
+      } catch (bErr) {
+        request.log.warn('[Seasonal Wipe] Broadcast note:', bErr.message);
+      }
+
+      return reply.send({
+        success: true,
+        totalPlayers: allPlayers.length,
+        successCount,
+        failCount,
+        message: 'تم تصفير الموسم بنجاح لجميع اللاعبين مع الاحتفاظ بالذهب ومستويات العتاد الرئاسي 👑'
+      });
+    } catch (err) {
+      request.log.error(err, '[Seasonal Wipe] Fatal Error');
+      return reply.status(500).send({ success: false, error: err.message });
+    }
+  });
+
+  /**
    * POST /api/admin/force-reload
    * Broadcasts cache-buster and forces all connected player browsers to purge cache and reload immediately
    */

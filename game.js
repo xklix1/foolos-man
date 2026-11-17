@@ -1417,14 +1417,6 @@ const GameEngine = (() => {
       category: 'work'
     },
     {
-      id: 'bank_deposit',
-      title: 'تأمين رأس المال',
-      desc: 'أنجز 3 عمليات إيداع لتغذية وتأمين رصيدك البنكي',
-      target: 3,
-      icon: 'fa-building-columns',
-      category: 'banking'
-    },
-    {
       id: 'stock_trade',
       title: 'مضارب البورصة',
       desc: 'نفذ 3 صفقات تداول أسهم في البورصة المركزية (شراء أو بيع)',
@@ -1505,6 +1497,11 @@ const GameEngine = (() => {
         }))
       };
     } else {
+      // Automatically remove obsolete bank_deposit quest
+      if (state.dailyQuests.quests.some(q => q && q.id === 'bank_deposit')) {
+        state.dailyQuests.quests = state.dailyQuests.quests.filter(q => q && q.id !== 'bank_deposit');
+      }
+
       // Migrate legacy casino_play quest to trade_shipment
       const casinoIdx = state.dailyQuests.quests.findIndex(q => q && q.id === 'casino_play');
       if (casinoIdx !== -1) {
@@ -1593,7 +1590,7 @@ const GameEngine = (() => {
 
     const allClaimed = state.dailyQuests.quests.every(q => q.claimed);
     if (!allClaimed) {
-      throw new Error("يجب إكمال واستلام مكافآت جميع المهام الخمس أولاً لفتح الصندوق الأكبر!");
+      throw new Error("يجب إكمال واستلام مكافآت جميع المهام اليومية الأربعة أولاً لفتح الصندوق الأكبر!");
     }
 
     const sampleQ = state.dailyQuests.quests[0];

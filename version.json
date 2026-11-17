@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.46",
-  "build": 1793662000000,
-  "timestamp": 1793662000000,
-  "notes": "Comprehensive audit and synchronization of all P2P market catalog reference prices across commodities, minerals, crops, livestock, aircraft, and space rockets.",
-  "releaseNotes": "مزامنة وتدقيق شامل لجميع أسعار السوق المرجعية: تطابق كامل 100% بين محاصيل المزرعة، خامات الفضاء، طائرات المطار، صواريخ الفضاء، وحاويات التجارة."
+  "version": "v10.0.47",
+  "build": 1793663000000,
+  "timestamp": 1793663000000,
+  "notes": "Launch Season 2 with clean seasonal wipe, preserving player Gold and Executive Gear, and optimize daily quests to 4.",
+  "releaseNotes": "انطلاق الموسم الجديد وتصفير جميع الحسابات لبدء المنافسة من جديد، مع الحفاظ الكامل على سبائك الذهب ومستويات العتاد الرئاسي، وتحديث المهام اليومية إلى 4 مهام متكاملة."
 }
