@@ -188,6 +188,10 @@ function sanitizePlayerState(dbRow) {
     cleanState.stocks = {};
     cleanState.crypto = {};
     cleanState.investments = [];
+    cleanState.farm = JSON.parse(JSON.stringify(DEFAULT_STATE.farm));
+    cleanState.airport = JSON.parse(JSON.stringify(DEFAULT_STATE.airport));
+    cleanState.space = JSON.parse(JSON.stringify(DEFAULT_STATE.space));
+    cleanState.tradeCompany = JSON.parse(JSON.stringify(DEFAULT_STATE.tradeCompany));
     cleanState.isReset = true;
   } else {
     cleanState.cash = (dbRow.cash !== null && dbRow.cash !== undefined) ? Number(dbRow.cash) : Number(rawState.cash || 0);
@@ -289,7 +293,7 @@ function sanitizePlayerState(dbRow) {
   }
 
   // Agro Farm Tycoon (Officially open to all players)
-  if (rawState.farm && typeof rawState.farm === 'object') {
+  if (!isAccountReset && rawState.farm && typeof rawState.farm === 'object') {
     cleanState.farm = rawState.farm;
     const landLvl = Math.max(1, Number(cleanState.farm.landLevel || 1));
     const expectedPlots = landLvl === 1 ? 4 : (landLvl === 2 ? 8 : (landLvl === 3 ? 12 : (landLvl >= 4 ? 16 : 4)));
@@ -300,7 +304,7 @@ function sanitizePlayerState(dbRow) {
   }
 
   // International Airport & Manager Preservation
-  if (rawState.airport && typeof rawState.airport === 'object') {
+  if (!isAccountReset && rawState.airport && typeof rawState.airport === 'object') {
     cleanState.airport = {
       ...DEFAULT_STATE.airport,
       ...rawState.airport,
@@ -322,7 +326,7 @@ function sanitizePlayerState(dbRow) {
   }
 
   // Space Exploration Hub Preservation
-  if (rawState.space && typeof rawState.space === 'object') {
+  if (!isAccountReset && rawState.space && typeof rawState.space === 'object') {
     cleanState.space = {
       ...DEFAULT_STATE.space,
       ...rawState.space,
@@ -347,7 +351,7 @@ function sanitizePlayerState(dbRow) {
   }
 
   // Trade Company & Warehouse Cargo Preservation
-  if (rawState.tradeCompany && typeof rawState.tradeCompany === 'object') {
+  if (!isAccountReset && rawState.tradeCompany && typeof rawState.tradeCompany === 'object') {
     cleanState.tradeCompany = {
       warehouseCapacity: Math.min(50, Math.max(10, Number(rawState.tradeCompany.warehouseCapacity) || 10)),
       warehouse: (rawState.tradeCompany.warehouse && typeof rawState.tradeCompany.warehouse === 'object') ? rawState.tradeCompany.warehouse : {},

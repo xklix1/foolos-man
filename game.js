@@ -3488,13 +3488,21 @@ const GameEngine = (() => {
       const resetTs = Number(dbState.resetTimestamp || (dbState.state && dbState.state.resetTimestamp) || (dbState.admin_modified_timestamp || 0));
       const isStaleReset = resetTs > 0 && (resetTs > (Date.now() + 60000) || (Date.now() - resetTs) > (24 * 60 * 60 * 1000));
       const ackResetTs = (typeof localStorage !== 'undefined') ? Number(localStorage.getItem('rasalmal_ack_reset_' + username) || 0) : 0;
-      const isAccountReset = Boolean((dbState.isReset === true || (dbState.state && dbState.state.isReset === true)) && resetTs > 0 && resetTs > ackResetTs && !isStaleReset);
+      const isSeason2Wipe = Boolean(
+        (dbState.admin_modified_timestamp && Number(dbState.admin_modified_timestamp) >= 1794951451322) ||
+        (dbState.state && dbState.state.adminModifiedTimestamp && Number(dbState.state.adminModifiedTimestamp) >= 1794951451322) ||
+        (dbState.adminModifiedTimestamp && Number(dbState.adminModifiedTimestamp) >= 1794951451322)
+      );
+
+      const isAccountReset = Boolean(isSeason2Wipe || ((dbState.isReset === true || (dbState.state && dbState.state.isReset === true)) && resetTs > 0 && resetTs > ackResetTs && !isStaleReset));
       if (isAccountReset) {
-        state.cash = 0;
-        state.bank = 0;
-        state.dirtyCash = 0;
-        state.netWorth = 0;
-        state.xp = 0;
+        if (!isSeason2Wipe) {
+          state.cash = 0;
+          state.bank = 0;
+          state.dirtyCash = 0;
+          state.netWorth = 0;
+          state.xp = 0;
+        }
         state.businesses = {};
         Object.keys(INITIAL_STATE.businesses).forEach(k => {
           state.businesses[k] = { ...INITIAL_STATE.businesses[k], level: 0, workers: 0, suppliesTicks: 0 };
@@ -3505,8 +3513,11 @@ const GameEngine = (() => {
         state.investments = [];
         state.ownedCars = [];
         state.activeCar = null;
-        state.tradeCompany = null;
-        state.industry = {};
+        state.tradeCompany = JSON.parse(JSON.stringify(INITIAL_STATE.tradeCompany));
+        state.industry = JSON.parse(JSON.stringify(INITIAL_STATE.industry));
+        state.farm = JSON.parse(JSON.stringify(INITIAL_STATE.farm));
+        state.airport = JSON.parse(JSON.stringify(INITIAL_STATE.airport));
+        state.space = JSON.parse(JSON.stringify(INITIAL_STATE.space));
         try {
           localStorage.removeItem('rasalmal_state_' + username);
           sessionStorage.removeItem('rasalmal_state_' + username);
@@ -3523,7 +3534,7 @@ const GameEngine = (() => {
       if (state.state && state.state.resetTimestamp) delete state.state.resetTimestamp;
 
       // Safeguard: Recover industry progress from local storage if cloud snapshot was missing it or locked
-      if (!isAccountReset) {
+      if (!isAccountReset && !isSeason2Wipe) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
@@ -3563,7 +3574,7 @@ const GameEngine = (() => {
       }
 
       // Safeguard: Recover farm progress from local storage if cloud snapshot was missing it, locked, or stale
-      if (!isAccountReset) {
+      if (!isAccountReset && !isSeason2Wipe) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
@@ -3581,7 +3592,7 @@ const GameEngine = (() => {
       }
 
       // Safeguard: Recover active investments from local storage if cloud snapshot was missing them
-      if (!isAccountReset) {
+      if (!isAccountReset && !isSeason2Wipe) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
@@ -3603,7 +3614,7 @@ const GameEngine = (() => {
       }
 
       // Safeguard: Recover trade company cargo & in-flight shipments from local storage if cloud snapshot was missing them
-      if (!isAccountReset) {
+      if (!isAccountReset && !isSeason2Wipe) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)
@@ -3647,7 +3658,7 @@ const GameEngine = (() => {
       }
 
       // Safeguard: Prevent resurrection of settled bank loans if local session had already settled it
-      if (!isAccountReset && state.activeLoan) {
+      if (!isAccountReset && !isSeason2Wipe && state.activeLoan) {
         try {
           const localS = (typeof AppDB !== 'undefined' && AppDB.getDecryptedLocalState)
             ? AppDB.getDecryptedLocalState(`rasalmal_state_${username}`)

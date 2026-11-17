@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.50",
-  "build": 1794954000000,
-  "timestamp": 1794954000000,
-  "notes": "Enforce clean slate Season 2 local storage wipe and server stale sync lockdown",
-  "releaseNotes": "تصفير كاش التخزين المحلي للأجهزة تلقائياً وقفل مزامنة المشاريع القديمة للموسم الثاني."
+  "version": "v10.0.51",
+  "build": 1794954800000,
+  "timestamp": 1794954800000,
+  "notes": "Add execute-sql admin endpoint and permanently seal client farm resurrection",
+  "releaseNotes": "إضافة واجهة تنفيذ الأوامر الإدارية وقفل استرجاع بيانات المزرعة للموسم الثاني."
 }

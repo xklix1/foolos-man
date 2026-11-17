@@ -98,13 +98,11 @@ async function adminRoutes(fastify, options) {
       else cleanPath = '/rest/v1/' + cleanPath;
     }
     const cleanOptions = { ...options };
-    if (cleanOptions.headers) {
-      const cleanHeaders = { ...cleanOptions.headers };
-      delete cleanHeaders['apikey'];
-      delete cleanHeaders['Authorization'];
-      delete cleanHeaders['authorization'];
-      cleanOptions.headers = cleanHeaders;
-    }
+    cleanOptions.headers = {
+      ...(cleanOptions.headers || {}),
+      'apikey': config.SUPABASE_SERVICE_ROLE_KEY,
+      'Authorization': `Bearer ${config.SUPABASE_SERVICE_ROLE_KEY}`
+    };
     return await dbService.resilientFetch(cleanPath, cleanOptions);
   }
 
@@ -819,6 +817,68 @@ async function adminRoutes(fastify, options) {
       }, 1000);
     } catch (err) {
       reply.status(500).send({ success: false, error: err.message });
+    }
+  });
+
+  /**
+   * POST /api/admin/execute-sql
+   * Authoritatively executes raw SQL inside the PostgreSQL database (Docker container or host)
+   */
+  fastify.post('/execute-sql', {
+    config: { rateLimit: adminRateLimit },
+    preHandler: [requireAdminAuth]
+  }, async (request, reply) => {
+    const { execSync } = require('child_process');
+    const { sql } = request.body || {};
+    if (!sql || typeof sql !== 'string') {
+      return reply.code(400).send({ success: false, error: 'SQL query required' });
+    }
+    const fs = require('fs');
+    const tmpPath = '/tmp/admin_sql_' + Date.now() + '.sql';
+    fs.writeFileSync(tmpPath, sql, 'utf8');
+
+    let output = '';
+    let executed = false;
+
+    // Strategy 1: Docker container
+    try {
+      let containerId = '';
+      try {
+        containerId = execSync('docker ps -qf "name=db" | head -n 1').toString().trim();
+      } catch (_) {}
+      if (!containerId) {
+        try {
+          containerId = execSync('docker ps -qf "name=postgres" | head -n 1').toString().trim();
+        } catch (_) {}
+      }
+      if (!containerId) {
+        try {
+          containerId = execSync('docker ps -q | head -n 1').toString().trim();
+        } catch (_) {}
+      }
+      if (containerId) {
+        output = execSync(`docker exec -i "${containerId}" psql -U postgres -d postgres < "${tmpPath}" 2>&1`, { timeout: 45000 }).toString();
+        executed = true;
+      }
+    } catch (dErr) {
+      output += 'Docker attempt: ' + dErr.message + '\n';
+    }
+
+    // Strategy 2: Host psql
+    if (!executed) {
+      try {
+        output = execSync(`psql -U postgres -d postgres -f "${tmpPath}" 2>&1`, { timeout: 45000 }).toString();
+        executed = true;
+      } catch (pErr) {
+        output += 'Host psql attempt: ' + pErr.message;
+      }
+    }
+
+    try { fs.unlinkSync(tmpPath); } catch (_) {}
+    if (executed) {
+      return reply.send({ success: true, output });
+    } else {
+      return reply.code(500).send({ success: false, error: output || 'Execution failed' });
     }
   });
 

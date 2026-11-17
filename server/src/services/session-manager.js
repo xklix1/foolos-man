@@ -484,8 +484,16 @@ class SessionManager {
     delete s.pin;
     delete s.password;
 
-    // Agro Farm Tycoon (Officially open to all players)
+    // Agro Farm Tycoon (Authoritative & Anti-Resurrection Guard)
     if (clientState.farm && typeof clientState.farm === 'object' && !isClientStale) {
+      const isServerFarmLocked = !s.farm || typeof s.farm !== 'object' || !s.farm.unlocked;
+      if (isServerFarmLocked && !isAdminGrant) {
+        // Prevent resurrecting unlocked farm or livestock from stale local cache
+        clientState.farm.unlocked = false;
+        clientState.farm.landLevel = 1;
+        clientState.farm.maxPlots = 4;
+        clientState.farm.livestock = { cows: 0, chickens: 0, milk: 0, eggs: 0, compost: 0, lastProduceAt: 0, stats: { totalMilk: 0, totalEggs: 0, totalRevenue: 0 } };
+      }
       const sFarmLiq = (s.farm && s.farm.dailyLiquidation && typeof s.farm.dailyLiquidation === 'object') ? s.farm.dailyLiquidation : null;
       const cFarmLiq = (clientState.farm.dailyLiquidation && typeof clientState.farm.dailyLiquidation === 'object') ? clientState.farm.dailyLiquidation : null;
       const sHarvested = (s.farm && s.farm.harvestedCrops) ? JSON.parse(JSON.stringify(s.farm.harvestedCrops)) : null;
@@ -518,7 +526,7 @@ class SessionManager {
     // International Airport Hub & Fleet Synchronization
     if (clientState.airport && typeof clientState.airport === 'object' && !isClientStale) {
       if (!s.airport || typeof s.airport !== 'object' || !s.airport.unlocked) {
-        if (clientState.airport.unlocked) {
+        if (isAdminGrant && clientState.airport.unlocked) {
           s.airport = JSON.parse(JSON.stringify(clientState.airport));
         }
       } else {
