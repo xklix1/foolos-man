@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.51",
-  "build": 1794954800000,
-  "timestamp": 1794954800000,
-  "notes": "Add execute-sql admin endpoint and permanently seal client farm resurrection",
-  "releaseNotes": "إضافة واجهة تنفيذ الأوامر الإدارية وقفل استرجاع بيانات المزرعة للموسم الثاني."
+  "version": "v10.0.52",
+  "build": 1794955800000,
+  "timestamp": 1794955800000,
+  "notes": "Fix INITIAL_STATE.airport undefined in game.js resolving login JSON parse error",
+  "releaseNotes": "إصلاح خطأ تعريف المطار الافتراضي في محرك اللعبة وإنهاء مشكلة تسجيل الدخول."
 }

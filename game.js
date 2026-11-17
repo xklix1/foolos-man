@@ -1271,6 +1271,19 @@ const GameEngine = (() => {
       pen: { unlocked: false, level: 1, stars: 1 },
       terminal: { unlocked: false, level: 1, stars: 1 }
     },
+    airport: {
+      unlocked: false,
+      name: 'مطار العاصمة الدولي',
+      code: 'CAI',
+      facilities: { runway: 1, terminals: 1, hangar: 1, duty_free: 0 },
+      fleet: [],
+      manager: null,
+      claimedFlightIds: [],
+      stats: { totalFlights: 0, totalRevenue: 0, totalOperatingCost: 0, totalNetProfit: 0, totalDutyFreeCollected: 0, transitPermitsAccepted: 0 },
+      lastDutyFreeCollectionAt: 0,
+      lastTransitPermitAt: 0,
+      lastTransitCollectionAt: 0
+    },
     space: {
       unlocked: false,
       unlockedAt: 0,
@@ -3513,11 +3526,11 @@ const GameEngine = (() => {
         state.investments = [];
         state.ownedCars = [];
         state.activeCar = null;
-        state.tradeCompany = JSON.parse(JSON.stringify(INITIAL_STATE.tradeCompany));
-        state.industry = JSON.parse(JSON.stringify(INITIAL_STATE.industry));
-        state.farm = JSON.parse(JSON.stringify(INITIAL_STATE.farm));
-        state.airport = JSON.parse(JSON.stringify(INITIAL_STATE.airport));
-        state.space = JSON.parse(JSON.stringify(INITIAL_STATE.space));
+        state.tradeCompany = INITIAL_STATE.tradeCompany ? JSON.parse(JSON.stringify(INITIAL_STATE.tradeCompany)) : {};
+        state.industry = INITIAL_STATE.industry ? JSON.parse(JSON.stringify(INITIAL_STATE.industry)) : {};
+        state.farm = INITIAL_STATE.farm ? JSON.parse(JSON.stringify(INITIAL_STATE.farm)) : {};
+        state.airport = INITIAL_STATE.airport ? JSON.parse(JSON.stringify(INITIAL_STATE.airport)) : {};
+        state.space = INITIAL_STATE.space ? JSON.parse(JSON.stringify(INITIAL_STATE.space)) : {};
         try {
           localStorage.removeItem('rasalmal_state_' + username);
           sessionStorage.removeItem('rasalmal_state_' + username);
