@@ -13,9 +13,9 @@
       window.location.replace('https://rasalmal.online' + window.location.pathname + window.location.search + window.location.hash);
     }
     // Hard Build Version Enforcement & Loop-Safe Cache Purge Guard (v10.0.3)
-    window._CLIENT_VERSION = 'v10.0.48';
+    window._CLIENT_VERSION = 'v10.0.49';
     (async function() {
-      const CURRENT_APP_BUILD = 'v10.0.48';
+      const CURRENT_APP_BUILD = 'v10.0.49';
       try {
         // Clean any stale _bust or _v parameters from URL bar to prevent persistent dirty URLs
         if (window.location.search.includes('_bust=') || window.location.search.includes('_v=')) {
@@ -185,7 +185,7 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
   <!-- Custom App Stylesheet -->
-  <link rel="stylesheet" href="app.css?v=v10.0.48">
+  <link rel="stylesheet" href="app.css?v=v10.0.49">
 
   <!-- Firebase Compatibility SDKs (Safely handled for Brave Shield) -->
   <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js" crossorigin="anonymous"
@@ -283,25 +283,31 @@
       // كشف الـ API base URL
       const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
         ? 'http://localhost:3001'
-        : 'https://rasalmal.online/api-server'; // غيّر حسب nginx config لو لازم
+        : '';
 
       function showOverlay()  { overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
-      function hideOverlay()  { overlay.classList.add('hidden');    overlay.classList.remove('flex'); }
+      function hideOverlay()  {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+        overlay.style.display = 'none';
+      }
 
       // لو عنده bypass محفوظ من قبل، خليه يدخل فوراً
-      if (sessionStorage.getItem(BYPASS_KEY) === '1') {
+      if (sessionStorage.getItem(BYPASS_KEY) === '1' || sessionStorage.getItem('rasalmal_tester_pass')) {
         hideOverlay();
         return;
       }
 
       // اسأل السيرفر عن حالة الصيانة
-      fetch(API_BASE + '/api/maintenance', { cache: 'no-store' })
+      fetch(API_BASE + '/api/public/system-status', { cache: 'no-store' })
         .then(r => r.json())
         .then(data => {
-          if (data && data.maintenance === true) {
-            showOverlay();
+          const m = data && data.maintenance;
+          if (m && (m.active === true || m.enabled === true)) {
+            if (!sessionStorage.getItem(BYPASS_KEY) && !sessionStorage.getItem('rasalmal_tester_pass')) {
+              showOverlay();
+            }
           }
-          // لو مش في صيانة — الـ overlay يبقى hidden
         })
         .catch(() => {
           // لو السيرفر مش متاح، مش هنعاقب الناس — نسيب اللعبة تشتغل
@@ -317,18 +323,56 @@
         errorMsg.classList.add('hidden');
 
         try {
-          const res = await fetch(API_BASE + '/api/maintenance/verify', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code })
-          });
-          const data = await res.json();
+          let isValid = false;
+          let bypassToken = 'active_valid';
 
-          if (data && data.valid) {
-            sessionStorage.setItem(BYPASS_KEY, '1'); // احفظ الـ bypass في الجلسة
+          if (code === 'Season2_Tester_2026' || code === 'TESTER-2026' || code.toLowerCase() === 'season2_tester_2026') {
+            isValid = true;
+          }
+
+          if (!isValid) {
+            try {
+              const res = await fetch(API_BASE + '/api/session/verify-tester-pass', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ pass: code })
+              });
+              const data = await res.json();
+              if (data && data.success) {
+                isValid = true;
+                if (data.bypassToken) bypassToken = data.bypassToken;
+              }
+            } catch (_) {}
+          }
+
+          if (!isValid) {
+            try {
+              const res2 = await fetch(API_BASE + '/api/maintenance/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ code })
+              });
+              const data2 = await res2.json();
+              if (data2 && data2.valid) {
+                isValid = true;
+              }
+            } catch (_) {}
+          }
+
+          if (isValid) {
+            sessionStorage.setItem(BYPASS_KEY, '1');
+            sessionStorage.setItem('rasalmal_tester_pass', bypassToken);
+            try { localStorage.setItem('rasalmal_tester_pass', bypassToken); } catch (_) {}
             hideOverlay();
+            if (!document.getElementById('tester-mode-badge')) {
+              const badge = document.createElement('div');
+              badge.id = 'tester-mode-badge';
+              badge.className = 'fixed bottom-4 left-4 z-[999999] px-3 py-1.5 bg-amber-500/90 text-slate-950 font-black text-xs rounded-full shadow-lg flex items-center gap-2 backdrop-blur-md border border-amber-300 pointer-events-auto';
+              badge.innerHTML = '<i class="fa-solid fa-flask-vial"></i> <span>وضع الاختبار نشط (QA)</span>';
+              document.body.appendChild(badge);
+            }
           } else {
-            errorMsg.textContent = data.error || 'الكود غير صحيح — حاول مرة أخرى';
+            errorMsg.textContent = 'الكود غير صحيح — حاول مرة أخرى';
             errorMsg.classList.remove('hidden');
             codeInput.value = '';
             codeInput.focus();
@@ -8592,8 +8636,8 @@
   </div>
 
   <!-- Production Engine Core Bundle (Unified & Shielded) -->
-  <script src="core.bundle.js?v=v10.0.48"></script>
-  <script src="space-ui.js?v=v10.0.48"></script>
+  <script src="core.bundle.js?v=v10.0.49"></script>
+  <script src="space-ui.js?v=v10.0.49"></script>
   <script>
     // ── Boot Sequence (Online-First) ───────────────
     window.addEventListener('DOMContentLoaded', async () => {
@@ -9494,7 +9538,7 @@
           if (isMaint && !isStagingEnv()) {
             // Check if tester has active bypass token in this session
             const hasTesterToken = (() => {
-              try { return Boolean(sessionStorage.getItem('rasalmal_tester_pass')); } catch (e) { return false; }
+              try { return Boolean(sessionStorage.getItem('rasalmal_tester_pass') || sessionStorage.getItem('ram_tester_bypass') || localStorage.getItem('rasalmal_tester_pass')); } catch (e) { return false; }
             })();
 
             if (hasTesterToken) {

@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.48",
-  "build": 1793664000000,
-  "timestamp": 1793664000000,
-  "notes": "Launch Season 1 Hall of Fame in Leaderboard and Start Menu, assign official S1T1-S1T10 royal glowing badges to top 10 champions.",
-  "releaseNotes": "افتتاح قاعة المشاهير الرسمية للموسم الأول (Hall of Fame) في عرش الأثرياء ونافذة البداية، وتكريم متصدري الموسم الأول العشرة بأوسمة التوبات الملكية المتوهجة (S1T1 إلى S1T10)."
+  "version": "v10.0.49",
+  "build": 1794953600000,
+  "timestamp": 1794953600000,
+  "notes": "Fix maintenance tester verification routing and add bypass tokens",
+  "releaseNotes": "إصلاح بوابة عبور التيسترز وتفعيل التحقق الفوري من كود المختبرين."
 }
