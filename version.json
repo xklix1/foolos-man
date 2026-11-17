@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.52",
-  "build": 1794955800000,
-  "timestamp": 1794955800000,
-  "notes": "Fix INITIAL_STATE.airport undefined in game.js resolving login JSON parse error",
-  "releaseNotes": "إصلاح خطأ تعريف المطار الافتراضي في محرك اللعبة وإنهاء مشكلة تسجيل الدخول."
+  "version": "v10.0.53",
+  "build": 1794958614059,
+  "timestamp": 1794958614059,
+  "notes": "Season 2 Economic Rebalance: Tiered Business Demand and Exponential Upgrade Curve",
+  "releaseNotes": "تحديث موازنة اقتصاد الموسم الثاني: ضبط عوائد الشركات الكبرى ومنحنى الترقية الأسي."
 }

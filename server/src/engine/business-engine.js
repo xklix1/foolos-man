@@ -121,8 +121,11 @@ function getBusinessUpgradeCost(key, currentLevel, playerState = {}) {
   const bizConfig = BUSINESSES[key];
   if (!bizConfig) return 0;
   if (currentLevel <= 0) return bizConfig.cost;
-  // Upgrade scaling formula: baseCost * (1.75 ^ level)
-  const baseCost = Math.floor(bizConfig.cost * Math.pow(1.75, currentLevel));
+    // Upgrade scaling formula: Season 2 exponential progression (1.75 for lvl 1-3, 2.15 for higher levels)
+  const scaleMultiplier = currentLevel <= 3
+    ? Math.pow(1.75, currentLevel)
+    : Math.pow(1.75, 3) * Math.pow(2.15, currentLevel - 3);
+  const baseCost = Math.floor(bizConfig.cost * scaleMultiplier);
   const hasTaxShield = Boolean(playerState.inventory && playerState.inventory.tax_shield > 0);
   return hasTaxShield ? Math.floor(baseCost * 0.875) : baseCost;
 }

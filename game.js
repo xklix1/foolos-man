@@ -60,7 +60,7 @@ const GameEngine = (() => {
       id:'tech',
       name:'شركة برمجيات وتطبيقات',
       cost: 119000,
-      baseDemand: 52,
+      baseDemand: 47,
       optimumPrice: 120,
       costOfGoods: 45,
       maxWorkers: 50,
@@ -72,7 +72,7 @@ const GameEngine = (() => {
       id:'logistics',
       name:'مجمع خدمات لوجستية وشحن',
       cost: 663000,
-      baseDemand: 92,
+      baseDemand: 83,
       optimumPrice: 260,
       costOfGoods: 100,
       maxWorkers: 50,
@@ -84,7 +84,7 @@ const GameEngine = (() => {
       id:'supermarket',
       name:'سلسلة سوبرماركت وتجزئة',
       cost: 2720000,
-      baseDemand: 161,
+      baseDemand: 145,
       optimumPrice: 500,
       costOfGoods: 200,
       maxWorkers: 50,
@@ -96,7 +96,7 @@ const GameEngine = (() => {
       id:'solar_factory',
       name:'مصنع ألواح الطاقة الشمسية ',
       cost: 11900000,
-      baseDemand: 253,
+      baseDemand: 152,
       optimumPrice: 1100,
       costOfGoods: 450,
       maxWorkers: 50,
@@ -108,7 +108,7 @@ const GameEngine = (() => {
       id:'private_hospital',
       name:'مستشفى ومجمع طبي تخصصي',
       cost: 46750000,
-      baseDemand: 402,
+      baseDemand: 241,
       optimumPrice: 2400,
       costOfGoods: 1000,
       maxWorkers: 50,
@@ -120,7 +120,7 @@ const GameEngine = (() => {
       id:'media_studio',
       name:'مؤسسة إنتاج إعلامي وسينمائي',
       cost: 136000000,
-      baseDemand: 575,
+      baseDemand: 345,
       optimumPrice: 4500,
       costOfGoods: 1900,
       maxWorkers: 50,
@@ -132,7 +132,7 @@ const GameEngine = (() => {
       id:'private_bank',
       name:'بنك استثماري وشركة وساطة مالية ',
       cost: 442000000,
-      baseDemand: 805,
+      baseDemand: 483,
       optimumPrice: 8800,
       costOfGoods: 3600,
       maxWorkers: 50,
@@ -144,7 +144,7 @@ const GameEngine = (() => {
       id:'oil_refinery',
       name:'مجمع مصافي البترول والطاقة ',
       cost: 1360000000,
-      baseDemand: 862,
+      baseDemand: 517,
       optimumPrice: 16000,
       costOfGoods: 7000,
       maxWorkers: 50,
@@ -156,7 +156,7 @@ const GameEngine = (() => {
       id:'space_tech',
       name:'مؤسسة استكشاف الفضاء والأقمار الصناعية',
       cost: 4080000000,
-      baseDemand: 920,
+      baseDemand: 552,
       optimumPrice: 28000,
       costOfGoods: 12000,
       maxWorkers: 50,
@@ -4348,7 +4348,8 @@ const GameEngine = (() => {
       throw new Error("لقد وصل المشروع للحد الأقصى من المستويات (المستوى 10). يرجى تحويله لعلامة تجارية (Franchise) للترقية للمستوى الأعلى.");
     }
 
-    const baseCost = Math.floor(biz.cost * Math.pow(1.75, bizState.level));
+    const scaleMultiplier = bizState.level <= 3 ? Math.pow(1.75, bizState.level) : Math.pow(1.75, 3) * Math.pow(2.15, bizState.level - 3);
+    const baseCost = Math.floor(biz.cost * scaleMultiplier);
     const hasTaxShield = (state.inventory && state.inventory.tax_shield > 0);
     const upgradeCost = hasTaxShield ? Math.floor(baseCost * 0.875) : baseCost;
 
