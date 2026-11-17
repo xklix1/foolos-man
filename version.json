@@ -1,7 +1,7 @@
 {
-  "version": "v10.0.49",
-  "build": 1794953600000,
-  "timestamp": 1794953600000,
-  "notes": "Fix maintenance tester verification routing and add bypass tokens",
-  "releaseNotes": "إصلاح بوابة عبور التيسترز وتفعيل التحقق الفوري من كود المختبرين."
+  "version": "v10.0.50",
+  "build": 1794954000000,
+  "timestamp": 1794954000000,
+  "notes": "Enforce clean slate Season 2 local storage wipe and server stale sync lockdown",
+  "releaseNotes": "تصفير كاش التخزين المحلي للأجهزة تلقائياً وقفل مزامنة المشاريع القديمة للموسم الثاني."
 }

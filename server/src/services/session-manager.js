@@ -271,7 +271,7 @@ class SessionManager {
     const isAuthoritativeLimitsReset = (sLimitsResetAt > 0 && sLimitsResetAt > cLimitsResetAck);
 
     // Synchronize Businesses (Preserve suppliesTicks and upgrades, and handle legitimate Franchise sales)
-    if (clientState.businesses && typeof clientState.businesses === 'object') {
+    if (clientState.businesses && typeof clientState.businesses === 'object' && !isClientStale) {
       s.businesses = s.businesses || {};
       Object.keys(clientState.businesses).forEach(bk => {
         const cBiz = clientState.businesses[bk];
@@ -485,7 +485,7 @@ class SessionManager {
     delete s.password;
 
     // Agro Farm Tycoon (Officially open to all players)
-    if (clientState.farm && typeof clientState.farm === 'object') {
+    if (clientState.farm && typeof clientState.farm === 'object' && !isClientStale) {
       const sFarmLiq = (s.farm && s.farm.dailyLiquidation && typeof s.farm.dailyLiquidation === 'object') ? s.farm.dailyLiquidation : null;
       const cFarmLiq = (clientState.farm.dailyLiquidation && typeof clientState.farm.dailyLiquidation === 'object') ? clientState.farm.dailyLiquidation : null;
       const sHarvested = (s.farm && s.farm.harvestedCrops) ? JSON.parse(JSON.stringify(s.farm.harvestedCrops)) : null;
@@ -516,7 +516,7 @@ class SessionManager {
     }
 
     // International Airport Hub & Fleet Synchronization
-    if (clientState.airport && typeof clientState.airport === 'object') {
+    if (clientState.airport && typeof clientState.airport === 'object' && !isClientStale) {
       if (!s.airport || typeof s.airport !== 'object' || !s.airport.unlocked) {
         if (clientState.airport.unlocked) {
           s.airport = JSON.parse(JSON.stringify(clientState.airport));

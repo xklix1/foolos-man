@@ -2034,10 +2034,14 @@ var AppDB = (() => {
       const adminTs = Number(row.admin_modified_timestamp || (row.state && row.state.adminModifiedTimestamp) || 0);
       const isAccountReset = isAccountResetRow;
       const localTs = local ? Number(local.lastSeen || local.lastActiveTimestamp || 0) : 0;
-      const isStaleLocalDueToAdmin = (adminTs > 0 && adminTs > localTs && adminTs <= Date.now() + 300000) || isAccountReset;
+      const isStaleLocalDueToAdmin = (adminTs > 0 && adminTs > localTs) || isAccountReset || (adminTs >= 1794951451322 && localTs < 1794951451322);
 
       if (isStaleLocalDueToAdmin && isCurrentPlayer) {
-        try { localStorage.removeItem(`rasalmal_state_${u}`); } catch (e) {}
+        try {
+          localStorage.removeItem(`rasalmal_state_${u}`);
+          localStorage.removeItem(`rasalmal_backup_${u}`);
+        } catch (e) {}
+        local = null;
       }
 
       if (local && typeof local === 'object' && !isStaleLocalDueToAdmin && !isStaleLocalDueToSecondaryDevice) {

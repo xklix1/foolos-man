@@ -908,17 +908,46 @@ var ServerBridge = (() => {
               s.tradeCompany.warehouse = JSON.parse(JSON.stringify(res.authoritativeState.tradeCompany.warehouse));
             }
           }
-          if (res.authoritativeState.businesses !== undefined && typeof res.authoritativeState.businesses === 'object') {
-            s.businesses = s.businesses || {};
-            Object.keys(res.authoritativeState.businesses).forEach(bk => {
-              const sBiz = res.authoritativeState.businesses[bk];
-              if (sBiz && s.businesses[bk]) {
-                s.businesses[bk].level = Math.max(Number(s.businesses[bk].level || 0), Number(sBiz.level || 0));
-                s.businesses[bk].suppliesTicks = Math.max(Number(s.businesses[bk].suppliesTicks || 0), Number(sBiz.suppliesTicks || 0));
-              } else if (sBiz) {
-                s.businesses[bk] = sBiz;
+          const isHardAdminReset = Boolean(
+            res.adminModifiedTimestamp && (
+              Number(res.adminModifiedTimestamp) >= 1794951451322 ||
+              Number(res.adminModifiedTimestamp) > Number(s.adminModifiedTimestamp || 0)
+            )
+          );
+
+          if (isHardAdminReset) {
+            if (res.authoritativeState.businesses !== undefined) {
+              s.businesses = JSON.parse(JSON.stringify(res.authoritativeState.businesses || {}));
+            }
+            if (res.authoritativeState.farm !== undefined) {
+              s.farm = JSON.parse(JSON.stringify(res.authoritativeState.farm || {}));
+            }
+            if (res.authoritativeState.airport !== undefined) {
+              s.airport = JSON.parse(JSON.stringify(res.authoritativeState.airport || {}));
+            }
+            if (res.authoritativeState.space !== undefined) {
+              s.space = JSON.parse(JSON.stringify(res.authoritativeState.space || {}));
+            }
+            try {
+              const u = (s.username || (typeof GameEngine !== 'undefined' && GameEngine.activeUsername) || '').trim();
+              if (u) {
+                localStorage.removeItem('rasalmal_state_' + u);
+                localStorage.removeItem('rasalmal_backup_' + u);
               }
-            });
+            } catch (_) {}
+          } else {
+            if (res.authoritativeState.businesses !== undefined && typeof res.authoritativeState.businesses === 'object') {
+              s.businesses = s.businesses || {};
+              Object.keys(res.authoritativeState.businesses).forEach(bk => {
+                const sBiz = res.authoritativeState.businesses[bk];
+                if (sBiz && s.businesses[bk]) {
+                  s.businesses[bk].level = Math.max(Number(s.businesses[bk].level || 0), Number(sBiz.level || 0));
+                  s.businesses[bk].suppliesTicks = Math.max(Number(s.businesses[bk].suppliesTicks || 0), Number(sBiz.suppliesTicks || 0));
+                } else if (sBiz) {
+                  s.businesses[bk] = sBiz;
+                }
+              });
+            }
           }
           if (res.authoritativeState.lastLimitsResetAck !== undefined) {
             s.lastLimitsResetAck = Number(res.authoritativeState.lastLimitsResetAck || 0);
